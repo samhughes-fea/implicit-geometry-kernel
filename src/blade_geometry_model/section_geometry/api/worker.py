@@ -234,7 +234,7 @@ class SectionGeometryResult:
 
     When midlines are gated, also fills shell-handoff scalars (``chord_m``,
     ``twist_rad``, ``leading_edge_twisted_pitch_axis_blade_frame``, ``trailing_edge_twisted_pitch_axis_blade_frame``) so FE can build
-    ``ShellMeshInputs`` without re-evaluating SDF.
+    ``ShellStripMeshingInputs`` without re-evaluating SDF.
 
     ``section`` implements :class:`SectionMidlineHost` for midline / mesh export.
 

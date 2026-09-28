@@ -3,7 +3,7 @@ visualisation/demos/topology_twist_stability_demo.py
 =========================================
 Computational-geometry demo: shell topology stability under twist.
 
-``build_shell_strip_topology`` snaps web feet onto skin and inserts cap–web
+``prepare_shell_midline_junctions`` snaps web feet onto skin and inserts cap–web
 T-junction vertices. This demo sweeps section twist and shows that junction
 gaps stay near geometry tolerance — topology ops are stable under rigid motion
 of the IR section.
@@ -55,8 +55,8 @@ from blade_structure_utilities.geometry_utilities.section_geometry.midlines.ring
 from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-    build_shell_strip_topology,
+from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    prepare_shell_midline_junctions,
 )
 from blade_structure_utilities.geometry_utilities.coordinate_frames import (
     section_plot_axes,
@@ -309,7 +309,7 @@ def main(argv: list[str] | None = None) -> Path:
         twist = float(np.deg2rad(deg))
         section = _build_section(af, twist_rad=twist)
         raw = build_shell_midline_strips(section, twist_rad=twist)
-        topo = build_shell_strip_topology(raw)
+        topo = prepare_shell_midline_junctions(raw)
         topo_by_twist[deg] = topo
         raw_by_twist[deg] = raw
         gaps_raw = _web_skin_gaps(raw)

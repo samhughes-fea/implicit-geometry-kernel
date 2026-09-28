@@ -234,7 +234,7 @@ class SectionGeometryResult:
 
     When midlines are gated, also fills shell-handoff scalars (``chord_m``,
     ``twist_rad``, ``leading_edge_twisted_pitch_axis_blade_frame``, ``trailing_edge_twisted_pitch_axis_blade_frame``) so FE can build
-    ``ShellMeshInputs`` without re-evaluating SDF.
+    ``ShellStripMeshingInputs`` without re-evaluating SDF.
 
     ``section`` implements :class:`SectionMidlineHost` for midline / mesh export.
 
@@ -249,7 +249,8 @@ class SectionGeometryResult:
 
     ``stage_timings`` is a small ``{stage: seconds}`` dict populated when
     ``SECTION_GEOMETRY_PROFILE=1`` (assemble / assemble_* / properties /
-    properties_* / emit_* / midlines / topology / topology_* / cell_wall_loops).
+    properties_* / emit_* / midlines / junction_preparation /
+    junction_preparation_* / cell_wall_loops).
     """
 
     section: SectionMidlineHost
@@ -804,8 +805,8 @@ def build_section_geometry(
         from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
             build_shell_midline_strips,
         )
-        from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-            build_shell_strip_topology,
+        from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+            prepare_shell_midline_junctions,
         )
 
         with timed_stage("midlines", stage_s):
@@ -815,7 +816,7 @@ def build_section_geometry(
                 n_web_samples=int(n_web_samples),
                 n_cap_samples=int(n_cap_samples),
             )
-        with timed_stage("topology", stage_s):
+        with timed_stage("junction_preparation", stage_s):
             # Offset-locus interiors require the same frame as the strips.
             # Midlines are emitted in B; the airfoil locus is authored in S —
             # only share them when twist is ~0.
@@ -828,7 +829,7 @@ def build_section_geometry(
                 )
                 cap_depth = float(skin_max) + 0.5 * float(spar)
             midline_strips = tuple(
-                build_shell_strip_topology(
+                prepare_shell_midline_junctions(
                     raw,
                     stage_sink=stage_s,
                     airfoil=locus_af,

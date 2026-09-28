@@ -47,8 +47,8 @@ from blade_structure_utilities.geometry_utilities.section_geometry import (
 from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-    build_shell_strip_topology,
+from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    prepare_shell_midline_junctions,
 )
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
     plot_section_hybrid,
@@ -104,7 +104,7 @@ def main(argv: list[str] | None = None) -> Path:
     print(f"Wrote {path1}")
 
     raw = build_shell_midline_strips(section, twist_rad=0.0)
-    topo = build_shell_strip_topology(raw)
+    topo = prepare_shell_midline_junctions(raw)
     skins = [s for s in topo if s.kind == "skin"]
 
     fig2, ax2 = plt.subplots(figsize=(12.0, 5.2))

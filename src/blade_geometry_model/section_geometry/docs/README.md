@@ -106,7 +106,7 @@ Runnable teaching scripts (not plot demos):
 | [`../constructive/`](../constructive/README.md) | Polygons for area |
 | [`../props_emit/`](../props_emit/README.md) | `properties_map` |
 | [`../midlines/`](../midlines/README.md) | Centreline strips |
-| [`../topology/`](../topology/README.md) | Junction snap |
+| [`../junction_preparation/`](../junction_preparation/README.md) | Junction snap |
 | [`../cell_wall_loops/`](../cell_wall_loops/README.md) | Cell-wall loops |
 | [`../examples/`](../examples/README.md) | Teaching scripts `01`–`05` |
 | [`../visualisation/demos/`](../visualisation/demos/README.md) | Demo run list |

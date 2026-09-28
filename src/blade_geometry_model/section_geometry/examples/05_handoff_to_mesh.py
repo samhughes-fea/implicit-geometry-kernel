@@ -1,4 +1,4 @@
-"""Handoff midlines to ``ShellMeshInputs`` (stop before a full mesh study).
+"""Handoff midlines to ``ShellStripMeshingInputs`` (stop before a full mesh study).
 
 Optionally builds a coarse strip mesh when ``--mesh`` is passed.
 

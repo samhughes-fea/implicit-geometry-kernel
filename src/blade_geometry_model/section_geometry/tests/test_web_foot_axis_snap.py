@@ -33,8 +33,8 @@ from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shel
     build_shell_midline_strips,
 )
 from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-    build_shell_strip_topology,
+from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    prepare_shell_midline_junctions,
 )
 
 LAYOUTS = ["2D-F", "2D-CN", "3D-F", "3D-CN", "5D-F"]
@@ -59,7 +59,7 @@ def _prepared_strips(layout_key: str, twist_deg: float, naca: str):
         shear_web_thickness=0.008,
     )
     raw = build_shell_midline_strips(section, twist_rad=twist_rad, chord_m=_CHORD_M)
-    return raw, build_shell_strip_topology(raw)
+    return raw, prepare_shell_midline_junctions(raw)
 
 
 def _webs(strips):

@@ -15,8 +15,8 @@ from blade_structure_utilities.geometry_utilities.section_geometry.constructive 
 from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-    build_shell_strip_topology,
+from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    prepare_shell_midline_junctions,
 )
 from blade_structure_utilities.geometry_utilities.section_geometry.cell_wall_loops.cell_wall_loops import (
     build_cell_wall_loops,
@@ -78,7 +78,7 @@ def test_twin_web_hierarchical_skin_arcs():
     assert {s.skin_side for s in raw_skins} == {"suction_surface", "pressure_surface"}
     assert all(not s.closed for s in raw_skins)
 
-    topo = build_shell_strip_topology(raw)
+    topo = prepare_shell_midline_junctions(raw)
     skins = [s for s in topo if s.kind == "skin"]
     assert {s.skin_side for s in skins} == {"suction_surface", "pressure_surface"}
     # Twin-web: LE + bay_0 + TE per side â†’ 6 strips

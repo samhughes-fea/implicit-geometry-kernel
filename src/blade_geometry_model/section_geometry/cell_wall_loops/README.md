@@ -62,5 +62,5 @@ cavity loop ([`ADR_ZERO_WEB_SHELL_MESH`](../docs/reference/ADR_ZERO_WEB_SHELL_ME
 
 ## See also
 
-- [`../topology/`](../topology/README.md)
+- [`../junction_preparation/`](../junction_preparation/README.md)
 - [`../../section_contract/`](../../section_contract/README.md)

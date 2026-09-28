@@ -15,9 +15,9 @@ from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.pr
 from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-    ShellStripTopologySpec,
-    build_shell_strip_topology,
+from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    ShellMidlineJunctionPreparationOptions,
+    prepare_shell_midline_junctions,
 )
 from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
 
@@ -32,7 +32,7 @@ def test_hybrid_props_then_shell_midlines():
     assert meta["backend"] == "hybrid"
     assert "skin_suction_surface" in props and "skin_pressure_surface" in props
     strips = build_shell_midline_strips(section, twist_rad=0.0)
-    strips = build_shell_strip_topology(strips, ShellStripTopologySpec())
+    strips = prepare_shell_midline_junctions(strips, ShellMidlineJunctionPreparationOptions())
     assert len(strips) >= 3
     kinds = {s.kind for s in strips}
     assert "skin" in kinds

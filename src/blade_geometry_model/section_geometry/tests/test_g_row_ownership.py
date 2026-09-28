@@ -16,10 +16,11 @@ FORBIDDEN_IMPORT_PREFIXES: dict[str, tuple[str, ...]] = {
     "layout": (
         "blade_structure_utilities.geometry_utilities.section_geometry.recipes",
         "blade_structure_utilities.geometry_utilities.section_geometry.constructive",
+        "blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation",
         "blade_structure_utilities.geometry_utilities.section_geometry.topology",
         "blade_structure_utilities.geometry_utilities.section_geometry.sections.components",
     ),
-    "topology": (
+    "junction_preparation": (
         "blade_structure_utilities.geometry_utilities.section_geometry.sdf",
         "blade_structure_utilities.geometry_utilities.section_geometry.constructive",
         "blade_structure_utilities.geometry_utilities.section_geometry.recipes",

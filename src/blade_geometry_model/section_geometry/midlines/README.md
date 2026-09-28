@@ -54,5 +54,5 @@ Do not apply a second twist to `midline_twisted_pitch_axis_blade_frame`.
 
 ## See also
 
-- [`../topology/`](../topology/README.md)
+- [`../junction_preparation/`](../junction_preparation/README.md)
 - [`../../section_contract/`](../../section_contract/README.md)

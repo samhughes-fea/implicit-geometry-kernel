@@ -61,8 +61,8 @@ from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.pr
 from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-    build_shell_strip_topology,
+from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    prepare_shell_midline_junctions,
 )
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
     apply_structural_section_axes,
@@ -483,7 +483,7 @@ def _render_topology_twist(
             core_enabled=False,
         )
         raw = build_shell_midline_strips(section, twist_rad=twist_rad)
-        snapped = build_shell_strip_topology(raw)
+        snapped = prepare_shell_midline_junctions(raw)
 
         raw_gap = _max_web_skin_gap(raw)
         snapped_gap = _max_web_skin_gap(snapped)

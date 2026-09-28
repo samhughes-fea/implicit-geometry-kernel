@@ -9,7 +9,7 @@ frame by frame, so the whole chain can be watched re-deriving. Three panels,
 all sharing one window:
 
 1. **CSG solids** - the named implicit regions.
-2. **Junction-prepared centrelines** - after ``topology.build_shell_strip_topology``.
+2. **Junction-prepared centrelines** - after ``topology.prepare_shell_midline_junctions``.
 3. **Q4 shell mesh** - after ``section_mesh.SectionMeshRunner``.
 
 and beneath them the vector actually driving the frame, with the component

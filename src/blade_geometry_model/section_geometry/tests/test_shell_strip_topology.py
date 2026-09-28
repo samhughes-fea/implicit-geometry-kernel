@@ -33,10 +33,10 @@ def _strips(airfoil, layout_key: str):
 
 
 @pytest.mark.parametrize("layout_key", ["2D-F", "2D-CN"])
-def test_build_shell_strip_topology_preserves_cap_endpoints(layout_key, airfoil):
-    from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-        ShellStripTopologySpec,
-        build_shell_strip_topology,
+def test_prepare_shell_midline_junctions_preserves_cap_endpoints(layout_key, airfoil):
+    from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+        ShellMidlineJunctionPreparationOptions,
+        prepare_shell_midline_junctions,
         split_skin_at_junctions,
     )
 
@@ -47,7 +47,7 @@ def test_build_shell_strip_topology_preserves_cap_endpoints(layout_key, airfoil)
         for m in split
         if m.kind == "cap"
     }
-    out = build_shell_strip_topology(strips, ShellStripTopologySpec())
+    out = prepare_shell_midline_junctions(strips, ShellMidlineJunctionPreparationOptions())
     for m in out:
         if m.kind != "cap":
             continue
@@ -60,9 +60,9 @@ def test_build_shell_strip_topology_preserves_cap_endpoints(layout_key, airfoil)
 @pytest.mark.parametrize("layout_key", ["2C-CN", "3D-F"])
 def test_topology_inserts_cap_web_junctions(layout_key, airfoil):
     from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import build_section_view, resolve_system_type
-    from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-        ShellStripTopologySpec,
-        build_shell_strip_topology,
+    from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+        ShellMidlineJunctionPreparationOptions,
+        prepare_shell_midline_junctions,
     )
     from blade_structure_utilities.mesh_utilities.section_mesh.handoff._section_to_shell_inputs import (
         shell_mesh_inputs_from_section,
@@ -71,7 +71,7 @@ def test_topology_inserts_cap_web_junctions(layout_key, airfoil):
     layout = resolve_system_type(layout_key)
     section = build_section_view(airfoil, layout, twist_angle_rad=0.0)
     strips = _strips(airfoil, layout_key)
-    topo = build_shell_strip_topology(strips, ShellStripTopologySpec())
+    topo = prepare_shell_midline_junctions(strips, ShellMidlineJunctionPreparationOptions())
     shell = shell_mesh_inputs_from_section(
         section,
         twist_rad=0.0,
@@ -86,14 +86,14 @@ def test_topology_inserts_cap_web_junctions(layout_key, airfoil):
 
 @pytest.mark.parametrize("layout_key, expect_kinds", [("0A", {"skin"}), ("0B", {"skin", "cap"})])
 def test_zero_web_topology_skips_web_junctions(layout_key, expect_kinds, airfoil):
-    from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-        ShellStripTopologySpec,
-        build_shell_strip_topology,
+    from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+        ShellMidlineJunctionPreparationOptions,
+        prepare_shell_midline_junctions,
     )
 
     strips = _strips(airfoil, layout_key)
     assert not any(s.kind == "web" for s in strips)
-    topo = build_shell_strip_topology(strips, ShellStripTopologySpec())
+    topo = prepare_shell_midline_junctions(strips, ShellMidlineJunctionPreparationOptions())
     kinds = {s.kind for s in topo}
     assert kinds == expect_kinds
     assert not any(s.kind == "web" for s in topo)
@@ -107,13 +107,13 @@ def test_zero_web_cell_loops_single_cavity(airfoil):
     from blade_structure_utilities.geometry_utilities.section_geometry.cell_wall_loops import (
         build_cell_wall_loops,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-        ShellStripTopologySpec,
-        build_shell_strip_topology,
+    from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+        ShellMidlineJunctionPreparationOptions,
+        prepare_shell_midline_junctions,
     )
 
     strips = _strips(airfoil, "0A")
-    topo = build_shell_strip_topology(strips, ShellStripTopologySpec())
+    topo = prepare_shell_midline_junctions(strips, ShellMidlineJunctionPreparationOptions())
     loops = build_cell_wall_loops(topo)
     assert len(loops) == 1
     assert loops[0].web_labels == ()

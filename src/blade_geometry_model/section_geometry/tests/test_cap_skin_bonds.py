@@ -66,7 +66,7 @@ def test_every_cap_is_bonded_one_to_one_along_its_whole_length(key, twist_rad, c
 @pytest.mark.parametrize("key", ["2D-F", "3C-F", "4D-F"])
 def test_bonding_moves_no_geometry(key):
     """Every pre-bond vertex survives and every added vertex lies on its original polyline."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.topology import shell_strip_topology
+    from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation import shell_midline_junction_preparation as shell_strip_topology
 
     captured = {}
     original = shell_strip_topology.bond_caps_to_skin

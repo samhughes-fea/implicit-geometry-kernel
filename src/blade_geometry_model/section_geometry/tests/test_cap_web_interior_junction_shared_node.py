@@ -39,8 +39,8 @@ from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shel
     build_shell_midline_strips,
 )
 from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-    build_shell_strip_topology,
+from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    prepare_shell_midline_junctions,
 )
 
 # Layouts where a web crosses a cap interior: family D with 3+ webs, and family C.
@@ -71,7 +71,7 @@ def _prepared(layout_key: str, twist_deg: float, chord_m: float):
         shear_web_thickness=0.008 * chord_m,
     )
     raw = build_shell_midline_strips(section, twist_rad=twist_rad, chord_m=chord_m)
-    return build_shell_strip_topology(raw)
+    return prepare_shell_midline_junctions(raw)
 
 
 def _by_kind(strips, kind):

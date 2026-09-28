@@ -119,7 +119,7 @@ def test_stage_timings_attached_when_profiling_enabled(monkeypatch):
     assert "emit_cores" in result.stage_timings
     assert "properties_shoelace" in result.stage_timings
     assert "midlines" in result.stage_timings
-    assert "topology" in result.stage_timings
+    assert "junction_preparation" in result.stage_timings
     assert result.stage_timings["assemble"] >= 0.0
     assert result.stage_timings["properties"] >= 0.0
     assert result.stage_timings["properties_constructive"] >= 0.0

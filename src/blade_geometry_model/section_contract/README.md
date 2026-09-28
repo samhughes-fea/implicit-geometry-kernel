@@ -123,7 +123,7 @@ one consistent emit.
 - No MITC4 element count (`n_elements` is mesh / FE policy)
 - No laminate stack (material bind assigns layups)
 - No FE junction DOF clustering (geometric junctions in
-  `section_geometry.topology.shell_strip_topology`; kinematic junctions at
+  `section_geometry.junction_preparation`; kinematic junctions at
   assembly from `SectionStripMesh`)
 
 This keeps the contract stable as FE kernel choices evolve.

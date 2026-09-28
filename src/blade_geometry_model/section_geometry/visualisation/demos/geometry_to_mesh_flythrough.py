@@ -14,7 +14,7 @@ where the difference between the stages is actually visible:
    IML offset), **not** from a post-boolean zero contour. At this stage the
    strips are independent: a web centreline runs to its own end and the skin
    centreline passes straight through it. They do not share endpoints.
-3. **Junction-prepared strips** - ``topology.build_shell_strip_topology``.
+3. **Junction-prepared strips** - ``topology.prepare_shell_midline_junctions``.
    Skin arcs are split at web and cap feet, endpoints are merged onto shared
    junction points, and cap-web T-junctions are inserted. This is the step that
    turns a pile of curves into a connected 1-D topology.
@@ -131,7 +131,7 @@ _STAGE_SUBTITLES = {
 _STAGE_MODULE = {
     "csg": "sections / sdf.ir",
     "raw": "midlines.build_shell_midline_strips",
-    "prepared": "topology.build_shell_strip_topology",
+    "prepared": "topology.prepare_shell_midline_junctions",
     "mesh": "section_mesh.SectionMeshRunner",
 }
 

@@ -4,7 +4,7 @@ visualisation/demos/shell_junction_topology_demo.py
 Demonstrate constructive shell midline junction topology.
 
 Builds a three-web NACA 2412 box section, exports B-frame midlines, then
-applies ``build_shell_strip_topology`` (skin split at web/cap feet +
+applies ``prepare_shell_midline_junctions`` (skin split at web/cap feet +
 cap-web T-junction vertices). Writes:
 
 * ``topology_before_after.png`` — raw midlines vs topology-prepared strips
@@ -57,8 +57,8 @@ from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shel
 from blade_structure_utilities.geometry_utilities.section_geometry.midlines.ring_geometry import (
     point_to_open_polyline_nearest,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
-    build_shell_strip_topology,
+from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    prepare_shell_midline_junctions,
 )
 from blade_structure_utilities.geometry_utilities.coordinate_frames import (
     section_plot_axes,
@@ -283,7 +283,7 @@ def main(argv: list[str] | None = None) -> Path:
     af = AirfoilSDF.from_naca("2412", chord=1.0)
     section = _build_section(af)
     raw = build_shell_midline_strips(section, twist_rad=0.0)
-    topo = build_shell_strip_topology(raw)
+    topo = prepare_shell_midline_junctions(raw)
 
     # --- full before / after ---
     fig, axes = plt.subplots(1, 2, figsize=_FIGSIZE_FULL)
@@ -295,7 +295,7 @@ def main(argv: list[str] | None = None) -> Path:
     plot_shell_midline_strip_topology(
         topo,
         ax=axes[1],
-        title="After build_shell_strip_topology\n(skin split + cap–web T nodes)",
+        title="After prepare_shell_midline_junctions\n(skin split + cap–web T nodes)",
     )
     _save_fig(fig, out_dir / "topology_before_after.png", presentation=bool(args.presentation))
 

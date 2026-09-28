@@ -312,7 +312,7 @@ section_geometry/
 ├── constructive/   # polygons for area / inertia
 ├── props_emit/     # gated properties_map
 ├── midlines/       # centreline strip emit
-├── topology/       # junction snap for meshing
+├── junction_preparation/  # junction snap for meshing (topology/ alias → 2027-03-31)
 ├── cell_wall_loops/ # cell-wall loops
 ├── visualisation/  # plots and demos
 └── docs/           # layout taxonomy, dual-rep notes
@@ -329,7 +329,7 @@ section_geometry/
 | [`constructive/`](constructive/README.md) | Polygon path for mature regions |
 | [`props_emit/`](props_emit/README.md) | Orchestrates `properties_map` |
 | [`midlines/`](midlines/README.md) | Wall → centreline polyline |
-| [`topology/`](topology/README.md) | Snap strip endpoints for meshing |
+| [`junction_preparation/`](junction_preparation/README.md) | Snap strip endpoints for meshing |
 | [`cell_wall_loops/`](cell_wall_loops/README.md) | Closed loops around empty cells |
 | [`visualisation/`](visualisation/README.md) | Plotting and demos |
 

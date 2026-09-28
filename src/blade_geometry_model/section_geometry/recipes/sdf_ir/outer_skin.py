@@ -51,8 +51,8 @@ def _normalise_skin_side(skin_side: str | None) -> str | None:
     return "suction_surface" if surface == "upper" else "pressure_surface"
 
 
-def _closed_mid_ring(airfoil_sdf, thickness: float) -> np.ndarray:
-    """Closed mid-surface ring from ``buffer(-t/2)`` (may omit aero tip)."""
+def _closed_mid_ring(airfoil_sdf, thickness: float, *, mid_depth: float | None = None) -> np.ndarray:
+    """Closed mid-surface ring from ``buffer(-mid_depth)`` (may omit aero tip)."""
     from shapely.geometry import MultiPolygon, Polygon
 
     from blade_structure_utilities.geometry_utilities.section_geometry.constructive.offset_locus import (
@@ -73,18 +73,21 @@ def _closed_mid_ring(airfoil_sdf, thickness: float) -> np.ndarray:
     t = float(thickness)
     if t <= 0.0:
         raise ValueError("OuterSkin thickness must be positive.")
+    depth = 0.5 * t if mid_depth is None else float(mid_depth)
+    if depth <= 0.0:
+        raise ValueError(f"OuterSkin mid-surface depth must be positive, got {depth!r}.")
 
     poly = airfoil_polygon(airfoil_sdf)
-    mid_geom = offset_polygon_inward(poly, 0.5 * t)
+    mid_geom = offset_polygon_inward(poly, depth)
     if mid_geom.is_empty:
         raise ValueError(
-            f"OuterSkin mid-surface buffer(-t/2) is empty for thickness={t:g}."
+            f"OuterSkin mid-surface buffer(-{depth:g}) is empty for thickness={t:g}."
         )
     if isinstance(mid_geom, MultiPolygon):
         mid_geom = max(mid_geom.geoms, key=lambda g: g.area)
     if not isinstance(mid_geom, Polygon) or mid_geom.exterior is None:
         raise ValueError(
-            f"OuterSkin mid-surface buffer(-t/2) did not yield a Polygon "
+            f"OuterSkin mid-surface buffer(-{depth:g}) did not yield a Polygon "
             f"(got {type(mid_geom).__name__})."
         )
     mid = np.asarray(mid_geom.exterior.coords, dtype=float)
@@ -141,11 +144,18 @@ def split_closed_ring_ss_ps(ring: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 class OuterSkin(SectionComponent):
-    """Skin wall of uniform thickness grown inward from the airfoil boundary.
+    """Skin wall of uniform thickness grown from a fixed reference face.
 
-    The supplied airfoil contour is the aerodynamic *outer* surface; the skin
-    occupies the band ``-t <= phi <= 0`` so the outer shape never grows with
-    skin thickness.
+    Default placement (``outer_mould_line`` / inward): the supplied airfoil
+    contour is the aerodynamic *outer* surface; the skin occupies the band
+    ``-t <= phi <= 0`` so the outer shape never grows with skin thickness, and
+    the midline sits at ``buffer(-t/2)``.
+
+    Named non-default reference faces (WP3):
+    * ``inner_mould_line`` — IML fixed at ``-reference_iml_depth_m`` from the
+      authoring OML; midline at ``iml - t/2`` (toward the fluid);
+    * ``midsurface`` — midline held at the authoring mid depth while both faces
+      move (solid still authored from the OML for SDF compatibility).
 
     When ``skin_side`` is ``"SS"`` / ``"PS"``, the solid is the half-annulus on
     the suction (camber-upper) or pressure (camber-lower) side.
@@ -161,9 +171,24 @@ class OuterSkin(SectionComponent):
         airfoil_expr_node=None,
         skin_side: str | None = None,
         camber_xy=None,
+        reference_face: str = "outer_mould_line",
+        reference_iml_depth_m: float | None = None,
     ):
+        from blade_structure_utilities.geometry_utilities.section_geometry.placement.anchoring import (
+            airfoil_inward_depth_for_midsurface,
+        )
+
         self._af = airfoil_sdf
         self.thickness = float(thickness)
+        self.reference_face = str(reference_face).strip().lower()
+        self.reference_iml_depth_m = (
+            None if reference_iml_depth_m is None else float(reference_iml_depth_m)
+        )
+        self._mid_depth = airfoil_inward_depth_for_midsurface(
+            self.reference_face,
+            self.thickness,
+            reference_iml_depth_m=float(self.reference_iml_depth_m or 0.0),
+        )
         side = _normalise_skin_side(skin_side)
         self.skin_side = side
         if side == "suction_surface":
@@ -210,14 +235,14 @@ class OuterSkin(SectionComponent):
     def midline_polyline(self):
         """Return the skin mid-surface polyline.
 
-        * Full skin (``skin_side is None``): closed ring from ``buffer(-t/2)``.
+        * Full skin (``skin_side is None``): closed ring from the placement mid depth.
         * Suction/pressure: open half-ring (suction: TE→LE, pressure: LE→TE).
 
         Where local airfoil thickness drops below ``t``, no constant-thickness
         mid-surface exists, so the locus ends short of the aerodynamic tip by
         construction — not by post-hoc trim.
         """
-        mid = _closed_mid_ring(self._af, self.thickness)
+        mid = _closed_mid_ring(self._af, self.thickness, mid_depth=self._mid_depth)
         if self.skin_side is None:
             return np.vstack([mid, mid[0:1]])
         ss, ps = split_closed_ring_ss_ps(mid)
@@ -225,7 +250,10 @@ class OuterSkin(SectionComponent):
 
     def __repr__(self):
         side = self.skin_side or "full"
-        return f"OuterSkin(thickness={self.thickness:.4g}, skin_side={side!r})"
+        return (
+            f"OuterSkin(thickness={self.thickness:.4g}, skin_side={side!r}, "
+            f"reference_face={self.reference_face!r})"
+        )
 
 
 __all__ = [

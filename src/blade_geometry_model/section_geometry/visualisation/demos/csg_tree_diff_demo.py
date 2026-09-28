@@ -3,9 +3,11 @@ visualisation/demos/csg_tree_diff_demo.py
 =========================================
 Diff two design vectors by comparing their CSG expression trees.
 
-Builds two sections (same layout, different thicknesses by default), draws
-each region's tree side by side for a chosen label, and colours nodes as
-unchanged / changed / added-removed. Reuses layout_tree helpers from
+Builds two sections (same layout, one gauge moved by default) and draws one
+merged tree for a chosen region: each node is reused as-is, rebuilt because a
+child changed, or re-parameterised (shown as ``A -> B``). Both sections are
+drawn with the affected regions highlighted, and the whole-section census of
+distinct nodes goes in the legend. Reuses layout_tree helpers from
 csg_expression_tree_demo.py.
 
 Writes under visualisation/output/csg_tree_diff/:
@@ -66,88 +68,160 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
     MUTED,
     NAVY,
     RED,
-    TEAL,
+    strip_axes_chrome,
+)
+from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+    plot_section_hybrid,
 )
 
-_UNCHANGED = "#6b7280"
-_ADDED = TEAL
-_REMOVED = NAVY
+_REUSED = "#9aa3ae"
+_REBUILT = "#f3b7c4"
+_CHANGED = RED
+_UNTOUCHED_REGION = "#d9dde3"
+_AFFECTED_REGION = "#e38aa0"
 
 
 def _to_key(label) -> str:
     return str(getattr(label, "value", label))
 
 
-def _expr_signature(node: Expr) -> tuple:
-    name = type(node).__name__
-    parameters = tuple(sorted(scalar_parameters(node).items()))
-    children = tuple(_expr_signature(child) for _, child in child_expressions(node))
-    return (name, parameters, children)
+def _node_status(node_a: Expr, node_b: Expr) -> str:
+    """How node B relates to node A at the same place in the tree.
+
+    ``reused``: the whole subtree is identical. ``changed``: this node's own
+    parameters moved. ``rebuilt``: its own parameters are equal, but something
+    beneath it changed.
+    """
+    # Expr is a frozen dataclass: equality is structural, vertices included —
+    # the same notion of "distinct node" collect_unique counts on slide 9.
+    if node_a == node_b:
+        return "reused"
+    if type(node_a) is not type(node_b):
+        raise SystemExit(
+            f"Trees differ in structure ({type(node_a).__name__} vs {type(node_b).__name__}); "
+            "this demo diffs parameter changes on one layout."
+        )
+    if scalar_parameters(node_a) != scalar_parameters(node_b):
+        return "changed"
+    return "rebuilt"
 
 
-def _classify_nodes(left: Expr, right: Expr) -> dict[str, set[Expr]]:
-    left_nodes: set[Expr] = set()
-    right_nodes: set[Expr] = set()
-    collect_unique(left, left_nodes)
-    collect_unique(right, right_nodes)
-    left_by_sig = {_expr_signature(node): node for node in left_nodes}
-    right_by_sig = {_expr_signature(node): node for node in right_nodes}
-    shared_sigs = set(left_by_sig) & set(right_by_sig)
-    only_left = {left_by_sig[sig] for sig in set(left_by_sig) - shared_sigs}
-    only_right = {right_by_sig[sig] for sig in set(right_by_sig) - shared_sigs}
-    unchanged = {left_by_sig[sig] for sig in shared_sigs}
-    return {
-        "unchanged": unchanged,
-        "removed": only_left,
-        "added": only_right,
-    }
+def _paired_walk(node_a: Expr, node_b: Expr):
+    """Yield ``(node_a, node_b)`` in the same pre-order ``layout_tree`` numbers nodes."""
+    yield node_a, node_b
+    children_a = child_expressions(node_a)
+    children_b = child_expressions(node_b)
+    if len(children_a) != len(children_b):
+        raise SystemExit("Trees differ in arity; this demo diffs parameter changes on one layout.")
+    for (_, child_a), (_, child_b) in zip(children_a, children_b):
+        yield from _paired_walk(child_a, child_b)
 
 
-def _draw_coloured_tree(axis, root: Expr, colours: dict[Expr, str], title: str) -> None:
-    positions, edges = layout_tree(root)
+def _format_length(value: float) -> str:
+    return f"{value * 1e3:.1f} mm" if abs(value) < 1.0 else f"{value:.3g}"
+
+
+def _changed_parameter_lines(node_a: Expr, node_b: Expr, limit: int = 2) -> list[str]:
+    parameters_a = scalar_parameters(node_a)
+    parameters_b = scalar_parameters(node_b)
+    lines = [
+        f"{name}  {_format_length(parameters_a[name])} → {_format_length(parameters_b[name])}"
+        for name in parameters_a
+        if name in parameters_b and parameters_a[name] != parameters_b[name]
+    ]
+    return lines[:limit]
+
+
+def _draw_merged_tree(axis, root_a: Expr, root_b: Expr) -> None:
+    positions, edges = layout_tree(root_a)
+    pairs = list(_paired_walk(root_a, root_b))
     for parent_id, child_id in edges:
         x0, y0, _, _ = positions[parent_id]
         x1, y1, _, _ = positions[child_id]
-        axis.plot([x0, x1], [y0, y1], color=MUTED, lw=0.9, zorder=1)
-    for _, (x_position, y_position, node, _) in positions.items():
-        colour = colours.get(node, _UNCHANGED)
-        caption = node_caption(node).split("\n")[0]
+        axis.plot([x0, x1], [y0, y1], color=MUTED, lw=1.2, zorder=1)
+
+    fills = {"reused": _REUSED, "rebuilt": _REBUILT, "changed": _CHANGED}
+    text_colours = {"reused": "white", "rebuilt": INK, "changed": "white"}
+    details = {"reused": ["reused as-is"], "rebuilt": ["rebuilt: a child changed"]}
+    for node_id, (x_position, y_position, _, _) in positions.items():
+        node_a, node_b = pairs[node_id]
+        status = _node_status(node_a, node_b)
+        detail = details.get(status) or _changed_parameter_lines(node_a, node_b)
         box = FancyBboxPatch(
-            (x_position - 0.38, y_position - 0.16),
-            0.76,
-            0.32,
-            boxstyle="round,pad=0.02,rounding_size=0.05",
-            linewidth=1.0,
-            edgecolor=INK,
-            facecolor=colour,
-            alpha=0.85,
+            (x_position - 0.46, y_position - 0.24),
+            0.92,
+            0.48,
+            boxstyle="round,pad=0.02,rounding_size=0.06",
+            linewidth=0.0,
+            facecolor=fills[status],
             zorder=2,
         )
         axis.add_patch(box)
         axis.text(
-            x_position,
-            y_position,
-            caption,
-            ha="center",
-            va="center",
-            fontsize=6.5,
-            color="white",
-            zorder=3,
+            x_position, y_position + 0.10, type(node_a).__name__, ha="center", va="center",
+            fontsize=13, fontweight="bold", color=text_colours[status], zorder=3,
         )
-    axis.set_title(title, color=INK, fontsize=11)
+        axis.text(
+            x_position, y_position - 0.10, "\n".join(detail), ha="center", va="center",
+            fontsize=10, color=text_colours[status], zorder=3, linespacing=1.15,
+        )
     axis.set_axis_off()
-    xs = [pos[0] for pos in positions.values()]
-    ys = [pos[1] for pos in positions.values()]
-    if xs and ys:
-        axis.set_xlim(min(xs) - 0.8, max(xs) + 0.8)
-        axis.set_ylim(min(ys) - 0.6, max(ys) + 0.6)
+    xs = [position[0] for position in positions.values()]
+    ys = [position[1] for position in positions.values()]
+    axis.set_xlim(min(xs) - 0.6, max(xs) + 0.6)
+    axis.set_ylim(min(ys) - 0.45, max(ys) + 0.45)
 
 
 def _region_expr(section, label: str) -> Expr:
     label_keys = [_to_key(key) for key in section]
     if label not in label_keys:
-        raise SystemExit(f'Label {label!r} not found; have {label_keys}')
+        raise SystemExit(f"Label {label!r} not found; have {label_keys}")
     return section[label].expr
+
+
+def _section_diff(section_a, section_b) -> dict:
+    """Whole-section census: every distinct node of B, by how it relates to A."""
+    statuses: dict[Expr, str] = {}
+    changed_regions: set[str] = set()
+    for label in section_a:
+        key = _to_key(label)
+        root_a = _region_expr(section_a, key)
+        root_b = _region_expr(section_b, key)
+        for node_a, node_b in _paired_walk(root_a, root_b):
+            statuses.setdefault(node_b, _node_status(node_a, node_b))
+        if _node_status(root_a, root_b) != "reused":
+            changed_regions.add(key)
+    counts = {
+        status: sum(1 for value in statuses.values() if value == status)
+        for status in ("reused", "rebuilt", "changed")
+    }
+    return {
+        "counts": counts,
+        "changed_regions": sorted(changed_regions),
+        "region_count": len(list(section_a)),
+    }
+
+
+def _draw_section(axis, section, changed_regions: set[str], label: str, title: str) -> None:
+    def colour(region_label):
+        key = _to_key(region_label)
+        if key == label:
+            return RED
+        return _AFFECTED_REGION if key in changed_regions else _UNTOUCHED_REGION
+
+    plot_section_hybrid(
+        section,
+        residual_mesh=None,
+        ax=axis,
+        alpha=0.9,
+        core_alpha=0.35,
+        title="",
+        show_legend=False,
+        color_fn=colour,
+    )
+    axis.set_aspect("equal", adjustable="datalim")
+    strip_axes_chrome(axis)
+    axis.set_title(title, fontsize=13, color=INK, loc="left")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -156,7 +230,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--layout", default="2D-F")
     parser.add_argument("--label", default="shear_web_0")
     parser.add_argument("--skin-a", type=float, default=0.004)
-    parser.add_argument("--skin-b", type=float, default=0.010)
+    parser.add_argument("--skin-b", type=float, default=0.004)
     parser.add_argument("--cap-a", type=float, default=0.012)
     parser.add_argument("--cap-b", type=float, default=0.012)
     parser.add_argument("--web-a", type=float, default=0.005)
@@ -169,76 +243,78 @@ def main(argv: list[str] | None = None) -> int:
 
     airfoil = AirfoilSDF.from_naca("2412", chord=1.0, n_points=160)
     layout = resolve_system_type(str(args.layout))
-    section_a = build_section_view(
-        airfoil,
-        layout,
-        skin_thickness=float(args.skin_a),
-        spar_cap_thickness=float(args.cap_a),
-        shear_web_thickness=float(args.web_a),
-    )
-    section_b = build_section_view(
-        airfoil,
-        layout,
-        skin_thickness=float(args.skin_b),
-        spar_cap_thickness=float(args.cap_b),
-        shear_web_thickness=float(args.web_b),
-    )
+
+    def build(skin: float, cap: float, web: float):
+        return build_section_view(
+            airfoil,
+            layout,
+            skin_thickness=float(skin),
+            spar_cap_thickness=float(cap),
+            shear_web_thickness=float(web),
+        )
+
+    section_a = build(args.skin_a, args.cap_a, args.web_a)
+    section_b = build(args.skin_b, args.cap_b, args.web_b)
     left = _region_expr(section_a, str(args.label))
     right = _region_expr(section_b, str(args.label))
-    classes = _classify_nodes(left, right)
+    census = _section_diff(section_a, section_b)
+    changed_regions = set(census["changed_regions"])
 
-    left_colours = {node: _UNCHANGED for node in classes["unchanged"]}
-    left_colours.update({node: _REMOVED for node in classes["removed"]})
-    right_colours = {node: _UNCHANGED for node in classes["unchanged"]}
-    right_colours.update({node: _ADDED for node in classes["added"]})
+    moved = [
+        f"{name} {value_a * 1e3:g} → {value_b * 1e3:g} mm"
+        for name, value_a, value_b in (
+            ("skin", args.skin_a, args.skin_b),
+            ("cap", args.cap_a, args.cap_b),
+            ("web", args.web_a, args.web_b),
+        )
+        if value_a != value_b
+    ]
 
-    left_unique: set[Expr] = set()
-    right_unique: set[Expr] = set()
-    collect_unique(left, left_unique)
-    collect_unique(right, right_unique)
-    shared_count = len(classes["unchanged"])
-    differ_count = len(classes["removed"]) + len(classes["added"])
-
-    fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.8))
-    _draw_coloured_tree(
-        axes[0],
-        left,
-        left_colours,
-        title=(
-            f"A skin={args.skin_a * 1e3:.0f} mm web={args.web_a * 1e3:.0f} mm "
-            f"({args.label})"
-        ),
+    fig = plt.figure(figsize=(14.0, 5.8))
+    grid = fig.add_gridspec(2, 2, width_ratios=(1.2, 1.0), wspace=0.04, hspace=0.25)
+    _draw_section(fig.add_subplot(grid[0, 0]), section_a, set(), "", f"A · {args.layout}")
+    _draw_section(
+        fig.add_subplot(grid[1, 0]),
+        section_b,
+        changed_regions,
+        str(args.label),
+        f"B · {', '.join(moved) or 'no change'}",
     )
-    _draw_coloured_tree(
-        axes[1],
-        right,
-        right_colours,
-        title=(
-            f"B skin={args.skin_b * 1e3:.0f} mm web={args.web_b * 1e3:.0f} mm "
-            f"({args.label})"
-        ),
-    )
-    fig.suptitle(
-        f"CSG tree diff  A={len(left_unique)}  B={len(right_unique)}  "
-        f"shared={shared_count}  differ={differ_count}",
-        color=INK,
+    tree_axis = fig.add_subplot(grid[:, 1])
+    _draw_merged_tree(tree_axis, left, right)
+    tree_axis.set_title(f"{args.label}: one tree, A → B", fontsize=13, color=INK)
+
+    counts = census["counts"]
+    total = sum(counts.values())
+    handles = [
+        FancyBboxPatch((0, 0), 1, 1, facecolor=_CHANGED, linewidth=0,
+                       label=f"parameter changed ({counts['changed']})"),
+        FancyBboxPatch((0, 0), 1, 1, facecolor=_REBUILT, linewidth=0,
+                       label=f"rebuilt above a change ({counts['rebuilt']})"),
+        FancyBboxPatch((0, 0), 1, 1, facecolor=_REUSED, linewidth=0,
+                       label=f"reused unchanged ({counts['reused']})"),
+    ]
+    fig.legend(
+        handles=handles,
+        loc="upper left",
+        bbox_to_anchor=(0.0, 0.0),
+        ncol=3,
+        frameon=False,
         fontsize=12,
+        title=f"whole section: {total} distinct nodes in B",
+        title_fontsize=12,
+        alignment="left",
     )
-    fig.text(
-        0.5,
-        0.02,
-        "grey = unchanged signature; navy = only in A; teal = only in B",
-        ha="center",
-        color=MUTED,
-        fontsize=9,
-    )
-    fig.tight_layout(rect=(0.0, 0.05, 1.0, 0.92))
 
     png_path = out_dir / "csg_tree_diff.png"
     save_figure(fig, png_path, presentation=bool(args.presentation))
     plt.close(fig)
     print(f"Wrote {png_path}")
 
+    left_unique: set[Expr] = set()
+    right_unique: set[Expr] = set()
+    collect_unique(left, left_unique)
+    collect_unique(right, right_unique)
     payload = {
         "layout": str(args.layout),
         "label": str(args.label),
@@ -256,10 +332,7 @@ def main(argv: list[str] | None = None) -> int:
             "node_visits": count_nodes(right),
             "unique_nodes": len(right_unique),
         },
-        "shared_nodes": shared_count,
-        "differing_nodes": differ_count,
-        "removed_only_in_a": len(classes["removed"]),
-        "added_only_in_b": len(classes["added"]),
+        "whole_section": census,
     }
     json_path = out_dir / "csg_tree_diff.json"
     json_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

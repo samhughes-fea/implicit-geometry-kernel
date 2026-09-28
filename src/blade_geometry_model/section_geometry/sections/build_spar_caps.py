@@ -61,6 +61,7 @@ def _wrap_expr_cap(base_cap: SparCap, expr: Expr) -> SparCap:
     out._af = base_cap._af
     out._strip_clip = base_cap._strip_clip
     out._camber_xy = getattr(base_cap, "_camber_xy", None)
+    out._camber_surface = getattr(base_cap, "_camber_surface", None)
     for _fw in (
         "flapwise_nx",
         "flapwise_ny",

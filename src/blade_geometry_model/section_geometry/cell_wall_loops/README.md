@@ -5,7 +5,13 @@
 Builds closed wall loops around each inter-web cell from topology-prepared
 skin and web centrelines (`CellWallLoop` in
 [`section_contract`](../../section_contract/README.md)); spar caps are ignored.
-With `n` webs the usual count is `n + 1` (one loop if `n = 0`).
+With `n` webs there are exactly `n + 1` loops (one if `n = 0`).
+
+The cells are the bounded faces of the labelled wall graph: nodes are the
+skin-arc junctions made by `split_skin_at_junctions`, edges are the labelled
+skin arcs and webs. No coordinate axis is read, and each loop carries
+`wall_labels` — the exact strips that bound it — which consumers use as the
+wall-to-cell membership ([SG-014](../docs/bug_log.md#sg-014)).
 
 ## Table of contents
 
@@ -21,9 +27,8 @@ With `n` webs the usual count is `n + 1` (one loop if `n = 0`).
 | File | Role |
 |------|------|
 | `cell_wall_loops.py` | `build_cell_wall_loops` |
-| `cell_wall_loop_builders.py` | Loop construction |
-| `cell_wall_web_attach.py` | Attach webs to the skin ring |
-| `cell_wall_geom.py` | Arc / geometry helpers |
+| `cell_wall_loop_builders.py` | Face walk over the labelled wall graph; invariant checks |
+| `cell_wall_geom.py` | Skin-ring ordering, shoelace area |
 
 ```mermaid
 flowchart LR
@@ -38,9 +43,11 @@ flowchart LR
 | Name | File | Role |
 |------|------|------|
 | `build_cell_wall_loops` | `cell_wall_loops.py` | Strips → loops |
-| `build_void_cell_wall_loops` | alias | Historical name |
 
-Raises `ValueError` if the skin ring is too short.
+Raises `ValueError` when the walls are not a planar subdivision of the skin
+ring: a web end not on a skin junction (to 1 nm — webs are never
+extrapolated), two webs on one junction, crossing webs, a skin that does not
+chain, or cell areas that do not tile the ring.
 
 `CellWallLoop` fields (`id`, `polyline_twisted_pitch_axis_blade_frame`,
 `area_m2`, …) are summarised in

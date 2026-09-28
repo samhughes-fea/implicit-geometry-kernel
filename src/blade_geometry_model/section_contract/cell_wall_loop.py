@@ -34,6 +34,13 @@ class CellWallLoop:
     piece_labels
         Ordered role tags along the loop construction (e.g. ``skin``,
         ``shear_web_0``).
+    wall_labels
+        The midline strip labels that bound this cell, in loop order (e.g.
+        ``skin_suction_surface:bay_1``, ``shear_web_2``,
+        ``skin_pressure_surface:bay_1``, ``shear_web_1``). This **is** the
+        wall-to-cell membership: a strip label appearing in two loops is a wall
+        shared by those cells. Consumers read membership from it and never
+        re-derive it from coordinates (SG-014).
     """
 
     id: int
@@ -41,6 +48,7 @@ class CellWallLoop:
     area_m2: float
     web_labels: tuple[str, ...] = ()
     piece_labels: tuple[str, ...] = ()
+    wall_labels: tuple[str, ...] = ()
 
     def is_closed(self, *, tol: float = 1e-9) -> bool:
         pts = np.asarray(self.polyline_twisted_pitch_axis_blade_frame, dtype=float)

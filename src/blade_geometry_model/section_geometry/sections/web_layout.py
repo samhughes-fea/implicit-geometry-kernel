@@ -313,11 +313,16 @@ def flapwise_web_sframe_inputs(
             y_search=y_search_b,
             phi_inner=phi_inner_b,
         )
-    except ValueError:
-        # Thick skin / thin local section: B-frame re-query can miss intercepts
-        # even when S-frame anchors exist. Fall back to rotating the S anchors.
-        y_b_top = sin_t * x + cos_t * y_top
-        y_b_bot = sin_t * x + cos_t * y_bot
+    except (ValueError, InfeasibleSectionGeometry) as exc:
+        # Do not rotate stale S-frame IML anchors into B: under twist that lands
+        # the web feet off the skin mid-surface by ~t_skin/2 (SG-002 tip mono).
+        # Callers that froze web_y at a thinner skin must re-resolve or step down.
+        raise InfeasibleSectionGeometry(
+            "flapwise web cannot re-anchor on the twisted inner skin at "
+            f"x_B={x_b_web:.6g} (S-frame x={float(x):.6g}); frozen web_y "
+            f"({float(y_top):.6g},{float(y_bot):.6g}) is not usable at this "
+            f"skin gauge under twist. Re-resolve the station layout. ({exc})"
+        ) from exc
     x_top_S = cos_t * x_b_web + sin_t * y_b_top
     y_top_S = -sin_t * x_b_web + cos_t * y_b_top
     x_bot_S = cos_t * x_b_web + sin_t * y_b_bot

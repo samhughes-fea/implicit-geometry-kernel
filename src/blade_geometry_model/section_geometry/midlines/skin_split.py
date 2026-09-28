@@ -53,7 +53,9 @@ def _normalise_side(side: str | None, *, label: str = "", pts: NDArray | None = 
     if "pressure" in lab or lab.endswith("_ps") or ":ps" in lab:
         return _PRESSURE
     if pts is not None and pts.size:
-        return _SUCTION if float(np.mean(pts[:, 1])) >= 0.0 else _PRESSURE
+        # Canonical B: X_B is flapwise and the suction surface is on +X_B. This
+        # read Y_B (chordwise) before SG-015, i.e. it classified by LE/TE half.
+        return _SUCTION if float(np.mean(pts[:, 0])) >= 0.0 else _PRESSURE
     return None
 
 
@@ -97,7 +99,11 @@ def _ensure_ss_ps_skins(
         return []
     if len(skins) == 1 and skins[0].closed:
         ring = np.asarray(skins[0].midline_twisted_pitch_axis_blade_frame, dtype=float)
-        ss, ps = split_closed_ring_ss_ps(ring)
+        # split_closed_ring_ss_ps reasons chord-first (LE = min x, suction = +y);
+        # these strips are canonical B (X_B flap, Y_B chord), so transpose around
+        # the call (SG-015). OuterSkin calls it in its chord-first authoring frame.
+        ss_chord_first, ps_chord_first = split_closed_ring_ss_ps(ring[:, ::-1])
+        ss, ps = ss_chord_first[:, ::-1].copy(), ps_chord_first[:, ::-1].copy()
         t = float(skins[0].thickness_m)
         return [
             ShellMidlineStrip(

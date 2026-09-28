@@ -9,8 +9,9 @@ boundaries and reports measurable gap / area metrics.
 
 Writes:
 
+* ``dual_rep_gap_map.png`` — every wall's constructive boundary coloured by its gap
+  to φ=0, beside sampled area error against wall width (the slide figure)
 * ``dual_rep_boundary_overlay.png`` — constructive exterior vs φ=0 for wall solids
-* ``dual_rep_residual_inserts.png`` — insert φ heatmaps + constructive skin
 * ``dual_rep_consistency.json`` — max/mean gaps and area deltas
 
 Run from the repository root::
@@ -37,6 +38,7 @@ _ensure_mod.ensure_repo_path()
 
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
+    apply_presentation_style,
     demo_output_dir,
     save_figure,
 )
@@ -53,16 +55,9 @@ from blade_structure_utilities.geometry_utilities.section_geometry.constructive 
 from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
     quadtree_spec_for_airfoil,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
-    plot_section_hybrid,
-)
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_sdf import (
-    plot_sdf_field,
-)
 from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf import offset
 
 _DPI = DEFAULT_DPI
 _SKIN_T = 0.003
@@ -159,11 +154,152 @@ def _save_fig(fig, path: Path) -> None:
     print(f"Wrote {path}")
 
 
+def _draw_gap_map(section, polys, grid, out_path: Path, *, presentation: bool) -> dict:
+    """One section, every wall's constructive boundary coloured by its gap to φ = 0.
+
+    The overlay figure shows only that the two boundaries coincide. Colouring the
+    constructive ring by the gap puts *where* they part company on the section
+    itself, and the scatter says why: a sampled area error scales with the cell
+    over the feature width, so the thinnest walls are the ones it cannot resolve.
+    """
+    from matplotlib.collections import LineCollection
+    from matplotlib.colors import LinearSegmentedColormap, LogNorm
+
+    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+        INK,
+        MUTED,
+        RED,
+        region_color,
+        strip_axes_chrome,
+    )
+    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+        apply_structural_section_axes,
+    )
+
+    # Walls only: cores are cavities, and the LE/TE inserts are field-side
+    # regions whose boundaries would read as extra webs on the map.
+    wall_labels = [
+        key
+        for key in (str(getattr(label, "value", label)) for label in polys)
+        if not is_residual_label(key) and not key.startswith("sandwich_core") and "insert" not in key
+    ]
+    cell = float(max(grid.dx, grid.dy))
+    half_cell = 0.5 * cell
+    half_cell_mm = half_cell * 1e3
+    gap_map = LinearSegmentedColormap.from_list("gap", ["#c9ced6", "#e89aae", RED])
+
+    fig = plt.figure(figsize=(14.0, 5.4))
+    grid_spec = fig.add_gridspec(1, 2, width_ratios=(1.9, 1.0), wspace=0.18)
+    ax_map = fig.add_subplot(grid_spec[0, 0])
+    ax_area = fig.add_subplot(grid_spec[0, 1])
+
+    rows: list[dict] = []
+    tracks: list[tuple[str, np.ndarray, np.ndarray, np.ndarray]] = []
+    for label in wall_labels:
+        geom = polys[label]
+        ring = _ring_from_geom(geom)
+        phi = grid.eval(section[label])
+        zero = grid.zero_contour(phi)
+        _, per_point, samples = _per_point_gap(ring, zero)
+        if per_point.size < 2:
+            raise RuntimeError(f"{label}: no φ = 0 contour to compare against")
+        tracks.append((label, ring, samples, per_point))
+        area_constructive = float(geom.area)
+        area_sampled = float(grid.area(phi))
+        extent = ring.max(axis=0) - ring.min(axis=0)
+        rows.append(
+            {
+                "label": label,
+                "max_gap_mm": float(per_point.max() * 1e3),
+                "narrowest_mm": float(np.min(extent) * 1e3),
+                "area_rel_err": abs(area_sampled - area_constructive) / max(area_constructive, 1e-30),
+            }
+        )
+
+    # The scale runs to the true worst gap, not to half a cell: the skins spike
+    # past it where they close to a point at the trailing edge.
+    worst_gap_mm = max(row["max_gap_mm"] for row in rows)
+    gap_norm = LogNorm(vmin=half_cell_mm * 1e-3, vmax=max(worst_gap_mm, half_cell_mm))
+    for label, ring, samples, per_point in tracks:
+        closed = np.vstack([samples, samples[:1]])
+        gaps_closed = np.r_[per_point, per_point[:1]]
+        segments = np.stack([closed[:-1], closed[1:]], axis=1)
+        segment_gap_mm = 0.5 * (gaps_closed[:-1] + gaps_closed[1:]) * 1e3
+        ax_map.fill(ring[:, 0], ring[:, 1], color="#eef0f3", zorder=1)
+        collection = LineCollection(
+            segments, cmap=gap_map, norm=gap_norm, linewidths=3.2, zorder=3, capstyle="round"
+        )
+        collection.set_array(np.maximum(segment_gap_mm, gap_norm.vmin))
+        ax_map.add_collection(collection)
+
+    apply_structural_section_axes(ax_map)
+    ax_map.set_aspect("equal", adjustable="datalim")
+    ax_map.autoscale_view()
+    strip_axes_chrome(ax_map)
+    ax_map.set_title(
+        "Every wall's exact boundary, coloured by its gap to the sampled φ = 0", loc="left"
+    )
+    colourbar = fig.colorbar(
+        collection, ax=ax_map, orientation="horizontal", fraction=0.06, pad=0.02, aspect=40
+    )
+    colourbar.set_label("gap to the sampled boundary [mm]", color=INK)
+    colourbar.ax.axvline(half_cell_mm, color=INK, lw=1.6)
+    colourbar.ax.text(
+        half_cell_mm, 1.25, f"half a cell ({half_cell_mm:.2f} mm)", transform=colourbar.ax.get_xaxis_transform(),
+        ha="center", va="bottom", fontsize=10.5, color=INK,
+    )
+    colourbar.outline.set_visible(False)
+
+    widths = np.array([row["narrowest_mm"] for row in rows])
+    errors = np.array([row["area_rel_err"] for row in rows])
+    # Identical walls (the two webs) land on one point: label them once. Points
+    # within a few per cent on both log axes are the same point on the slide.
+    groups: list[dict] = []
+    for row in rows:
+        for group in groups:
+            if (abs(np.log10(group["width"] / row["narrowest_mm"])) < 0.02
+                    and abs(np.log10(group["error"] / row["area_rel_err"])) < 0.05):
+                group["labels"].append(row["label"])
+                break
+        else:
+            groups.append({"width": row["narrowest_mm"], "error": row["area_rel_err"], "labels": [row["label"]]})
+    for group in groups:
+        width_mm, error, labels = group["width"], group["error"], group["labels"]
+        name = labels[0].replace("_surface", "").replace("_", " ")
+        if len(labels) > 1:
+            name = f"{name.rsplit(' ', 1)[0]}s ×{len(labels)}"
+        ax_area.loglog(
+            width_mm, error, "o", ms=12, color=region_color(labels[0]), zorder=3, label=name
+        )
+    ax_area.legend(loc="lower left", bbox_to_anchor=(0.0, 0.02), fontsize=11, frameon=False, handletextpad=0.3)
+    # Scaling guide, not a fit: a boundary error of order one cell over a
+    # feature of width w gives a relative area error of order cell / w.
+    guide_widths = np.geomspace(widths.min() * 0.6, widths.max() * 1.6, 20)
+    ax_area.loglog(guide_widths, (cell * 1e3) / guide_widths, color=MUTED, ls="--", lw=1.4, zorder=2)
+    label_width = guide_widths[len(guide_widths) // 2]
+    ax_area.text(
+        label_width, (cell * 1e3) / label_width * 1.4, "∝ cell / width",
+        color=MUTED, fontsize=11, rotation=-24, ha="left",
+    )
+    ax_area.set_xlabel("narrowest extent of the wall [mm]")
+    ax_area.set_ylabel("sampled area error  ΔA / A")
+    ax_area.set_title("So properties are integrated on the polygon", loc="left")
+    ax_area.set_ylim(errors.min() * 0.02, max(errors.max(), (cell * 1e3) / widths.min()) * 3.0)
+    ax_area.grid(True, which="major", alpha=0.4)
+
+    save_figure(fig, out_path, presentation=presentation)
+    plt.close(fig)
+    print(f"Wrote {out_path}")
+    return {"cell_m": cell, "worst_gap_mm": worst_gap_mm, "walls": rows}
+
+
 def main(argv: list[str] | None = None) -> Path:
     default_out = Path(__file__).resolve().parents[1] / "output" / "dual_rep_consistency"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, default=default_out)
+    parser.add_argument("--presentation", action="store_true", help="Deck styling for the gap map.")
     args = parser.parse_args(argv)
+    apply_presentation_style(bool(args.presentation))
     out_dir: Path = args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -171,6 +307,9 @@ def main(argv: list[str] | None = None) -> Path:
     section = _build_section(af)
     grid = SDFGrid.from_airfoil(af, padding=0.06, nx=480, ny=220)
     polys = emit_wall_solid_polygons(section)
+    gap_map_summary = _draw_gap_map(
+        section, polys, grid, out_dir / "dual_rep_gap_map.png", presentation=bool(args.presentation)
+    )
 
     fig, axes = plt.subplots(2, 2, figsize=(12.0, 8.0))
     metrics: dict[str, dict] = {}
@@ -288,57 +427,16 @@ def main(argv: list[str] | None = None) -> Path:
     )
     _save_fig(fig_r, out_dir / "dual_rep_residual_track.png")
 
-    # Residual inserts on hybrid mesh.
+    # The hybrid backend used to hand the LE/TE inserts to a residual quadtree;
+    # they are now constructive polygons too, so record what the backend reports
+    # rather than drawing a residual path that no longer runs.
     spec = quadtree_spec_for_airfoil(af, chord=1.0, max_depth=7, max_cells=120000)
-    props, meta, mesh = compute_section_properties(
+    props, meta = compute_section_properties(
         section,
         backend="hybrid",
         quadtree_spec=spec,
         airfoil_for_spec=af,
-        with_mesh=True,
     )
-    assert mesh is not None
-
-    fig2, axes2 = plt.subplots(1, 3, figsize=(14.0, 4.5))
-    plot_section_hybrid(
-        section,
-        residual_mesh=mesh,
-        ax=axes2[0],
-        title="Hybrid: constructive wall solids + residual inserts",
-        show_legend=True,
-    )
-    # Inner-skin reference (insert flush interface).
-    phi_inner = grid.eval(offset(af, -_SKIN_T))
-    axes2[0].contour(
-        grid.X,
-        grid.Y,
-        phi_inner,
-        levels=[0.0],
-        colors=["#111111"],
-        linewidths=1.0,
-        linestyles=["--"],
-        zorder=20,
-    )
-
-    residual_areas: dict[str, float] = {}
-    for ax, lab in zip(axes2[1:], ("leading_edge_insert", "trailing_edge_insert")):
-        if lab not in section:
-            ax.set_title(f"{lab} missing")
-            ax.axis("off")
-            continue
-        phi = grid.eval(section[lab])
-        plot_sdf_field(phi, grid, ax=ax, title=f"{lab} residual φ", vmax=0.03)
-        residual_areas[lab] = float(props.get(lab, {}).get("area", float("nan")))
-        # Zoom
-        inside = phi < 0
-        if np.any(inside):
-            xs = grid.X[inside]
-            ys = grid.Y[inside]
-            pad = 0.03
-            ax.set_xlim(float(xs.min()) - pad, float(xs.max()) + pad)
-            ax.set_ylim(float(ys.min()) - pad, float(ys.max()) + pad)
-    fig2.suptitle("Residual-φ consumers (LE/TE inserts) on hybrid path", fontsize=11)
-    _save_fig(fig2, out_dir / "dual_rep_residual_inserts.png")
 
     max_gap = max(
         (m["max_gap_m"] for m in metrics.values() if np.isfinite(m["max_gap_m"])),
@@ -350,16 +448,14 @@ def main(argv: list[str] | None = None) -> Path:
         "skin_thickness_m": _SKIN_T,
         "wall_solid_boundary_metrics": metrics,
         "max_boundary_gap_m": max_gap,
-        "residual_areas_hybrid_m2": residual_areas,
+        "gap_map": gap_map_summary,
         "hybrid_meta_keys": sorted(meta.keys()),
-        "residual_labels_in_mesh": [
-            str(k)
-            for k in getattr(mesh, "phi_by_label", {})
-            if is_residual_label(str(getattr(k, "value", k)))
-        ],
+        "hybrid_residual_labels": list(meta.get("residual_labels", [])),
+        "hybrid_residual_maturity": dict(meta.get("residual_maturity", {})),
         "notes": (
             "Constructive wall-solid boundaries and dense-grid φ=0 agree to a "
-            "measurable gap; inserts are residual-φ only on the hybrid mesh."
+            "measurable gap; the hybrid backend's residual labels are listed "
+            "under hybrid_residual_labels."
         ),
     }
     json_path = out_dir / "dual_rep_consistency.json"

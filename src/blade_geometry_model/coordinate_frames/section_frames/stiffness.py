@@ -55,8 +55,8 @@ def transform_stiffness_B_to_Sprime(
         - zL_grid: station grid (for indexing)
     EI_edge_B : float or np.ndarray, optional
         Generated edgewise bending stiffness in B frame [N·m²] (E * Ixx_B), shape (n_stations,)
-        If not provided, will compute from geometry as fallback (not recommended for stress computation).
-        Default: None
+        If not provided, derived from outline second moments transformed S→B.
+        Degenerate loops raise (CF-002); no 1e-6 invent.
     station_indices : np.ndarray, optional
         Station indices to evaluate. If None, uses all stations.
         Shape (n_eval,) with values in [0, n_stations-1]
@@ -111,23 +111,27 @@ def transform_stiffness_B_to_Sprime(
         if EI_edge_B is not None:
             EI_edge_B = np.asarray(EI_edge_B, dtype=np.float64)
     
-    # Handle missing EI_edge_B: compute from geometry as fallback
+    # Missing EI_edge_B: derive from outline Ixx in B (not S, and never invent 1e-6).
     if EI_edge_B is None:
-        # Compute Ixx_B from geometry for each station as fallback
         EI_edge_B = np.zeros(n_eval, dtype=np.float64)
         for i, idx in enumerate(station_indices):
             n_points = int(outer_loop_point_counts[idx])
             if n_points < 3:
-                continue
-            try:
-                coords_S = outer_loop_geometry_S[idx, :n_points, :]
-                poly_S = ShapelyPolygon(coords_S)
-                _, _, Ixx_S, _, _ = section_properties_S(poly_S)
-                # Transform Ixx_S to Ixx_B (pivot-referenced, then to B frame)
-                # For now, use Ixx_S directly as approximation (would need proper transformation)
-                EI_edge_B[i] = E * Ixx_S
-            except Exception:
-                EI_edge_B[i] = 1e-6  # Small fallback value
+                raise ValueError(
+                    f"station {int(idx)} outer loop has {n_points} points; "
+                    "cannot invent EI_edge_B (CF-002)"
+                )
+            coords_S = outer_loop_geometry_S[idx, :n_points, :]
+            poly_S = ShapelyPolygon(coords_S)
+            _, _, Ixx_S, Iyy_S, Ixy_S = section_properties_S(poly_S)
+            twist_deg_val = twist_deg[i] if hasattr(twist_deg, "__getitem__") else twist_deg
+            Ixx_B, _Iyy_B, _Ixy_B = transform_second_moments_S_to_B(
+                Ixx_S=Ixx_S,
+                Iyy_S=Iyy_S,
+                Ixy_S=Ixy_S,
+                twist_deg=twist_deg_val,
+            )
+            EI_edge_B[i] = E * float(Ixx_B)
     
     # Step 1: Compute structural I values in B frame with full Ixy support
     # Get geometric properties from geometry (S frame, pivot-referenced)
@@ -139,22 +143,16 @@ def transform_stiffness_B_to_Sprime(
     for i, idx in enumerate(station_indices):
         n_points = int(outer_loop_point_counts[idx])
         if n_points < 3:
-            Ixx_S_geom[i] = 1e-12 / E
-            Iyy_S_geom[i] = 1e-12 / E
-            Ixy_S_geom[i] = 0.0
-            continue
-        
-        try:
-            coords_S = outer_loop_geometry_S[idx, :n_points, :]
-            poly_S = ShapelyPolygon(coords_S)
-            _, _, Ixx_S_val, Iyy_S_val, Ixy_S_val = section_properties_S(poly_S)
-            Ixx_S_geom[i] = Ixx_S_val
-            Iyy_S_geom[i] = Iyy_S_val
-            Ixy_S_geom[i] = Ixy_S_val
-        except Exception:
-            Ixx_S_geom[i] = 1e-12 / E
-            Iyy_S_geom[i] = 1e-12 / E
-            Ixy_S_geom[i] = 0.0
+            raise ValueError(
+                f"station {int(idx)} outer loop has {n_points} points; "
+                "refusing 1e-12/E invent for geometric I (CF-002)"
+            )
+        coords_S = outer_loop_geometry_S[idx, :n_points, :]
+        poly_S = ShapelyPolygon(coords_S)
+        _, _, Ixx_S_val, Iyy_S_val, Ixy_S_val = section_properties_S(poly_S)
+        Ixx_S_geom[i] = Ixx_S_val
+        Iyy_S_geom[i] = Iyy_S_val
+        Ixy_S_geom[i] = Ixy_S_val
     
     # Transform geometric properties S→B with full Ixy
     Ixx_B_geom = np.zeros(n_eval, dtype=np.float64)
@@ -217,32 +215,23 @@ def transform_stiffness_B_to_Sprime(
     for i, idx in enumerate(station_indices):
         n_points = int(outer_loop_point_counts[idx])
         if n_points < 3:
-            # Use pivot-referenced values as fallback
-            EI_xx_Sprime[i] = E * Ixx_S_pivot[i]
-            EI_yy_Sprime[i] = E * Iyy_S_pivot[i]
-            continue
-        
-        # Get S frame coordinates to compute centroid
+            raise ValueError(
+                f"station {int(idx)} outer loop has {n_points} points; "
+                "cannot form S' centroid EI (CF-002)"
+            )
         coords_S = outer_loop_geometry_S[idx, :n_points, :]
-        
-        # Compute centroid coordinates in S frame (relative to pivot)
-        try:
-            poly_S = ShapelyPolygon(coords_S)
-            A, (Cx, Cy), _, _, _ = section_properties_S(poly_S)
-            
-            # Parallel axis theorem: I_centroid = I_pivot - A * d²
-            # For Ixx (bending about X_S): d = Cy (distance in Y direction from pivot to centroid)
-            # For Iyy (bending about Y_S): d = Cx (distance in X direction from pivot to centroid)
-            Ixx_centroid = Ixx_S_pivot[i] - A * Cy**2
-            Iyy_centroid = Iyy_S_pivot[i] - A * Cx**2
-            
-            EI_xx_Sprime[i] = E * max(Ixx_centroid, 1e-12)  # Avoid zero/negative values
-            EI_yy_Sprime[i] = E * max(Iyy_centroid, 1e-12)
-            
-        except Exception:
-            # If polygon construction fails, use pivot-referenced values as fallback
-            EI_xx_Sprime[i] = E * Ixx_S_pivot[i]
-            EI_yy_Sprime[i] = E * Iyy_S_pivot[i]
+        poly_S = ShapelyPolygon(coords_S)
+        A, (Cx, Cy), _, _, _ = section_properties_S(poly_S)
+        Ixx_centroid = Ixx_S_pivot[i] - A * Cy**2
+        Iyy_centroid = Iyy_S_pivot[i] - A * Cx**2
+        if Ixx_centroid <= 0.0 or Iyy_centroid <= 0.0:
+            raise ValueError(
+                f"station {int(idx)} centroid second moment is non-positive "
+                f"(Ixx={Ixx_centroid:.3e}, Iyy={Iyy_centroid:.3e}); "
+                "refusing 1e-12 clamp (CF-002)"
+            )
+        EI_xx_Sprime[i] = E * Ixx_centroid
+        EI_yy_Sprime[i] = E * Iyy_centroid
     
     # Return scalars if inputs were scalars
     if isinstance(EI_flap_B, (int, float)) or (hasattr(EI_flap_B, 'ndim') and EI_flap_B.ndim == 0):

@@ -19,7 +19,7 @@ def snap_cap_height_at_most(height_m: float, pitch_m: float | None) -> float:
     Returns `height_m` unchanged when `pitch_m` is absent/invalid.
     When not even one ply fits (`height_m < pitch`), returns ``0.0`` — geometric
     run-out, matching ``PlyGrid.largest_at_most``. Leaving a sub-ply continuous
-    strip made laminate ceil (1 ply) disagree with geometry and broke Catalog FI.
+    strip made the ply-count ceil (1 ply) disagree with geometry and broke Catalog FI.
     """
     if pitch_m is None:
         return float(height_m)

@@ -31,8 +31,8 @@ Always use these explicit names — avoid bare “local/global” and “strip l
 
 | | |
 |---|---|
-| **Owns** | Short tags (`FrameTag` / `FRAME_*` / `require_frame_tag`); axis sense and plot contract for B/S/S′; S↔B geometry/moment/inertia maps; NACA↔S adapter; section-plot helpers; E↔M ply \(T_\sigma/T_\varepsilon\); product shell load-channel adapter |
-| **Does not own** | SDF solids, strip meshing, MITC4 kinematics, Hashin FI evaluation |
+| **Owns** | Short tags (`FrameTag` / `FRAME_*` / `require_frame_tag`); axis sense and plot contract for B/S/S′; S↔B geometry/moment/inertia maps; NACA↔S adapter; section-plot helpers; E↔M ply \(T_\sigma/T_\varepsilon\) (in-plane 3×3 and canonical 6×6); product shell load-channel adapter |
+| **Does not own** | SDF solids, strip meshing, MITC4 kinematics, Hashin FI evaluation, formulation projectors |
 | **Consumers** | `section_contract` (B midlines / `BeamResultantVector` frame tags), `section_geometry` (S authoring / B emit), `section_mesh` (+x3 / B midlines), FE tertiary/quaternary, beam `StressHistory`, root_blend adapters, BIS nests / BSP assemble scratch |
 
 ---
@@ -83,7 +83,8 @@ flowchart LR
 
 Operational demos (demos / plots): [`visualisation/`](visualisation/README.md).
 
-Known-issue index: [`FRAMES_INVENTORY.md`](FRAMES_INVENTORY.md).
+Known-issue / package inventory: [`FRAMES_INVENTORY.md`](FRAMES_INVENTORY.md)
+(programme status for ARCH-MUST-016 remediation).
 
 ---
 
@@ -126,6 +127,12 @@ from blade_structure_utilities.geometry_utilities.coordinate_frames import (
 # E → M: stress and strain use DIFFERENT matrices — see shell_frames
 sigma_M = rotate_ply_stress_E_to_M(sigma_E, ply_angles_deg)
 eps_M = rotate_ply_strain_E_to_M(eps_E, ply_angles_deg)
+
+# Canonical 3D Voigt [11,22,33,23,13,12]
+from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    rotate_ply_stress_3d_E_to_M,
+    rotate_transverse_shear_E_to_M,
+)
 ```
 
 ---

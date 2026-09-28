@@ -313,7 +313,9 @@ def render_contact_sheet(
     columns = len(entries)
     # Sized to land in a full-width slide panel of roughly 2.5:1. One column per
     # leg made seven narrow columns whose sections were too small to read.
-    figure, axes = plt.subplots(2, columns, figsize=(3.6 * columns, 5.7))
+    figure, axes = plt.subplots(
+        2, columns, figsize=(3.0 * columns, 4.2), gridspec_kw={"hspace": 0.05, "wspace": 0.04}
+    )
     axes = np.atleast_2d(axes)
 
     for column, (context, vector, caption, _moving) in enumerate(entries):
@@ -332,23 +334,16 @@ def render_contact_sheet(
             f"{vector['key']}\n"
             f"t_skin {vector['skin_thickness'] * 1e3:.0f} mm · "
             f"twist {vector['twist_deg']:.0f}°",
-            fontsize=10.5,
+            fontsize=12.5,
             color=NAVY,
         )
         summary = context.mesh.summary()
         axes[1, column].set_xlabel(
-            f"{int(summary['n_total_elements'])} elements", fontsize=9.5, color=TEAL
+            f"{int(summary['n_total_elements'])} elements", fontsize=12, color=TEAL
         )
 
-    axes[0, 0].set_ylabel("implicit solids", fontsize=11, color=NAVY)
-    axes[1, 0].set_ylabel("Q4 shell mesh", fontsize=11, color=NAVY)
-
-    figure.suptitle(
-        "One design vector, swept: every station is the same expression tree "
-        "with different parameters",
-        fontsize=13.5,
-    )
-    figure.tight_layout()
+    axes[0, 0].set_ylabel("implicit solids", fontsize=13, color=NAVY)
+    axes[1, 0].set_ylabel("Q4 shell mesh", fontsize=13, color=NAVY)
     save_figure(figure, path, presentation=presentation)
     plt.close(figure)
     print(f"Wrote {path}")

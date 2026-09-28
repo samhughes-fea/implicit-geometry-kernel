@@ -17,7 +17,7 @@ import numpy as np
 
 
 def ply_stress_transform_E_to_M(theta_deg) -> np.ndarray:
-    """Voigt **stress** transform \(T_\\sigma\): ``sigma_M = T @ sigma_E``.
+    r"""Voigt **stress** transform \(T_\sigma\): ``sigma_M = T @ sigma_E``.
 
     Parameters
     ----------
@@ -44,7 +44,7 @@ def ply_stress_transform_E_to_M(theta_deg) -> np.ndarray:
 
 
 def ply_strain_transform_E_to_M(theta_deg) -> np.ndarray:
-    """Engineering **strain** transform \(T_\\varepsilon\): ``eps_M = T @ eps_E``.
+    r"""Engineering **strain** transform \(T_\varepsilon\): ``eps_M = T @ eps_E``.
 
     Differs from :func:`ply_stress_transform_E_to_M` by the factor-2 shear terms
     (``sc`` vs ``2sc`` off-diagonal, ``-2sc`` vs ``-sc`` on the shear row) — a
@@ -145,3 +145,88 @@ def rotate_ply_strain_E_to_M(eps_E: np.ndarray, theta_deg) -> np.ndarray:
 def rotate_ply_strain_M_to_E(eps_M: np.ndarray, theta_deg) -> np.ndarray:
     """Inverse of :func:`rotate_ply_strain_E_to_M`."""
     return _matvec(ply_strain_transform_M_to_E(theta_deg), eps_M)
+
+
+# Canonical 3D Voigt order: [11, 22, 33, 23, 13, 12]
+_CANONICAL_3D = ("11", "22", "33", "23", "13", "12")
+
+
+def ply_stress_transform_3d_E_to_M(theta_deg) -> np.ndarray:
+    r"""Six-component Voigt stress transform about \(x_3\): ``sigma_M = T @ sigma_E``.
+
+    Ordering is ``[σ11, σ22, σ33, τ23, τ13, τ12]``.
+    """
+    t = np.deg2rad(np.asarray(theta_deg, dtype=np.float64))
+    c, s = np.cos(t), np.sin(t)
+    cc, ss, sc = c * c, s * s, s * c
+    out = np.zeros(t.shape + (6, 6), dtype=np.float64)
+    out[..., 0, 0], out[..., 0, 1], out[..., 0, 5] = cc, ss, 2.0 * sc
+    out[..., 1, 0], out[..., 1, 1], out[..., 1, 5] = ss, cc, -2.0 * sc
+    out[..., 2, 2] = 1.0
+    out[..., 3, 3], out[..., 3, 4] = c, -s
+    out[..., 4, 3], out[..., 4, 4] = s, c
+    out[..., 5, 0], out[..., 5, 1], out[..., 5, 5] = -sc, sc, cc - ss
+    return out
+
+
+def ply_strain_transform_3d_E_to_M(theta_deg) -> np.ndarray:
+    r"""Six-component engineering-strain transform about \(x_3\).
+
+    Ordering is ``[ε11, ε22, ε33, γ23, γ13, γ12]``.
+    """
+    t = np.deg2rad(np.asarray(theta_deg, dtype=np.float64))
+    c, s = np.cos(t), np.sin(t)
+    cc, ss, sc = c * c, s * s, s * c
+    out = np.zeros(t.shape + (6, 6), dtype=np.float64)
+    out[..., 0, 0], out[..., 0, 1], out[..., 0, 5] = cc, ss, sc
+    out[..., 1, 0], out[..., 1, 1], out[..., 1, 5] = ss, cc, -sc
+    out[..., 2, 2] = 1.0
+    out[..., 3, 3], out[..., 3, 4] = c, -s
+    out[..., 4, 3], out[..., 4, 4] = s, c
+    out[..., 5, 0], out[..., 5, 1], out[..., 5, 5] = -2.0 * sc, 2.0 * sc, cc - ss
+    return out
+
+
+def ply_stress_transform_3d_M_to_E(theta_deg) -> np.ndarray:
+    """Inverse of :func:`ply_stress_transform_3d_E_to_M`."""
+    return ply_stress_transform_3d_E_to_M(-np.asarray(theta_deg, dtype=np.float64))
+
+
+def ply_strain_transform_3d_M_to_E(theta_deg) -> np.ndarray:
+    """Inverse of :func:`ply_strain_transform_3d_E_to_M`."""
+    return ply_strain_transform_3d_E_to_M(-np.asarray(theta_deg, dtype=np.float64))
+
+
+def rotate_ply_stress_3d_E_to_M(sigma_E: np.ndarray, theta_deg) -> np.ndarray:
+    """Rotate canonical 3D Voigt stress from E to M."""
+    return _matvec(ply_stress_transform_3d_E_to_M(theta_deg), sigma_E)
+
+
+def rotate_ply_stress_3d_M_to_E(sigma_M: np.ndarray, theta_deg) -> np.ndarray:
+    """Rotate canonical 3D Voigt stress from M to E."""
+    return _matvec(ply_stress_transform_3d_M_to_E(theta_deg), sigma_M)
+
+
+def rotate_ply_strain_3d_E_to_M(eps_E: np.ndarray, theta_deg) -> np.ndarray:
+    """Rotate canonical 3D engineering strain from E to M."""
+    return _matvec(ply_strain_transform_3d_E_to_M(theta_deg), eps_E)
+
+
+def rotate_ply_strain_3d_M_to_E(eps_M: np.ndarray, theta_deg) -> np.ndarray:
+    """Rotate canonical 3D engineering strain from M to E."""
+    return _matvec(ply_strain_transform_3d_M_to_E(theta_deg), eps_M)
+
+
+def rotate_transverse_shear_E_to_M(
+    tau13_E: np.ndarray,
+    tau23_E: np.ndarray,
+    theta_deg,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Rotate ``(τ13, τ23)`` from laminate E into ply material M via the 3D map."""
+    tau13 = np.asarray(tau13_E, dtype=np.float64)
+    tau23 = np.asarray(tau23_E, dtype=np.float64)
+    zeros = np.zeros_like(tau13)
+    vec = np.stack([zeros, zeros, zeros, tau23, tau13, zeros], axis=-1)
+    rotated = rotate_ply_stress_3d_E_to_M(vec, theta_deg)
+    return rotated[..., 4], rotated[..., 3]
+

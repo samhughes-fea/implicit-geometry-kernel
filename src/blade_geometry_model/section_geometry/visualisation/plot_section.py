@@ -10,6 +10,9 @@ from blade_structure_utilities.mesh_utilities.area_2d.quadrature import (
     label_boundary_segments,
     label_fill_polygons,
 )
+from blade_structure_utilities.geometry_utilities.section_geometry.constructive.labels import (
+    is_core_label,
+)
 from blade_structure_utilities.geometry_utilities.section_geometry.sections.labels import ComponentLabel
 
 
@@ -29,7 +32,9 @@ _COMPONENT_COLORS = {
 }
 _DEFAULT_COLOR = "#607D8B"
 _WEB_COLORS = ["#4CAF50", "#009688", "#8BC34A", "#2E7D32"]
-_CORE_COLORS = ["#9C27B0", "#AB47BC", "#7B1FA2", "#6A1B9A"]
+#: One translucent core tint for all bays (avoid dark index stacking).
+_CORE_COLORS = ["#9E86C8", "#9E86C8", "#9E86C8", "#9E86C8"]
+_DEFAULT_CORE_ALPHA = 0.22
 
 
 def fit_square_section_axes(
@@ -321,7 +326,8 @@ def plot_section(section_geometry, grid, ax=None, alpha=0.45,
     linewidths : float
         Boundary contour width.
     core_alpha : float or None
-        Override fill alpha for ``core_*`` labels (defaults to ``min(0.25, alpha)``).
+        Override fill alpha for ``sandwich_core_*`` / ``core_*`` labels
+        (defaults to ``min(0.22, alpha)``).
     omit_cores : bool
         If True, skip ``core_*`` fills so skin/spar/web read more clearly.
     axes_mode : {"structural", "default", "YB_XB_over_c"}
@@ -395,17 +401,18 @@ def plot_section(section_geometry, grid, ax=None, alpha=0.45,
         return str(getattr(label, "value", label))
 
     def _is_core(label) -> bool:
-        return _label_str(label).startswith("core")
+        # Real bay labels are ``sandwich_core_*`` (see constructive.is_core_label).
+        return is_core_label(label) or _label_str(label).startswith("core")
 
     def _draw_priority(label) -> int:
         s = _label_str(label)
-        if s.startswith("core"):
+        if _is_core(label):
             return 0
         if "skin" in s:
             return 1
         if "spar" in s:
             return 2
-        if s.startswith("web"):
+        if "shear_web" in s or s.startswith("web"):
             return 3
         return 4
 
@@ -413,7 +420,7 @@ def plot_section(section_geometry, grid, ax=None, alpha=0.45,
     if omit_cores:
         labels = [lbl for lbl in labels if not _is_core(lbl)]
 
-    core_a = float(core_alpha) if core_alpha is not None else min(0.25, float(alpha))
+    core_a = float(core_alpha) if core_alpha is not None else min(_DEFAULT_CORE_ALPHA, float(alpha))
     drawn = []
     for label in labels:
         if resample_b:
@@ -426,7 +433,9 @@ def plot_section(section_geometry, grid, ax=None, alpha=0.45,
             )
         color = _component_color(label)
         fill_alpha = core_a if _is_core(label) else float(alpha)
-        lw = float(linewidths) * (1.6 if _label_str(label).startswith("web") else 1.0)
+        lw = float(linewidths) * (
+            1.6 if ("shear_web" in _label_str(label) or _label_str(label).startswith("web")) else 1.0
+        )
         # Filled region where phi < 0
         ax.contourf(X_plot, Y_plot, phi,
                     levels=[-np.inf, 0.0],
@@ -599,6 +608,8 @@ def plot_section_hybrid(
     ax=None,
     *,
     alpha=0.45,
+    core_alpha: float | None = None,
+    omit_cores: bool = False,
     title="Blade section geometry (hybrid)",
     show_legend=True,
     color_fn=_component_color,
@@ -610,6 +621,9 @@ def plot_section_hybrid(
 
     Constructive rings and residual mesh leaves are rotated-NACA; with
     ``structural_axes`` they are remapped to canonical B plot axes.
+
+    Sandwich cores use ``core_alpha`` (default ``min(0.22, alpha)``) and are
+    drawn under wall solids so translucent bay fills do not cover skins/webs.
     """
     from matplotlib.collections import LineCollection, PolyCollection
     from matplotlib.patches import Patch, PathPatch
@@ -652,13 +666,31 @@ def plot_section_hybrid(
             codes_list.append(codes)
         return Path(np.vstack(verts_list), np.concatenate(codes_list))
 
+    def _draw_priority(label: str) -> int:
+        if is_core_label(label):
+            return 0
+        if "skin" in label:
+            return 1
+        if "spar" in label:
+            return 2
+        if "shear_web" in label or label.startswith("web"):
+            return 3
+        return 4
+
+    core_a = float(core_alpha) if core_alpha is not None else min(_DEFAULT_CORE_ALPHA, float(alpha))
     legend_labels: list[str] = []
     polys = emit_constructive_polygons(section)
+    if omit_cores:
+        polys = {k: v for k, v in polys.items() if not is_core_label(k)}
+    ordered = sorted(polys.items(), key=lambda kv: _draw_priority(str(kv[0])))
     xs_lim: list[float] = []
     ys_lim: list[float] = []
-    for label, geom in polys.items():
+    for label, geom in ordered:
+        lab = str(label)
         color = color_fn(label)
-        legend_labels.append(label)
+        legend_labels.append(lab)
+        fill_a = core_a if is_core_label(lab) else float(alpha)
+        z = 1 if is_core_label(lab) else 2
         geoms = getattr(geom, "geoms", None) or (geom,)
         for g in geoms:
             if g.is_empty:
@@ -671,8 +703,9 @@ def plot_section_hybrid(
                     path,
                     facecolor=color,
                     edgecolor="none",
-                    alpha=alpha,
+                    alpha=fill_a,
                     rasterized=True,
+                    zorder=z,
                 )
             )
 
@@ -692,12 +725,13 @@ def plot_section_hybrid(
                         edgecolors="none",
                         alpha=alpha,
                         rasterized=True,
+                        zorder=2,
                     )
                 )
             segs = label_boundary_segments(residual_mesh, label)
             if len(segs):
                 segs_p = np.asarray([_to_plot(s) for s in segs], dtype=float)
-                ax.add_collection(LineCollection(segs_p, colors=color, linewidths=1.0))
+                ax.add_collection(LineCollection(segs_p, colors=color, linewidths=1.0, zorder=3))
         spec = residual_mesh.spec
         corners = _to_plot(
             np.array(
@@ -732,7 +766,12 @@ def plot_section_hybrid(
 
     if show_legend and legend_labels:
         handles = [
-            Patch(facecolor=color_fn(lbl), alpha=alpha, label=lbl) for lbl in legend_labels
+            Patch(
+                facecolor=color_fn(lbl),
+                alpha=(core_a if is_core_label(lbl) else float(alpha)),
+                label=lbl,
+            )
+            for lbl in legend_labels
         ]
         ax.legend(handles=handles, loc="upper right", fontsize=8)
 

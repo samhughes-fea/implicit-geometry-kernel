@@ -31,35 +31,6 @@ from blade_structure_utilities.geometry_utilities.section_geometry.midlines.sect
 )
 
 
-def rotate_chord_to_blade(
-    points_S: NDArray[np.float64], twist_rad: float
-) -> NDArray[np.float64]:
-    """Rotate ``(N, 2)`` chord-frame points by ``+twist_rad`` into the B-frame.
-
-    Mirrors the rotation that :class:`MultiCellSection` applies to every
-    component's SDF when ``twist_angle != 0``: ``x' = R(twist) @ x`` about
-    the origin (``cx=0``, ``cy=0``).
-
-    Parameters
-    ----------
-    points_S
-        ``(N, 2)`` array of points in the chord (S) frame.
-    twist_rad
-        Section twist angle in radians.
-
-    Returns
-    -------
-    NDArray[np.float64]
-        ``(N, 2)`` array of points rotated into the blade (B) frame.
-    """
-    if abs(twist_rad) < 1e-15:
-        return np.asarray(points_S, dtype=float).copy()
-    c = float(np.cos(twist_rad))
-    s = float(np.sin(twist_rad))
-    p = np.asarray(points_S, dtype=float)
-    return np.column_stack([c * p[:, 0] - s * p[:, 1], s * p[:, 0] + c * p[:, 1]])
-
-
 def _skin_side_from_label(label: object) -> str | None:
     """``suction_surface`` / ``pressure_surface`` from a skin label, or ``None``.
 
@@ -98,11 +69,11 @@ def build_shell_midline_strips(
     authoring→handoff boundary. Output arrays are ``(X_B, Y_B)`` with
     ``Y_LE < 0 < Y_TE`` and the pivot at the origin.
 
-    A bare rotation (:func:`rotate_chord_to_blade`) is **not** sufficient — it
-    leaves the array chordwise-first with its origin at the LE, which is the
-    rotated-NACA adapter frame, not B. Everything downstream (``+x3``
-    orientation, the flap/edge load-channel map, the section plot contract)
-    reads canonical B.
+    A bare S→B rotation (``coordinate_frames.rotate_S_to_B``) is **not**
+    sufficient alone — it leaves the array chordwise-first with its origin at
+    the LE, which is the rotated-NACA adapter frame, not B. Everything
+    downstream (``+x3`` orientation, the flap/edge load-channel map, the
+    section plot contract) reads canonical B.
 
     Parameters
     ----------
@@ -391,7 +362,6 @@ def _insert_web_cap_junction_nodes(
 
 __all__ = [
     "build_shell_midline_strips",
-    "rotate_chord_to_blade",
     "SectionMidlineHost",
     "ShellComponentLike",
     "SkinShellComponentLike",

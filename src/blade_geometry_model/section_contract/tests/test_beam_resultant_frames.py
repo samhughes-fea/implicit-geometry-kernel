@@ -108,10 +108,14 @@ def test_transported_to_torque_uses_product_shear_map() -> None:
     flap = BeamResultantVector.from_named(Vz=1000.0, about_xy=(0.0, 0.0))
     out = flap.transported_to(0.1, 0.2)
     assert out.T == pytest.approx(0.2 * 1000.0)
+    np.testing.assert_allclose(out.R[:5], [0.0, 0.0, 1000.0, 0.0, 0.0])
     # Pure edge shear → T' = ΔX Vy = -0.1 * Vy
     edge = BeamResultantVector.from_named(Vy=500.0, about_xy=(0.0, 0.0))
     out_e = edge.transported_to(0.1, 0.2)
     assert out_e.T == pytest.approx(-0.1 * 500.0)
+    assert out_e.Mz == pytest.approx(0.0)
+    assert out_e.My == pytest.approx(0.0)
+    assert out_e.N == pytest.approx(0.0)
 
 
 def test_with_about_xy_retags_only() -> None:

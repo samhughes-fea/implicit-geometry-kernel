@@ -39,6 +39,11 @@ Deviations are stated per entry.
 | [SG-011](#sg-011) | Family-D continuous-box spar caps leave a bay gap against flapwise webs under twist | **Fixed** — CapWall flapwise strip + `c_station` SoT |
 | [SG-012](#sg-012) | Constructive CapWall solids split suction/pressure on `y=0`, not cavity midline | **Fixed** — store `camber_xy` on CapWall recipes |
 | [SG-013](#sg-013) | Family-C (and B) pads recenter onto `argmax(depth)` instead of the web / band center | **Fixed** — `extent_anchor="band_center"` symmetric half-width |
+| [SG-014](#sg-014) | Cell wall loops pair the wrong web ends on B-frame sections and carry no wall membership; every consumer re-guesses it | **Fixed** — loops are faces of the labelled wall graph and carry `wall_labels` |
+| [SG-015](#sg-015) | Closed-ring suction/pressure split and the side fallback read chord-first coordinates on B-frame strips | **Fixed** — transposed at the call; side from `X_B` |
+| [SG-016](#sg-016) | 50 package tests fail at HEAD (`SparCap._camber_surface`, g-row hardening) | **Fixed** — wrap copies `_camber_surface`; barrel / comment gates cleared |
+| [SG-017](#sg-017) | Caps are built from the skin but their bond to it is never emitted | **Fixed** — `bond_caps_to_skin` pairs every cap vertex with the skin; `ShellMidlineStrip.bonds` |
+| [SG-018](#sg-018) | Residual nearest / argmin sites vs standing invariant (Exactness item 6 follow-on) | **Logged** (2026-09-26) — no relocation defect |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -67,13 +72,13 @@ minimum web spacing (`min_web_gap_frac`, 2 % of chord) fell 200x → 48x → 10x
 from a 1.0 m to a 0.05 m chord, and is now constant at ~200x. Behaviour at the
 1 m reference chord is unchanged (99.93 µm vs the old fixed 100 µm).
 
-### What a grep still finds (verified 2026-08-30, after cleanup)
+### What a grep still finds (verified 2026-09-26, Exactness item 6 follow-on)
 
 The tables above are about *relocation*, not about whether a symbol appears.
 This section covers the **whole package plus its downstream callers**, including
 `tests/` and `visualisation/` — unlike the tolerance audit below, which excludes
 them. Nothing in this list is a defect except where noted, so do not "clean
-them up" without reading the linked entry first.
+them up" without reading the linked entry first. Full classification: [SG-018](#sg-018).
 
 `point_to_open_polyline_nearest` — 4 live sites:
 
@@ -86,6 +91,12 @@ them up" without reading the linked entry first.
 
 It is **gone** from `topology/cap_web_junctions.py` and from `section_mesh`'s
 `centerline_mesh.py`, neither of which imports it any more.
+
+Other production `argmin` / nearest (2026-09-26): `cell_wall_loop_builders._node_of`
+is a 1 nm coincidence **raise**; `cap_skin_bonds._foot` constructs SG-017 bonds
+(does not relocate); LE `argmin` on `X_B` identifies the polygon LE vertex;
+`nearest_on_closed_polyline*` is defined with **no** production callers in this
+package. SDF primitive "nearest" is field math, not strip membership.
 
 `_SKIN_RAY_CAP_BBOX_MARGIN_M` — **no live sites.** Deleted with SG-006; the only
 surviving mention is a historical sentence in
@@ -320,6 +331,20 @@ Pinned by `tests/test_web_foot_axis_snap.py` — 40 cases
 ~~An earlier fix made topology's *guess* correct, by intersecting the web axis
 with the skin instead of projecting perpendicular to it.~~ Superseded by the
 above: it removed the symptom, not the need to guess.
+
+### Follow-on, 2026-09-27 (WP6 tip mono)
+
+Confirmatory 2D-F e2e crashed on tip mono_after_redispatch: frozen thin-skin
+`web_y` + raised skin (~7 mm) + tip twist made `flapwise_web_sframe_inputs` miss
+B-frame IML intercepts and **rotate** the stale anchors; emit then returned a
+blind `origin + t/2` foot (~3.5 mm off mid — SG-002 in `build_cell_wall_loops`).
+
+Fix: refuse the rotate fallback (`InfeasibleSectionGeometry`); harden
+`_extend_to_skin_mid_surface` (longer oracle / bidirectional SDF; no blind
+offset); mono gauge projection keeps prior gauges when raise is infeasible.
+Pinned by `test_tip_absolute_2a_f_loops_build_under_twist`,
+`test_tip_fractional_2a_f_loops_build_under_twist`, and
+`test_stale_frozen_web_y_under_twist_raises_infeasible_not_sg002_gap`.
 
 ### Cleanup, 2026-08-30
 
@@ -1021,3 +1046,258 @@ path never touches extent and was not at fault.
   `center_x`; deepest drifts LE-ward; D aft-rule bit-identical; B/C tip meshability.
 - `tests/test_structural_family.py::test_structural_C_cap_recipes_centered_on_webs`
   — CapWall midpoints match web stations on 2412.
+
+## SG-014
+
+**Cell wall loops pair the wrong web ends on B-frame sections and carry no wall membership; every consumer re-guesses it**
+
+**Status:** Fixed
+**Found:** 2026-09-25 (4D-F `new_3.2m_rotor` re-qualification; repo [BL-040](../../../../../docs/bug_log.md#bl-040))
+**Fixed:** 2026-09-25
+**Area:** `cell_wall_loops/`, `section_contract/cell_wall_loop.py`; consumers in
+`section_properties.reference_axes.wall_network` and `section_loads.thinwall`
+
+### Symptom
+
+4D-F station 21 (layout 4A-F, four webs, 0.2 m chord) never reached a
+closed-section `GJ`: every trial logged `closed-section GJ unavailable (segment 0
+is claimed by 3 cells; a wall can bound at most two); polar kept`, so the
+torsion gate could not pass however the station was sized.
+
+### Evidence
+
+The failing station's midlines and loops were captured from the campaign
+workers. The emitted cell areas summed to **1.71×** the skin-ring area
+(0.01133 vs 0.00662 m²): bay 1 spanned `Y_B` −0.069…+0.023 (it had swallowed the
+LE cell) and bays 2 and 3 both ran to the TE, so the TE skin sat in cells 2, 3
+and 4. The same strips transposed to chord-first gave five correct LE→TE cells
+tiling the ring exactly.
+
+A worker sweep (1C, 2D, 3D, 4D in -F and -CN, 2B-F, 3C-F; twist 0–1.2 rad;
+chord 1.0 and 0.2 m) found **36 of 80** configurations emitting cells that do not
+tile the section — 14 raising "claimed by 3 cells" and **22 solving silently on
+overlapping cells**, including 2D-F and 3D-F at moderate twist (area +18 % to
++100 %). Every multi-web layout was affected somewhere; one web never was.
+
+Production audit (a hook on every closed-section solve of the 16-station
+`new_3.2m_rotor` campaign at `ad560972`):
+
+| Layout | Solves | On wrong cells | Raised | Σ cell area / ring |
+|---|---|---|---|---|
+| 2D-F | 113 | 32 | 0 | ≤ 1.28 |
+| 3D-F | 121 | 48 | 0 | ≤ 1.67 |
+
+Bredt `GJ` scales with the enclosed area squared, so on those solves the
+torsional stiffness was overstated by up to ~2.8× without warning.
+
+### Root cause
+
+Two defects, one of them structural.
+
+1. **The contract dropped what the producer knew.** `build_cell_wall_loops`
+   assembled each cell from named pieces — the skin arcs `split_skin_at_junctions`
+   cut at the web feet, and specific webs — then emitted only a polyline and an
+   area. Every consumer re-derived which walls bound which cell from
+   coordinates, each with its own tolerance:
+   `section_properties.network_from_midlines_props` took the nearest segment
+   midpoint within an absolute 5 cm (over *all* strips, spar caps included), and
+   `section_loads` took segment midpoints within 0.25 × median segment length of
+   the loop polyline. Both are guesses that fail as walls get close — the class
+   of heuristic SG-001…SG-004 removed from the junction pass.
+2. **The builder reasoned chord-first on canonical B.** It sorted webs LE→TE on
+   `x`, chose each web's top on `y`, and chose the LE/TE skin arcs on `mean_x`.
+   In B, `X_B` is flapwise and `Y_B` chordwise. A flapwise web has both ends at
+   the same `Y_B`, so "top" was arbitrary per web; a bay joined web *a*'s top to
+   web *b*'s top, and when those lay on opposite surfaces the shorter skin arc
+   ran round the nose or the tail. When the midlines moved to B,
+   `section_loads` gained an explicit `_b_to_chordwise_first` adapter; this
+   builder did not, and its unit tests were written chord-first, so nothing
+   caught it.
+
+Nothing checked the result: no test that each web bounds two cells, each skin
+arc one, and that the cells tile the ring. `section_properties`' log records
+that "a segment appearing in two cells **is** a shared wall, so nothing is
+re-derived from coordinates" — true of the solver, but the network it was
+handed had been re-derived from coordinates.
+
+### Fix
+
+- **Contract.** `CellWallLoop.wall_labels`: the strip labels bounding the cell,
+  in loop order. It **is** the membership, and consumers read it.
+- **Builder** (`cell_wall_loop_builders.py`, rewritten). The section is a planar
+  graph — nodes are the skin-arc junctions, edges the labelled strips — and the
+  cells are its bounded faces, found by walking the ring and turning onto a web
+  wherever one starts. No coordinate axis is read: web order comes from the
+  walk, LE→TE numbering from the leading-edge arcs. A web end must **coincide**
+  with a junction to 1 nm (measured ≤ 5×10⁻¹³ m; closest junction pair 4 mm), so
+  a web stopping short is refused rather than extrapolated (standing
+  invariant). It also refuses two webs on one junction, crossing webs, a skin
+  that does not chain, and any result whose cell areas do not tile the ring to
+  1×10⁻⁹. `cell_wall_web_attach.py` and the ray/arc helpers are deleted.
+- **`section_properties`.** `network_from_midlines_props` builds cells from
+  `wall_labels` and refuses a loop without them; the nearest-midpoint match is
+  deleted. It now adapts `CellWallLoop` objects itself — before, a DTO passed
+  straight in failed on `.get`, and `shear_centre_from_midlines` silently
+  returned the elastic centroid, so the BIS `shear_centre_xy` has never been a
+  multi-cell shear centre. That value now changes.
+- **`section_loads`** — Channel C builds its own cells; logged and fixed in its
+  own log.
+
+### Verification
+
+- `tests/test_cell_wall_loops.py` (rewritten in B): 1–5 flapwise webs give
+  contiguous LE→TE cells with exact areas; web order and direction are
+  irrelevant; membership is invariant under rotation; caps bound nothing;
+  short, crossing and coincident webs are refused; the worker sweep (64
+  layout × twist × chord cases) tiles every section.
+- `section_properties/tests/test_closed_section_torsion.py`: unlabelled loops
+  are refused; four flapwise webs on a 0.2 m chord solve with five cells.
+- Station 21's captured inputs: five cells, areas 1.53 / 2.39 / 1.90 / 0.77 /
+  0.027 ×10⁻³ m², summing to the ring.
+
+## SG-015
+
+**Closed-ring suction/pressure split and the side fallback read chord-first coordinates on B-frame strips**
+
+**Status:** Fixed
+**Found:** 2026-09-25 (while fixing SG-014)
+**Fixed:** 2026-09-25
+**Area:** `midlines/skin_split.py`
+
+### Symptom
+
+`split_skin_at_junctions`, given a single closed skin ring in B, split it at the
+wrong points: rotating a box section by 0.3 rad moved the "leading-edge" arcs to
+the trailing-edge web.
+
+### Root cause
+
+`_ensure_ss_ps_skins` passed B-frame points to `split_closed_ring_ss_ps`, which
+takes the LE as `argmin x` and suction as the higher mean `y` — chord-first
+conventions. `_normalise_side`'s geometric fallback likewise classified by
+`mean(y) >= 0`, i.e. by LE/TE half rather than by surface. Production is not
+affected: multi-web sections emit labelled suction/pressure halves, and
+`OuterSkin` calls the splitter in its chord-first authoring frame. The path is
+reached by closed or unlabelled skins (legacy inputs, tests).
+
+### Fix
+
+Transpose to chord-first around the `split_closed_ring_ss_ps` call and back; the
+side fallback reads `X_B` (suction on `+X_B`).
+
+### Verification
+
+`test_cell_wall_loops.py::test_a_closed_b_frame_skin_is_split_into_suction_and_pressure_by_x_b`.
+
+## SG-016
+
+**50 package tests fail at HEAD (`SparCap._camber_surface`, g-row hardening)**
+
+**Status:** Fixed
+**Found:** 2026-09-25
+**Fixed:** 2026-09-25
+**Area:** `sections/build_spar_caps.py::_wrap_expr_cap`, `sections/cap_ply_snap.py`, package `__all__`
+
+### Symptom
+At `ad560972`, `test_spar_cap_midline_offset` failed 48 cases with
+`AttributeError: 'SparCap' object has no attribute '_camber_surface'`, and
+`test_g_row_hardening` failed on a `laminate` comment and barrel extras.
+
+### Root cause
+`_wrap_expr_cap` rebuilds Family-D caps via `SparCap.__new__` and copied
+`_camber_xy` but not `_camber_surface`, which `midline_polyline` requires.
+Separately, a production comment used the word `laminate`, and
+`apply_spar_cap_runout` / `max_spar_from_cavity` were on `__all__` without being
+on the G-row allowlist (matrix silent → deep-only).
+
+### Fix
+Copy `_camber_surface` in `_wrap_expr_cap`; reword the ply-snap comment; drop the
+run-out helpers from the public barrel (lazy deep import remains).
+
+### Verification
+`test_spar_cap_midline_offset` + `test_g_row_hardening` — 83 passed. Package
+graphify refreshed under `section_geometry/graphify-out/`.
+
+## SG-017
+
+**Caps are built from the skin but their bond to it is never emitted**
+
+**Status:** Fixed
+**Found:** 2026-09-25 (thin_wall_section TW-001; section_loads SL-012)
+**Fixed:** 2026-09-25
+**Area:** `topology/cap_skin_bonds.py` (new), `section_contract.ShellMidlineStrip.bonds` / `StripBond`
+
+### Symptom
+
+Every consumer that needs to know which skin a spar cap is attached to guessed
+it: Channel C decided which skin segments a cap "stacks" on by a chordwise
+bounding box and a flap tolerance of 15 % of the section's flap span
+(section_loads SL-012). The exact thin-wall kernel cannot solve shear with a cap
+at all without the attachment (TW-001): the cap's axial rate has to enter the
+skin somewhere.
+
+### Root cause
+
+`cap_skin_ray_resample` builds each cap's interior vertices from inward rays cast
+from skin vertices, so the correspondence exists while the cap is built — but the
+hits are merged and filtered, and only the cap polyline is emitted. As with
+SG-014, the producer knew the topology and the contract dropped it.
+
+### Fix
+
+`bond_caps_to_skin`, the last topology pass (nothing after it may move cap or
+skin vertices):
+
+- the skin arcs of the cap's declared surface are chained head to tail;
+- each cap vertex is paired with its perpendicular foot on that chain, and the
+  feet must advance monotonically;
+- the cap-to-skin map is piecewise linear between those pairs; every skin vertex
+  inside the footprint takes its cap partner **from the same map**. An earlier
+  draft projected skin vertices back onto the cap independently; near a web
+  junction (a 0.28 mm skin segment beside a 1.2 mm cap segment) the two
+  projections are not mutual inverses and interleaved (3D-F and 3C-F at 0.2–1.0 m),
+  which the one-map construction rules out;
+- a foot within a quarter of the adjacent segment of an existing vertex is paired
+  with that vertex — this chooses which points correspond, never where anything
+  is; every other foot is inserted **on** its polyline, so no geometry moves;
+- one `StripBond` per host skin arc, as coordinate pairs (they survive strip
+  reversal in the mesh handoff).
+
+### Verification
+
+60 worker sections (1C-F/CN, 2D-F/CN, 3D-F, 3C-F, 4D-F/CN, 2B-F, 0B × twist 0 /
+0.6 / 1.2 rad × chord 1.0 / 0.2 m): every cap bonded one-to-one, and the thin-wall
+kernel integrates every unit load back to ≤ 6.4×10⁻¹¹ with the caps at their own
+offset.
+
+## SG-018
+
+**Residual nearest / argmin sites vs standing invariant**
+
+**Status:** Logged — 2026-09-26 (no relocation defect)
+**Area:** package-wide production nearest / `argmin` (Exactness item 6 follow-on)
+
+### Symptom
+Programme item 6 asked for a review of remaining "nearest" sites against
+"topology splits and indexes; it never relocates."
+
+### Classification (production, excluding tests/demos unless they drive emit)
+
+| Site | Verdict |
+|---|---|
+| `split_skin_at_junctions` + `point_to_open_polyline_nearest` | OK — indexes arc-s; does not write the web foot |
+| `cell_wall_loop_builders._node_of` | OK — coincidence check; raises above `WEB_FOOT_COINCIDENCE_TOL_M` |
+| `cap_skin_bonds._foot` | OK — SG-017 bond construction; inserts on the polyline, does not move existing vertices |
+| `recipes/sdf_ir/outer_skin.py`, `sdf/airfoil.py`, `sections/clips.py` LE `argmin` | OK — identify LE vertex on the discrete airfoil polygon |
+| `sections/cap_feasibility.py` `argmin` on `xs_q` | OK — seed a design sample, not topology membership |
+| `nearest_on_closed_polyline*` | definition only; no production caller |
+| `sdf/primitives.py` nearest box | SDF distance, not strip identity |
+
+No site rewrites geometry or invents wall/strip membership when the producer
+already knows it. Survivors stay as documented indexing / coincidence / emit
+construction.
+
+### Verification
+Re-grep of `point_to_open_polyline_nearest`, `nearest_on_closed_polyline`, and
+production `np.argmin` under `section_geometry/` (2026-09-26).
+

@@ -37,8 +37,15 @@ _ensure_mod.ensure_repo_path()
 
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
+    apply_presentation_style,
     demo_output_dir,
     save_figure,
+)
+from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+    INK,
+    NAVY,
+    RED,
+    TEAL,
 )
 
 from blade_structure_utilities.geometry_utilities.section_geometry import (
@@ -161,9 +168,9 @@ def _sampled_nose_deviation(af: AirfoilSDF, nx: int, *, window_x: float = 0.05, 
     return deviation, float(cell), segments
 
 
-def _save_fig(fig, path: Path) -> None:
+def _save_fig(fig, path: Path, *, presentation: bool = False) -> None:
     fig.tight_layout()
-    save_figure(fig, path)
+    save_figure(fig, path, presentation=presentation)
     plt.close(fig)
     print(f"Wrote {path}")
 
@@ -177,7 +184,14 @@ def main(argv: list[str] | None = None) -> Path:
         default=default_out,
         help=f"Output directory (default: {default_out})",
     )
+    parser.add_argument(
+        "--presentation",
+        action="store_true",
+        help="Deck styling for the slide-facing nose figure.",
+    )
     args = parser.parse_args(argv)
+    presentation = bool(args.presentation)
+    apply_presentation_style(presentation)
     out_dir: Path = args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -313,10 +327,13 @@ def main(argv: list[str] | None = None) -> Path:
     # the nose facet away.
     resolutions = (48, 96, 192, 384)
     nose_rows: list[dict] = []
-    fig3b, axes3b = plt.subplots(1, 2, figsize=(13.0, 5.4))
+    fig3b, axes3b = plt.subplots(
+        1, 2, figsize=(14.0, 5.6), gridspec_kw={"width_ratios": (1.0, 1.25), "wspace": 0.28}
+    )
 
     ax_nose, ax_err = axes3b
-    colours = plt.cm.viridis(np.linspace(0.08, 0.82, len(resolutions)))
+    # Coarse grids get the strongest colour: they are the ones that visibly fail.
+    colours = [RED, "#e46a86", "#eea3b4", "#f5ccd6"]
 
     for colour, nx in zip(colours, resolutions):
         deviation, cell, segments = _sampled_nose_deviation(af, nx)
@@ -325,57 +342,76 @@ def main(argv: list[str] | None = None) -> Path:
         nose_rows.append({"nx": int(nx), "cell_m": cell, "nose_deviation_m": deviation})
         for k, seg in enumerate(segments):
             ax_nose.plot(
-                seg[:, 0],
-                seg[:, 1],
+                seg[:, 0] * 1e3,
+                seg[:, 1] * 1e3,
                 color=colour,
-                lw=1.6,
-                label=f"sampled, cell {cell * 1e3:.1f} mm" if k == 0 else None,
+                lw=2.0,
+                label=f"sampled, {cell * 1e3:.1f} mm cell" if k == 0 else None,
                 zorder=3,
             )
 
     ax_nose.plot(
-        np.r_[verts[:, 0], verts[0, 0]],
-        np.r_[verts[:, 1], verts[0, 1]],
-        "k-",
-        lw=2.4,
+        np.r_[verts[:, 0], verts[0, 0]] * 1e3,
+        np.r_[verts[:, 1], verts[0, 1]] * 1e3,
+        color=NAVY,
+        lw=2.8,
         label="exact polyhedral SDF",
         zorder=5,
     )
-    ax_nose.plot(le[0], le[1], "k*", ms=13, zorder=6)
-    ax_nose.set_xlim(le[0] - 0.008, le[0] + 0.05)
-    ax_nose.set_ylim(le[1] - 0.030, le[1] + 0.030)
+    ax_nose.set_xlim((le[0] - 0.008) * 1e3, (le[0] + 0.05) * 1e3)
+    ax_nose.set_ylim((le[1] - 0.030) * 1e3, (le[1] + 0.030) * 1e3)
     ax_nose.set_aspect("equal", adjustable="box")
-    ax_nose.grid(True, alpha=0.3)
-    ax_nose.set_xlabel(r"$x_{chord}$ [m]")
-    ax_nose.set_ylabel(r"$y_{thickness}$ [m]")
-    ax_nose.set_title("Sample the field and the nose facets away")
-    ax_nose.legend(fontsize=8, loc="lower right")
+    ax_nose.set_xlabel("chordwise [mm]")
+    ax_nose.set_ylabel("thickness [mm]")
+    ax_nose.set_title("Sample the field and the nose facets away", loc="left")
+    ax_nose.legend(loc="center right", fontsize=11)
 
     if nose_rows:
-        cells = np.array([r["cell_m"] for r in nose_rows], dtype=float)
-        errs = np.array([max(r["nose_deviation_m"], 1e-18) for r in nose_rows], dtype=float)
-        ax_err.loglog(cells * 1e3, errs * 1e3, "o-", color="#C62828", ms=7, lw=1.8,
-                      label="marching squares on a sampled grid")
+        cells_mm = np.array([r["cell_m"] for r in nose_rows], dtype=float) * 1e3
+        errors_mm = np.array([max(r["nose_deviation_m"], 1e-18) for r in nose_rows], dtype=float) * 1e3
         # The exact path's error is what |phi| already measured on the vertex loop.
-        exact_floor_m = max(float(np.max(phi_v)), 1e-17)
-        ax_err.axhline(
-            exact_floor_m * 1e3,
-            color="#2E7D32",
-            ls="--",
-            lw=2.0,
-            label="exact polyhedral SDF (machine epsilon)",
+        exact_floor_mm = max(float(np.max(phi_v)), 1e-17) * 1e3
+
+        ax_err.loglog(cells_mm, errors_mm, "o-", color=RED, ms=9, lw=2.4, zorder=3)
+        for cell_mm, error_mm in zip(cells_mm, errors_mm):
+            ax_err.annotate(
+                f"{error_mm:.2g} mm",
+                xy=(cell_mm, error_mm),
+                xytext=(0, 12),
+                textcoords="offset points",
+                ha="center",
+                fontsize=11,
+                color=RED,
+                fontweight="bold",
+            )
+        exact_is_zero = float(np.max(phi_v)) == 0.0
+        ax_err.axhline(exact_floor_mm, color=TEAL, ls="--", lw=2.2, zorder=2)
+        ax_err.text(
+            cells_mm.max() * 1.4,
+            exact_floor_mm * 8,
+            (
+                "exact polyhedral SDF: |φ| = 0 on the vertex loop\n(drawn at 1e-14 mm only so a log axis can show it)"
+                if exact_is_zero
+                else f"exact polyhedral SDF: max |φ| = {exact_floor_mm:.1e} mm on the vertex loop"
+            ),
+            ha="right",
+            va="bottom",
+            fontsize=11.5,
+            color=TEAL,
+            fontweight="bold",
         )
+
+        ax_err.set_xticks(cells_mm)
+        ax_err.set_xticklabels([f"{value:.1f}" for value in cells_mm])
+        ax_err.minorticks_off()
+        ax_err.set_xlim(cells_mm.min() * 0.35, cells_mm.max() * 1.5)
+        ax_err.set_ylim(exact_floor_mm * 0.05, errors_mm.max() * 20)
         ax_err.set_xlabel("grid cell size [mm]")
         ax_err.set_ylabel("worst deviation from the true nose [mm]")
-        ax_err.set_title("The nose is only ever as sharp as the cell")
-        ax_err.grid(True, which="both", alpha=0.3)
-        ax_err.legend(fontsize=8, loc="lower right")
+        ax_err.set_title("The nose is only ever as sharp as the cell", loc="left")
+        ax_err.grid(True, which="major", axis="y", alpha=0.5)
 
-    fig3b.suptitle(
-        "Why the aerofoil is evaluated, never sampled — LE nose, NACA 2412",
-        fontsize=12,
-    )
-    _save_fig(fig3b, out_dir / "le_nose_grid_vs_exact.png")
+    _save_fig(fig3b, out_dir / "le_nose_grid_vs_exact.png", presentation=presentation)
 
     # --- 4. Twist case: B-frame LE/TE ---
     twist = float(np.radians(15.0))

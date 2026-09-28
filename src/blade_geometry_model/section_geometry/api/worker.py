@@ -284,12 +284,15 @@ def section_geometry_prep_key(
     outputs: Collection[str] = ALL_OUTPUT_GATES,
     web_x_positions_m: Sequence[float] | None = None,
     zone_gauges_m: Mapping[str, float] | None = None,
+    placement_digest_by_kind: Mapping[str, str] | None = None,
 ) -> tuple[Any, ...]:
     """Stable cache key for a geometry worker call (layout + airfoil + DVs + gates).
 
     ``web_x_positions_m`` participates: anchored positions change the built
     section without changing the layout key or any thickness, so omitting it
     would let two different sections collide on one cache entry.
+    ``placement_digest_by_kind`` participates so a surface-aware policy change
+    invalidates geometry caches (WP3 D3.3 / WP5 D5.3).
     """
     from blade_structure_utilities.geometry_utilities.section_geometry.api.kwarg_aliases import (
         resolve_shear_web_thickness,
@@ -353,6 +356,11 @@ def section_geometry_prep_key(
         if not zone_gauges_m
         else tuple(sorted((str(k), round(float(v), 12)) for k, v in zone_gauges_m.items()))
     )
+    placement_key = (
+        None
+        if not placement_digest_by_kind
+        else tuple(sorted((str(k), str(v)) for k, v in placement_digest_by_kind.items()))
+    )
     return (
         layout_key,
         airfoil_id,
@@ -364,6 +372,7 @@ def section_geometry_prep_key(
         out_key,
         web_key,
         zone_key,
+        placement_key,
     )
 
 
@@ -794,7 +803,6 @@ def build_section_geometry(
 
         from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
             build_shell_midline_strips,
-            rotate_chord_to_blade,
         )
         from blade_structure_utilities.geometry_utilities.section_geometry.topology.shell_strip_topology import (
             build_shell_strip_topology,

@@ -5,7 +5,8 @@ Randomized robustness sweep for implicit section geometry.
 
 Writes under ``visualisation/output/robustness_monte_carlo/``:
 
-* ``robustness_monte_carlo.png`` - parameter sweep success map and response spread.
+* ``robustness_monte_carlo.png`` - every successful section overlaid, and the
+  median-normalised spread of area, Iyy and Ixx.
 * ``robustness_monte_carlo.json`` - per-sample metadata and aggregate statistics.
 """
 
@@ -28,8 +29,19 @@ _ensure_mod.ensure_repo_path()
 
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
+    apply_presentation_style,
     demo_output_dir,
     save_figure,
+)
+from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+    INK,
+    MUTED,
+    RED,
+    TEAL,
+    strip_axes_chrome,
+)
+from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+    plot_section_hybrid,
 )
 
 from blade_structure_utilities.geometry_utilities.section_geometry import (
@@ -67,7 +79,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--n-samples", type=int, default=120)
     p.add_argument("--seed", type=int, default=7)
     p.add_argument("--out-dir", type=Path, default=None)
+    p.add_argument("--presentation", action="store_true", help="Deck styling.")
     args = p.parse_args(argv)
+    apply_presentation_style(bool(args.presentation))
 
     out_dir = args.out_dir or (Path(__file__).resolve().parents[1] / "output" / "robustness_monte_carlo")
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -82,6 +96,7 @@ def main(argv: list[str] | None = None) -> int:
     ok_area: list[float] = []
     ok_ixx: list[float] = []
     ok_iyy: list[float] = []
+    ghost_sections: list = []
 
     for i in range(int(args.n_samples)):
         skin = float(np.clip(rng.normal(0.0035, 0.0008), 0.0015, 0.0065))
@@ -130,63 +145,83 @@ def main(argv: list[str] | None = None) -> int:
                 ok_area.append(float(t["area"]))
                 ok_ixx.append(float(t["Ixx"]))
                 ok_iyy.append(float(t["Iyy"]))
+                ghost_sections.append(section)
         except Exception as exc:
             row["error"] = str(exc)
 
         samples.append(row)
 
     ok_mask = np.array([bool(r["ok"]) for r in samples], dtype=bool)
-    skin_vals = np.array([float(r["skin_thickness_m"]) for r in samples], dtype=float)
-    web_vals = np.array([float(r["shear_web_thickness_m"]) for r in samples], dtype=float)
     area_vals = np.array([np.nan if r["area"] is None else float(r["area"]) for r in samples], dtype=float)
-    twdev_vals = np.array([float(r["twist_dev_deg"]) for r in samples], dtype=float)
-
-    fig, axs = plt.subplots(2, 2, figsize=(15.5, 10.5))
-    ax0, ax1, ax2, ax3 = axs.ravel()
-
-    ax0.scatter(skin_vals[~ok_mask], web_vals[~ok_mask], s=36, c="#d32f2f", alpha=0.65, label="failed")
-    ax0.scatter(skin_vals[ok_mask], web_vals[ok_mask], s=30, c="#2e7d32", alpha=0.65, label="ok")
-    ax0.set_title("Monte Carlo feasibility map")
-    ax0.set_xlabel("skin thickness [m]")
-    ax0.set_ylabel("web thickness [m]")
-    ax0.grid(True, alpha=0.25)
-    ax0.legend(loc="best")
-
-    ax1.hist(area_vals[np.isfinite(area_vals)], bins=28, color="#1976d2", alpha=0.8)
-    ax1.set_title("Total area distribution")
-    ax1.set_xlabel("area [m²]")
-    ax1.set_ylabel("count")
-    ax1.grid(True, alpha=0.25)
-
-    # area is m^2 and the inertias m^4, so a shared raw axis buries two of the three
-    # boxes at the baseline. Normalise each response by its own median to compare the
-    # spreads rather than the magnitudes.
-    metrics = [np.array(ok_area, dtype=float), np.array(ok_ixx, dtype=float), np.array(ok_iyy, dtype=float)]
-    normalised = [m / np.median(m) if m.size and np.median(m) != 0.0 else m for m in metrics]
-    ax2.boxplot(normalised, tick_labels=["area", "Ixx", "Iyy"], showfliers=False)
-    ax2.axhline(1.0, color="#616161", lw=0.9, ls="--", zorder=0)
-    ax2.set_title("Valid-sample response spread")
-    ax2.set_ylabel("response / median")
-    ax2.grid(True, axis="y", alpha=0.25)
-
-    sc = ax3.scatter(twdev_vals, area_vals, c=np.where(ok_mask, 1.0, 0.0), cmap="coolwarm", alpha=0.7, s=28)
-    _ = sc
-    ax3.set_title("Area vs twist perturbation")
-    ax3.set_xlabel("twist deviation from nominal [deg]")
-    ax3.set_ylabel("area [m²]")
-    ax3.grid(True, alpha=0.25)
-
     fail_count = int(np.sum(~ok_mask))
     ok_count = int(np.sum(ok_mask))
     success_rate = float(ok_count / max(len(samples), 1))
-    fig.suptitle(
-        f"Robustness Monte Carlo - key={args.key}, n={len(samples)}, success={success_rate:.1%}",
-        fontsize=14,
+
+    # Left: every successful section drawn on top of the others at low opacity,
+    # so the envelope of the whole sweep is visible at once. Right: the spread of
+    # each response about its own median (area is m², inertias m⁴, so raw values
+    # cannot share an axis).
+    fig = plt.figure(figsize=(14.0, 5.2))
+    grid_spec = fig.add_gridspec(1, 2, width_ratios=(1.9, 1.0), wspace=0.12)
+    ax_ghost = fig.add_subplot(grid_spec[0, 0])
+    ax_spread = fig.add_subplot(grid_spec[0, 1])
+
+    ghost_alpha = float(np.clip(6.0 / max(ok_count, 1), 0.01, 0.2))
+    for section in ghost_sections:
+        plot_section_hybrid(
+            section,
+            residual_mesh=None,
+            ax=ax_ghost,
+            alpha=ghost_alpha,
+            core_alpha=0.0,
+            omit_cores=True,
+            title="",
+            show_legend=False,
+        )
+    ax_ghost.set_aspect("equal", adjustable="datalim")
+    strip_axes_chrome(ax_ghost)
+    ax_ghost.set_title(
+        f"{ok_count} randomised {args.key} sections, overlaid",
+        loc="left",
+    )
+    ax_ghost.text(
+        0.99, 0.04,
+        f"{ok_count} / {len(samples)} built · {fail_count} failures",
+        transform=ax_ghost.transAxes, ha="right", va="bottom",
+        fontsize=16, fontweight="bold", color=TEAL if fail_count == 0 else RED,
     )
 
+    responses = {
+        "area": np.array(ok_area, dtype=float),
+        "Iyy": np.array(ok_iyy, dtype=float),
+        "Ixx": np.array(ok_ixx, dtype=float),
+    }
+    colours = {"area": MUTED, "Iyy": MUTED, "Ixx": RED}
+    jitter = np.random.default_rng(0)
+    for position, (name, values) in enumerate(responses.items()):
+        if values.size == 0:
+            continue
+        normalised = values / np.median(values)
+        ax_spread.scatter(
+            position + jitter.uniform(-0.18, 0.18, normalised.size), normalised,
+            s=9, alpha=0.35, color=colours[name], linewidths=0,
+        )
+        low, high = np.percentile(normalised, [5, 95])
+        ax_spread.plot([position, position], [low, high], color=INK, lw=2.4)
+        ax_spread.text(
+            position + 0.28, high, f"×{high / low:.2f}", va="center", fontsize=12,
+            color=colours[name], fontweight="bold",
+        )
+    ax_spread.axhline(1.0, color=MUTED, lw=0.9, ls="--", zorder=0)
+    ax_spread.set_xticks(range(len(responses)))
+    ax_spread.set_xticklabels(list(responses))
+    ax_spread.set_xlim(-0.6, len(responses) - 0.2)
+    ax_spread.set_ylabel("response / median")
+    ax_spread.set_title("Spread (5–95 %): only Ixx really moves", loc="left")
+    ax_spread.grid(True, axis="y", alpha=0.4)
+
     out_png = out_dir / "robustness_monte_carlo.png"
-    fig.tight_layout()
-    save_figure(fig, out_png)
+    save_figure(fig, out_png, presentation=bool(args.presentation))
     plt.close(fig)
     print(f"Wrote {out_png}")
 

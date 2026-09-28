@@ -14,6 +14,7 @@ import pytest
 from blade_structure_utilities.geometry_utilities.coordinate_frames import (
     ply_strain_transform_E_to_M,
     ply_strain_transform_M_to_E,
+    ply_stress_transform_3d_E_to_M,
     ply_stress_transform_E_to_M,
     ply_stress_transform_M_to_E,
     rotate_ply_strain_E_to_M,
@@ -111,10 +112,8 @@ class TestPhysics:
     def test_stress_strain_consistency_against_material_stiffness(self, theta_deg):
         """sigma_M == Q_material @ eps_M — the identity that exposed the defect.
 
-        Uses a laminate stress state with non-zero shear, which is what makes the
-        two transforms distinguishable. Consistency holds under the ``-theta``
-        convention because ``Q_bar`` is built with the opposite angle sign (see
-        FRAMES_INVENTORY.md).
+        Uses a laminate stress state with non-zero shear. After the coordinated
+        ``Q_bar`` / ``T_ply`` sign fix, consistency holds under ``+theta``.
         """
         from blade_structure_utilities.material_utilities.laminate import (
             clpt_recovery_from_laminate,
@@ -128,8 +127,8 @@ class TestPhysics:
         sig_E = np.asarray(sig_lam)[0]
         eps_E = np.asarray(eps_lam)[0]
 
-        sig_M = rotate_ply_stress_E_to_M(sig_E, -theta_deg)
-        eps_M = rotate_ply_strain_E_to_M(eps_E, -theta_deg)
+        sig_M = rotate_ply_stress_E_to_M(sig_E, theta_deg)
+        eps_M = rotate_ply_strain_E_to_M(eps_E, theta_deg)
 
         assert sig_M == pytest.approx(_Q_material() @ eps_M, rel=1e-9)
 
@@ -145,8 +144,8 @@ class TestPhysics:
         _, _, sig_lam, eps_lam = clpt_recovery_from_laminate(
             lam, np.array([100e6 * h, 20e6 * h, 40e6 * h]), np.zeros(3)
         )
-        sig_M = rotate_ply_stress_E_to_M(np.asarray(sig_lam)[0], -theta_deg)
-        eps_M_wrong = rotate_ply_stress_E_to_M(np.asarray(eps_lam)[0], -theta_deg)
+        sig_M = rotate_ply_stress_E_to_M(np.asarray(sig_lam)[0], theta_deg)
+        eps_M_wrong = rotate_ply_stress_E_to_M(np.asarray(eps_lam)[0], theta_deg)
 
         assert not np.allclose(sig_M, _Q_material() @ eps_M_wrong, rtol=1e-6)
 
@@ -181,7 +180,46 @@ class TestBatching:
         assert rotate_ply_vectors(faced, T).shape == (1, 2, 3, 3)
 
 
-class TestLaminateDelegation:
+class TestThreeDimensionalTransforms:
+    def test_in_plane_block_matches_3x3(self):
+        th = 37.0
+        t3 = ply_stress_transform_3d_E_to_M(th)
+        t2 = ply_stress_transform_E_to_M(th)
+        idx = np.ix_([0, 1, 5], [0, 1, 5])
+        assert np.allclose(t3[idx], t2)
+
+    def test_transverse_shear_round_trip(self):
+        from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+            ply_stress_transform_3d_E_to_M,
+            rotate_transverse_shear_E_to_M,
+        )
+
+        tau13, tau23 = 12e6, -3e6
+        m13, m23 = rotate_transverse_shear_E_to_M(tau13, tau23, 30.0)
+        vec = np.array([0.0, 0.0, 0.0, tau23, tau13, 0.0])
+        back = ply_stress_transform_3d_E_to_M(-30.0) @ (
+            ply_stress_transform_3d_E_to_M(30.0) @ vec
+        )
+        assert back == pytest.approx(vec)
+        assert m13 != pytest.approx(tau13) or m23 != pytest.approx(tau23)
+
+    def test_strain_work_invariance(self):
+        from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+            ply_strain_transform_3d_E_to_M,
+            ply_stress_transform_3d_E_to_M,
+        )
+
+        th = 25.0
+        sigma_E = np.array([10.0, 4.0, 1.0, 0.5, -0.2, 3.0])
+        # engineering strain dummy
+        eps_E = np.array([0.001, 0.0004, 0.0001, 0.0002, -0.0001, 0.0006])
+        ts = ply_stress_transform_3d_E_to_M(th)
+        te = ply_strain_transform_3d_E_to_M(th)
+        # Voigt work: σ·ε with engineering shear is invariant if T_ε^T T_σ^{-T} = I
+        # equivalently σ_M · ε_M == σ_E · ε_E
+        sigma_M = ts @ sigma_E
+        eps_M = te @ eps_E
+        assert float(sigma_M @ eps_M) == pytest.approx(float(sigma_E @ eps_E), rel=1e-12)
     def test_build_T_ply_is_the_stress_transform(self):
         lam = _single_ply_laminate(37.0)
         assert np.allclose(lam.build_T_ply()[0], ply_stress_transform_E_to_M(37.0))

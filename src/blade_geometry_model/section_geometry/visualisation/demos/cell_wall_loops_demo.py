@@ -96,10 +96,13 @@ def _build_section(
 ) -> MultiCellSection:
     chord = float(af.chord)
     xs = [f * chord for f in web_fracs]
-    # Family D needs â‰¥1 web (box spar between outermost webs); 0-web stays A.
+    # Family D's box spar spans the outermost webs, so it needs two. Follow the
+    # resolver's own step-down: one web hands D to C (a cap per web), none to A.
     family = structural_family
     if not xs and family not in ("A", "B"):
         family = "A"
+    elif len(xs) == 1 and family == "D":
+        family = "C"
     # Exaggerated member widths for demo readability (not design values).
     return MultiCellSection(
         af,
@@ -377,7 +380,7 @@ def main(argv: list[str] | None = None) -> Path:
         section_d = _build_section(af, fracs, structural_family="D")
         strips_d = build_shell_midline_strips(section_d, twist_rad=0.0)
         loops_d = build_cell_wall_loops(strips_d)
-        fam = "A" if n_webs == 0 else "D"
+        fam = "A" if n_webs == 0 else ("C" if n_webs == 1 else "D")
 
         fig2, ax2 = plt.subplots(figsize=_FIGSIZE)
         _plot_section_with_loops(

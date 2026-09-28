@@ -59,7 +59,9 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
     MUTED,
     NAVY,
     RED,
+    SURFACE,
     TEAL,
+    strip_axes_chrome,
 )
 
 
@@ -140,6 +142,68 @@ def _sweep_cascade(
     }
 
 
+# Human wording for the resolver's drop reasons. An unknown reason is shown
+# verbatim rather than guessed at.
+_DROP_REASON_TEXT = {
+    "no_inner_skin_intercept": "web lands in the trailing-edge wedge",
+}
+
+
+def _plateaus(rows: list[dict]) -> list[dict]:
+    """First row of every surviving-web level, plus the raising row."""
+    plateaus: list[dict] = []
+    previous_count: int | None = None
+    for row in rows:
+        count = int(row["n_webs_surviving"])
+        if row["status"] == "raise" or count != previous_count:
+            plateaus.append(row)
+        previous_count = count
+    return plateaus
+
+
+def _vertical_extent(vertices: np.ndarray, x: float) -> tuple[float, float] | None:
+    """Lowest and highest crossing of the closed outline with the line ``X = x``."""
+    start = vertices
+    end = np.roll(vertices, -1, axis=0)
+    spans = (start[:, 0] - x) * (end[:, 0] - x) <= 0.0
+    spans &= start[:, 0] != end[:, 0]
+    if not np.any(spans):
+        return None
+    fraction = (x - start[spans, 0]) / (end[spans, 0] - start[spans, 0])
+    crossings = start[spans, 1] + fraction * (end[spans, 1] - start[spans, 1])
+    return float(crossings.min()), float(crossings.max())
+
+
+def _draw_station_inset(axis: plt.Axes, row: dict, payload: dict, *, height_limit: float) -> None:
+    """The station itself: outline, surviving webs solid, dropped webs ghosted in red."""
+    chord = float(row["chord_m"])
+    vertices = np.asarray(AirfoilSDF.from_naca("2412", chord=chord, n_points=160).vertices, dtype=float)
+    axis.fill(vertices[:, 0], vertices[:, 1], color=SURFACE, zorder=1)
+    axis.plot(
+        np.append(vertices[:, 0], vertices[0, 0]),
+        np.append(vertices[:, 1], vertices[0, 1]),
+        color=NAVY, lw=1.4, zorder=2,
+    )
+
+    dropped_x = {round(float(item["x_m"]), 9) for item in row["dropped"]}
+    for web_x in payload["web_x_positions_m"]:
+        extent = _vertical_extent(vertices, float(web_x))
+        is_dropped = row["status"] == "raise" or round(float(web_x), 9) in dropped_x
+        if is_dropped:
+            if extent is None:
+                axis.scatter([web_x], [0.0], marker="x", s=36, color=RED, lw=1.8, zorder=3)
+            else:
+                axis.plot([web_x, web_x], extent, color=RED, lw=1.4, ls=(0, (2, 2)), zorder=3)
+        elif extent is not None:
+            axis.plot([web_x, web_x], extent, color=TEAL, lw=2.6, zorder=3)
+
+    axis.set_xlim(-0.02, float(payload["root_chord_m"]) + 0.02)
+    axis.set_ylim(-height_limit, height_limit)
+    axis.set_aspect("equal")
+    axis.invert_xaxis()
+    strip_axes_chrome(axis)
+
+
 def _plot_cascade(payload: dict, *, presentation: bool) -> plt.Figure:
     rows = payload["rows"]
     chords = np.array([row["chord_m"] for row in rows], dtype=float)
@@ -147,57 +211,76 @@ def _plot_cascade(payload: dict, *, presentation: bool) -> plt.Figure:
         [row["n_webs_surviving"] if row["status"] == "ok" else 0 for row in rows],
         dtype=float,
     )
-    fig, axis = plt.subplots(figsize=(12.5, 4.6))
-    axis.step(chords, n_webs, where="post", color=NAVY, lw=2.4, label="surviving webs")
-    axis.plot(chords, n_webs, "o", color=NAVY, ms=5)
+    plateaus = _plateaus(rows)
 
-    annotated_chords: set[float] = set()
-    for row in rows:
+    fig = plt.figure(figsize=(14.0, 6.0))
+    grid = fig.add_gridspec(2, len(plateaus), height_ratios=(0.75, 2.6), hspace=0.02, wspace=0.06)
+    step_axis = fig.add_subplot(grid[1, :])
+
+    # Top strip: every station is drawn at the root's scale, so the chord visibly
+    # shrinks under webs that stay where the root put them.
+    height_limit = 0.09 * float(payload["root_chord_m"])
+    for index, row in enumerate(plateaus):
+        inset = fig.add_subplot(grid[0, index])
+        _draw_station_inset(inset, row, payload, height_limit=height_limit)
+        label = row["effective_key"] if row["status"] == "ok" else "raise"
+        inset.set_title(
+            f"{label}\nchord {float(row['chord_m']):.2f} m",
+            fontsize=12, color=RED if row["status"] == "raise" else INK, pad=2,
+        )
+
+    step_axis.step(chords, n_webs, where="post", color=NAVY, lw=2.6, label="surviving webs")
+    step_axis.plot(chords[:-1] if rows[-1]["status"] == "raise" else chords,
+                   n_webs[:-1] if rows[-1]["status"] == "raise" else n_webs,
+                   "o", color=NAVY, ms=4)
+
+    previous_key: str | None = None
+    drop_reasons: set[str] = set()
+    for row in plateaus:
         if row["status"] != "ok":
             continue
-        if not row["dropped"]:
-            continue
-        chord = float(row["chord_m"])
-        if chord in annotated_chords:
-            continue
-        annotated_chords.add(chord)
-        reasons = sorted({drop["reason"] for drop in row["dropped"]})
-        axis.annotate(
-            f"drop: {', '.join(reasons)}\n→ {row['effective_key']}",
-            xy=(chord, row["n_webs_surviving"]),
-            xytext=(8, 14),
-            textcoords="offset points",
-            fontsize=8.5,
-            color=TEAL,
-            arrowprops={"arrowstyle": "->", "color": MUTED, "lw": 0.8},
-        )
+        key = str(row["effective_key"])
+        drop_reasons.update(drop["reason"] for drop in row["dropped"])
+        if previous_key is not None:
+            # Key grammar is <webs><family>-<axis>: a changed family letter is a
+            # hand-over (a box cap needs two webs to close), not just a drop.
+            handover = f" ({previous_key[1]}→{key[1]})" if key[1] != previous_key[1] else ""
+            count = int(row["n_webs_surviving"])
+            plateau_chords = chords[(n_webs == count) & np.array([r["status"] == "ok" for r in rows])]
+            step_axis.annotate(
+                f"−1 web · {key}{handover}",
+                xy=(float(plateau_chords.mean()), count),
+                xytext=(0, 10), textcoords="offset points", ha="center",
+                fontsize=12, color=TEAL, fontweight="bold",
+            )
+        previous_key = key
 
     raise_chord = payload.get("raise_chord_m")
     if raise_chord is not None:
-        axis.axvline(raise_chord, color=RED, ls="--", lw=1.6, label="InfeasibleSectionGeometry")
-        axis.scatter([raise_chord], [0.0], s=80, c=RED, zorder=4)
-        axis.annotate(
-            "raise",
-            xy=(raise_chord, 0.0),
-            xytext=(10, 20),
-            textcoords="offset points",
-            color=RED,
-            fontsize=11,
-            fontweight="bold",
+        step_axis.axvline(raise_chord, color=RED, ls="--", lw=1.6)
+        step_axis.scatter([raise_chord], [0.0], s=90, c=RED, zorder=4)
+        step_axis.annotate(
+            "InfeasibleSectionGeometry\nnot one web can be anchored:\nraise, never return a guess",
+            xy=(raise_chord, 0.0), xytext=(-14, 4), textcoords="offset points",
+            ha="right", color=RED, fontsize=11.5, fontweight="bold",
         )
 
-    axis.set_xlabel("local chord [m]", color=INK)
-    axis.set_ylabel("surviving web count", color=INK)
-    axis.set_title(
-        f"Feasibility cascade · {payload['layout_key']} with root-anchored webs "
-        f"(root chord {payload['root_chord_m']:.2f} m)",
-        color=INK,
-    )
-    axis.set_ylim(-0.4, max(n_webs.max(), 1.0) + 1.2)
-    axis.grid(True, alpha=0.35)
-    axis.legend(loc="upper left", frameon=False)
-    axis.invert_xaxis()
-    fig.tight_layout()
+    step_axis.set_xlabel("local chord [m]  →  outboard", color=INK)
+    step_axis.set_ylabel("surviving webs", color=INK)
+    step_axis.set_yticks(range(0, int(max(n_webs.max(), 1.0)) + 1))
+    step_axis.set_ylim(-0.5, max(n_webs.max(), 1.0) + 0.9)
+    step_axis.grid(True, axis="y", alpha=0.5)
+    step_axis.invert_xaxis()
+
+    legend_handles = [
+        plt.Line2D([], [], color=TEAL, lw=2.6, label="web anchored"),
+        plt.Line2D(
+            [], [], color=RED, lw=1.4, ls=(0, (2, 2)),
+            label="web dropped, never slid: "
+            + "; ".join(sorted(_DROP_REASON_TEXT.get(reason, reason) for reason in drop_reasons)),
+        ),
+    ]
+    step_axis.legend(handles=legend_handles, loc="lower left", frameon=False, fontsize=11)
     return fig
 
 

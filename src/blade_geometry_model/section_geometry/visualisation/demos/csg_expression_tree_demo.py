@@ -47,6 +47,7 @@ _ensure_mod.ensure_repo_path()
 
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
+    apply_presentation_style,
     demo_output_dir,
     save_figure,
 )
@@ -56,6 +57,7 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
     RED,
     distance_field_norm,
     draw_distance_field,
+    strip_axes_chrome,
 )
 
 from blade_structure_utilities.geometry_utilities.section_geometry import (
@@ -99,9 +101,9 @@ def _to_key(label) -> str:
     return str(getattr(label, "value", label))
 
 
-def _save(fig, path: Path) -> None:
+def _save(fig, path: Path, *, presentation: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    save_figure(fig, path)
+    save_figure(fig, path, presentation=presentation)
     plt.close(fig)
     print(f"Wrote {path}")
 
@@ -214,18 +216,18 @@ def draw_tree(axis, root: Expr, shared_nodes: set[Expr]) -> None:
     leaf_count = sum(1 for _, _, node, _ in positions.values() if not child_expressions(node))
 
     if leaf_count <= 6:
-        box_font, show_parameters, show_formula = 7.0, True, True
+        box_font, show_parameters, show_formula = 10.0, True, True
     elif leaf_count <= 12:
         box_font, show_parameters, show_formula = 5.8, False, False
     else:
         box_font, show_parameters, show_formula = 4.8, False, False
 
-    box_half_width = 0.42 if leaf_count <= 6 else 0.46
+    box_half_width = 0.47 if leaf_count <= 6 else 0.46
     # The numpy line rides inside the node, so the box has to be tall enough to
     # carry it. Floated outside to the right it read as stray text with nothing
     # tying it to the operator it implements.
-    box_half_height = (0.27 if show_formula else 0.22) if show_parameters else 0.15
-    row_pitch = 1.0 if show_parameters else 0.72
+    box_half_height = (0.42 if show_formula else 0.22) if show_parameters else 0.15
+    row_pitch = 1.25 if show_parameters else 0.72
 
     for parent_id, child_id in edges:
         parent_x, parent_y, _, _ = positions[parent_id]
@@ -260,7 +262,7 @@ def draw_tree(axis, root: Expr, shared_nodes: set[Expr]) -> None:
         caption = node_caption(node) if show_parameters else type(node).__name__
         axis.text(
             node_x,
-            node_y + (0.05 if carries_formula else 0.0),
+            node_y + (0.08 if carries_formula else 0.0),
             caption,
             ha="center",
             va="center",
@@ -272,11 +274,11 @@ def draw_tree(axis, root: Expr, shared_nodes: set[Expr]) -> None:
         if carries_formula:
             axis.text(
                 node_x,
-                node_y - box_half_height + 0.06,
+                node_y - box_half_height + 0.09,
                 formula,
                 ha="center",
                 va="center",
-                fontsize=6.4,
+                fontsize=9.5,
                 family="monospace",
                 color="white",
                 alpha=0.82,
@@ -389,7 +391,7 @@ def draw_field(
             linewidths=1.1,
             linestyles="dashed",
         )
-    axis.set_title(title, fontsize=9.0)
+    axis.set_title(title, fontsize=13, loc="left", color=INK)
     axis.set_xticks([])
     axis.set_yticks([])
     axis.set_aspect("equal")
@@ -397,9 +399,9 @@ def draw_field(
         axis.text(
             0.03,
             0.04,
-            f"enclosed {area_m2 * 1e4:.1f} cm^2",
+            f"enclosed {area_m2 * 1e4:.1f} cm²",
             transform=axis.transAxes,
-            fontsize=7.5,
+            fontsize=11,
             color="#2b3238",
             bbox={"facecolor": "white", "alpha": 0.8, "edgecolor": "none", "pad": 1.8},
         )
@@ -425,7 +427,7 @@ def _annotate_target(axis, x_plot, y_plot, target_phi, label: str) -> None:
         xytext=(x_center, y_top * 0.72),
         ha="center",
         va="bottom",
-        fontsize=9.5,
+        fontsize=12,
         fontweight="bold",
         color=INK,
         zorder=6,
@@ -456,7 +458,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--max-stages", type=int, default=4)
     parser.add_argument("--out-dir", type=Path, default=None)
+    parser.add_argument("--presentation", action="store_true", help="Deck styling.")
     args = parser.parse_args(argv)
+    presentation = bool(args.presentation)
+    apply_presentation_style(presentation)
 
     out_dir = args.out_dir or (
         Path(__file__).resolve().parents[1] / "output" / "csg_expression_tree"
@@ -530,7 +535,7 @@ def main(argv: list[str] | None = None) -> int:
         target_expression, airfoil_for_grid, nx=460, ny=300
     )
 
-    figure = plt.figure(figsize=(17.0, 10.6))
+    figure = plt.figure(figsize=(13.5, 7.6))
     # A station is a thin lens. Given a tall top row, equal aspect fills the
     # difference with dead space above and below the aerofoil rather than with
     # geometry, so the row is deliberately short.
@@ -553,8 +558,11 @@ def main(argv: list[str] | None = None) -> int:
         show_airfoil=False,
         show_legend=False,
         auto_limits=True,
-        title=f"{args.key} section - the region built below is {args.label}",
+        title="",
     )
+    strip_axes_chrome(axis_section)
+    axis_section.set_title(f"{args.key}: the region built below is {args.label}", loc="left",
+                           fontsize=13, color=INK)
     # Pick the demonstrated region out of the assembly. plot_section draws in
     # the structural frame (horizontal = Y_B, vertical = X_B), so the SDF-grid
     # arrays are passed through the same remap before contouring.
@@ -589,10 +597,9 @@ def main(argv: list[str] | None = None) -> int:
     _annotate_target(axis_section, x_plot, y_plot, target_phi_section, args.label)
 
     axis_tree.set_title(
-        f"Expression tree for {args.label}\n"
-        "operator nodes (blue) - shape leaves (orange) - "
-        "purple outline = node also used by another region",
-        fontsize=10.5,
+        "Its expression tree · blue operators, orange leaves,\n"
+        "purple outline = shared with another region",
+        loc="left", fontsize=12, color=INK,
     )
     draw_tree(axis_tree, target_expression, shared_nodes)
 
@@ -657,16 +664,11 @@ def main(argv: list[str] | None = None) -> int:
         colour_bar = figure.colorbar(
             stage_mesh, ax=stage_axes, orientation="vertical", fraction=0.022, pad=0.012
         )
-        colour_bar.set_label("φ (m)", fontsize=8.5)
-        colour_bar.ax.tick_params(labelsize=7.5)
+        colour_bar.set_label("φ [m]", fontsize=11)
+        colour_bar.ax.tick_params(labelsize=10)
+        colour_bar.outline.set_visible(False)
 
-    figure.suptitle(
-        "Geometry is a compiled program: one region, its CSG tree, "
-        "and the field emerging operator by operator",
-        fontsize=13.5,
-        y=0.975,
-    )
-    _save(figure, out_dir / "csg_expression_tree.png")
+    _save(figure, out_dir / "csg_expression_tree.png", presentation=presentation)
 
     # --- figure 2: node census ---------------------------------------------
     census_figure, census_axes = plt.subplots(1, 2, figsize=(15.0, 5.6))

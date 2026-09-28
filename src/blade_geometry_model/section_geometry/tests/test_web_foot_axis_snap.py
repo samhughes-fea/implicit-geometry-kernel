@@ -119,3 +119,117 @@ def test_web_foot_lands_exactly_on_a_skin_node(layout_key, twist_deg):
                 f"{gap * 1e3:.4f} mm from the nearest skin node — the skin split "
                 "arc length no longer matches the foot point."
             )
+
+
+def test_tip_absolute_2a_f_loops_build_under_twist():
+    """Tip-scale 2A-F with absolute LE web + tip twist must emit SG-002-clean feet.
+
+    Captured from WP6 confirmatory tip mono DV (chord ≈ 88 mm, skin 3.536 mm,
+    web 4.42 mm, twist ≈ 0.41 deg). Fractional layouts already passed; this pins
+    the absolute-web tip path that BL-006 steps into (TE web dropped → 1A-F).
+    """
+    from blade_structure_utilities.geometry_utilities.section_geometry.api.worker import (
+        build_section_geometry,
+    )
+    from blade_structure_utilities.geometry_utilities.section_geometry.cell_wall_loops.cell_wall_loop_builders import (
+        build_cell_wall_loops,
+    )
+
+    chord = 0.08775168
+    twist_rad = float(np.deg2rad(0.407709))
+    af = AirfoilSDF.from_naca("2412", n_points=200, chord=chord)
+    # Tip plan webs: LE kept, TE past tip chord dropped → 1A-F survivors.
+    result = build_section_geometry(
+        layout=resolve_system_type("1A-F"),
+        airfoil=af,
+        skin_thickness=0.003536,
+        shear_web_thickness=0.00442,
+        spar_cap_thickness=0.0,
+        twist_rad=twist_rad,
+        web_x_positions_m=[0.036130035],
+        outputs=("midlines", "cell_wall_loops"),
+    )
+    strips = result.midline_strips or ()
+    webs = [s for s in strips if s.kind == "web"]
+    assert webs, "tip must keep the LE web"
+    assert result.cell_wall_loops and len(result.cell_wall_loops) >= 2
+    build_cell_wall_loops(strips)
+
+
+def test_tip_fractional_2a_f_loops_build_under_twist():
+    """Tip-scale catalogue 2A-F (fractional webs) still builds loops under tip twist."""
+    from blade_structure_utilities.geometry_utilities.section_geometry.api.worker import (
+        build_section_geometry,
+    )
+
+    chord = 0.08775168
+    twist_rad = float(np.deg2rad(0.407709))
+    af = AirfoilSDF.from_naca("2412", n_points=200, chord=chord)
+    result = build_section_geometry(
+        layout=resolve_system_type("2A-F"),
+        airfoil=af,
+        skin_thickness=0.003536,
+        shear_web_thickness=0.00442,
+        spar_cap_thickness=0.0,
+        twist_rad=twist_rad,
+        outputs=("midlines", "cell_wall_loops"),
+    )
+    webs = [s for s in (result.midline_strips or ()) if s.kind == "web"]
+    assert len(webs) == 2
+    assert result.cell_wall_loops and len(result.cell_wall_loops) == 3
+
+
+def test_stale_frozen_web_y_under_twist_raises_infeasible_not_sg002_gap():
+    """Frozen thin-skin web_y + thicker skin + twist must not emit a blind foot.
+
+    Pre-fix: flapwise_web_sframe_inputs rotated stale IML anchors and
+    ShearWeb._extend_to_skin_mid_surface returned origin+t/2, leaving the foot
+    ~3.5 mm off the skin mid (SG-002). Now the assemble path raises
+    InfeasibleSectionGeometry so mono can keep prior gauges.
+    """
+    from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+        InfeasibleSectionGeometry,
+    )
+    from blade_structure_utilities.geometry_utilities.section_geometry.api.worker import (
+        build_section_geometry,
+        resolve_station_layout,
+    )
+
+    chord = 0.08775168
+    twist_rad = float(np.deg2rad(0.407709))
+    af = AirfoilSDF.from_naca("2412", n_points=200, chord=chord)
+    skin_cold = 0.003536
+    skin_mono = 0.007072
+    web_x = [0.036130035]
+    res = resolve_station_layout(
+        resolve_system_type("1A-F"),
+        af,
+        skin_thickness=skin_cold,
+        web_x_positions_m=web_x,
+    )
+    assert list(res.web_x_positions_m), "cold tip must host the LE web"
+    # Matched gauges still build.
+    ok = build_section_geometry(
+        layout=resolve_system_type("1A-F"),
+        airfoil=af,
+        skin_thickness=skin_cold,
+        shear_web_thickness=0.00442,
+        spar_cap_thickness=0.0,
+        twist_rad=twist_rad,
+        web_x_positions_m=list(res.web_x_positions_m),
+        web_y_coords=list(res.web_y_coords),
+        outputs=("midlines", "cell_wall_loops"),
+    )
+    assert ok.cell_wall_loops
+    with pytest.raises(InfeasibleSectionGeometry, match="frozen web_y|re-anchor|inner skin"):
+        build_section_geometry(
+            layout=resolve_system_type("1A-F"),
+            airfoil=af,
+            skin_thickness=skin_mono,
+            shear_web_thickness=0.00442,
+            spar_cap_thickness=0.0,
+            twist_rad=twist_rad,
+            web_x_positions_m=list(res.web_x_positions_m),
+            web_y_coords=list(res.web_y_coords),
+            outputs=("midlines", "cell_wall_loops"),
+        )

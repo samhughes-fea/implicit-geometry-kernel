@@ -95,8 +95,8 @@ def _placement_buildable_at_gauge(
                 center_x=float(x),
             )
             if (
-                float(h_u) > 0.0
-                and float(h_l) > 0.0
+                float(h_u) >= gauge - 1e-12
+                and float(h_l) >= gauge - 1e-12
                 and (float(_x_hi) - float(_x_lo)) > 1e-12
                 and not bool(info.get("pad_run_out"))
             ):

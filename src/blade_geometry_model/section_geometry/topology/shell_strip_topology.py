@@ -19,6 +19,7 @@ from blade_structure_utilities.geometry_utilities.section_geometry.midlines.cap_
     resample_cap_interiors_from_skin_rays,
     skin_ring_vertex_tangents,
 )
+from .cap_skin_bonds import bond_caps_to_skin
 from .cap_web_junctions import insert_cap_web_interior_junctions
 from ..midlines.ring_geometry import normal_2d_ccw, point_to_open_polyline_nearest
 from ..midlines.skin_split import split_skin_at_junctions
@@ -83,6 +84,12 @@ def build_shell_strip_topology(
                 airfoil=airfoil,
                 cap_mid_depth_m=cap_mid_depth_m,
             )
+
+    # Last: every later pass must leave cap and skin vertices alone, because the
+    # bonds name them (thin_wall_section TW-001).
+    if any(s.kind == "cap" for s in out):
+        with timed_stage("topology_cap_bond", stage_sink):
+            out = bond_caps_to_skin(tuple(out))
     return out
 
 
@@ -92,6 +99,7 @@ __all__ = [
     "split_skin_at_junctions",
     "resample_cap_interiors_from_skin_rays",
     "insert_cap_web_interior_junctions",
+    "bond_caps_to_skin",
     "concat_skin_ring_vertices",
     "skin_ring_vertex_tangents",
     "normal_2d_ccw",

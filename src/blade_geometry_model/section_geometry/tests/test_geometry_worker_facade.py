@@ -132,11 +132,11 @@ def test_resolve_station_layout_anchors_skip_second_resolve_web_anchors(monkeypa
     """G8: layout resolution already ran resolve_web_anchors; build must not redo it."""
     import blade_structure_utilities.geometry_utilities.section_geometry.sections.multicell as mc
 
-    af = AirfoilSDF.from_naca("0012", n_points=120, chord=0.24)
+    af = AirfoilSDF.from_naca("0012", n_points=120, chord=1.0)
     layout = resolve_system_type("2D-CN")
-    anchored = [float(f) * 0.24 for f in layout.web_chord_fracs]
+    anchored = [float(f) * 1.0 for f in layout.web_chord_fracs]
     station = resolve_station_layout(
-        layout, af, skin_thickness=0.001, web_x_positions_m=anchored
+        layout, af, skin_thickness=0.005, web_x_positions_m=anchored
     )
     assert station.web_y_coords
     assert len(station.web_y_coords) == len(station.web_x_positions_m)
@@ -152,9 +152,9 @@ def test_resolve_station_layout_anchors_skip_second_resolve_web_anchors(monkeypa
     build_section_geometry(
         station.layout,
         af,
-        skin_thickness=0.001,
-        spar_cap_thickness=0.004,
-        shear_web_thickness=0.002,
+        skin_thickness=0.005,
+        spar_cap_thickness=0.008,
+        shear_web_thickness=0.006,
         outputs=("midlines",),
         web_x_positions_m=station.web_x_positions_m,
         web_y_coords=station.web_y_coords,

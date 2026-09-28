@@ -49,8 +49,16 @@ _ensure_mod.ensure_repo_path()
 
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
+    apply_presentation_style,
     demo_output_dir,
     save_figure,
+)
+from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+    INK,
+    NAVY,
+    RED,
+    region_color,
+    strip_axes_chrome,
 )
 
 from blade_structure_utilities.geometry_utilities.section_geometry import (
@@ -75,9 +83,9 @@ def _to_key(label) -> str:
     return str(getattr(label, "value", label))
 
 
-def _save(fig, path: Path) -> None:
+def _save(fig, path: Path, *, presentation: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    save_figure(fig, path)
+    save_figure(fig, path, presentation=presentation)
     plt.close(fig)
     print(f"Wrote {path}")
 
@@ -125,7 +133,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--spar-cap-thickness", type=float, default=0.012)
     parser.add_argument("--shear-web-thickness", type=float, default=0.006)
     parser.add_argument("--out-dir", type=Path, default=None)
+    parser.add_argument("--presentation", action="store_true", help="Deck styling.")
     args = parser.parse_args(argv)
+    presentation = bool(args.presentation)
+    apply_presentation_style(presentation)
 
     out_dir = args.out_dir or (
         Path(__file__).resolve().parents[1] / "output" / "thickness_as_field_offset"
@@ -178,13 +189,14 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     # --- figure 1 -----------------------------------------------------------
-    figure = plt.figure(figsize=(17.0, 8.2))
-    outer = figure.add_gridspec(2, 1, height_ratios=[1.0, 0.78], hspace=0.20)
-    top = outer[0].subgridspec(1, 2, width_ratios=[1.45, 1.0], wspace=0.19)
+    figure = plt.figure(figsize=(15.0, 6.6))
+    outer = figure.add_gridspec(2, 1, height_ratios=[1.0, 0.55], hspace=0.12)
+    top = outer[0].subgridspec(1, 2, width_ratios=[1.6, 1.0], wspace=0.14)
     axis_nested = figure.add_subplot(top[0, 0])
     axis_area = figure.add_subplot(top[0, 1])
 
-    color_map = matplotlib.colormaps["viridis"]
+    # Deck ramp: thin gauges pale, thick gauges in the skin's own navy.
+    color_map = matplotlib.colors.LinearSegmentedColormap.from_list("gauge", ["#9ec5e8", NAVY])
     normalise = Normalize(vmin=min(thicknesses_m), vmax=max(thicknesses_m))
 
     # The OML never moves; the skin's inner mould line is what the scalar drives.
@@ -202,42 +214,38 @@ def main(argv: list[str] | None = None) -> int:
         )
     axis_nested.set_aspect("equal")
     axis_nested.set_title(
-        "One expression tree, one scalar changed: skin gauge 2 mm -> 20 mm\n"
-        "black = outer mould line (fixed)   |   coloured = inner mould line per gauge",
-        fontsize=11,
+        "Outer mould line fixed; inner face per gauge, 2 → 20 mm", loc="left", fontsize=13, color=INK,
     )
-    axis_nested.set_xlabel("x_chord [m]")
-    axis_nested.set_ylabel("y_thickness [m]")
-    mappable = cm.ScalarMappable(norm=normalise, cmap=color_map)
+    strip_axes_chrome(axis_nested)
+    mappable = cm.ScalarMappable(norm=Normalize(1e3 * min(thicknesses_m), 1e3 * max(thicknesses_m)), cmap=color_map)
     color_bar = figure.colorbar(
-        mappable, ax=axis_nested, fraction=0.05, pad=0.20, orientation="horizontal"
+        mappable, ax=axis_nested, fraction=0.045, pad=0.02, orientation="horizontal", aspect=45
     )
-    color_bar.set_label("skin thickness [m]")
+    color_bar.set_label("skin gauge [mm]")
+    color_bar.outline.set_visible(False)
 
     thickness_mm = [row["skin_thickness_mm"] for row in sweep_rows]
     axis_area.plot(
         thickness_mm,
         [row["skin_area_m2"] * 1e4 for row in sweep_rows],
         marker="o",
-        color="#2f6f9f",
+        color=region_color("skin_suction_surface"),
+        lw=2.4,
         label="skin wall",
     )
     axis_area.plot(
         thickness_mm,
         [row["core_area_m2"] * 1e4 for row in sweep_rows],
         marker="s",
-        color="#c2703d",
+        color=region_color("sandwich_core"),
+        lw=2.4,
         label="enclosed cores (cavity)",
     )
     axis_area.set_xlabel("skin thickness [mm]")
-    axis_area.set_ylabel("area [cm^2]")
-    axis_area.set_title(
-        "Smooth, monotone response - no remesh, no boolean repair\n"
-        "skin grows, cavity gives way, total is conserved",
-        fontsize=11,
-    )
-    axis_area.grid(alpha=0.28)
-    axis_area.legend(fontsize=9)
+    axis_area.set_ylabel("area [cm²]")
+    axis_area.set_title("Skin grows, cavity gives way", loc="left", fontsize=13, color=INK)
+    axis_area.grid(alpha=0.4)
+    axis_area.legend(fontsize=11, frameon=False)
 
     bottom = outer[1].subgridspec(1, len(thicknesses_m), wspace=0.06)
     for panel_index, (thickness, phi_union) in enumerate(zip(thicknesses_m, sweep_fields)):
@@ -256,17 +264,10 @@ def main(argv: list[str] | None = None) -> int:
             grid.X, grid.Y, phi_union, levels=[0.0], colors="k", linewidths=1.2
         )
         axis_panel.set_aspect("equal")
-        axis_panel.set_xticks([])
-        axis_panel.set_yticks([])
-        axis_panel.set_title(f"{thickness * 1000.0:.0f} mm", fontsize=10)
+        strip_axes_chrome(axis_panel)
+        axis_panel.set_title(f"{thickness * 1000.0:.0f} mm", fontsize=12, color=INK)
 
-    figure.suptitle(
-        "Thickness is a field operation: Offset(base, -t) resizes every wall "
-        "without touching topology",
-        fontsize=13.5,
-        y=0.98,
-    )
-    _save(figure, out_dir / "thickness_sweep.png")
+    _save(figure, out_dir / "thickness_sweep.png", presentation=presentation)
 
     # --- figure 2: where offsetting is actually valid ----------------------
     reference_thickness = thicknesses_m[len(thicknesses_m) // 2]
@@ -285,7 +286,9 @@ def main(argv: list[str] | None = None) -> int:
     residual_aerofoil = np.abs(gradient_aerofoil - 1.0)
     residual_assembled = np.abs(gradient_assembled - 1.0)
 
-    metric_figure, metric_axes = plt.subplots(2, 2, figsize=(15.4, 7.2))
+    metric_figure, metric_axes = plt.subplots(
+        2, 2, figsize=(15.0, 6.4), gridspec_kw={"hspace": 0.32, "wspace": 0.12}
+    )
     (axis_grad_aero, axis_grad_asm), (axis_offset_family, axis_residual) = metric_axes
 
     # Map the residual, not |grad phi| itself: the field is 1.0 almost
@@ -316,13 +319,13 @@ def main(argv: list[str] | None = None) -> int:
             grid.X, grid.Y, phi_assembled, levels=[0.0], colors="#7fd4ff", linewidths=0.8
         )
         axis.set_aspect("equal")
-        axis.set_xticks([])
-        axis.set_yticks([])
-        axis.set_title(title, fontsize=10.5)
+        strip_axes_chrome(axis)
+        axis.set_title(title, loc="left", fontsize=12.5, color=INK)
         color_bar_residual = metric_figure.colorbar(
             mesh, ax=axis, fraction=0.028, pad=0.015
         )
-        color_bar_residual.set_label("| |grad phi| - 1 |", fontsize=8.5)
+        color_bar_residual.set_label("| ‖∇φ‖ − 1 |", fontsize=11)
+        color_bar_residual.outline.set_visible(False)
 
     # Offsetting the metric aerofoil field gives a genuine parallel family.
     for offset_amount in (-0.005, -0.015, -0.030, -0.050):
@@ -337,19 +340,17 @@ def main(argv: list[str] | None = None) -> int:
             grid.Y,
             phi_offset,
             levels=[0.0],
-            colors=["#2f6f9f"],
-            linewidths=1.3,
+            colors=[NAVY],
+            linewidths=1.6,
         )
     axis_offset_family.contour(
         grid.X, grid.Y, phi_aerofoil, levels=[0.0], colors="#111418", linewidths=2.0
     )
     axis_offset_family.set_aspect("equal")
-    axis_offset_family.set_xticks([])
-    axis_offset_family.set_yticks([])
+    strip_axes_chrome(axis_offset_family)
     axis_offset_family.set_title(
-        "Offsets of the metric field: a true parallel-curve family\n"
-        "(5, 15, 30, 50 mm inward)",
-        fontsize=10.5,
+        "Offsets of the aerofoil: a true parallel family (5, 15, 30, 50 mm)", loc="left", fontsize=12.5,
+        color=INK,
     )
 
     percentiles = (50, 90, 99)
@@ -366,8 +367,8 @@ def main(argv: list[str] | None = None) -> int:
         bins=80,
         range=(0.0, 1.0),
         histtype="step",
-        linewidth=1.8,
-        color="#2f6f9f",
+        linewidth=2.2,
+        color=NAVY,
         label="aerofoil polygon",
         density=True,
     )
@@ -376,32 +377,24 @@ def main(argv: list[str] | None = None) -> int:
         bins=80,
         range=(0.0, 1.0),
         histtype="step",
-        linewidth=1.8,
-        color="#c2703d",
+        linewidth=2.2,
+        color=RED,
         label="assembled section",
         density=True,
     )
     axis_residual.set_yscale("log")
-    axis_residual.set_xlabel("Eikonal residual  | |grad phi| - 1 |")
+    axis_residual.set_xlabel("Eikonal residual  | ‖∇φ‖ − 1 |")
     axis_residual.set_ylabel("density")
     # Both medians are ~1e-15, so the medians say nothing; the tail is the story.
     axis_residual.set_title(
-        "Offset is exact only where the residual is ~0\n"
-        f"99th percentile: aerofoil {residual_summary['aerofoil_polygon']['p99']:.4f}"
-        f"  vs assembled {residual_summary['assembled_section']['p99']:.4f}",
-        fontsize=10.5,
+        f"99th percentile: aerofoil {residual_summary['aerofoil_polygon']['p99']:.4f} "
+        f"vs assembled {residual_summary['assembled_section']['p99']:.3f}",
+        loc="left", fontsize=12.5, color=INK,
     )
-    axis_residual.grid(alpha=0.25)
-    axis_residual.legend(fontsize=9)
+    axis_residual.grid(alpha=0.4)
+    axis_residual.legend(fontsize=11, frameon=False)
 
-    metric_figure.suptitle(
-        "The nuance: Offset is a true offset only on a metric field - "
-        "so the package offsets the aerofoil, never an assembled union",
-        fontsize=13,
-        y=0.985,
-    )
-    metric_figure.tight_layout(rect=(0, 0, 1, 0.93))
-    _save(metric_figure, out_dir / "offset_metric_validity.png")
+    _save(metric_figure, out_dir / "offset_metric_validity.png", presentation=presentation)
 
     payload = {
         "key": str(args.key),

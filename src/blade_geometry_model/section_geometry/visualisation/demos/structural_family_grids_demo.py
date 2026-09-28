@@ -19,6 +19,7 @@ Run from the repository root::
     python .../structural_family_grids_demo.py --twist-deg 15 --families A D
     python .../structural_family_grids_demo.py --keys 2D-F 3D-CN
     python .../structural_family_grids_demo.py --wall
+    python .../structural_family_grids_demo.py --presentation --matrix
 """
 
 from __future__ import annotations
@@ -125,6 +126,7 @@ def _render_system(
         residual_mesh=None,
         ax=ax,
         alpha=0.5,
+        core_alpha=0.22,
         title=f"{key}\n(n_webs={n_webs}, {z}, twist={twist_use:g}°)",
         show_legend=False,
     )
@@ -206,6 +208,112 @@ def _compose_contact_sheet(
     return out_path
 
 
+# The taxonomy matrix: one row per (cap family, web axis), one column per web
+# count. Each registry key has exactly one cell, so the empty cells are part of
+# the picture — they are the combinations the registry does not define.
+_MATRIX_ROWS: tuple[tuple[str, str], ...] = tuple(
+    (family, axis) for family in _FAMILIES for axis in ("CN", "F")
+)
+_MATRIX_WEB_COUNTS = (0, 1, 2, 3, 4, 5)
+_FAMILY_MEANING = {"A": "no cap", "B": "one cap band", "C": "cap per web", "D": "box cap"}
+_AXIS_MEANING = {"CN": "chord-normal webs", "F": "flapwise webs"}
+
+
+def _render_taxonomy_matrix(
+    keys: list[str],
+    *,
+    airfoil: AirfoilSDF,
+    twist_deg: float,
+    out_dir: Path,
+    presentation: bool = False,
+) -> Path:
+    """Draw every key into its (family × axis, web count) cell of one figure.
+
+    Tiles are pictorial — no ticks, no per-tile title — because the row and
+    column headers already say what each cell is, and 40 sets of axis numbers
+    would be the loudest thing on the sheet.
+    """
+    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+        INK,
+        MUTED,
+        SURFACE,
+        strip_axes_chrome,
+    )
+
+    cell_of_key: dict[tuple[int, int], str] = {}
+    for key in keys:
+        layout = resolve_system_type(key)
+        row = _MATRIX_ROWS.index((str(layout.structural_family).upper(), _z_tag(key)))
+        column = _MATRIX_WEB_COUNTS.index(int(layout.n_webs))
+        if (row, column) in cell_of_key:
+            raise SystemExit(
+                f"Keys {cell_of_key[(row, column)]} and {key} map to the same matrix cell."
+            )
+        cell_of_key[(row, column)] = key
+
+    row_count, column_count = len(_MATRIX_ROWS), len(_MATRIX_WEB_COUNTS)
+    fig, axes = plt.subplots(
+        row_count,
+        column_count,
+        figsize=(2.55 * column_count + 2.2, 0.95 * row_count + 0.7),
+        gridspec_kw={"wspace": 0.04, "hspace": 0.08},
+    )
+
+    for row, (family, axis) in enumerate(_MATRIX_ROWS):
+        for column, web_count in enumerate(_MATRIX_WEB_COUNTS):
+            ax = axes[row, column]
+            key = cell_of_key.get((row, column))
+            if key is None:
+                strip_axes_chrome(ax)
+                ax.set_facecolor(SURFACE)
+                ax.text(0.5, 0.5, "—", ha="center", va="center", color=MUTED, fontsize=14,
+                        transform=ax.transAxes)
+                continue
+            layout = resolve_system_type(key)
+            twist_use = _taxonomy.twist_deg_for_layout(layout, twist_deg=twist_deg)
+            section = build_section_view(
+                airfoil, layout, twist_angle_rad=float(np.deg2rad(twist_use))
+            )
+            plot_section_hybrid(
+                section,
+                residual_mesh=None,
+                ax=ax,
+                alpha=0.9,
+                core_alpha=0.3,
+                title="",
+                show_legend=False,
+            )
+            ax.set_aspect("equal", adjustable="datalim")
+            strip_axes_chrome(ax)
+            ax.text(0.02, 0.04, key, transform=ax.transAxes, fontsize=11,
+                    fontweight="bold", color=INK, ha="left", va="bottom")
+
+        axes[row, 0].annotate(
+            f"{family} · {axis}",
+            xy=(0, 0.5), xycoords="axes fraction", xytext=(-14, 6),
+            textcoords="offset points", ha="right", va="center",
+            fontsize=13, fontweight="bold", color=INK,
+        )
+        axes[row, 0].annotate(
+            f"{_FAMILY_MEANING[family]}, {_AXIS_MEANING[axis].split()[0]}",
+            xy=(0, 0.5), xycoords="axes fraction", xytext=(-14, -10),
+            textcoords="offset points", ha="right", va="center",
+            fontsize=10, color=MUTED,
+        )
+
+    for column, web_count in enumerate(_MATRIX_WEB_COUNTS):
+        axes[0, column].set_title(
+            f"{web_count} web{'s' if web_count != 1 else ''}",
+            fontsize=13, fontweight="bold", color=INK, pad=6,
+        )
+
+    out_path = out_dir / "structural_family_matrix.png"
+    save_figure(fig, out_path, presentation=presentation)
+    plt.close(fig)
+    print(f"Wrote {out_path} ({len(cell_of_key)} keys)")
+    return out_path
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     add_output_and_presentation_args(p, default_stem="structural_family_grids")
@@ -234,6 +342,15 @@ def main(argv: list[str] | None = None) -> int:
         type=int,
         default=8,
         help="Column count for --wall contact sheet.",
+    )
+    p.add_argument(
+        "--matrix",
+        action="store_true",
+        help=(
+            "Also draw every key into one taxonomy matrix "
+            "(rows = cap family x web axis, columns = web count): "
+            "structural_family_matrix.png."
+        ),
     )
     args = p.parse_args(argv)
     apply_presentation_style(bool(args.presentation))
@@ -302,6 +419,15 @@ def main(argv: list[str] | None = None) -> int:
             columns=int(args.wall_columns),
         )
         payload["wall_png"] = wall_path.name
+    if bool(args.matrix):
+        matrix_path = _render_taxonomy_matrix(
+            [str(row["key"]) for row in systems],
+            airfoil=af,
+            twist_deg=float(args.twist_deg),
+            out_dir=out_dir,
+            presentation=bool(args.presentation),
+        )
+        payload["matrix_png"] = matrix_path.name
     json_path = out_dir / "structural_family_grids.json"
     json_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(f"Wrote {json_path} ({len(systems)} systems)")

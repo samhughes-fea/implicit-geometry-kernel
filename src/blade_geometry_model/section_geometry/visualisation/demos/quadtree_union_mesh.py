@@ -54,6 +54,7 @@ _ensure_mod.ensure_repo_path()
 
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
+    apply_presentation_style,
     demo_output_dir,
     save_figure,
 )
@@ -88,7 +89,8 @@ def render_case(
     max_depth: int,
     out_dir: Path,
     twist_deg: float = 15.0,
-    save_figure: bool = True,
+    write_png: bool = True,
+    presentation: bool = False,
 ) -> dict[str, Any]:
     """Build and render one taxonomy case; return summary metadata."""
     layout = resolve_system_type(key)
@@ -106,16 +108,22 @@ def render_case(
     display_name = system_type_display_name(key)
     geom_title = f"{display_name} (twist={twist_deg:g} deg)"
 
-    fig, (axg, axq) = plt.subplots(1, 2, figsize=(20, 6))
-    plot_section(
-        section,
-        grid,
-        ax=axg,
-        alpha=0.5,
-        show_airfoil=False,
-        title=f"Built geometry — {geom_title}",
-        show_legend=True,
-    )
+    if presentation:
+        # Slide variant: one panel, cropped to the section — the refinement
+        # hugging the walls is the whole message, and the square root cell
+        # around it is dead space.
+        fig, axq = plt.subplots(figsize=(13.0, 4.6))
+    else:
+        fig, (axg, axq) = plt.subplots(1, 2, figsize=(20, 6))
+        plot_section(
+            section,
+            grid,
+            ax=axg,
+            alpha=0.5,
+            show_airfoil=False,
+            title=f"Built geometry — {geom_title}",
+            show_legend=True,
+        )
     for cell in leaves:
         axq.add_patch(
             Rectangle(
@@ -124,31 +132,50 @@ def render_case(
                 cell.height,
                 fill=False,
                 edgecolor="0.6",
-                linewidth=0.3,
+                linewidth=0.25 if presentation else 0.3,
             )
         )
     for label in labels:
         phi = grid.eval(section[label])
         axq.contour(
-            grid.X, grid.Y, phi, levels=[0.0], colors=[_component_color(label)], linewidths=1.4
+            grid.X, grid.Y, phi, levels=[0.0], colors=[_component_color(label)],
+            linewidths=2.0 if presentation else 1.4,
         )
-    axq.set_xlim(spec.x_min, spec.x_max)
-    axq.set_ylim(spec.y_min, spec.y_max)
-    axq.set_title(
-        f"Square union-refined quadtree — {display_name} "
-        f"(depth<={max_depth}, leaves={len(leaves)})"
-    )
+    if presentation:
+        outline = np.asarray(airfoil_b.vertices, dtype=float)
+        pad = 0.03 * float(chord)
+        axq.set_xlim(outline[:, 0].min() - pad, outline[:, 0].max() + pad)
+        axq.set_ylim(outline[:, 1].min() - pad, outline[:, 1].max() + pad)
+        axq.set_aspect("equal")
+        axq.set_title(
+            f"{key}, {twist_deg:g}° twist · one quadtree shared by every region · "
+            f"{len(leaves):,} leaves, depth ≤ {max_depth}",
+            loc="left", fontsize=13,
+        )
+    else:
+        axq.set_xlim(spec.x_min, spec.x_max)
+        axq.set_ylim(spec.y_min, spec.y_max)
+        axq.set_title(
+            f"Square union-refined quadtree — {display_name} "
+            f"(depth<={max_depth}, leaves={len(leaves)})"
+        )
     from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
         apply_structural_section_axes,
     )
 
     apply_structural_section_axes(axq)
+    if presentation:
+        from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+            strip_axes_chrome,
+        )
+
+        strip_axes_chrome(axq)
     fig.tight_layout()
     out_dir.mkdir(parents=True, exist_ok=True)
     png_name = f"quadtree_union_{key}.png"
     out_png = out_dir / png_name
-    if save_figure:
-        save_figure(fig, out_png)
+    if write_png:
+        save_figure(fig, out_png, presentation=presentation)
         print(f"Wrote {out_png}  (leaves={len(leaves)})")
     plt.close(fig)
 
@@ -189,7 +216,9 @@ def main(argv: list[str] | None = None) -> int:
         default=15.0,
         help="Section twist for every layout [deg] (default 15).",
     )
+    p.add_argument("--presentation", action="store_true", help="Single cropped slide panel.")
     args = p.parse_args(argv)
+    apply_presentation_style(bool(args.presentation))
 
     if args.list_keys:
         for key in SYSTEM_TYPE_KEYS:
@@ -214,6 +243,7 @@ def main(argv: list[str] | None = None) -> int:
             max_depth=args.max_depth,
             out_dir=out_dir,
             twist_deg=args.twist_deg,
+            presentation=bool(args.presentation),
         )
         cases.append(meta)
 

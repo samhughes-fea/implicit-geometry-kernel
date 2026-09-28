@@ -5,8 +5,9 @@ Demonstrate implicit-CSG component interactions via distance-field diagnostics.
 
 Writes under ``visualisation/output/csg_provenance/``:
 
-* ``csg_provenance_map.png`` - geometry, winner-label map, nearest-interface map,
-  and ambiguity margin.
+* ``csg_provenance_map.png`` - winner-label map, nearest-interface map and
+  junction map (distance to the third-nearest region), stacked, sharing one
+  region legend.
 * ``csg_provenance_map.json`` - run metadata and winner-pixel counts.
 """
 
@@ -21,6 +22,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from matplotlib.patches import Patch
+from scipy.ndimage import center_of_mass, distance_transform_edt
+from scipy.ndimage import label as label_connected
 
 _erp = Path(__file__).resolve().parent / "_ensure_repo_path.py"
 _spec = importlib.util.spec_from_file_location("_ensure_repo_path", _erp)
@@ -31,8 +34,15 @@ _ensure_mod.ensure_repo_path()
 
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
+    apply_presentation_style,
     demo_output_dir,
     save_figure,
+)
+from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+    NAVY,
+    RED,
+    strip_axes_chrome,
+    tighten_to_section,
 )
 
 from blade_structure_utilities.geometry_utilities.section_geometry import (
@@ -43,7 +53,6 @@ from blade_structure_utilities.geometry_utilities.section_geometry import (
 )
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
     _component_color,
-    plot_section,
 )
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
     apply_structural_section_axes,
@@ -57,10 +66,9 @@ def _to_key(label) -> str:
     return str(getattr(label, "value", label))
 
 
-def _save(fig, path: Path) -> None:
+def _save(fig, path: Path, *, presentation: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
-    save_figure(fig, path)
+    save_figure(fig, path, presentation=presentation)
     plt.close(fig)
     print(f"Wrote {path}")
 
@@ -71,10 +79,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--naca", default="2412")
     p.add_argument("--chord", type=float, default=1.0)
     p.add_argument("--twist-deg", type=float, default=15.0)
-    p.add_argument("--nx", type=int, default=640)
-    p.add_argument("--ny", type=int, default=280)
+    p.add_argument("--nx", type=int, default=1600)
+    p.add_argument("--ny", type=int, default=700)
     p.add_argument("--out-dir", type=Path, default=None)
+    p.add_argument(
+        "--junction-clip-mm",
+        type=float,
+        default=1.5,
+        help="A pixel within this distance of a third resolved region belongs to a junction.",
+    )
+    p.add_argument("--presentation", action="store_true", help="Deck styling.")
     args = p.parse_args(argv)
+    apply_presentation_style(bool(args.presentation))
 
     out_dir = args.out_dir or (Path(__file__).resolve().parents[1] / "output" / "csg_provenance")
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -117,45 +133,102 @@ def main(argv: list[str] | None = None) -> int:
     nearest = np.argmin(np.abs(phi), axis=0)
     winner = np.where(any_inside, winner_inside, nearest)
 
-    abs_phi = np.abs(phi)
-    if n_labels > 1:
-        part = np.partition(abs_phi, kth=1, axis=0)
-        ambiguity = np.maximum(part[1] - part[0], 0.0)
-    else:
-        ambiguity = np.zeros_like(abs_phi[0])
+    # Where does a mesher need a shared node? Where three materials meet. The
+    # raw fields cannot answer that: implicit regions overlap (cores run under
+    # the walls, adjacent cores overlap each other), so "k-th nearest |phi|"
+    # measures overlaps, not junctions. Answer it on the resolved partition
+    # instead: the winner map, then each label's distance transform. The third
+    # smallest of those distances is ~0 exactly where a third label arrives.
+    if n_labels < 3:
+        raise RuntimeError("A junction map needs at least three regions.")
+    cell_spacing = (
+        float(abs(grid.Y[1, 0] - grid.Y[0, 0])),
+        float(abs(grid.X[0, 1] - grid.X[0, 0])),
+    )
+    resolved = np.where(any_inside, winner_inside, -1)
+    label_distances = np.stack(
+        [distance_transform_edt(resolved != index, sampling=cell_spacing) for index in range(n_labels)],
+        axis=0,
+    )
+    third_nearest = np.partition(label_distances, kth=2, axis=0)[2]
 
     x_plot, y_plot = rotated_naca_grid_to_section_plot_axes(
         grid.X, grid.Y, twist_rad=twist_rad, chord_m=float(args.chord)
     )
 
-    fig, axs = plt.subplots(2, 2, figsize=(16, 11))
-    ax_geom, ax_winner, ax_nearest, ax_margin = axs.ravel()
-
-    plot_section(section, grid, ax=ax_geom, alpha=0.52, show_airfoil=False, show_legend=True, auto_limits=True,
-                 title=f"Hybrid section plot - {args.key} ({args.twist_deg:g} deg)")
+    outline = np.asarray(airfoil_for_grid.vertices, dtype=float)
+    outline_x, outline_y = rotated_naca_grid_to_section_plot_axes(
+        np.r_[outline[:, 0], outline[0, 0]],
+        np.r_[outline[:, 1], outline[0, 1]],
+        twist_rad=twist_rad,
+        chord_m=float(args.chord),
+    )
 
     colors = [_component_color(k) for k in label_keys]
     cmap = ListedColormap(colors)
     norm = BoundaryNorm(np.arange(-0.5, n_labels + 0.5, 1.0), cmap.N)
 
-    ax_winner.pcolormesh(x_plot, y_plot, winner, cmap=cmap, norm=norm, shading="auto")
-    apply_structural_section_axes(ax_winner)
-    ax_winner.set_title("Winner label map (inside: most negative phi)")
+    fig, axes = plt.subplots(3, 1, figsize=(11.0, 8.4), gridspec_kw={"hspace": 0.32})
+    ax_winner, ax_nearest, ax_margin = axes
 
-    ax_nearest.pcolormesh(x_plot, y_plot, nearest, cmap=cmap, norm=norm, shading="auto")
-    apply_structural_section_axes(ax_nearest)
-    ax_nearest.set_title("Nearest label map (global nearest interface)")
+    # Winner only means something inside a region: outside, leave the page blank
+    # rather than painting the bounding box with whichever label is closest.
+    ax_winner.pcolormesh(
+        x_plot, y_plot, np.ma.masked_where(~any_inside, winner_inside),
+        cmap=cmap, norm=norm, shading="auto",
+    )
+    ax_winner.set_title("Winner: most negative φ — which laminate is at this point", loc="left")
 
-    margin_map = ax_margin.pcolormesh(x_plot, y_plot, ambiguity, shading="auto", cmap="magma")
-    plt.colorbar(margin_map, ax=ax_margin, label="second|phi| - min|phi| [m]")
-    apply_structural_section_axes(ax_margin)
-    ax_margin.set_title("Interface ambiguity margin")
+    ax_nearest.pcolormesh(
+        x_plot, y_plot, np.ma.masked_where(~any_inside, nearest),
+        cmap=cmap, norm=norm, shading="auto",
+    )
+    ax_nearest.set_title("Nearest interface — what the mesher asks for", loc="left")
 
-    legend_handles = [Patch(facecolor=colors[i], edgecolor="none", label=label_keys[i]) for i in range(n_labels)]
-    ax_winner.legend(handles=legend_handles, title="Labels", loc="lower right", fontsize=8, title_fontsize=9)
+    # Each junction is a handful of pixels; cluster them and ring the centroid
+    # so they read at slide scale. The faded partition underneath says which
+    # materials are meeting.
+    junction_clip = float(args.junction_clip_mm) * 1e-3
+    junction_mask = any_inside & (third_nearest < junction_clip)
+    junction_labels, junction_count = label_connected(junction_mask, structure=np.ones((3, 3)))
+    junction_centres = center_of_mass(junction_mask, junction_labels, range(1, junction_count + 1))
+
+    ax_margin.pcolormesh(
+        x_plot, y_plot, np.ma.masked_where(~any_inside, winner_inside),
+        cmap=cmap, norm=norm, shading="auto", alpha=0.3,
+    )
+    if junction_count:
+        rows = np.array([centre[0] for centre in junction_centres])
+        columns = np.array([centre[1] for centre in junction_centres])
+        row_index = np.clip(np.round(rows).astype(int), 0, x_plot.shape[0] - 1)
+        column_index = np.clip(np.round(columns).astype(int), 0, x_plot.shape[1] - 1)
+        ax_margin.scatter(
+            x_plot[row_index, column_index], y_plot[row_index, column_index],
+            s=150, facecolors="none", edgecolors=RED, linewidths=2.2, zorder=4,
+        )
+    ax_margin.set_title(
+        f"Junctions: {junction_count} points where three materials meet — each needs a shared node",
+        loc="left",
+    )
+
+    for axis in axes:
+        axis.plot(outline_x, outline_y, color=NAVY, lw=1.0)
+        apply_structural_section_axes(axis)
+        tighten_to_section(axis, outline_x, outline_y, pad_fraction=0.03)
+        strip_axes_chrome(axis)
+
+    # One legend for all three panels, by region, in drawing colours.
+    legend_handles = [
+        Patch(facecolor=colors[i], edgecolor="none", label=label_keys[i].replace("_", " "))
+        for i in range(n_labels)
+    ]
+    fig.legend(
+        handles=legend_handles, loc="upper center", bbox_to_anchor=(0.5, 0.06),
+        ncol=5, frameon=False, fontsize=10.5,
+    )
 
     out_png = out_dir / "csg_provenance_map.png"
-    _save(fig, out_png)
+    _save(fig, out_png, presentation=bool(args.presentation))
 
     payload = {
         "key": str(args.key),
@@ -167,8 +240,8 @@ def main(argv: list[str] | None = None) -> int:
         "winner_pixel_counts": {k: int(np.sum(winner == i)) for i, k in enumerate(label_keys)},
         "nearest_pixel_counts": {k: int(np.sum(nearest == i)) for i, k in enumerate(label_keys)},
         "inside_fraction": float(np.mean(any_inside)),
-        "ambiguity_margin_mean_m": float(np.mean(ambiguity)),
-        "ambiguity_margin_p95_m": float(np.quantile(ambiguity, 0.95)),
+        "third_nearest_region_inside_p05_m": float(np.quantile(third_nearest[any_inside], 0.05)),
+        "junction_count": int(junction_count),
         "png": out_png.name,
     }
     out_json = out_dir / "csg_provenance_map.json"

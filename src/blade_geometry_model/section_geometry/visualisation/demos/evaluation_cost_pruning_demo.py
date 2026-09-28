@@ -23,7 +23,8 @@ Bbox culling is applied by the adaptive area mesh in ``props_emit/area_mesh.py``
 Writes under ``visualisation/output/evaluation_cost_pruning/``:
 
 * ``support_box_culling.png`` - per-region support boxes and culled fractions.
-* ``evaluation_scaling.png`` - memo sharing, grid scaling, web-count scaling.
+* ``evaluation_scaling.png`` - naive walk vs per-region memo vs one shared memo,
+  and section cost against region count across the catalogue.
 * ``evaluation_cost_pruning.json`` - all measured numbers.
 
 Run from the repository root::
@@ -52,8 +53,15 @@ _ensure_mod.ensure_repo_path()
 
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
+    apply_presentation_style,
     demo_output_dir,
     save_figure,
+)
+from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+    INK,
+    MUTED,
+    NAVY,
+    RED,
 )
 
 from blade_structure_utilities.geometry_utilities.section_geometry import (
@@ -72,6 +80,16 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
 
 _DPI = DEFAULT_DPI
 
+# Node-visit counting lives with the expression-tree demo; reuse it rather than
+# re-deriving what "a node" means.
+_tree_spec = importlib.util.spec_from_file_location(
+    "csg_expression_tree_demo", Path(__file__).resolve().parent / "csg_expression_tree_demo.py"
+)
+_tree_mod = importlib.util.module_from_spec(_tree_spec)
+assert _tree_spec.loader is not None
+_tree_spec.loader.exec_module(_tree_mod)
+count_nodes = _tree_mod.count_nodes
+
 _OPERATOR_COLOR = "#2f6f9f"
 _LEAF_COLOR = "#c2703d"
 _SHARED_COLOR = "#7a4fa3"
@@ -81,9 +99,9 @@ def _to_key(label) -> str:
     return str(getattr(label, "value", label))
 
 
-def _save(fig, path: Path) -> None:
+def _save(fig, path: Path, *, presentation: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    save_figure(fig, path)
+    save_figure(fig, path, presentation=presentation)
     plt.close(fig)
     print(f"Wrote {path}")
 
@@ -159,7 +177,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--spar-cap-thickness", type=float, default=0.012)
     parser.add_argument("--shear-web-thickness", type=float, default=0.006)
     parser.add_argument("--out-dir", type=Path, default=None)
+    parser.add_argument("--presentation", action="store_true", help="Deck styling.")
     args = parser.parse_args(argv)
+    presentation = bool(args.presentation)
+    apply_presentation_style(presentation)
 
     out_dir = args.out_dir or (
         Path(__file__).resolve().parents[1] / "output" / "evaluation_cost_pruning"
@@ -234,12 +255,13 @@ def main(argv: list[str] | None = None) -> int:
 
     axis_boxes.set_aspect("equal")
     axis_boxes.set_title(
-        f"expr_bbox support boxes for {args.key}\n"
-        "dashed = analytic bound on the region, derived with zero SDF evaluations",
-        fontsize=11,
+        f"{args.key}: dashed = each region's analytic bound, zero field evaluations",
+        loc="left", fontsize=12.5,
     )
-    axis_boxes.set_xlabel("x_chord [m]")
-    axis_boxes.set_ylabel("y_thickness [m]")
+    axis_boxes.set_xticks([])
+    axis_boxes.set_yticks([])
+    for spine in axis_boxes.spines.values():
+        spine.set_visible(False)
 
     bounded_rows = [row for row in culling_rows if row["bounded"]]
     bounded_rows.sort(key=lambda row: row["culled_fraction"])
@@ -250,7 +272,9 @@ def main(argv: list[str] | None = None) -> int:
         height=0.66,
     )
     axis_culled.set_yticks(np.arange(len(bounded_rows)))
-    axis_culled.set_yticklabels([row["label"] for row in bounded_rows], fontsize=8.5)
+    axis_culled.set_yticklabels(
+        [row["label"].replace("_surface", "").replace("_", " ") for row in bounded_rows], fontsize=11
+    )
     for bar_index, row in enumerate(bounded_rows):
         percentage = row["culled_fraction"] * 100.0
         axis_culled.text(
@@ -259,25 +283,20 @@ def main(argv: list[str] | None = None) -> int:
             f"{percentage:.1f}%",
             ha="right",
             va="center",
-            fontsize=8.5,
+            fontsize=10.5,
             color="white",
             fontweight="bold",
         )
     axis_culled.set_xlabel("% of the sampling domain provably outside the region")
     axis_culled.set_xlim(0, 100)
     axis_culled.set_title(
-        "Work that never has to happen\n"
-        "(applied by the adaptive area mesh, not by eval_expr_batch)",
-        fontsize=11,
+        "Work that never has to happen (applied by the adaptive area mesh)",
+        loc="left", fontsize=12.5,
     )
     axis_culled.grid(axis="x", alpha=0.28)
 
-    figure_boxes.suptitle(
-        "Analytic support: the IR knows where each region cannot be, before any field is sampled",
-        fontsize=13,
-    )
-    figure_boxes.tight_layout(rect=(0, 0, 1, 0.93))
-    _save(figure_boxes, out_dir / "support_box_culling.png")
+    figure_boxes.tight_layout()
+    _save(figure_boxes, out_dir / "support_box_culling.png", presentation=presentation)
 
     # --- figure 2: memo sharing and scaling --------------------------------
     shared_seconds = timed_median(
@@ -329,76 +348,72 @@ def main(argv: list[str] | None = None) -> int:
             }
         )
 
-    scaling_figure, scaling_axes = plt.subplots(1, 3, figsize=(17.0, 5.0))
-    axis_memo, axis_grid_scaling, axis_key_scaling = scaling_axes
+    scaling_figure, scaling_axes = plt.subplots(
+        1, 2, figsize=(14.0, 5.0), gridspec_kw={"width_ratios": (1.15, 1.0), "wspace": 0.28}
+    )
+    axis_memo, axis_key_scaling = scaling_axes
 
+    # Three ways to evaluate the same section. A naive walk visits every node of
+    # every region's tree; a memo per region stops repeats inside one tree; one
+    # memo for the section also stops repeats *between* trees, which is where
+    # the shared aerofoil and cavity subtrees live.
+    naive_visits = int(sum(count_nodes(expression) for _, expression in pairs))
     speedup = isolated_seconds / shared_seconds if shared_seconds > 0 else float("nan")
-    memo_positions = np.arange(2)
-    axis_memo.bar(
-        memo_positions,
-        [isolated_evaluations, shared_evaluations],
-        color=[_LEAF_COLOR, _SHARED_COLOR],
-        width=0.55,
-    )
-    axis_memo.set_xticks(memo_positions)
-    axis_memo.set_xticklabels(
-        ["memo per region", "one memo for\nthe whole section"], fontsize=9.5
-    )
-    for position, value in zip(memo_positions, (isolated_evaluations, shared_evaluations)):
-        axis_memo.text(
-            position, value, f"{value}", ha="center", va="bottom", fontsize=12, fontweight="bold"
-        )
-    axis_memo.set_ylim(0, max(isolated_evaluations, shared_evaluations) * 1.16)
-    axis_memo.set_ylabel("nodes actually evaluated on the grid")
+    steps = [
+        ("walk every tree", naive_visits, None, MUTED),
+        ("memo per region", isolated_evaluations, isolated_seconds, "#e89aae"),
+        ("one memo for\nthe section", shared_evaluations, shared_seconds, RED),
+    ]
+    positions = np.arange(len(steps))
+    axis_memo.bar(positions, [step[1] for step in steps], color=[step[3] for step in steps], width=0.6)
+    for position, (_, count, seconds, _) in zip(positions, steps):
+        axis_memo.text(position, count, f"{count}", ha="center", va="bottom", fontsize=15,
+                       fontweight="bold", color=INK)
+        if seconds is not None:
+            axis_memo.text(position, count / 2.0, f"{seconds * 1e3:.0f} ms", ha="center",
+                           va="center", fontsize=12, color="white", fontweight="bold")
+    axis_memo.set_xticks(positions)
+    axis_memo.set_xticklabels([step[0] for step in steps])
+    axis_memo.set_ylim(0, naive_visits * 1.18)
+    axis_memo.set_ylabel("field evaluations on the grid")
     axis_memo.set_title(
-        f"Shared-subtree memoisation ({args.key})\n"
-        f"{isolated_seconds * 1e3:.1f} ms -> {shared_seconds * 1e3:.1f} ms "
-        f"({speedup:.2f}x)",
-        fontsize=11,
+        f"{args.key}: {naive_visits} → {shared_evaluations} evaluations "
+        f"({naive_visits / max(shared_evaluations, 1):.1f}× fewer)",
+        loc="left",
     )
-    axis_memo.grid(axis="y", alpha=0.28)
+    axis_memo.grid(axis="y", alpha=0.4)
 
-    axis_grid_scaling.plot(
-        [row["points"] for row in grid_rows],
-        [row["seconds"] * 1e3 for row in grid_rows],
-        marker="o",
-        color=_OPERATOR_COLOR,
-    )
-    axis_grid_scaling.set_xlabel("grid points")
-    axis_grid_scaling.set_ylabel("section evaluation [ms]")
-    axis_grid_scaling.set_title("Cost is linear in sample count", fontsize=11)
-    axis_grid_scaling.grid(alpha=0.28)
-
-    axis_key_scaling.plot(
-        [row["regions"] for row in key_rows],
-        [row["seconds"] * 1e3 for row in key_rows],
-        marker="s",
-        color=_LEAF_COLOR,
-    )
+    regions = np.array([row["regions"] for row in key_rows], dtype=float)
+    milliseconds = np.array([row["seconds"] * 1e3 for row in key_rows], dtype=float)
+    axis_key_scaling.plot(regions, milliseconds, marker="o", ms=9, lw=2.4, color=NAVY)
+    # The proportional line is what "structure costs per region" would look like
+    # if nothing were shared: it makes the flatness of the measured curve legible.
+    if regions.size:
+        proportional = milliseconds[0] * regions / regions[0]
+        axis_key_scaling.plot(regions, proportional, ls="--", lw=1.4, color=MUTED)
+        axis_key_scaling.text(
+            regions[-1], proportional[-1], "  if cost ∝ regions", va="center",
+            fontsize=11, color=MUTED,
+        )
     for row in key_rows:
         axis_key_scaling.annotate(
-            row["key"],
-            (row["regions"], row["seconds"] * 1e3),
-            textcoords="offset points",
-            xytext=(0, 8),
-            ha="center",
-            fontsize=8.5,
+            row["key"], (row["regions"], row["seconds"] * 1e3), textcoords="offset points",
+            xytext=(0, -18), ha="center", fontsize=11, color=INK,
+        )
+    if regions.size >= 2:
+        growth = milliseconds[-1] / milliseconds[0] - 1.0
+        axis_key_scaling.set_title(
+            f"{int(regions[0])} → {int(regions[-1])} regions costs +{growth:.0%}, "
+            f"not {regions[-1] / regions[0]:.0f}×",
+            loc="left",
         )
     axis_key_scaling.set_xlabel("regions in the section")
     axis_key_scaling.set_ylabel("section evaluation [ms]")
-    axis_key_scaling.set_title(
-        "Cost across the layout catalogue (0 to 5 webs)", fontsize=11
-    )
-    axis_key_scaling.margins(y=0.16)
-    axis_key_scaling.grid(alpha=0.28)
+    axis_key_scaling.set_xlim(0, regions.max() * 1.35 if regions.size else 1)
+    axis_key_scaling.set_ylim(0, None)
+    axis_key_scaling.grid(alpha=0.4)
 
-    scaling_figure.suptitle(
-        "Evaluation economics: one memo for the whole section, linear in samples, "
-        "gentle in region count",
-        fontsize=13,
-    )
-    scaling_figure.tight_layout(rect=(0, 0, 1, 0.90))
-    _save(scaling_figure, out_dir / "evaluation_scaling.png")
+    _save(scaling_figure, out_dir / "evaluation_scaling.png", presentation=presentation)
 
     payload = {
         "key": str(args.key),
@@ -417,6 +432,7 @@ def main(argv: list[str] | None = None) -> int:
         "support_boxes": culling_rows,
         "grid_scaling": grid_rows,
         "layout_scaling": key_rows,
+        "naive_node_visits": naive_visits,
         "note": (
             "expr_bbox culling is reported as available work reduction; "
             "eval_expr_batch does not prune, props_emit/area_mesh.py applies it."

@@ -91,7 +91,15 @@ class ShearWeb(SectionComponent):
         (:func:`midlines.junction_primitives.solve_web_foot_on_skin_mid`) so
         production feet and the topology oracle use the same polygon join
         contract; falls back to SDF ray-march on the mid-surface field.
+
+        Never returns an unverified blind offset. A foot that cannot be placed
+        on the mid-surface raises :class:`InfeasibleSectionGeometry` (SG-002)
+        instead of handing ``cell_wall_loops`` a millimetre-scale miss.
         """
+        from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+            InfeasibleSectionGeometry,
+        )
+
         half_gauge = 0.5 * float(self.skin_thickness)
         if half_gauge <= 0.0:
             return np.asarray(anchor, dtype=float)
@@ -102,31 +110,36 @@ class ShearWeb(SectionComponent):
             return np.asarray(anchor, dtype=float)
         step = step / norm
         origin = np.asarray(anchor, dtype=float)
+        # Span well past IML and OML so tip / twist / stale-anchor cases still
+        # register as interior segment hits on the mid ring.
+        search = max(8.0 * half_gauge, 4.0 * float(self.skin_thickness), 1e-3)
 
-        # Axis through IML anchors, extended past the mid-surface so the ring
-        # intersection is an interior segment hit (same setup as the oracle test).
+        def _pick_outward_hit(hits):
+            scored = []
+            for h in hits:
+                hh = np.asarray(h, dtype=float).reshape(2)
+                along = float(np.dot(hh - origin, step))
+                if along < -1e-12:
+                    continue
+                scored.append((along, float(np.linalg.norm(hh - origin)), hh))
+            if not scored:
+                return None
+            scored.sort(key=lambda t: (t[0], t[1]))
+            return scored[0][2]
+
         try:
             from blade_structure_utilities.geometry_utilities.section_geometry.midlines.junction_primitives import (
                 solve_web_foot_on_skin_mid,
             )
 
-            axis_p0 = origin + 2.0 * half_gauge * step
-            axis_p1 = origin - 2.0 * half_gauge * step
+            axis_p0 = origin + search * step
+            axis_p1 = origin - search * step
             hits = solve_web_foot_on_skin_mid(
                 axis_p0, axis_p1, self._af, float(self.skin_thickness)
             )
-            if hits:
-                # Prefer the hit in the outward (+step) half-space nearest origin.
-                scored = []
-                for h in hits:
-                    hh = np.asarray(h, dtype=float).reshape(2)
-                    along = float(np.dot(hh - origin, step))
-                    if along < -1e-12:
-                        continue
-                    scored.append((along, float(np.linalg.norm(hh - origin)), hh))
-                if scored:
-                    scored.sort(key=lambda t: (t[0], t[1]))
-                    return scored[0][2]
+            picked = _pick_outward_hit(hits) if hits else None
+            if picked is not None:
+                return picked
         except Exception:
             pass
 
@@ -136,17 +149,41 @@ class ShearWeb(SectionComponent):
             p = origin + float(t) * step
             return float(phi_mid(np.array([p[0]]), np.array([p[1]]))[0])
 
-        lo, hi = 0.0, 4.0 * half_gauge
-        phi_lo, phi_hi = phi_at(lo), phi_at(hi)
-        if not (phi_lo <= 0.0 <= phi_hi):
-            return origin + half_gauge * step
-        for _ in range(60):
-            mid = 0.5 * (lo + hi)
-            if phi_at(mid) <= 0.0:
-                lo = mid
-            else:
-                hi = mid
-        return origin + 0.5 * (lo + hi) * step
+        # Sample the axis both ways; any sign-change bracket is a valid foot.
+        samples = np.linspace(-search, search, 65)
+        phis = np.asarray([phi_at(t) for t in samples], dtype=float)
+        bracket = None
+        for i in range(len(samples) - 1):
+            p0, p1 = float(phis[i]), float(phis[i + 1])
+            if p0 == 0.0:
+                return origin + float(samples[i]) * step
+            if p0 * p1 > 0.0:
+                continue
+            # Prefer the outward (t >= 0) crossing nearest the origin.
+            t_lo, t_hi = float(samples[i]), float(samples[i + 1])
+            if t_hi < 0.0:
+                continue
+            lo, hi = t_lo, t_hi
+            for _ in range(60):
+                mid = 0.5 * (lo + hi)
+                if phi_at(mid) <= 0.0:
+                    lo = mid
+                else:
+                    hi = mid
+            t_hit = 0.5 * (lo + hi)
+            if t_hit < -1e-12:
+                continue
+            if bracket is None or t_hit < bracket[0]:
+                bracket = (t_hit, origin + t_hit * step)
+        if bracket is not None:
+            return bracket[1]
+
+        raise InfeasibleSectionGeometry(
+            "ShearWeb foot cannot reach the skin mid-surface along its axis "
+            f"(anchor={origin.tolist()}, skin_thickness={float(self.skin_thickness):.6g}). "
+            "Frozen web_y anchors are usually stale relative to the current skin, "
+            "or the local cavity is thinner than the skin gauge (SG-002)."
+        )
 
     def midline_polyline(self, n=20):
         n_use = max(2, int(n))

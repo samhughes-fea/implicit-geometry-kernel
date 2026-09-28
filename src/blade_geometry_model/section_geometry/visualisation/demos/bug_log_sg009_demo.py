@@ -5,9 +5,9 @@ SG-009 schematic: making a junction exact destroys the evidence used to find it.
 
 Three panels:
 
-1. Two open polylines cross (strict-interior detector finds the hit).
-2. A shared node is inserted at the crossing — the polylines now only *touch*.
-3. The same detector returns nothing (tangency is not an interior crossing).
+1. A raw web midline crosses the skin midline (strict-interior detector finds it).
+2. The skin is split and the web trimmed at the crossing: one shared node.
+3. The same detector returns nothing (touching is not an interior crossing).
 
 Writes under ``visualisation/output/bug_log_sg009/``:
 
@@ -28,6 +28,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import FancyArrowPatch
 
 _erp = Path(__file__).resolve().parent / "_ensure_repo_path.py"
 _spec = importlib.util.spec_from_file_location("_ensure_repo_path", _erp)
@@ -50,66 +51,74 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
     NAVY,
     RED,
     TEAL,
+    strip_axes_chrome,
 )
 
 
 def _crossing_polylines() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Two open polylines that cross at the origin, plus the shared point."""
-    horizontal = np.array([[-1.0, 0.0], [1.0, 0.0]], dtype=float)
-    diagonal = np.array([[-0.8, -0.8], [0.8, 0.8]], dtype=float)
-    shared = np.array([0.0, 0.0], dtype=float)
-    return horizontal, diagonal, shared
+    """A skin midline and a web midline that overshoots through it.
+
+    Schematic geometry in the shape of a real web-skin junction: a gently
+    curved skin sampled at a handful of nodes, and a web whose raw end runs
+    past the skin, so the two strictly cross.
+    """
+    skin_x = np.linspace(-1.0, 1.0, 6)
+    skin = np.column_stack([skin_x, 0.55 - 0.12 * skin_x**2])
+    web = np.array([[0.08, -0.95], [0.16, 0.85]], dtype=float)
+    hits = intersect_open_polylines_2d(skin, web)
+    if len(hits) != 1:
+        raise RuntimeError(f"Schematic must cross exactly once; got {len(hits)} hits.")
+    shared = np.asarray(hits[0][4], dtype=float)
+    return skin, web, shared
 
 
 def _insert_shared_node(poly: np.ndarray, shared: np.ndarray) -> np.ndarray:
-    """Insert ``shared`` between the two endpoints (open two-segment polyline)."""
-    return np.vstack([poly[0], shared, poly[-1]])
+    """Insert ``shared`` into ``poly`` at its position along the polyline."""
+    projections = [
+        np.dot(shared - poly[i], poly[i + 1] - poly[i]) / np.dot(poly[i + 1] - poly[i], poly[i + 1] - poly[i])
+        for i in range(len(poly) - 1)
+    ]
+    for index, fraction in enumerate(projections):
+        if 0.0 <= fraction <= 1.0:
+            return np.vstack([poly[: index + 1], shared, poly[index + 1 :]])
+    raise RuntimeError("Shared node does not lie on the polyline.")
+
+
+def _trim_at(poly: np.ndarray, shared: np.ndarray) -> np.ndarray:
+    """The web ends at the junction: keep the part below the shared node."""
+    return np.vstack([poly[0], shared])
 
 
 def _draw_panel(
     axis,
-    poly_a: np.ndarray,
-    poly_b: np.ndarray,
+    skin: np.ndarray,
+    web: np.ndarray,
     *,
     title: str,
     hits: list,
-    highlight: np.ndarray | None = None,
+    shared: np.ndarray | None = None,
+    verdict: str,
+    verdict_colour: str,
 ) -> None:
-    axis.plot(poly_a[:, 0], poly_a[:, 1], color=NAVY, lw=2.4, solid_capstyle="round")
-    axis.plot(poly_b[:, 0], poly_b[:, 1], color=TEAL, lw=2.4, solid_capstyle="round")
-    axis.scatter(poly_a[:, 0], poly_a[:, 1], s=28, c=NAVY, zorder=3)
-    axis.scatter(poly_b[:, 0], poly_b[:, 1], s=28, c=TEAL, zorder=3)
-    if highlight is not None:
-        axis.scatter(
-            [highlight[0]],
-            [highlight[1]],
-            s=90,
-            c=RED,
-            zorder=4,
-            edgecolors=INK,
-            linewidths=0.8,
-            label="shared node",
-        )
+    axis.plot(skin[:, 0], skin[:, 1], color=NAVY, lw=3.2, solid_capstyle="round", zorder=2)
+    axis.plot(web[:, 0], web[:, 1], color=TEAL, lw=3.2, solid_capstyle="round", zorder=2)
+    axis.scatter(skin[:, 0], skin[:, 1], s=34, c=NAVY, zorder=3, edgecolors="white", linewidths=0.8)
+    axis.scatter(web[:, 0], web[:, 1], s=34, c=TEAL, zorder=3, edgecolors="white", linewidths=0.8)
+    if shared is not None:
+        axis.scatter([shared[0]], [shared[1]], s=320, facecolors="none", edgecolors=TEAL,
+                     linewidths=2.4, zorder=4)
     for hit in hits:
         point = np.asarray(hit[4], dtype=float)
-        axis.scatter([point[0]], [point[1]], s=70, c=RED, zorder=4, marker="x", linewidths=2.0)
-    axis.set_title(title, color=INK, fontsize=12)
+        axis.scatter([point[0]], [point[1]], s=320, facecolors="none", edgecolors=RED,
+                     linewidths=2.4, zorder=4)
+    axis.text(0.5, 1.02, title, transform=axis.transAxes, ha="center", va="bottom",
+              color=INK, fontsize=14, fontweight="bold")
+    axis.text(0.5, -0.04, verdict, transform=axis.transAxes, ha="center", va="top",
+              color=verdict_colour, fontsize=13, fontweight="bold")
     axis.set_aspect("equal", adjustable="box")
-    axis.set_xlim(-1.25, 1.25)
-    axis.set_ylim(-1.05, 1.05)
-    axis.tick_params(colors=MUTED)
-    for spine in axis.spines.values():
-        spine.set_color(MUTED)
-    n_hits = len(hits)
-    axis.text(
-        0.02,
-        0.04,
-        f"detector hits: {n_hits}",
-        transform=axis.transAxes,
-        color=RED if n_hits == 0 else NAVY,
-        fontsize=11,
-        fontweight="bold",
-    )
+    axis.set_xlim(-1.15, 1.15)
+    axis.set_ylim(-1.05, 1.0)
+    strip_axes_chrome(axis)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -121,44 +130,34 @@ def main(argv: list[str] | None = None) -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    horizontal, diagonal, shared = _crossing_polylines()
-    hits_before = intersect_open_polylines_2d(horizontal, diagonal)
-    touching_a = _insert_shared_node(horizontal, shared)
-    touching_b = _insert_shared_node(diagonal, shared)
-    hits_after = intersect_open_polylines_2d(touching_a, touching_b)
+    skin, web, shared = _crossing_polylines()
+    hits_before = intersect_open_polylines_2d(skin, web)
+    skin_split = _insert_shared_node(skin, shared)
+    web_trimmed = _trim_at(web, shared)
+    hits_after = intersect_open_polylines_2d(skin_split, web_trimmed)
 
-    # Presentation aspect ~2.5:1 for a full-width slide panel.
-    fig, axes = plt.subplots(1, 3, figsize=(12.5, 4.2))
+    fig, axes = plt.subplots(1, 3, figsize=(14.0, 4.6), gridspec_kw={"wspace": 0.16})
     _draw_panel(
-        axes[0],
-        horizontal,
-        diagonal,
-        title="1 · Crossing polylines",
-        hits=hits_before,
+        axes[0], skin, web, title="1 · Raw: web crosses skin", hits=hits_before,
+        verdict=f"detector: {len(hits_before)} crossing", verdict_colour=NAVY,
     )
     _draw_panel(
-        axes[1],
-        touching_a,
-        touching_b,
-        title="2 · Shared node inserted",
-        hits=[],
-        highlight=shared,
+        axes[1], skin_split, web_trimmed, title="2 · Fixed: one shared node", hits=[],
+        shared=shared, verdict="junction now exact", verdict_colour=TEAL,
     )
     _draw_panel(
-        axes[2],
-        touching_a,
-        touching_b,
-        title="3 · Detector sees nothing",
-        hits=hits_after,
-        highlight=shared,
+        axes[2], skin_split, web_trimmed, title="3 · Re-check", hits=hits_after,
+        shared=shared,
+        verdict=f"detector: {len(hits_after)} — touching ≠ crossing",
+        verdict_colour=RED if len(hits_after) == 0 else NAVY,
     )
-    fig.suptitle(
-        "SG-009 · Making a junction exact destroys the evidence used to find it",
-        color=INK,
-        fontsize=13,
-        y=0.98,
-    )
-    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.92))
+    for left, right in ((axes[0], axes[1]), (axes[1], axes[2])):
+        fig.add_artist(
+            FancyArrowPatch(
+                (left.get_position().x1 - 0.005, 0.5), (right.get_position().x0 + 0.005, 0.5),
+                transform=fig.transFigure, arrowstyle="-|>", mutation_scale=22, color=MUTED, lw=1.6,
+            )
+        )
 
     png_path = out_dir / "bug_log_sg009_schematic.png"
     save_figure(fig, png_path, presentation=bool(args.presentation))

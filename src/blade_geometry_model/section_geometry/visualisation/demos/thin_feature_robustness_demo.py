@@ -46,7 +46,11 @@ _ensure_mod.ensure_repo_path()
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     demo_output_dir,
+    apply_presentation_style,
     save_figure,
+)
+from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+    strip_axes_chrome,
 )
 
 from blade_structure_utilities.geometry_utilities.section_geometry import (
@@ -110,9 +114,9 @@ def _web_centroid(section: MultiCellSection) -> np.ndarray:
     return np.array([float(c.x), float(c.y)], dtype=float)
 
 
-def _save_fig(fig, path: Path) -> None:
+def _save_fig(fig, path: Path, *, presentation: bool = False) -> None:
     fig.tight_layout()
-    save_figure(fig, path)
+    save_figure(fig, path, presentation=presentation)
     plt.close(fig)
     print(f"Wrote {path}")
 
@@ -197,21 +201,24 @@ def _plot_zoom_panel(
         ax.set_xlim(x0, x1)
     ax.set_ylim(y0, y1)
     ax.set_aspect("equal", adjustable="box")
-    ax.grid(True, alpha=0.25)
+    strip_axes_chrome(ax, keep_frame=True)
 
 
 def main(argv: list[str] | None = None) -> Path:
     default_out = Path(__file__).resolve().parents[1] / "output" / "thin_feature_robustness"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, default=default_out)
+    parser.add_argument("--presentation", action="store_true", help="Deck styling.")
     args = parser.parse_args(argv)
+    presentation = bool(args.presentation)
+    apply_presentation_style(presentation)
     out_dir: Path = args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
     af = AirfoilSDF.from_naca("2412", chord=1.0, n_points=140)
     cases = [("twist_0deg", 0.0), ("twist_15deg", float(np.deg2rad(15.0)))]
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.0, 5.5))
+    fig, axes = plt.subplots(1, 2, figsize=(10.0, 5.2))
     zoom_meta: dict[str, dict] = {}
     for ax, (tag, twist) in zip(axes, cases):
         section = _build_section(af, twist_rad=twist)
@@ -239,8 +246,8 @@ def main(argv: list[str] | None = None) -> Path:
             centre,
             half=0.06,
             title=(
-                f"{tag.replace('_', ' ')}\n"
-                f"web_0 A_qt={a_qt:.3e}  A_constr={a_c:.3e}"
+                f"{np.rad2deg(twist):.0f}° twist · {_WEB_T * 1e3:g} mm web\n"
+                f"quadtree area {abs(a_qt - a_c) / a_c:.2%} from exact"
             ),
             twist_rad=float(twist),
             chord_m=1.0,
@@ -257,11 +264,7 @@ def main(argv: list[str] | None = None) -> Path:
             "centre_rotated_naca": [float(centre[0]), float(centre[1])],
             "centre_plot_YB_XB": [float(centre_hv[0]), float(centre_hv[1])],
         }
-    fig.suptitle(
-        f"Thin web robustness (shear_web_thickness={_WEB_T:g} m) — adaptive QT resolves capsule ∩ cavity",
-        fontsize=11,
-    )
-    _save_fig(fig, out_dir / "thin_web_zoom_twist.png")
+    _save_fig(fig, out_dir / "thin_web_zoom_twist.png", presentation=presentation)
 
     # Depth sweep at 0° twist — clean QT ↔ constructive convergence on the
     # same wall solid. Zoom panels above still show the web under 15° twist.

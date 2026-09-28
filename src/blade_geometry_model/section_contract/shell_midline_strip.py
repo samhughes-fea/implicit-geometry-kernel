@@ -33,6 +33,25 @@ from numpy.typing import NDArray
 
 
 @dataclass(frozen=True)
+class StripBond:
+    """Where a bonded strip (a spar cap) is attached to a host strip (a skin arc).
+
+    ``points`` and ``host_points`` are aligned ``(M, 2)`` arrays of corresponding
+    **vertices** of the bonded strip and of the host strip ``host_label``, in
+    order along the bond; consecutive pairs are consecutive vertices of both, so
+    each bonded segment lies against exactly one host segment. Coordinates, not
+    indices, so the bond survives a strip being reversed. Produced by
+    ``section_geometry`` (``bond_caps_to_skin``); read by the thin-wall kernel,
+    where the cap sheds its axial rate into the skin at the paired point
+    (thin_wall_section TW-001).
+    """
+
+    host_label: str
+    points: NDArray[np.float64]
+    host_points: NDArray[np.float64]
+
+
+@dataclass(frozen=True)
 class ShellMidlineStrip:
     """Mid-surface strip for one SDF subcomponent; FE-kernel-agnostic.
 
@@ -68,6 +87,17 @@ class ShellMidlineStrip:
     bay_index
         For skin only when ``skin_arc == "bay"``: zero-based bay index between
         consecutive webs (``0`` … ``n_webs-2``).  ``None`` otherwise.
+    zone_id, gauge_dof_id, topology_generation, stack_family_digest, repeats_k
+        Optional structural-gauge identity stamped when geometry is built from
+        a :class:`StationGaugeState`. ``None`` on the thickness-authority path.
+    placement_policy_id, placement_digest, reference_face
+        Optional surface-aware placement stamp (WP3 D3.4). Policy id / digest
+        from ``layup.types.placement``; ``reference_face`` is the enum value
+        string (e.g. ``outer_mould_line``). ``None`` until geometry producers
+        carry placement through to the strip.
+    bonds
+        For caps: how the strip is bonded to the skin arcs it lies on
+        (:class:`StripBond`, one per host arc). Empty for skin and web.
     """
 
     label: str
@@ -80,6 +110,15 @@ class ShellMidlineStrip:
     skin_side: str | None = None
     skin_arc: str | None = None
     bay_index: int | None = None
+    zone_id: str | None = None
+    gauge_dof_id: str | None = None
+    topology_generation: int | None = None
+    stack_family_digest: str | None = None
+    repeats_k: int | None = None
+    placement_policy_id: str | None = None
+    placement_digest: str | None = None
+    reference_face: str | None = None
+    bonds: tuple[StripBond, ...] = ()
 
     def arc_length_m(self) -> float:
         """Total polyline arc length in metres (twisted pitch-axis blade frame)."""
@@ -90,4 +129,4 @@ class ShellMidlineStrip:
         return float(np.sum(np.hypot(d[:, 0], d[:, 1])))
 
 
-__all__ = ["ShellMidlineStrip"]
+__all__ = ["ShellMidlineStrip", "StripBond"]

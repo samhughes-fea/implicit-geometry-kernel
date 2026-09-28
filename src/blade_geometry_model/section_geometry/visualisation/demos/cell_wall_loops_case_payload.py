@@ -50,6 +50,7 @@ def cell_wall_loops_case_payload(
                 "area_m2": float(lp.area_m2),
                 "web_labels": list(lp.web_labels),
                 "piece_labels": list(lp.piece_labels),
+                "wall_labels": list(lp.wall_labels),
                 "polyline_twisted_pitch_axis_blade_frame": _polyline_to_list(lp.polyline_twisted_pitch_axis_blade_frame),
             }
             for lp in cell_loops

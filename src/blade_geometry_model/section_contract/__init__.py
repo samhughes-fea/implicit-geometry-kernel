@@ -14,7 +14,7 @@ from .load_orders import (
     SHELL_K6_MODE_ORDER,
     STRIP_OPTIM_ORDER,
 )
-from .shell_midline_strip import ShellMidlineStrip
+from .shell_midline_strip import ShellMidlineStrip, StripBond
 
 __all__ = [
     "BEAM_IO_ORDER",
@@ -30,4 +30,5 @@ __all__ = [
     "CellWallLoop",
     "InfeasibleSectionGeometry",
     "ShellMidlineStrip",
+    "StripBond",
 ]

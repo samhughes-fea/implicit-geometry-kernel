@@ -52,8 +52,8 @@ _ensure_mod.ensure_repo_path()
 
 from blade_structure_inputs.module.materials.materials import Materials
 from blade_structure_utilities.fem_utilities.section_shell_fea import SectionLinearStaticRunner
-from blade_structure_utilities.fem_utilities.section_shell_fea.pre_processing.mesh.api.shell_panel_topology import (
-    shell_panel_topology_from_shell_inputs,
+from blade_structure_utilities.fem_utilities.section_shell_fea.pre_processing.mesh.api.bound_section_shell_inputs import (
+    bind_section_shell_inputs,
 )
 from blade_structure_utilities.geometry_utilities.coordinate_frames import section_plot_axes
 from blade_structure_utilities.geometry_utilities.section_contract import BeamResultantVector
@@ -146,7 +146,7 @@ def _run_chain(*, moment_flapwise: float, shear_flapwise: float) -> dict:
         .execute()
         .get_results()
     )
-    topology = shell_panel_topology_from_shell_inputs(shell, zones=binding.zones, n_cells=binding.n_cells)
+    topology = bind_section_shell_inputs(shell, zones=binding.zones, n_cells=binding.n_cells)
     mesh = build_section_strip_mesh(
         topology.shell_inputs,
         target_element_length_frac=TARGET_ELEMENT_LENGTH_FRAC,

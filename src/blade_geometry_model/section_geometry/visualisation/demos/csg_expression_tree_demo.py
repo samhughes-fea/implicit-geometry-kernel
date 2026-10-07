@@ -56,8 +56,12 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
 )
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
     INK,
+    LIGHT_TEAL,
+    MUTED,
     NAVY,
     RED,
+    SURFACE,
+    TEAL,
     distance_field_norm,
     draw_distance_field,
     strip_axes_chrome,
@@ -83,10 +87,17 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
 
 _DPI = DEFAULT_DPI
 
-# Nodes that combine or transform sub-fields, versus nodes that are shapes.
-_OPERATOR_COLOR = "#2f6f9f"
-_LEAF_COLOR = "#c2703d"
-_SHARED_COLOR = "#7a4fa3"
+# Deck-matched node fill: navy operators (like hdr), light-teal leaves (like
+# gap-card-teal), teal rim for shared subtrees — same tokens as the HTML deck.
+_OPERATOR_FACE = NAVY
+_OPERATOR_EDGE = NAVY
+_LEAF_FACE = LIGHT_TEAL
+_LEAF_EDGE = TEAL
+_SHARED_EDGE = TEAL
+_CONNECTOR = MUTED
+_OPERATOR_TEXT = "#ffffff"
+_LEAF_TEXT = NAVY
+_FORMULA_OPERATOR_ALPHA = 0.78
 
 # One line of numpy per operator, taken from the eval_expr_batch dispatch.
 _OPERATOR_FORMULA = {
@@ -291,21 +302,22 @@ def layout_tree(root: Expr, *, leaf_gap: float = 1.0) -> tuple[dict, list]:
 
 
 def draw_tree(axis, root: Expr, shared_nodes: set[Expr]) -> None:
-    """Draw the expression tree as a node-link diagram.
+    """Draw the expression tree in deck chrome (navy / teal / surface).
 
-    Small trees get wide leaf gaps, elbow connectors, and readable captions.
-    Wide trees shrink type and drop parameter / formula lines rather than overlap.
+    Matches the CDFAM HTML chain-box / gap-card language rather than a generic
+    orange–blue diagram palette. Small trees get wide leaf gaps and elbows;
+    wide trees shrink type and drop parameter / formula lines rather than overlap.
     """
     leaf_count = sum(1 for _ in _iter_leaves(root))
     leaf_gap = 2.15 if leaf_count <= 3 else (1.55 if leaf_count <= 6 else 1.0)
     positions, edges = layout_tree(root, leaf_gap=leaf_gap)
 
     if leaf_count <= 3:
-        box_font, formula_font, show_parameters, show_formula = 12.0, 9.5, True, True
-        box_half_width, box_half_height, row_pitch = 0.92, 0.52, 1.70
+        box_font, formula_font, show_parameters, show_formula = 11.5, 9.0, True, True
+        box_half_width, box_half_height, row_pitch = 0.92, 0.50, 1.65
     elif leaf_count <= 6:
-        box_font, formula_font, show_parameters, show_formula = 10.5, 8.5, True, True
-        box_half_width, box_half_height, row_pitch = 0.70, 0.46, 1.45
+        box_font, formula_font, show_parameters, show_formula = 10.0, 8.0, True, True
+        box_half_width, box_half_height, row_pitch = 0.70, 0.44, 1.40
     elif leaf_count <= 12:
         box_font, formula_font, show_parameters, show_formula = 5.8, 5.0, False, False
         box_half_width, box_half_height, row_pitch = 0.46, 0.15, 0.72
@@ -322,8 +334,8 @@ def draw_tree(axis, root: Expr, shared_nodes: set[Expr]) -> None:
         axis.plot(
             [parent_x, parent_x, child_x, child_x],
             [parent_y - box_half_height, mid_y, mid_y, child_y + box_half_height],
-            color="#6b7580",
-            linewidth=2.0,
+            color=_CONNECTOR,
+            linewidth=1.5,
             solid_capstyle="round",
             solid_joinstyle="round",
             zorder=1,
@@ -332,46 +344,69 @@ def draw_tree(axis, root: Expr, shared_nodes: set[Expr]) -> None:
     for node_x, node_y_raw, node, _ in positions.values():
         node_y = node_y_raw * row_pitch
         is_leaf = not child_expressions(node)
-        face = _LEAF_COLOR if is_leaf else _OPERATOR_COLOR
         is_shared = node in shared_nodes
+        face = _LEAF_FACE if is_leaf else _OPERATOR_FACE
+        if is_shared:
+            edge, edge_width = _SHARED_EDGE, 2.4
+        elif is_leaf:
+            edge, edge_width = _LEAF_EDGE, 1.6
+        else:
+            edge, edge_width = _OPERATOR_EDGE, 1.2
         box = FancyBboxPatch(
             (node_x - box_half_width, node_y - box_half_height),
             2.0 * box_half_width,
             2.0 * box_half_height,
-            boxstyle="round,pad=0.03,rounding_size=0.10",
+            boxstyle="round,pad=0.02,rounding_size=0.08",
             facecolor=face,
-            edgecolor=_SHARED_COLOR if is_shared else "white",
-            linewidth=2.8 if is_shared else 1.2,
+            edgecolor=edge,
+            linewidth=edge_width,
             linestyle="solid",
             zorder=2,
         )
         axis.add_patch(box)
         formula = _OPERATOR_FORMULA.get(type(node).__name__)
-        carries_formula = show_formula and formula is not None
+        carries_formula = show_formula and formula is not None and not is_leaf
         caption = node_caption(node) if show_parameters else type(node).__name__
+        # First line = type name (teal weight on deck cards); rest = params.
+        caption_lines = caption.split("\n")
+        name_line = caption_lines[0]
+        param_lines = caption_lines[1:]
+        text_color = _LEAF_TEXT if is_leaf else _OPERATOR_TEXT
+        name_y = node_y + (0.12 if (param_lines or carries_formula) else 0.0)
         axis.text(
             node_x,
-            node_y + (0.10 if carries_formula else 0.0),
-            caption,
+            name_y,
+            name_line,
             ha="center",
             va="center",
             fontsize=box_font,
-            color="white",
+            color=TEAL if is_leaf else _OPERATOR_TEXT,
             zorder=3,
-            linespacing=1.25,
-            fontweight="medium",
+            fontweight="bold",
         )
+        if param_lines:
+            axis.text(
+                node_x,
+                node_y - (0.06 if carries_formula else 0.10),
+                "\n".join(param_lines),
+                ha="center",
+                va="center",
+                fontsize=box_font - 1.5,
+                color=text_color,
+                zorder=3,
+                linespacing=1.2,
+            )
         if carries_formula:
             axis.text(
                 node_x,
-                node_y - box_half_height + 0.12,
+                node_y - box_half_height + 0.11,
                 formula,
                 ha="center",
                 va="center",
                 fontsize=formula_font,
                 family="monospace",
-                color="white",
-                alpha=0.88,
+                color=_OPERATOR_TEXT,
+                alpha=_FORMULA_OPERATOR_ALPHA,
                 zorder=3,
             )
 
@@ -382,6 +417,7 @@ def draw_tree(axis, root: Expr, shared_nodes: set[Expr]) -> None:
     axis.set_ylim(
         min(all_y) - box_half_height - 0.30, max(all_y) + box_half_height + 0.30
     )
+    axis.set_facecolor(SURFACE)
     axis.set_axis_off()
 
 
@@ -693,9 +729,9 @@ def main(argv: list[str] | None = None) -> int:
     _annotate_target(axis_section, x_plot, y_plot, target_phi_section, args.label)
 
     axis_tree.set_title(
-        "Expression tree · blue = operators · orange = leaves\n"
-        "purple outline = shared subtree",
-        loc="left", fontsize=12, color=INK,
+        "Expression tree · navy = operators · teal = leaves\n"
+        "teal rim = shared subtree",
+        loc="left", fontsize=12, color=MUTED,
     )
     draw_tree(axis_tree, target_expression, shared_nodes)
 
@@ -785,10 +821,10 @@ def main(argv: list[str] | None = None) -> int:
     unique_values = [per_label[k]["unique_nodes"] for k in ordered_labels]
 
     axis_bars.barh(
-        y_positions, visit_values, height=0.62, color=_OPERATOR_COLOR, label="node visits"
+        y_positions, visit_values, height=0.62, color=NAVY, label="node visits"
     )
     axis_bars.barh(
-        y_positions, unique_values, height=0.32, color=_LEAF_COLOR, label="distinct nodes"
+        y_positions, unique_values, height=0.32, color=TEAL, label="distinct nodes"
     )
     axis_bars.set_yticks(y_positions)
     axis_bars.set_yticklabels(ordered_labels, fontsize=8.5)
@@ -803,7 +839,7 @@ def main(argv: list[str] | None = None) -> int:
     axis_summary.bar(
         ["node visits\n(naive walk)", "distinct nodes\n(memoised)"],
         [total_visits, unique_total],
-        color=[_OPERATOR_COLOR, _SHARED_COLOR],
+        color=[NAVY, TEAL],
         width=0.55,
     )
     for index, value in enumerate((total_visits, unique_total)):

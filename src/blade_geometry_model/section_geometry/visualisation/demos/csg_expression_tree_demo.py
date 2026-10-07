@@ -87,16 +87,16 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
 
 _DPI = DEFAULT_DPI
 
-# Deck-matched node fill: navy operators (like hdr), light-teal leaves (like
-# gap-card-teal), teal rim for shared subtrees — same tokens as the HTML deck.
+# Deck-matched node fill: navy operators (hdr), surface leaves (chain-box),
+# teal type labels + rim for shared — same tokens as the HTML deck :root.
 _OPERATOR_FACE = NAVY
 _OPERATOR_EDGE = NAVY
-_LEAF_FACE = LIGHT_TEAL
+_LEAF_FACE = SURFACE
 _LEAF_EDGE = TEAL
 _SHARED_EDGE = TEAL
 _CONNECTOR = MUTED
 _OPERATOR_TEXT = "#ffffff"
-_LEAF_TEXT = NAVY
+_LEAF_TEXT = MUTED
 _FORMULA_OPERATOR_ALPHA = 0.78
 
 # One line of numpy per operator, taken from the eval_expr_batch dispatch.

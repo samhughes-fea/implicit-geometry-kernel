@@ -18,12 +18,15 @@ Writes under ``visualisation/output/csg_expression_tree/``:
 
 * ``csg_expression_tree.png`` - section context, node-link tree, and the
   operator-by-operator emergence of the region.
+* ``csg_expression_tree_stages.gif`` - looping dwell on each emergence stage
+  (Polygon → Offset → Intersect for a shear web). Deck live media; the PNG is
+  the PDF still.
 * ``csg_node_census.png`` - per-label tree size and the shared-subtree payoff.
 * ``csg_expression_tree.json`` - per-label node counts, depths, unique-node total.
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/csg_expression_tree_demo.py
+    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/csg_expression_tree_demo.py --presentation
 """
 
 from __future__ import annotations
@@ -108,6 +111,73 @@ def _save(fig, path: Path, *, presentation: bool = False) -> None:
     print(f"Wrote {path}")
 
 
+def _write_stages_gif(
+    out_path: Path,
+    *,
+    stages: list[Expr],
+    stage_fields: list[np.ndarray],
+    stage_grid: SDFGrid,
+    stage_norm,
+    label: str,
+    dwell_ms: int = 1100,
+) -> None:
+    """Looping GIF: one frame per emergence stage, same field scale as the PNG row."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    frames: list[Image.Image] = []
+    previous_phi: np.ndarray | None = None
+    names = [type(stage).__name__ for stage in stages]
+
+    for stage_index, (stage_expression, phi) in enumerate(zip(stages, stage_fields)):
+        figure, axis = plt.subplots(figsize=(7.2, 5.2))
+        ghost = (
+            previous_phi
+            if type(stage_expression).__name__ in ("Offset", "Shell", "Slab")
+            else None
+        )
+        draw_field(
+            axis,
+            stage_grid,
+            phi,
+            f"{stage_index + 1}. {type(stage_expression).__name__}",
+            area_m2=stage_grid.area(phi),
+            previous_phi=ghost,
+            norm=stage_norm,
+        )
+        progress = "  →  ".join(
+            f"[{name}]" if index == stage_index else name
+            for index, name in enumerate(names)
+        )
+        figure.suptitle(
+            f"{label} · {progress}",
+            fontsize=12,
+            color=INK,
+            x=0.02,
+            ha="left",
+            y=0.98,
+        )
+        figure.subplots_adjust(left=0.04, right=0.98, top=0.90, bottom=0.04)
+        buffer = BytesIO()
+        figure.savefig(buffer, format="png", dpi=120, facecolor="white")
+        plt.close(figure)
+        buffer.seek(0)
+        frames.append(Image.open(buffer).convert("P", palette=Image.ADAPTIVE))
+        previous_phi = phi
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    frames[0].save(
+        out_path,
+        save_all=True,
+        append_images=frames[1:],
+        duration=dwell_ms,
+        loop=0,
+        optimize=True,
+    )
+    print(f"Wrote {out_path}")
+
+
 def child_expressions(node: Expr) -> list[tuple[str, Expr]]:
     """Return ``(field_name, child)`` for every sub-expression of ``node``."""
     children: list[tuple[str, Expr]] = []
@@ -143,10 +213,25 @@ def node_caption(node: Expr) -> str:
         return f"Polygon\n{vertex_count} verts"
     if name == "CallableField":
         return f"CallableField\n{getattr(node, 'key', '')}"
+    if name == "Capsule":
+        # Two lines only — long endpoint dumps clip inside the box.
+        parameters = scalar_parameters(node)
+        radius = parameters.get("r")
+        ax_ = parameters.get("ax")
+        bx_ = parameters.get("bx")
+        if radius is not None and ax_ is not None and bx_ is not None:
+            if abs(ax_ - bx_) < 1e-9:
+                return f"Capsule\nx={ax_:.3g} · r={radius:.3g}"
+            return f"Capsule\nr={radius:.3g}"
+        if radius is not None:
+            return f"Capsule\nr={radius:.3g}"
+        return "Capsule"
 
     parameters = scalar_parameters(node)
     if not parameters:
         return name
+    if name == "Offset" and "amount" in parameters:
+        return f"Offset\namount={parameters['amount']:.4g}"
     shown = list(parameters.items())[:3]
     body = "\n".join(f"{key}={value:.4g}" for key, value in shown)
     return f"{name}\n{body}"
@@ -173,7 +258,7 @@ def collect_unique(node: Expr, seen: set[Expr]) -> None:
         collect_unique(child, seen)
 
 
-def layout_tree(root: Expr) -> tuple[dict, list]:
+def layout_tree(root: Expr, *, leaf_gap: float = 1.0) -> tuple[dict, list]:
     """Assign (x, y) to each node: leaves in order, parents centred on children.
 
     Returns ``(positions, edges)`` where ``positions`` maps a node id to
@@ -190,7 +275,7 @@ def layout_tree(root: Expr) -> tuple[dict, list]:
         positions[node_id] = (0.0, float(-depth), node, depth)
         if not children:
             x_position = next_leaf_x[0]
-            next_leaf_x[0] += 1.0
+            next_leaf_x[0] += leaf_gap
         else:
             child_x: list[float] = []
             for _, child in children:
@@ -208,35 +293,39 @@ def layout_tree(root: Expr) -> tuple[dict, list]:
 def draw_tree(axis, root: Expr, shared_nodes: set[Expr]) -> None:
     """Draw the expression tree as a node-link diagram.
 
-    Leaves sit one unit apart, so a wide tree has to give up detail rather than
-    overlap: captions shrink, parameter lines and the numpy annotations drop
-    away once there is no room for them.
+    Small trees get wide leaf gaps, elbow connectors, and readable captions.
+    Wide trees shrink type and drop parameter / formula lines rather than overlap.
     """
-    positions, edges = layout_tree(root)
-    leaf_count = sum(1 for _, _, node, _ in positions.values() if not child_expressions(node))
+    leaf_count = sum(1 for _ in _iter_leaves(root))
+    leaf_gap = 2.15 if leaf_count <= 3 else (1.55 if leaf_count <= 6 else 1.0)
+    positions, edges = layout_tree(root, leaf_gap=leaf_gap)
 
-    if leaf_count <= 6:
-        box_font, show_parameters, show_formula = 10.0, True, True
+    if leaf_count <= 3:
+        box_font, formula_font, show_parameters, show_formula = 12.0, 9.5, True, True
+        box_half_width, box_half_height, row_pitch = 0.92, 0.52, 1.70
+    elif leaf_count <= 6:
+        box_font, formula_font, show_parameters, show_formula = 10.5, 8.5, True, True
+        box_half_width, box_half_height, row_pitch = 0.70, 0.46, 1.45
     elif leaf_count <= 12:
-        box_font, show_parameters, show_formula = 5.8, False, False
+        box_font, formula_font, show_parameters, show_formula = 5.8, 5.0, False, False
+        box_half_width, box_half_height, row_pitch = 0.46, 0.15, 0.72
     else:
-        box_font, show_parameters, show_formula = 4.8, False, False
-
-    box_half_width = 0.47 if leaf_count <= 6 else 0.46
-    # The numpy line rides inside the node, so the box has to be tall enough to
-    # carry it. Floated outside to the right it read as stray text with nothing
-    # tying it to the operator it implements.
-    box_half_height = (0.42 if show_formula else 0.22) if show_parameters else 0.15
-    row_pitch = 1.25 if show_parameters else 0.72
+        box_font, formula_font, show_parameters, show_formula = 4.8, 4.5, False, False
+        box_half_width, box_half_height, row_pitch = 0.46, 0.15, 0.72
 
     for parent_id, child_id in edges:
-        parent_x, parent_y, _, _ = positions[parent_id]
-        child_x, child_y, _, _ = positions[child_id]
+        parent_x, parent_y_raw, _, _ = positions[parent_id]
+        child_x, child_y_raw, _, _ = positions[child_id]
+        parent_y = parent_y_raw * row_pitch
+        child_y = child_y_raw * row_pitch
+        mid_y = 0.5 * (parent_y + child_y)
         axis.plot(
-            [parent_x, child_x * 1.0],
-            [parent_y * row_pitch, child_y * row_pitch],
-            color="#9aa3ab",
-            linewidth=1.3,
+            [parent_x, parent_x, child_x, child_x],
+            [parent_y - box_half_height, mid_y, mid_y, child_y + box_half_height],
+            color="#6b7580",
+            linewidth=2.0,
+            solid_capstyle="round",
+            solid_joinstyle="round",
             zorder=1,
         )
 
@@ -249,10 +338,10 @@ def draw_tree(axis, root: Expr, shared_nodes: set[Expr]) -> None:
             (node_x - box_half_width, node_y - box_half_height),
             2.0 * box_half_width,
             2.0 * box_half_height,
-            boxstyle="round,pad=0.02,rounding_size=0.06",
+            boxstyle="round,pad=0.03,rounding_size=0.10",
             facecolor=face,
             edgecolor=_SHARED_COLOR if is_shared else "white",
-            linewidth=2.6 if is_shared else 1.4,
+            linewidth=2.8 if is_shared else 1.2,
             linestyle="solid",
             zorder=2,
         )
@@ -262,39 +351,47 @@ def draw_tree(axis, root: Expr, shared_nodes: set[Expr]) -> None:
         caption = node_caption(node) if show_parameters else type(node).__name__
         axis.text(
             node_x,
-            node_y + (0.08 if carries_formula else 0.0),
+            node_y + (0.10 if carries_formula else 0.0),
             caption,
             ha="center",
             va="center",
             fontsize=box_font,
             color="white",
             zorder=3,
-            linespacing=1.2,
+            linespacing=1.25,
+            fontweight="medium",
         )
         if carries_formula:
             axis.text(
                 node_x,
-                node_y - box_half_height + 0.09,
+                node_y - box_half_height + 0.12,
                 formula,
                 ha="center",
                 va="center",
-                fontsize=9.5,
+                fontsize=formula_font,
                 family="monospace",
                 color="white",
-                alpha=0.82,
+                alpha=0.88,
                 zorder=3,
             )
 
     all_x = [p[0] for p in positions.values()]
     all_y = [p[1] * row_pitch for p in positions.values()]
-    # The formula now sits inside the node, so no right gutter is reserved for it.
-    right_margin = box_half_width + 0.4
-    axis.set_xlim(min(all_x) - box_half_width - 0.4, max(all_x) + right_margin)
+    right_margin = box_half_width + 0.35
+    axis.set_xlim(min(all_x) - box_half_width - 0.35, max(all_x) + right_margin)
     axis.set_ylim(
-        min(all_y) - box_half_height - 0.35, max(all_y) + box_half_height + 0.35
+        min(all_y) - box_half_height - 0.30, max(all_y) + box_half_height + 0.30
     )
     axis.set_axis_off()
 
+
+def _iter_leaves(node: Expr):
+    children = child_expressions(node)
+    if not children:
+        yield node
+        return
+    for _, child in children:
+        yield from _iter_leaves(child)
 
 def emergence_stages(root: Expr, max_stages: int) -> list[Expr]:
     """A coherent build-up: leaf first, root last, each stage the parent of the last.
@@ -540,9 +637,8 @@ def main(argv: list[str] | None = None) -> int:
     # difference with dead space above and below the aerofoil rather than with
     # geometry, so the row is deliberately short.
     outer = figure.add_gridspec(2, 1, height_ratios=[0.82, 1.0], hspace=0.22)
-    # The tree is three or four nodes and does not need the larger half; the
-    # section is a thin lens and every millimetre of width becomes drawn chord.
-    top = outer[0].subgridspec(1, 2, width_ratios=[1.35, 1.0], wspace=0.10)
+    # Tree gets equal width to the section so nodes and elbow connectors breathe.
+    top = outer[0].subgridspec(1, 2, width_ratios=[1.05, 1.0], wspace=0.12)
     axis_section = figure.add_subplot(top[0, 0])
     axis_tree = figure.add_subplot(top[0, 1])
 
@@ -597,8 +693,8 @@ def main(argv: list[str] | None = None) -> int:
     _annotate_target(axis_section, x_plot, y_plot, target_phi_section, args.label)
 
     axis_tree.set_title(
-        "Its expression tree · blue operators, orange leaves,\n"
-        "purple outline = shared with another region",
+        "Expression tree · blue = operators · orange = leaves\n"
+        "purple outline = shared subtree",
         loc="left", fontsize=12, color=INK,
     )
     draw_tree(axis_tree, target_expression, shared_nodes)
@@ -669,6 +765,15 @@ def main(argv: list[str] | None = None) -> int:
         colour_bar.outline.set_visible(False)
 
     _save(figure, out_dir / "csg_expression_tree.png", presentation=presentation)
+
+    _write_stages_gif(
+        out_dir / "csg_expression_tree_stages.gif",
+        stages=stages,
+        stage_fields=stage_fields,
+        stage_grid=stage_grid,
+        stage_norm=stage_norm,
+        label=str(args.label),
+    )
 
     # --- figure 2: node census ---------------------------------------------
     census_figure, census_axes = plt.subplots(1, 2, figsize=(15.0, 5.6))

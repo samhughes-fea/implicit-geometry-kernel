@@ -493,6 +493,7 @@ def write_compact_tree_png(
     figure.patch.set_facecolor("white")
     axis.set_title(title, loc="left", fontsize=11, color=MUTED, pad=8)
     draw_tree(axis, root, shared, names_only=True)
+    axis.set_facecolor("white")  # compact wall panels: no surface card behind the tree
     figure.subplots_adjust(left=0.04, right=0.96, top=0.88, bottom=0.04)
     _save(figure, path, presentation=presentation)
 

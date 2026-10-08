@@ -74,7 +74,11 @@ from blade_structure_utilities.geometry_utilities.section_geometry import (
     resolve_system_type,
 )
 from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import (
+    Capsule,
     Expr,
+    Offset,
+    Polygon,
+    Slab,
     eval_expr_batch,
     expr_bbox,
 )
@@ -301,18 +305,28 @@ def layout_tree(root: Expr, *, leaf_gap: float = 1.0) -> tuple[dict, list]:
     return positions, edges
 
 
-def draw_tree(axis, root: Expr, shared_nodes: set[Expr]) -> None:
+def draw_tree(
+    axis,
+    root: Expr,
+    shared_nodes: set[Expr],
+    *,
+    names_only: bool = False,
+) -> None:
     """Draw the expression tree in deck chrome (navy / teal / surface).
 
     Matches the CDFAM HTML chain-box / gap-card language rather than a generic
     orange–blue diagram palette. Small trees get wide leaf gaps and elbows;
     wide trees shrink type and drop parameter / formula lines rather than overlap.
+    ``names_only`` keeps type names alone (deck wall panels).
     """
     leaf_count = sum(1 for _ in _iter_leaves(root))
     leaf_gap = 2.15 if leaf_count <= 3 else (1.55 if leaf_count <= 6 else 1.0)
     positions, edges = layout_tree(root, leaf_gap=leaf_gap)
 
-    if leaf_count <= 3:
+    if names_only:
+        box_font, formula_font, show_parameters, show_formula = 13.0, 9.0, False, False
+        box_half_width, box_half_height, row_pitch = 0.85, 0.28, 1.15
+    elif leaf_count <= 3:
         box_font, formula_font, show_parameters, show_formula = 11.5, 9.0, True, True
         box_half_width, box_half_height, row_pitch = 0.92, 0.50, 1.65
     elif leaf_count <= 6:
@@ -428,6 +442,59 @@ def _iter_leaves(node: Expr):
         return
     for _, child in children:
         yield from _iter_leaves(child)
+
+
+def _airfoil_polygon(airfoil) -> Polygon:
+    verts = np.asarray(airfoil.vertices, dtype=float)
+    return Polygon(tuple((float(x), float(y)) for x, y in verts))
+
+
+def pedagogical_wall_expr(
+    wall: str,
+    *,
+    airfoil,
+    skin_thickness: float,
+    spar_cap_thickness: float,
+    shear_web_thickness: float,
+    production_web: Expr | None = None,
+) -> Expr:
+    """Compact recipe spine for deck wall panels (not the full winner-map tree).
+
+    Skin/cap production exprs carry half-planes and web subtracts that overwhelm
+    a slide; the talk track is Offset / Slab / Capsule∩cavity.
+    """
+    leaf = _airfoil_polygon(airfoil)
+    cavity = Offset(leaf, -float(skin_thickness))
+    kind = str(wall).strip().lower()
+    if kind in {"skin", "skin_suction_surface"}:
+        return cavity
+    if kind in {"cap", "spar_cap", "spar_cap_suction_surface"}:
+        return Slab(cavity, float(spar_cap_thickness))
+    if kind in {"web", "shear_web", "shear_web_0"}:
+        if production_web is not None:
+            return production_web
+        # Fallback axis near mid-chord if the section build was skipped.
+        half = 0.5 * float(shear_web_thickness)
+        return Capsule(0.35, -0.08, 0.35, 0.08, half)
+    raise ValueError(f"unknown wall {wall!r}; expected skin|cap|web")
+
+
+def write_compact_tree_png(
+    path: Path,
+    root: Expr,
+    *,
+    shared_nodes: set[Expr] | None = None,
+    title: str,
+    presentation: bool = False,
+) -> None:
+    """Tree-only panel for the wall trio (no section context, no emergence row)."""
+    shared = shared_nodes if shared_nodes is not None else set()
+    figure, axis = plt.subplots(figsize=(4.6, 4.2))
+    figure.patch.set_facecolor("white")
+    axis.set_title(title, loc="left", fontsize=11, color=MUTED, pad=8)
+    draw_tree(axis, root, shared, names_only=True)
+    figure.subplots_adjust(left=0.04, right=0.96, top=0.88, bottom=0.04)
+    _save(figure, path, presentation=presentation)
 
 def emergence_stages(root: Expr, max_stages: int) -> list[Expr]:
     """A coherent build-up: leaf first, root last, each stage the parent of the last.
@@ -592,6 +659,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-stages", type=int, default=4)
     parser.add_argument("--out-dir", type=Path, default=None)
     parser.add_argument("--presentation", action="store_true", help="Deck styling.")
+    parser.add_argument(
+        "--names-only",
+        action="store_true",
+        help="Type names on tree nodes (no parameters / formulas).",
+    )
+    parser.add_argument(
+        "--tree-only",
+        action="store_true",
+        help="Write compact tree-only PNG(s); skip section/emergence/census figures.",
+    )
+    parser.add_argument(
+        "--deck-walls",
+        action="store_true",
+        help="Write csg_tree_skin/spar_cap/shear_web name-only panels for slides 13–15.",
+    )
     args = parser.parse_args(argv)
     presentation = bool(args.presentation)
     apply_presentation_style(presentation)
@@ -614,10 +696,49 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     label_keys = [_to_key(label) for label in section]
-    if args.label not in label_keys:
+    if args.label not in label_keys and not args.deck_walls:
         raise SystemExit(
             f"--label {args.label!r} not in section {args.key}; available: {label_keys}"
         )
+
+    if args.deck_walls:
+        web_expr = section["shear_web_0"].expr
+        panels = (
+            (
+                "skin",
+                out_dir / "csg_tree_skin.png",
+                "Skin · Offset of the NACA leaf",
+            ),
+            (
+                "cap",
+                out_dir / "csg_tree_spar_cap.png",
+                "Spar cap · Slab on the cavity",
+            ),
+            (
+                "web",
+                out_dir / "csg_tree_shear_web.png",
+                "Shear web · Capsule ∩ cavity",
+            ),
+        )
+        for wall, path, title in panels:
+            expr = pedagogical_wall_expr(
+                wall,
+                airfoil=airfoil,
+                skin_thickness=float(args.skin_thickness),
+                spar_cap_thickness=float(args.spar_cap_thickness),
+                shear_web_thickness=float(args.shear_web_thickness),
+                production_web=web_expr if wall == "web" else None,
+            )
+            write_compact_tree_png(
+                path,
+                expr,
+                shared_nodes=set(),
+                title=title,
+                presentation=presentation,
+            )
+        if args.tree_only:
+            return 0
+
 
     airfoil_for_grid = airfoil.rotate(twist_rad) if abs(twist_rad) > 1e-12 else airfoil
     section_grid = SDFGrid.from_airfoil(
@@ -733,7 +854,12 @@ def main(argv: list[str] | None = None) -> int:
         "teal rim = shared subtree",
         loc="left", fontsize=12, color=MUTED,
     )
-    draw_tree(axis_tree, target_expression, shared_nodes)
+    draw_tree(
+        axis_tree,
+        target_expression,
+        shared_nodes,
+        names_only=bool(args.names_only),
+    )
 
     bottom = outer[1].subgridspec(1, len(stages), wspace=0.07)
     stage_records: list[dict] = []

@@ -199,7 +199,7 @@ def main(argv: list[str] | None = None) -> int:
     color_map = matplotlib.colors.LinearSegmentedColormap.from_list("gauge", ["#9ec5e8", NAVY])
     normalise = Normalize(vmin=min(thicknesses_m), vmax=max(thicknesses_m))
 
-    # The OML never moves; the skin's inner mould line is what the scalar drives.
+    # The exterior skin-shell surface never moves; the interior surface is what the scalar drives.
     axis_nested.contour(
         grid.X, grid.Y, phi_aerofoil, levels=[0.0], colors="#111418", linewidths=2.4
     )
@@ -214,7 +214,7 @@ def main(argv: list[str] | None = None) -> int:
         )
     axis_nested.set_aspect("equal")
     axis_nested.set_title(
-        "Outer mould line fixed; inner face per gauge, 2 → 20 mm", loc="left", fontsize=13, color=INK,
+        "Exterior skin-shell surface fixed; interior per gauge, 2 → 20 mm", loc="left", fontsize=13, color=INK,
     )
     strip_axes_chrome(axis_nested)
     mappable = cm.ScalarMappable(norm=Normalize(1e3 * min(thicknesses_m), 1e3 * max(thicknesses_m)), cmap=color_map)

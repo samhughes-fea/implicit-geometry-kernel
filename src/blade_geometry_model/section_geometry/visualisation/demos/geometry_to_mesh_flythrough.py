@@ -817,7 +817,7 @@ def render_static_strip(
             if row == 0:
                 axis.set_title(
                     f"{_STAGE_TITLES[name]}\n{_STAGE_SUBTITLES[name]}",
-                    fontsize=11,
+                    fontsize=13,
                     color=_INK,
                 )
                 axis.text(
@@ -827,29 +827,13 @@ def render_static_strip(
                     transform=axis.transAxes,
                     ha="center",
                     va="top",
-                    fontsize=9,
+                    fontsize=11,
                     color=_KIND_COLOR["web"],
                 )
-            else:
-                axis.text(
-                    0.5,
-                    -0.05,
-                    _STAGE_MODULE[name],
-                    transform=axis.transAxes,
-                    ha="center",
-                    va="top",
-                    fontsize=8,
-                    family="monospace",
-                    color=_MUTED,
-                )
-    axes[0, 0].set_ylabel("whole section", fontsize=10, color=_MUTED)
-    axes[1, 0].set_ylabel("junction zoom", fontsize=10, color=_MUTED)
-    figure.suptitle(
-        "Implicit solids to a conforming shell mesh: the four stages, "
-        "whole section (top) and at a web-skin junction (bottom)",
-        fontsize=14,
-    )
-    figure.tight_layout(rect=(0, 0.01, 1, 0.93))
+    axes[0, 0].set_ylabel("whole section", fontsize=12, color=_INK)
+    axes[1, 0].set_ylabel("junction zoom", fontsize=12, color=_INK)
+    figure.tight_layout()
+    figure.subplots_adjust(hspace=0.22, wspace=0.05)
     save_figure(figure, out_path, presentation=presentation)
     plt.close(figure)
     print(f"Wrote {out_path}")

@@ -193,6 +193,76 @@ def _write_stages_gif(
     print(f"Wrote {out_path}")
 
 
+def _write_stages_trio(
+    out_path: Path,
+    *,
+    stages: list[Expr],
+    stage_fields: list[np.ndarray],
+    stage_grid: SDFGrid,
+    stage_norm,
+    label: str,
+    presentation: bool = False,
+) -> None:
+    """Three-panel static figure showing all emergence stages side by side.
+
+    Used as the PDF export still for the stages GIF: without it the validator
+    replaces the GIF with its final frame only, so the leaf→Offset→Intersect
+    progression is invisible in print.
+
+    Writes a ~2.5:1 figure matching the full-width slide panel.
+    """
+    n_stages = len(stages)
+    figure, axes = plt.subplots(1, n_stages, figsize=(14.0, 5.0))
+    if n_stages == 1:
+        axes = [axes]
+
+    names = [type(stage).__name__ for stage in stages]
+    previous_phi: np.ndarray | None = None
+    last_mesh = None
+
+    for panel_index, (stage_expression, phi, axis) in enumerate(
+        zip(stages, stage_fields, axes)
+    ):
+        ghost = (
+            previous_phi
+            if type(stage_expression).__name__ in ("Offset", "Shell", "Slab")
+            else None
+        )
+        mesh = draw_field(
+            axis,
+            stage_grid,
+            phi,
+            f"{panel_index + 1}. {type(stage_expression).__name__}",
+            area_m2=stage_grid.area(phi),
+            previous_phi=ghost,
+            norm=stage_norm,
+        )
+        if mesh is not None:
+            last_mesh = mesh
+        previous_phi = phi
+
+    if last_mesh is not None:
+        colour_bar = figure.colorbar(
+            last_mesh, ax=list(axes), orientation="vertical", fraction=0.022, pad=0.012
+        )
+        colour_bar.set_label("φ [m]", fontsize=11)
+        colour_bar.ax.tick_params(labelsize=10)
+        colour_bar.outline.set_visible(False)
+
+    arrow = "  →  ".join(names)
+    figure.suptitle(
+        f"{label} · {arrow}",
+        fontsize=12,
+        color=INK,
+        x=0.02,
+        ha="left",
+        y=0.98,
+    )
+    figure.subplots_adjust(left=0.02, right=0.92, top=0.90, bottom=0.04, wspace=0.08)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    _save(figure, out_path, presentation=presentation)
+
+
 def child_expressions(node: Expr) -> list[tuple[str, Expr]]:
     """Return ``(field_name, child)`` for every sub-expression of ``node``."""
     children: list[tuple[str, Expr]] = []
@@ -936,6 +1006,16 @@ def main(argv: list[str] | None = None) -> int:
         stage_grid=stage_grid,
         stage_norm=stage_norm,
         label=str(args.label),
+    )
+
+    _write_stages_trio(
+        out_dir / "csg_expression_tree_stages_trio.png",
+        stages=stages,
+        stage_fields=stage_fields,
+        stage_grid=stage_grid,
+        stage_norm=stage_norm,
+        label=str(args.label),
+        presentation=presentation,
     )
 
     # --- figure 2: node census ---------------------------------------------

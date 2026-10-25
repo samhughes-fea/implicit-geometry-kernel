@@ -76,6 +76,10 @@ from blade_structure_utilities.geometry_utilities.section_geometry.sections.web_
     inner_y_at_x,
     resolve_web_anchors,
 )
+from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (  # noqa: E402
+    apply_presentation_style,
+    save_figure,
+)
 from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (  # noqa: E402
     plot_section_hybrid,
 )
@@ -404,6 +408,37 @@ def _footer(fig, span: dict[str, Any], current) -> None:
     )
 
 
+def render_span_still(
+    span: dict[str, Any], current, out_path: Path, *, presentation: bool
+) -> None:
+    """Clean two-panel plan + chord-fraction figure for the PDF export still."""
+    fig = plt.figure(figsize=(13.0, 7.0))
+    gs = fig.add_gridspec(
+        2, 2, hspace=0.45, wspace=0.12, left=0.08, right=0.97, top=0.95, bottom=0.08
+    )
+    ax_left = fig.add_subplot(gs[0, 0])
+    ax_right = fig.add_subplot(gs[0, 1])
+    ax_chord = fig.add_subplot(gs[1, :])
+
+    _draw_plan(ax_left, span, anchored=False, current=current)
+    _draw_plan(ax_right, span, anchored=True, current=current)
+    _draw_chord_fraction(ax_chord, span, current)
+
+    ax_left.set_title("chord-relative — all webs survive", fontsize=12)
+    ax_right.set_title("root-anchored — webs drop at ×", fontsize=12)
+    for ax in (ax_left, ax_right):
+        ax.set_xlabel("Span [m]", fontsize=12)
+        ax.set_ylabel("Edgewise offset [m]", fontsize=12)
+        ax.tick_params(labelsize=10)
+    ax_chord.set_xlabel("Span [m]", fontsize=12)
+    ax_chord.set_ylabel("Web position [x/c]", fontsize=12)
+    ax_chord.tick_params(labelsize=10)
+
+    save_figure(fig, out_path, presentation=presentation)
+    plt.close(fig)
+    print(f"Wrote {out_path}")
+
+
 def render_frame(span: dict[str, Any], current, out_path: Path, *, dpi: int) -> Path:
     fig = plt.figure(figsize=(12.8, 7.91))
     gs = fig.add_gridspec(
@@ -451,8 +486,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-frames", type=int, default=None)
     parser.add_argument("--no-gif", action="store_true", help="Render frames only.")
     parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
+    parser.add_argument(
+        "--presentation",
+        action="store_true",
+        help="Larger fonts and higher DPI for slides/decks.",
+    )
     args = parser.parse_args(argv)
 
+    apply_presentation_style(bool(args.presentation))
     profile = PROFILES[args.profile]
     out_dir: Path = args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -506,6 +547,14 @@ def main(argv: list[str] | None = None) -> int:
 
     paths.metadata_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(f"Wrote {paths.metadata_path}")
+
+    still_row = rows[int(0.8 * len(rows))]
+    render_span_still(
+        span,
+        still_row,
+        out_dir / "spanwise_yz_plan_flyover_still.png",
+        presentation=bool(args.presentation),
+    )
     for drop in span["drops"]:
         print(
             f"  web {drop['web_index']} dropped at r/R={drop['r_over_R']:.3f}"

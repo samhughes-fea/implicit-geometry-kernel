@@ -349,6 +349,81 @@ def render_contact_sheet(
     print(f"Wrote {path}")
 
 
+def render_still_3plus2(
+    entries: list[tuple], path: Path, *, presentation: bool, window
+) -> None:
+    """3+2 two-row contact sheet for PDF/PPTX export — aspect fits a full-width slide panel.
+
+    Shows CSG solids only (no mesh row) so the sections fill more of each cell.
+    The last slot in row 2 carries a text annotation when there are fewer than
+    3 entries in that row.
+    """
+    n_per_row = 3
+    figure = plt.figure(figsize=(14.0, 6.2))
+    gs = figure.add_gridspec(
+        2, n_per_row,
+        hspace=0.06, wspace=0.04,
+        left=0.04, right=0.98, top=0.87, bottom=0.04,
+    )
+
+    def _draw_cell(row: int, col: int, context, vector) -> None:
+        axis = figure.add_subplot(gs[row, col])
+        _pipeline.draw_csg(axis, context, 1.0)
+        axis.set_xlim(window[0], window[1])
+        axis.set_ylim(window[2], window[3])
+        axis.set_aspect("equal", adjustable="box")
+        axis.set_xticks([])
+        axis.set_yticks([])
+        for spine in axis.spines.values():
+            spine.set_color("#d7dce3")
+        skin_mm = vector["skin_thickness"] * 1e3
+        cap_mm = vector["spar_cap_thickness"] * 1e3
+        web_mm = vector["shear_web_thickness"] * 1e3
+        twist = vector["twist_deg"]
+        title = (
+            f"{vector['key']}\n"
+            f"t_skin {skin_mm:.0f}  t_cap {cap_mm:.0f}  t_web {web_mm:.0f} mm"
+        )
+        if twist != 0.0:
+            title += f"  twist {twist:.0f}°"
+        axis.set_title(title, fontsize=10.5, color=NAVY)
+
+    row1_entries = entries[:n_per_row]
+    row2_entries = entries[n_per_row:]
+
+    for col, (context, vector, _caption, _moving) in enumerate(row1_entries):
+        _draw_cell(0, col, context, vector)
+
+    for col, (context, vector, _caption, _moving) in enumerate(row2_entries):
+        _draw_cell(1, col, context, vector)
+
+    for col in range(len(row2_entries), n_per_row):
+        axis = figure.add_subplot(gs[1, col])
+        axis.set_xlim(0, 1)
+        axis.set_ylim(0, 1)
+        axis.set_xticks([])
+        axis.set_yticks([])
+        for spine in axis.spines.values():
+            spine.set_visible(False)
+        axis.text(
+            0.5, 0.5,
+            "same constructor\n·\ndifferent numbers",
+            transform=axis.transAxes,
+            ha="center", va="center",
+            fontsize=13, color=NAVY, fontweight="bold",
+            linespacing=1.8,
+        )
+
+    figure.suptitle(
+        "Design vector: gauge sweep → topology change → twist"
+        " — one call each, no remesh",
+        fontsize=12.5, color=NAVY, y=0.96,
+    )
+    save_figure(figure, path, presentation=presentation)
+    plt.close(figure)
+    print(f"Wrote {path}")
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--naca", default="2412")
@@ -463,7 +538,7 @@ def main(argv: list[str] | None = None) -> int:
         keyframe_entries = [keyframe_entries[index] for index in picks]
 
     if keyframe_entries:
-        render_contact_sheet(
+        render_still_3plus2(
             keyframe_entries,
             out_dir / "design_vector_morph_stages.png",
             presentation=presentation,

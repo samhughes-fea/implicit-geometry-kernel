@@ -25,11 +25,12 @@ The inner face is the naive mitred curve offset from the offset demo, reused
 so the two slides describe the same geometry.
 
 **Implicit.** The web is one expression at every position:
-``max(|x - x_web| - t_web/2, cavity)`` with
-``cavity = max(phi + t_skin, -cap)``: the same min/max algebra the kernel
-uses. The figure maps the B-rep branches along the chord, then zooms into the
-three places the sweep leaves the clean branch, with the implicit web drawn
-filled over each: the same expression, clipped correctly, in all three.
+``Intersect(Capsule(axis, t_web/2), Offset(airfoil, -t_skin))``. The axis is
+the IML-to-IML segment, lengthened so the stadium's round ends sit outside
+the cavity. The cap is a **separate** field: overlap is legal. The figure
+maps the B-rep branches along the chord, then zooms into the three places
+the sweep leaves the clean branch, with that same capsule ∩ cavity drawn
+in teal.
 
 Sizes are illustrative (5 mm skin, 12 mm cap over 0.25–0.55 c, 6 mm web), not a
 design.
@@ -144,10 +145,46 @@ def _brep_branch(inner_face: np.ndarray, x_web: float) -> str:
     return "extend + trim"
 
 
-def _implicit_web_field(phi: np.ndarray, x_grid: np.ndarray, x_web: float) -> np.ndarray:
-    """One expression at every position: slab ∩ cavity, cavity = inner skin minus cap."""
-    cavity = np.maximum(phi + _SKIN_M, -_cap_field(phi, x_grid))
-    return np.maximum(np.abs(x_grid - x_web) - 0.5 * _WEB_M, cavity)
+def _sdf_capsule(x, y, ax: float, ay: float, bx: float, by: float, r: float) -> np.ndarray:
+    """Metric SDF of a stadium: distance to the segment minus radius."""
+    abx = bx - ax
+    aby = by - ay
+    apx = x - ax
+    apy = y - ay
+    ab2 = abx * abx + aby * aby + 1e-30
+    t = np.clip((apx * abx + apy * aby) / ab2, 0.0, 1.0)
+    return np.hypot(apx - t * abx, apy - t * aby) - r
+
+
+def _iml_anchors(airfoil, x_web: float) -> tuple[float, float] | None:
+    """Upper and lower inner-mould-line intercepts at ``x_web``, or None if empty."""
+    y_vals = np.linspace(-0.20, 0.20, 801)
+    phi = np.asarray(airfoil(np.full_like(y_vals, x_web), y_vals), dtype=float) + _SKIN_M
+    hits = np.where(np.diff(np.sign(phi)))[0]
+    if len(hits) < 2:
+        return None
+    ys: list[float] = []
+    for i in hits:
+        y0, y1 = float(y_vals[i]), float(y_vals[i + 1])
+        p0, p1 = float(phi[i]), float(phi[i + 1])
+        ys.append(y0 if p1 == p0 else y0 - p0 * (y1 - y0) / (p1 - p0))
+    ys.sort()
+    return ys[-1], ys[0]
+
+
+def _implicit_web_field(airfoil, x_grid: np.ndarray, y_grid: np.ndarray, x_web: float) -> np.ndarray:
+    """Capsule ∩ cavity. Cavity is Offset(airfoil, −t_skin); the cap is not subtracted."""
+    cavity = np.asarray(airfoil(x_grid, y_grid), dtype=float) + _SKIN_M
+    anchors = _iml_anchors(airfoil, x_web)
+    if anchors is None:
+        return np.ones_like(x_grid)
+    y_top, y_bot = anchors
+    radius = 0.5 * _WEB_M
+    extend = 2.0 * _WEB_M + _SKIN_M
+    return np.maximum(
+        _sdf_capsule(x_grid, y_grid, x_web, y_top + extend, x_web, y_bot - extend, radius),
+        cavity,
+    )
 
 
 def _cap_field(phi: np.ndarray, x_grid: np.ndarray) -> np.ndarray:
@@ -158,15 +195,21 @@ def _cap_field(phi: np.ndarray, x_grid: np.ndarray) -> np.ndarray:
     return np.maximum(np.maximum(inner, -inner - _CAP_M), cap_slab)
 
 
-#: The three places the sweep leaves "extend + trim": (branch, web x, window).
+#: Three stations, one expression. Captions lead with the kernel; B-rep is the aside.
 _ZOOMS = (
     ("near-tangent", 0.0080, (-0.004, 0.040), (-0.022, 0.030),
-     "a grazing intersection:\nthe trim point is ill-conditioned"),
+     "Nose: same capsule intersect interior.\nB-rep: grazing trim, ill-conditioned"),
     ("split at cap", 0.2500, (0.222, 0.278), (0.040, 0.082),
-     "a cap end lands between the faces:\nthe web end must be split into a T"),
+     "Cap end: capsule overlaps the cap field;\nwinner names the laminate. B-rep would split a T"),
     ("repair fold", 0.9850, (0.955, 1.004), (-0.017, 0.019),
-     "the offset skin has folded: each face line meets\nit 4 times — repair first. Implicit: empty,\nbecause the cavity has closed"),
+     "Trailing edge: cavity closed, implicit web empty. B-rep: folded offset, repair first"),
 )
+
+_ZOOM_TITLES = {
+    "near-tangent": "Implicit — nose",
+    "split at cap": "Implicit — cap end",
+    "repair fold": "Implicit — trailing edge",
+}
 
 
 def _draw_zoom(axis, airfoil, outline, inner_face, branch: str, x_web: float, x_window, y_window,
@@ -179,8 +222,10 @@ def _draw_zoom(axis, airfoil, outline, inner_face, branch: str, x_web: float, x_
     axis.contourf(x_grid, y_grid, phi, levels=[-np.inf, 0.0], colors=["#f4f6f9"], zorder=0)
     axis.contourf(x_grid, y_grid, _cap_field(phi, x_grid), levels=[-np.inf, 0.0], colors=[MUTED],
                   alpha=0.55, zorder=1)
-    axis.contourf(x_grid, y_grid, _implicit_web_field(phi, x_grid, x_web), levels=[-np.inf, 0.0],
-                  colors=[TEAL], alpha=0.9, zorder=2)
+    axis.contourf(
+        x_grid, y_grid, _implicit_web_field(airfoil, x_grid, y_grid, x_web),
+        levels=[-np.inf, 0.0], colors=[TEAL], alpha=0.9, zorder=2,
+    )
 
     closed_outline = np.vstack([outline, outline[:1]])
     closed_inner = np.vstack([inner_face, inner_face[:1]])
@@ -188,21 +233,30 @@ def _draw_zoom(axis, airfoil, outline, inner_face, branch: str, x_web: float, x_
     axis.plot(closed_inner[:, 0], closed_inner[:, 1], color=NAVY, lw=1.4, ls="--", zorder=3)
 
     for x_face in (x_web - 0.5 * _WEB_M, x_web + 0.5 * _WEB_M):
-        axis.plot([x_face, x_face], list(y_window), color=RED, lw=1.3, ls=":", zorder=4)
+        axis.plot([x_face, x_face], list(y_window), color=RED, lw=1.1, ls=":", zorder=4, alpha=0.85)
         crossings = _vertical_crossings(inner_face, x_face)
         if crossings:
-            axis.scatter([x_face] * len(crossings), [y for y, _ in crossings], s=70,
-                         facecolors="none", edgecolors=RED, linewidths=1.8, zorder=5)
+            axis.scatter([x_face] * len(crossings), [y for y, _ in crossings], s=55,
+                         facecolors="none", edgecolors=RED, linewidths=1.6, zorder=5)
+
+    anchors = _iml_anchors(airfoil, x_web)
+    if anchors is not None:
+        y_top, y_bot = anchors
+        extend = 2.0 * _WEB_M + _SKIN_M
+        axis.plot(
+            [x_web, x_web], [y_bot - extend, y_top + extend],
+            color="#0d3b4c", lw=2.2, zorder=6, solid_capstyle="round",
+        )
 
     axis.set_xlim(*x_window)
     axis.set_ylim(*y_window)
     axis.set_aspect("equal", adjustable="box")
     strip_axes_chrome(axis, keep_frame=True)
     for spine in axis.spines.values():
-        spine.set_color(_BRANCHES[branch] if branch != "near-tangent" else "#d9a441")
-        spine.set_linewidth(3.0)
-    axis.set_title(f"B-rep: {branch}", loc="left", fontsize=13, color=INK, fontweight="bold")
-    axis.text(0.0, -0.04, caption, transform=axis.transAxes, ha="left", va="top", fontsize=11, color=INK)
+        spine.set_color(TEAL)
+        spine.set_linewidth(2.4)
+    axis.set_title(_ZOOM_TITLES[branch], loc="left", fontsize=13, color=TEAL, fontweight="bold")
+    axis.text(0.0, -0.04, caption, transform=axis.transAxes, ha="left", va="top", fontsize=10.5, color=INK)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -265,13 +319,13 @@ def main(argv: list[str] | None = None) -> int:
     ax_section.set_aspect("equal", adjustable="datalim")
     strip_axes_chrome(ax_section)
     ax_section.set_title(
-        f"Sweep one {_WEB_M * 1e3:g} mm web across the chord: B-rep extend + trim takes "
-        f"{len(used)} different branches, switching {n_switches} times",
-        loc="left", fontsize=13, color=INK,
+        f"One expression along the chord: Capsule intersect Offset(airfoil, -t_skin). "
+        f"Colour bands: where B-rep would change branch ({n_switches} switches)",
+        loc="left", fontsize=12.5, color=INK,
     )
     ax_section.legend(
-        handles=[Patch(facecolor=_BRANCHES[name], label=name) for name in used],
-        loc="upper center", bbox_to_anchor=(0.5, -0.02), ncol=len(used), frameon=False, fontsize=11,
+        handles=[Patch(facecolor=_BRANCHES[name], label=f"B-rep: {name}") for name in used],
+        loc="upper center", bbox_to_anchor=(0.5, -0.02), ncol=len(used), frameon=False, fontsize=10.5,
     )
 
     for column, (branch, x_web, x_window, y_window, caption) in enumerate(_ZOOMS):
@@ -280,8 +334,8 @@ def main(argv: list[str] | None = None) -> int:
 
     fig.text(
         0.5, 0.0,
-        "Teal: the implicit web, max(|x − x_web| − t/2, cavity) — the same expression in all three, "
-        "and everywhere else. Red rings: where each B-rep face line meets the offset skin.",
+        "Teal fill + dark axis: the kernel web, same Capsule intersect interior in every zoom. "
+        "Red dotted lines and rings: B-rep face-meets-offset — not the recipe.",
         ha="center", va="top", fontsize=11.5, color=TEAL, fontweight="bold",
     )
 
@@ -298,6 +352,7 @@ def main(argv: list[str] | None = None) -> int:
         "brep_branches_used": used,
         "brep_branch_switches": n_switches,
         "runs": [{"from": float(a), "to": float(b), "branch": name} for a, b, name in runs],
+        "implicit_web": "Intersect(Capsule, Offset(airfoil, -t_skin))",
         "implicit_expressions": 1,
     }
     json_path = out_dir / "brep_extend_trim.json"

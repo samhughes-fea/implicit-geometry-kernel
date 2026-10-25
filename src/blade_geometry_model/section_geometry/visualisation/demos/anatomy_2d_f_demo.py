@@ -216,7 +216,7 @@ def _draw_annotated(section, airfoil, web_x_m, *, twist_rad: float, out_dir: Pat
     # against its x would pick a point on whichever surface came first.
     crest = outer[int(np.argmax(outer[:, 1]))]
     ax.annotate(
-        f"outer / inner mould line\nskin gauge {_SKIN_THICKNESS_M * 1e3:.0f} mm — one scalar in the tree",
+        f"exterior / interior skin-shell surface\nskin gauge {_SKIN_THICKNESS_M * 1e3:.0f} mm — one scalar in the tree",
         xy=(float(crest[0]), float(crest[1])),
         # Kept clear of the upper label row in x, but pulled down in y: the long
         # leader read as pointing at empty space rather than at the two lines.

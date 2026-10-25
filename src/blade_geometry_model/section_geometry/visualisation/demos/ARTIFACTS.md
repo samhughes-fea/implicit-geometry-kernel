@@ -22,6 +22,8 @@ Run demos from the repository root. Prefix below is
 | `structural_family_grids/3B-F.png` | `.../structural_family_grids_demo.py` |
 | `structural_family_grids/5A-F.png` | `.../structural_family_grids_demo.py` |
 | `csg_expression_tree/csg_expression_tree.png` | `.../csg_expression_tree_demo.py` |
+| `csg_expression_tree/csg_expression_tree_stages.gif` | `.../csg_expression_tree_demo.py --presentation` |
+| `csg_expression_tree/csg_expression_tree_stages_trio.png` | `.../csg_expression_tree_demo.py --presentation` |
 | `csg_expression_tree/csg_node_census.png` | `.../csg_expression_tree_demo.py` |
 | `sdf_operator_algebra/sdf_operator_algebra.png` | `.../sdf_operator_algebra_demo.py` |
 | `sdf_operator_algebra/sdf_kernel_only_operators.png` | `.../sdf_operator_algebra_demo.py` |

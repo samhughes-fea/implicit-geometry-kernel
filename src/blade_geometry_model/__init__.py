@@ -5,6 +5,9 @@ Public API overview
 Airfoils        Airfoil (from coordinates, ``Airfoil.naca4``, ``Airfoil.ellipse``)
 Layout          Station (span position, chord, twist, pitch axis, offset),
                 SkinRegion (chordwise skin bands), ShearWeb (webs at chord fractions)
+Loft            BladeGeometry (a section_geometry layout lofted between stations),
+                BladeGeometry.section_at(z) / section_at -> SectionCut (wall midlines
+                with thickness and labels, cell loops, in the blade frame)
 
 Implicit geometry (forked from blade-structure, see FORK.md)
     section_geometry   signed-distance (SDF / CSG) cross-sections: 40 structural
@@ -20,7 +23,9 @@ for spline-resampled airfoils), and on nothing else in the suite.
 """
 
 from .blade_geometry import Airfoil, ShearWeb, SkinRegion, Station
+from .loft import BladeGeometry, CellLoop, SectionCut, SectionWall, section_at
 
 __version__ = "0.1.0"
 
-__all__ = ["Airfoil", "ShearWeb", "SkinRegion", "Station"]
+__all__ = ["Airfoil", "BladeGeometry", "CellLoop", "SectionCut", "SectionWall", "ShearWeb", "SkinRegion", "Station",
+           "section_at"]

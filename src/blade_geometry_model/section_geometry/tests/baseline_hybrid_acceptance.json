@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "description": "Hybrid dual-rep property acceptance gates (see docs/DUAL_REP_ACCEPTANCE.md).",
+  "reference": "depth-7/8 quadtree on NACA 2412 system layouts",
+  "gates": {
+    "laminate": {
+      "area": {
+        "rtol": 0.001,
+        "atol": 0.0005
+      },
+      "cx_cy_atol": 0.02,
+      "Ixx_Iyy": {
+        "rtol": 0.05,
+        "atol": 2e-05
+      }
+    },
+    "constructive_insert": {
+      "area": {
+        "rtol": 0.001,
+        "atol": 0.0005
+      },
+      "note": "LE/TE inserts on constructive polygon path by default"
+    }
+  },
+  "performance": {
+    "canonical": "2D-CN NACA 2412 depth-7",
+    "properties_s_max": 0.15,
+    "or_speedup_vs_quadtree_min": 4.0
+  },
+  "constructive_labels": [
+    "skin_suction_surface",
+    "skin_pressure_surface",
+    "shear_web_*",
+    "spar_cap_*",
+    "sandwich_core_*",
+    "leading_edge_insert",
+    "trailing_edge_insert"
+  ],
+  "retained_residual_labels": []
+}

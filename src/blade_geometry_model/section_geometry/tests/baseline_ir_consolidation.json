@@ -1,0 +1,27 @@
+{
+  "before": {
+    "sdf_polygon_count": 456300,
+    "sdf_polygon_points": 8966587,
+    "phi_eval_count": 2091697,
+    "quadtree_leaf_count": 38004,
+    "properties_s": 54.13,
+    "leaf_count": 38004
+  },
+  "after": {
+    "sdf_polygon_count": 214845,
+    "sdf_polygon_points": 1230727,
+    "phi_eval_count": 3036194,
+    "quadtree_leaf_count": 41649,
+    "properties_s": 84.81,
+    "leaf_count": 41649
+  },
+  "perf_levers": {
+    "sdf_polygon_count": 12696,
+    "sdf_polygon_points": 441577,
+    "phi_eval_count": 3301224,
+    "quadtree_leaf_count": 38004,
+    "properties_s": 6.44,
+    "leaf_count": 38004
+  },
+  "notes": "sdf_polygon_count reduced ~53% post-IR; perf levers (cached Polygon hash + cross-label multi_sampler) restore wall time below pre-IR baseline with leaf count matching pre-IR parity"
+}

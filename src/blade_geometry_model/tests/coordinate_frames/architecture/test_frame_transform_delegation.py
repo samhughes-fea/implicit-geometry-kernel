@@ -11,16 +11,11 @@ from pathlib import Path
 import pytest
 
 _SRC = Path(__file__).resolve().parents[3]
-_COORD = _SRC / "geometry_utilities" / "coordinate_frames"
+_COORD = _SRC / "coordinate_frames"
 
-# Packages scanned for banned hand-built transforms.
-_SCAN_ROOTS = (
-    _SRC / "geometry_utilities",
-    _SRC / "mesh_utilities",
-    _SRC / "load_utilities",
-    _SRC / "fem_utilities",
-    _SRC / "material_utilities",
-)
+# Packages scanned for banned hand-built transforms (the forked geometry only;
+# blade-structure's mesh, load, FE and material packages did not come across).
+_SCAN_ROOTS = (_SRC,)
 
 _SKIP_DIR_NAMES = frozenset(
     {
@@ -76,19 +71,10 @@ def test_no_hand_built_ply_transform_matrices_outside_canon():
 @pytest.mark.frame_comparison
 def test_legacy_frame_apis_removed():
     """FRAME-004 / FRAME-005: dated wrappers are gone from live surfaces."""
-    midline = (
-        _SRC
-        / "geometry_utilities"
-        / "section_geometry"
-        / "midlines"
-        / "shell_midline_export.py"
-    )
-    ply = _SRC / "material_utilities" / "orthotropic" / "ply.py"
+    midline = _SRC / "section_geometry" / "midlines" / "shell_midline_export.py"
     midline_src = midline.read_text(encoding="utf-8")
-    ply_src = ply.read_text(encoding="utf-8")
     assert "def rotate_chord_to_blade" not in midline_src
     assert '"rotate_chord_to_blade"' not in midline_src
-    assert "def rotation_matrix_theta" not in ply_src
     assert "c * p[:, 0] - s * p[:, 1]" not in midline_src
 
 

@@ -10,7 +10,7 @@ The fork changed only what moving it needed: imports re-rooted from
 `blade_structure_utilities.*_utilities` onto `blade_geometry_model`, and the
 `tests` folders renamed. The files below were left out because they import
 packages that stay in blade-structure (its shell mesh hand-off, its thin-wall model,
-its section properties, its layup and loads). They check the seam between this
+its section properties, its layup and loads, and `blade_structure_precompute`). They check the seam between this
 geometry and the physics on top of it, so their counterparts belong in
 `composite_laminate_model` and `anisotropic_section_model`, written against
 those packages.
@@ -36,3 +36,7 @@ those packages.
 - `section_geometry/visualisation/demos/section_properties_dashboard.py`
 - `section_geometry/visualisation/demos/beyond_blades_demo.py`
 - `section_geometry/visualisation/demos/design_vector_morph.py`
+- `section_geometry/visualisation/demos/feature_flythroughs.py`
+- `section_geometry/visualisation/demos/spanwise_web_anchors.py`
+- `section_geometry/visualisation/demos/spanwise_web_anchors_shared.py`
+- `section_geometry/visualisation/demos/spanwise_yz_plan_flyover.py`

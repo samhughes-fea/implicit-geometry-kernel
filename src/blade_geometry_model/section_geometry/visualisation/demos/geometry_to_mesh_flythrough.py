@@ -37,7 +37,7 @@ Requires ImageMagick (``magick``) on PATH for GIF encoding; ``--no-gif`` skips i
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/geometry_to_mesh_flythrough.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/geometry_to_mesh_flythrough.py
 """
 
 from __future__ import annotations
@@ -73,7 +73,7 @@ def _load_sibling(name: str, filename: str):
 _ensure_mod = _load_sibling("_ensure_repo_path", "_ensure_repo_path.py")
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     PRESENTATION_DPI,
     apply_presentation_style,
@@ -90,26 +90,26 @@ if str(_demos_dir) not in sys.path:
 import feature_flythrough_render as _render  # noqa: E402
 import feature_flythrough_specs as _specs  # noqa: E402
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     section_plot_axes,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SDFGrid,
     SectionGeometryRunner,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
+from blade_geometry_model.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import (
+from blade_geometry_model.section_geometry.sdf.ir import (
     eval_expr_batch,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+from blade_geometry_model.section_geometry.visualisation.plot_section import (
     _component_color,
     rotated_naca_grid_to_section_plot_axes,
 )
-from blade_structure_utilities.mesh_utilities.section_mesh import SectionMeshRunner
+from blade_geometry_model.section_mesh import SectionMeshRunner
 
 _STAGE_NAMES = ("csg", "raw", "prepared", "mesh")
 

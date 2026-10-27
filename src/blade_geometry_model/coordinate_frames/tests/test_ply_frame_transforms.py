@@ -11,7 +11,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     ply_strain_transform_E_to_M,
     ply_strain_transform_M_to_E,
     ply_stress_transform_3d_E_to_M,
@@ -189,7 +189,7 @@ class TestThreeDimensionalTransforms:
         assert np.allclose(t3[idx], t2)
 
     def test_transverse_shear_round_trip(self):
-        from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+        from blade_geometry_model.coordinate_frames import (
             ply_stress_transform_3d_E_to_M,
             rotate_transverse_shear_E_to_M,
         )
@@ -204,7 +204,7 @@ class TestThreeDimensionalTransforms:
         assert m13 != pytest.approx(tau13) or m23 != pytest.approx(tau23)
 
     def test_strain_work_invariance(self):
-        from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+        from blade_geometry_model.coordinate_frames import (
             ply_strain_transform_3d_E_to_M,
             ply_stress_transform_3d_E_to_M,
         )

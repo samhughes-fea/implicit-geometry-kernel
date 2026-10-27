@@ -10,13 +10,13 @@ import warnings
 
 warnings.warn(
     "Import shell junction preparation from "
-    "blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation "
+    "blade_geometry_model.section_geometry.junction_preparation "
     "(topology is a reverse-compatibility alias until 2027-03-31).",
     DeprecationWarning,
     stacklevel=2,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation import (  # noqa: E402,F401
+from blade_geometry_model.section_geometry.junction_preparation import (  # noqa: E402,F401
     ShellMidlineJunctionPreparationOptions,
     ShellStripTopologySpec,
     build_shell_strip_topology,

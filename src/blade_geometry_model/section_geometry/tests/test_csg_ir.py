@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import (
+from blade_geometry_model.section_geometry.sdf.ir import (
     Box,
     Circle,
     Intersect,
@@ -18,11 +18,11 @@ from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import
     intersect_expr,
     union_expr,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.csg import intersect, offset, shell, subtract, union
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.grid import SDFGrid
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.primitives import sdf_box, sdf_circle
-from blade_structure_utilities.geometry_utilities.section_geometry import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir import (
+from blade_geometry_model.section_geometry.sdf.csg import intersect, offset, shell, subtract, union
+from blade_geometry_model.section_geometry.sdf.grid import SDFGrid
+from blade_geometry_model.section_geometry.sdf.primitives import sdf_box, sdf_circle
+from blade_geometry_model.section_geometry import AirfoilSDF
+from blade_geometry_model.section_geometry.recipes.sdf_ir import (
     LEInsert,
     OuterSkin,
     SandwichCore,

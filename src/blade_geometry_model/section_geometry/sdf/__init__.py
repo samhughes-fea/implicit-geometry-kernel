@@ -1,5 +1,5 @@
 """
-blade_structure_utilities.geometry_utilities.section_geometry.sdf
+blade_geometry_model.section_geometry.sdf
 ===================
 Generic 2-D signed distance field (SDF) and constructive solid geometry (CSG)
 toolbox.  No blade domain knowledge — reusable for any implicit geometry task.

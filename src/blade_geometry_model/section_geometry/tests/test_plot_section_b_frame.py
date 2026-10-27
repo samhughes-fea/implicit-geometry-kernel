@@ -10,16 +10,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     PIVOT_FRACTION_DEFAULT,
     naca_to_twisted_pitch_axis_blade_frame,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.multicell import (
+from blade_geometry_model.section_geometry.sections.multicell import (
     MultiCellSection,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.grid import SDFGrid
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.grid import SDFGrid
+from blade_geometry_model.section_geometry.visualisation.plot_section import (
     plot_section,
     rotated_naca_grid_to_section_plot_axes,
 )
@@ -66,16 +66,16 @@ def test_rotated_naca_grid_matches_naca_to_blade(af):
 
 
 def test_plot_section_and_sdf_and_mesh_xlim_straddle_pitch(af):
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_sdf import (
+    from blade_geometry_model.section_geometry.visualisation.plot_sdf import (
         plot_sdf_field,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         plot_section_from_mesh,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.export import (
+    from blade_geometry_model.section_geometry.props_emit.export import (
         SectionPropertiesReport,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+    from blade_geometry_model.section_geometry.props_emit.props_backend import (
         quadtree_spec_for_airfoil,
     )
 
@@ -163,7 +163,7 @@ def test_plot_section_twisted_skin_bbox_matches_blade_verts(af):
 
 
 def test_blade_plot_sampling_grid_rectilinear_and_query_roundtrip(af):
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         blade_plot_sampling_grid,
         section_query_from_blade,
     )

@@ -22,7 +22,7 @@ Writes under ``visualisation/output/sdf_operator_algebra/``:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/sdf_operator_algebra_demo.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/sdf_operator_algebra_demo.py
 """
 
 from __future__ import annotations
@@ -43,22 +43,22 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     demo_output_dir,
     save_figure,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+from blade_geometry_model.section_geometry.visualisation.palette import (
     draw_distance_field,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry import SDFGrid
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.csg import (
+from blade_geometry_model.section_geometry import SDFGrid
+from blade_geometry_model.section_geometry.sdf.csg import (
     blend,
     smooth_subtract,
     smooth_union,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import (
+from blade_geometry_model.section_geometry.sdf.ir import (
     Capsule,
     Circle,
     Intersect,

@@ -15,7 +15,7 @@ from typing import Any
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames.frame_tags import (
+from blade_geometry_model.coordinate_frames.frame_tags import (
     FRAME_B,
     require_frame_tag,
 )

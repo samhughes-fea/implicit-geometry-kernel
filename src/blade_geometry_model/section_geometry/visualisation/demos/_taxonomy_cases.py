@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import SystemLayoutSpec
+from blade_geometry_model.section_geometry.layout.system_layout import SystemLayoutSpec
 
 
 def twist_deg_for_layout(

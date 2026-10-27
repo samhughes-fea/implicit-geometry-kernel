@@ -15,7 +15,7 @@ home.
 * Storage order is always :data:`BEAM_IO_ORDER`
   ``(N, Vy, Vz, My, Mz, T)``. These ``My``/``Mz``/``Vy``/``Vz`` names are the
   **product shell solver channels** from
-  :func:`~blade_structure_utilities.geometry_utilities.coordinate_frames.blade_resultants_to_shell_channels`
+  :func:`~blade_geometry_model.coordinate_frames.blade_resultants_to_shell_channels`
   (``Mz``/``Vz`` ← flap, ``My``/``Vy`` ← edge). Consumers that need another
   conjugate order (e.g. shell K6 ``[N, My, Mz, T, Vz, Vy]``) must call
   :meth:`to_mode_conjugate` with an explicit named order — never silently
@@ -41,7 +41,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 from numpy.typing import NDArray
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     FRAME_B,
     FRAME_S,
     FRAME_SPRIME,
@@ -52,7 +52,7 @@ from blade_structure_utilities.geometry_utilities.coordinate_frames import (
     rotate_B_to_S,
     rotate_S_to_B,
 )
-from blade_structure_utilities.geometry_utilities.section_contract.load_orders import (
+from blade_geometry_model.section_contract.load_orders import (
     BEAM_IO_ORDER,
     SHELL_K6_MODE_ORDER,
     STRIP_OPTIM_ORDER,

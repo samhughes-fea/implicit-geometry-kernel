@@ -2,7 +2,7 @@
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/examples/01_first_station.py
+    python src/blade_geometry_model/section_geometry/examples/01_first_station.py
     python .../01_first_station.py --plot
 """
 
@@ -21,7 +21,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SectionGeometryRunner,
     plot_section,

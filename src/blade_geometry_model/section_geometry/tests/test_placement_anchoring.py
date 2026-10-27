@@ -5,10 +5,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_contract.shell_midline_strip import (
+from blade_geometry_model.section_contract.shell_midline_strip import (
     ShellMidlineStrip,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.placement import (
+from blade_geometry_model.section_geometry.placement import (
     PlacementGeometryError,
     anchored_wall_geometry,
     anchored_wall_geometry_from_policy,
@@ -18,13 +18,13 @@ from blade_structure_utilities.geometry_utilities.section_geometry.placement imp
     require_placement_stamp,
     stamp_strip_placement_fields,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.placement.anchoring import (
+from blade_geometry_model.section_geometry.placement.anchoring import (
     airfoil_inward_depth_for_midsurface,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.outer_skin import (
+from blade_geometry_model.section_geometry.recipes.sdf_ir.outer_skin import (
     OuterSkin,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 from blade_structure_utilities.material_utilities.layup import (
     DEFAULT_PLY_PLACEMENT,
     SKIN_CENTRED,
@@ -139,7 +139,7 @@ def test_web_midsurface_offset_is_zero():
 def test_invalid_thickness_raises():
     with pytest.raises(ValueError):
         anchored_wall_geometry("outer_mould_line", "inward", 0.0)
-    from blade_structure_utilities.geometry_utilities.section_geometry.placement.anchoring import (
+    from blade_geometry_model.section_geometry.placement.anchoring import (
         AnchoredWallGeometry,
     )
 

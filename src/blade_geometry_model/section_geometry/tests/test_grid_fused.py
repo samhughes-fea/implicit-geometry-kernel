@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.grid import SDFGrid
+from blade_geometry_model.section_geometry.sdf.grid import SDFGrid
 
 
 def _legacy_properties(grid: SDFGrid, phi):

@@ -6,7 +6,7 @@ MultiCellSection — generalised N-web blade section with N+1 sandwich-core bays
 
 from __future__ import annotations
 
-from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+from blade_geometry_model.section_contract.errors import (
     InfeasibleSectionGeometry,
 )
 
@@ -14,9 +14,9 @@ from typing import Any
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import Offset, Rotate, union_expr
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.profiling import timed_stage
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.transforms import rotate_field
+from blade_geometry_model.section_geometry.sdf.ir import Offset, Rotate, union_expr
+from blade_geometry_model.section_geometry.sdf.profiling import timed_stage
+from blade_geometry_model.section_geometry.sdf.transforms import rotate_field
 
 from ..layout.thickness_limits import (
     clamp_skin_thickness_m,
@@ -33,7 +33,7 @@ from .clip_algebra import (
     flapwise_web_normal,
     web_station_projection,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.base import (
+from blade_geometry_model.section_geometry.recipes.sdf_ir.base import (
     expr_callable,
     twist_component,
 )
@@ -132,7 +132,7 @@ class MultiCellSection:
         self._skin_t_ps = float(t_ps)
         self._twist = float(twist_angle)
         if _cap_rule.kind in ("fixed_band", "per_web_pads"):
-            from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF as _AirfoilSDF
+            from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF as _AirfoilSDF
 
             if not isinstance(airfoil_sdf, _AirfoilSDF):
                 raise TypeError(
@@ -171,7 +171,7 @@ class MultiCellSection:
         )
 
         with timed_stage("assemble_skin", stage_sink):
-            from blade_structure_utilities.geometry_utilities.section_geometry.recipes.walls import (
+            from blade_geometry_model.section_geometry.recipes.walls import (
                 SkinWall,
             )
 
@@ -310,7 +310,7 @@ class MultiCellSection:
                     y_search_b = (-1.5, 1.5)
 
             web_components = []
-            from blade_structure_utilities.geometry_utilities.section_geometry.recipes.walls import (
+            from blade_geometry_model.section_geometry.recipes.walls import (
                 WebWall,
             )
 
@@ -409,7 +409,7 @@ class MultiCellSection:
         wall_exclusion_exprs = [c.expr for c in wall_solids_for_core]
 
         with timed_stage("assemble_cores", stage_sink):
-            from blade_structure_utilities.geometry_utilities.section_geometry.recipes.walls import (
+            from blade_geometry_model.section_geometry.recipes.walls import (
                 CoreWall,
             )
 
@@ -486,7 +486,7 @@ class MultiCellSection:
                 self._components["sandwich_core_0"] = core
 
         if trailing_edge_insert_x_m is not None:
-            from blade_structure_utilities.geometry_utilities.section_geometry.recipes.walls import (
+            from blade_geometry_model.section_geometry.recipes.walls import (
                 InsertWall,
             )
 
@@ -502,7 +502,7 @@ class MultiCellSection:
             self._components[ComponentLabel.TRAILING_EDGE_INSERT] = te
 
         if leading_edge_insert_x_m is not None:
-            from blade_structure_utilities.geometry_utilities.section_geometry.recipes.walls import (
+            from blade_geometry_model.section_geometry.recipes.walls import (
                 InsertWall,
             )
 
@@ -617,7 +617,7 @@ class MultiCellSection:
         return {label: comp(x, y, memo=memo) for label, comp in self._components.items()}
 
     def eval_union(self, x, y):
-        from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import eval_expr_batch
+        from blade_geometry_model.section_geometry.sdf.ir import eval_expr_batch
 
         return eval_expr_batch(self._eval_union_expr, x, y, {})
 

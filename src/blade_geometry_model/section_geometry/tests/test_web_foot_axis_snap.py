@@ -25,15 +25,15 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
+from blade_geometry_model.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
     prepare_shell_midline_junctions,
 )
 
@@ -128,10 +128,10 @@ def test_tip_absolute_2a_f_loops_build_under_twist():
     web 4.42 mm, twist ≈ 0.41 deg). Fractional layouts already passed; this pins
     the absolute-web tip path that BL-006 steps into (TE web dropped → 1A-F).
     """
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.worker import (
+    from blade_geometry_model.section_geometry.api.worker import (
         build_section_geometry,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.cell_wall_loops.cell_wall_loop_builders import (
+    from blade_geometry_model.section_geometry.cell_wall_loops.cell_wall_loop_builders import (
         build_cell_wall_loops,
     )
 
@@ -158,7 +158,7 @@ def test_tip_absolute_2a_f_loops_build_under_twist():
 
 def test_tip_fractional_2a_f_loops_build_under_twist():
     """Tip-scale catalogue 2A-F (fractional webs) still builds loops under tip twist."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.worker import (
+    from blade_geometry_model.section_geometry.api.worker import (
         build_section_geometry,
     )
 
@@ -187,10 +187,10 @@ def test_stale_frozen_web_y_under_twist_raises_infeasible_not_sg002_gap():
     ~3.5 mm off the skin mid (SG-002). Now the assemble path raises
     InfeasibleSectionGeometry so mono can keep prior gauges.
     """
-    from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+    from blade_geometry_model.section_contract.errors import (
         InfeasibleSectionGeometry,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.worker import (
+    from blade_geometry_model.section_geometry.api.worker import (
         build_section_geometry,
         resolve_station_layout,
     )

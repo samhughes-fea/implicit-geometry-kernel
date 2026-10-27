@@ -13,7 +13,7 @@ Outputs (under ``visualisation/output/section_centerline_geometry_taxonomy/``):
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/section_centerline_geometry_taxonomy.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/section_centerline_geometry_taxonomy.py
     python .../section_centerline_geometry_taxonomy.py 0A 0B 2D-F
 """
 
@@ -32,7 +32,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     demo_output_dir,
     save_figure,
@@ -40,7 +40,7 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
 
 
 def _all_layout_keys() -> tuple[str, ...]:
-    from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+    from blade_geometry_model.section_geometry.layout.system_layout import (
         SYSTEM_TYPE_KEYS,
     )
 
@@ -77,15 +77,15 @@ def _save_subcomponent_figure(
 
     import numpy as np
 
-    from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    from blade_geometry_model.coordinate_frames import (
         naca_to_twisted_pitch_axis_blade_frame,
         section_plot_axes,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         apply_structural_section_axes,
         fit_square_section_axes,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_subcomponents import (
+    from blade_geometry_model.section_geometry.visualisation.plot_subcomponents import (
         draw_section_sdf_panel,
         taxonomy_plot_caption,
     )
@@ -149,11 +149,11 @@ def _run_single_layout(
     twist_deg: float,
     out_dir: Path,
 ) -> None:
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+    from blade_geometry_model.section_geometry.api.factory import (
         build_section_view,
         resolve_system_type,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
+    from blade_geometry_model.section_geometry.midlines.shell_midline_export import (
         build_shell_midline_strips,
     )
 
@@ -181,10 +181,10 @@ def _run_single_layout(
 def main(argv: list[str] | None = None) -> None:
     import numpy as np
 
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+    from blade_geometry_model.section_geometry.api.factory import (
         resolve_system_type,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+    from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 
     argv = list(sys.argv[1:] if argv is None else argv)
 

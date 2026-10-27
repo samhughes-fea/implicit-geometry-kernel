@@ -7,7 +7,7 @@ from typing import Literal
 
 import numpy as np
 
-from blade_structure_utilities.mesh_utilities.area_2d.spec import QuadtreeSpec
+from blade_geometry_model.area_2d.spec import QuadtreeSpec
 
 PropsBackend = Literal["grid", "quadtree", "hybrid"]
 

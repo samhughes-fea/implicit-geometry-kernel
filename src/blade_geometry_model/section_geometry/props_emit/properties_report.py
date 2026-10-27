@@ -7,12 +7,12 @@ import json
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.cache import SectionEvalCache
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+from blade_geometry_model.section_geometry.sdf.cache import SectionEvalCache
+from blade_geometry_model.section_geometry.props_emit.props_backend import (
     PropsBackend,
     props_backend_from_env,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import compute_section_properties
+from blade_geometry_model.section_geometry.props_emit.props_compute import compute_section_properties
 
 
 class SectionPropertiesReport:

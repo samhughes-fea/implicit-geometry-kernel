@@ -12,7 +12,7 @@ Writes:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/skin_ss_ps_taxonomy_demo.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/skin_ss_ps_taxonomy_demo.py
 """
 
 from __future__ import annotations
@@ -32,25 +32,25 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     demo_output_dir,
     save_figure,
 )
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     section_plot_axes,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
+from blade_geometry_model.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
     prepare_shell_midline_junctions,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+from blade_geometry_model.section_geometry.visualisation.plot import (
     plot_section_hybrid,
     plot_shell_midline_strip_topology,
 )

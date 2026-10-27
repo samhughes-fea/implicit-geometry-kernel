@@ -4,24 +4,24 @@ from __future__ import annotations
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive import (
+from blade_geometry_model.section_geometry.constructive import (
     emit_wall_solid_polygons,
     is_skin_label,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
+from blade_geometry_model.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
     prepare_shell_midline_junctions,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.cell_wall_loops.cell_wall_loops import (
+from blade_geometry_model.section_geometry.cell_wall_loops.cell_wall_loops import (
     build_cell_wall_loops,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.outer_skin import (
+from blade_geometry_model.section_geometry.recipes.sdf_ir.outer_skin import (
     OuterSkin,
 )
 
@@ -34,7 +34,7 @@ def test_is_skin_label_ss_ps():
 
 
 def test_ss_ps_skin_areas_sum_near_full_annulus():
-    from blade_structure_utilities.geometry_utilities.section_geometry.constructive.emitters import (
+    from blade_geometry_model.section_geometry.constructive.emitters import (
         emit_outer_skin_polygon,
     )
 

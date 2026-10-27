@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.csg import offset
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import Capsule, Intersect, Offset
+from blade_geometry_model.section_geometry.sdf.csg import offset
+from blade_geometry_model.section_geometry.sdf.ir import Capsule, Intersect, Offset
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.clip_algebra import (
+from blade_geometry_model.section_geometry.sections.clip_algebra import (
     airfoil_expr,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.labels import (
+from blade_geometry_model.section_geometry.sections.labels import (
     ComponentLabel,
 )
 from .base import SectionComponent
@@ -96,7 +96,7 @@ class ShearWeb(SectionComponent):
         on the mid-surface raises :class:`InfeasibleSectionGeometry` (SG-002)
         instead of handing ``cell_wall_loops`` a millimetre-scale miss.
         """
-        from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+        from blade_geometry_model.section_contract.errors import (
             InfeasibleSectionGeometry,
         )
 
@@ -128,7 +128,7 @@ class ShearWeb(SectionComponent):
             return scored[0][2]
 
         try:
-            from blade_structure_utilities.geometry_utilities.section_geometry.midlines.junction_primitives import (
+            from blade_geometry_model.section_geometry.midlines.junction_primitives import (
                 solve_web_foot_on_skin_mid,
             )
 

@@ -14,27 +14,27 @@ BANNED_TOP_LEVEL = ("engine", "interface", "core")
 # Skip-layer edges forbidden by G_ROW_OWNERSHIP_MATRIX.
 FORBIDDEN_IMPORT_PREFIXES: dict[str, tuple[str, ...]] = {
     "layout": (
-        "blade_structure_utilities.geometry_utilities.section_geometry.recipes",
-        "blade_structure_utilities.geometry_utilities.section_geometry.constructive",
-        "blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation",
-        "blade_structure_utilities.geometry_utilities.section_geometry.topology",
-        "blade_structure_utilities.geometry_utilities.section_geometry.sections.components",
+        "blade_geometry_model.section_geometry.recipes",
+        "blade_geometry_model.section_geometry.constructive",
+        "blade_geometry_model.section_geometry.junction_preparation",
+        "blade_geometry_model.section_geometry.topology",
+        "blade_geometry_model.section_geometry.sections.components",
     ),
     "junction_preparation": (
-        "blade_structure_utilities.geometry_utilities.section_geometry.sdf",
-        "blade_structure_utilities.geometry_utilities.section_geometry.constructive",
-        "blade_structure_utilities.geometry_utilities.section_geometry.recipes",
-        "blade_structure_utilities.geometry_utilities.section_geometry.layout",
+        "blade_geometry_model.section_geometry.sdf",
+        "blade_geometry_model.section_geometry.constructive",
+        "blade_geometry_model.section_geometry.recipes",
+        "blade_geometry_model.section_geometry.layout",
     ),
     "cell_wall_loops": (
-        "blade_structure_utilities.geometry_utilities.section_geometry.sdf",
-        "blade_structure_utilities.geometry_utilities.section_geometry.constructive",
-        "blade_structure_utilities.geometry_utilities.section_geometry.recipes",
+        "blade_geometry_model.section_geometry.sdf",
+        "blade_geometry_model.section_geometry.constructive",
+        "blade_geometry_model.section_geometry.recipes",
     ),
     "midlines": (
-        "blade_structure_utilities.geometry_utilities.section_geometry.constructive",
-        "blade_structure_utilities.geometry_utilities.section_geometry.sdf",
-        "blade_structure_utilities.geometry_utilities.section_geometry.props_emit",
+        "blade_geometry_model.section_geometry.constructive",
+        "blade_geometry_model.section_geometry.sdf",
+        "blade_geometry_model.section_geometry.props_emit",
     ),
 }
 
@@ -52,7 +52,7 @@ def test_api_and_types_homes_exist() -> None:
 
 
 def test_sections_does_not_export_sdf_ir_components() -> None:
-    from blade_structure_utilities.geometry_utilities.section_geometry import sections
+    from blade_geometry_model.section_geometry import sections
 
     banned = {
         "OuterSkin",

@@ -4,20 +4,20 @@ from __future__ import annotations
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import (
+from blade_geometry_model.section_geometry.sdf.ir import (
     CallableField,
     Intersect,
     Offset,
     Slab,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.clip_algebra import (
+from blade_geometry_model.section_geometry.sections.clip_algebra import (
     airfoil_expr,
     camber_side_field,
     lower_half_plane_expr,
     upper_half_plane_expr,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.labels import (
+from blade_geometry_model.section_geometry.sections.labels import (
     ComponentLabel,
 )
 from .base import SectionComponent, expr_callable
@@ -55,7 +55,7 @@ def _closed_mid_ring(airfoil_sdf, thickness: float, *, mid_depth: float | None =
     """Closed mid-surface ring from ``buffer(-mid_depth)`` (may omit aero tip)."""
     from shapely.geometry import MultiPolygon, Polygon
 
-    from blade_structure_utilities.geometry_utilities.section_geometry.constructive.offset_locus import (
+    from blade_geometry_model.section_geometry.constructive.offset_locus import (
         airfoil_polygon,
         offset_polygon_inward,
     )
@@ -174,7 +174,7 @@ class OuterSkin(SectionComponent):
         reference_face: str = "outer_mould_line",
         reference_iml_depth_m: float | None = None,
     ):
-        from blade_structure_utilities.geometry_utilities.section_geometry.placement.anchoring import (
+        from blade_geometry_model.section_geometry.placement.anchoring import (
             airfoil_inward_depth_for_midsurface,
         )
 

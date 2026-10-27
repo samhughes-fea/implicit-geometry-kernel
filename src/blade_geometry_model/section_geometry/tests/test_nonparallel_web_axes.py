@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.cap_placement import (
+from blade_geometry_model.section_geometry.layout.cap_placement import (
     CapPlacementRule,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.section_layout import (
+from blade_geometry_model.section_geometry.layout.section_layout import (
     SectionLayout,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+from blade_geometry_model.section_geometry.sdf.airfoil import (
     AirfoilSDF,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.from_layout import (
+from blade_geometry_model.section_geometry.sections.from_layout import (
     multicell_from_section_layout,
 )
 

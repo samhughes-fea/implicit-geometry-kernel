@@ -22,7 +22,7 @@ Chord-fraction presets (columns A / B / C — web positions, LE → TE)
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/system_types_twist_grid.py --out-dir outputs/system_types_twist20
+    python src/blade_geometry_model/section_geometry/visualisation/demos/system_types_twist_grid.py --out-dir outputs/system_types_twist20
 
 Writes ``system_types_grid_summary.json`` and, by default, one ``sections/<alignment>_<A|B|C>_n<k>.json``
 per subplot (section properties, airfoil vertices; use ``--with-contours`` for φ=0 polylines — slower).
@@ -48,25 +48,25 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     demo_output_dir,
     save_figure,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     SDFGrid,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.export import (
+from blade_geometry_model.section_geometry.props_emit.export import (
     SectionPropertiesReport,
     export_section_json,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+from blade_geometry_model.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+from blade_geometry_model.section_geometry.visualisation.plot import (
     _component_color,
     plot_section,
 )

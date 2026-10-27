@@ -12,17 +12,17 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.export import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
+from blade_geometry_model.section_geometry.props_emit.export import (
     _multicell_host,
     _shared_grid_phi,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.grid import SDFGrid
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.grid import SDFGrid
 
 
 @pytest.mark.parametrize("twist_deg", [0.0, 15.0])

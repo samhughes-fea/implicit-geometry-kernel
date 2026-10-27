@@ -16,7 +16,7 @@ Writes:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/dual_rep_consistency_demo.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/dual_rep_consistency_demo.py
 """
 
 from __future__ import annotations
@@ -36,26 +36,26 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     demo_output_dir,
     save_figure,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     SDFGrid,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive import (
+from blade_geometry_model.section_geometry.constructive import (
     emit_wall_solid_polygons,
     is_residual_label,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import (
     quadtree_spec_for_airfoil,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+from blade_geometry_model.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
 
@@ -165,14 +165,14 @@ def _draw_gap_map(section, polys, grid, out_path: Path, *, presentation: bool) -
     from matplotlib.collections import LineCollection
     from matplotlib.colors import LinearSegmentedColormap, LogNorm
 
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+    from blade_geometry_model.section_geometry.visualisation.palette import (
         INK,
         MUTED,
         RED,
         region_color,
         strip_axes_chrome,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         apply_structural_section_axes,
     )
 
@@ -348,7 +348,7 @@ def main(argv: list[str] | None = None) -> Path:
         )
         ax.legend(fontsize=7, loc="best")
         ax.grid(True, alpha=0.3)
-        from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+        from blade_geometry_model.section_geometry.visualisation.plot_section import (
             apply_structural_section_axes,
         )
 

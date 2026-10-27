@@ -23,7 +23,7 @@ LOOP_STYLES: tuple[tuple[str, str], ...] = (
 
 def draw_component_midlines(ax: Any, strips: Sequence[Any]) -> list[Line2D]:
     """Faint skin/web midlines over a section plot."""
-    from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    from blade_geometry_model.coordinate_frames import (
         section_plot_axes,
     )
 
@@ -60,7 +60,7 @@ def draw_cell_wall_loops_dashed(
     lw: float = 1.35,
 ) -> list[Line2D]:
     """Draw each cell wall loop as a thin dashed centreline."""
-    from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    from blade_geometry_model.coordinate_frames import (
         section_plot_axes,
     )
 
@@ -91,7 +91,7 @@ def draw_cell_wall_loops_filled(
     loops: Sequence[Any],
 ) -> None:
     """Filled cell loops over midlines (standalone midline view)."""
-    from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    from blade_geometry_model.coordinate_frames import (
         section_plot_axes,
     )
 
@@ -118,7 +118,7 @@ def plot_section_with_cell_wall_loops(
 ) -> Any:
     """``plot_section`` plus midlines and dashed cell-wall loops."""
     import matplotlib.pyplot as plt
-    from blade_structure_utilities.geometry_utilities.section_geometry import plot_section
+    from blade_geometry_model.section_geometry import plot_section
 
     if ax is None:
         _fig, ax = plt.subplots(figsize=(8.0, 6.0))

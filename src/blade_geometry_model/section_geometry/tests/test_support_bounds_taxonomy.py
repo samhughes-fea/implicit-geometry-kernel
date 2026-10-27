@@ -17,7 +17,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     resolve_system_type,
     build_section_view,
 )
@@ -25,11 +25,11 @@ from blade_structure_utilities.geometry_utilities.section_geometry.api.factory i
 # ``from ..props_emit.area_mesh import *``, and star-import never re-exports
 # underscore names, so ``_section_evaluator`` / ``_section_label_keys`` are
 # invisible through it.
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit import area_mesh as am
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import compute_section_properties
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.grid import SDFGrid
+from blade_geometry_model.section_geometry.props_emit import area_mesh as am
+from blade_geometry_model.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.props_emit.props_compute import compute_section_properties
+from blade_geometry_model.section_geometry.sdf.grid import SDFGrid
 
 # Representative subset: every family (A/B/C/D), both orientations (CN/F),
 # a range of web counts, plus the two skin-only layouts.

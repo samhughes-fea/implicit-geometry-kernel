@@ -40,7 +40,7 @@ def _section_query_from_blade(
 
     Delegates to :func:`plot_section.section_query_from_blade`.
     """
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         section_query_from_blade,
     )
 
@@ -57,7 +57,7 @@ def draw_section_sdf_panel(ax_geom: Any, section: Any, airfoil: Any, twist_rad: 
     """
     from matplotlib.patches import Patch
 
-    from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    from blade_geometry_model.coordinate_frames import (
         naca_to_twisted_pitch_axis_blade_frame,
     )
 

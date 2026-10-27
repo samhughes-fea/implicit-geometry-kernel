@@ -7,7 +7,7 @@ Extends ``quadtree_convergence_study.py`` with a second integration method:
 extract an explicit polygon boundary from the *same* implicit/SDF geometry
 via marching squares, then compute area/centroid/second moments exactly via
 the shoelace formula (Green's theorem,
-``blade_structure_utilities.integration_utilities.shoelace_integration``).
+``blade_geometry_model.shoelace_integration``).
 
 Reports both methods' accuracy (vs the same high-resolution uniform-grid
 reference used by the quadtree study) and wall time, and deliberately
@@ -21,14 +21,14 @@ separates two costs that get conflated if you only ask "is shoelace fast":
    implicit/SDF kernel would newly have to pay to get that polygon at all,
    since it represents geometry as signed-distance fields / CSG, not
    explicit vertex loops. This repo's only available extractor
-   (``blade_structure_utilities.geometry_utilities.root_blend_model.contouring.
+   (``blade_geometry_model.root_blend_model.contouring.
    marching_squares_zero_contour``) is a pure-Python, unvectorized
    grid scan (no ``scikit-image`` in this environment) -- it is *not*
    representative of what a properly vectorized extractor would cost, and
    that caveat matters for interpreting the results below.
 
 Run from the repository root:
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/quadtree_vs_shoelace_convergence_study.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/quadtree_vs_shoelace_convergence_study.py
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     demo_output_dir,
     save_figure,
@@ -74,12 +74,12 @@ assert _qcs_spec.loader is not None
 sys.modules["quadtree_convergence_study"] = qcs  # dataclass() needs this in sys.modules
 _qcs_spec.loader.exec_module(qcs)
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SDFGrid,
 )
-from blade_structure_utilities.geometry_utilities.root_blend_model.contouring import marching_squares_zero_contour
-from blade_structure_utilities.integration_utilities.shoelace_integration import section_properties_S
+from blade_geometry_model.root_blend_model.contouring import marching_squares_zero_contour
+from blade_geometry_model.shoelace_integration import section_properties_S
 
 PROP_KEYS = qcs.PROP_KEYS
 TRACK_LABELS = qcs.TRACK_LABELS

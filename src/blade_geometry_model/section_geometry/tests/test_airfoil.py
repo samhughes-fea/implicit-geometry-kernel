@@ -9,8 +9,8 @@ import pytest
 import tempfile
 import os
 
-from blade_structure_utilities.geometry_utilities.section_geometry import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.naca import (
+from blade_geometry_model.section_geometry import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.naca import (
     airfoil_vertices_from_spanwise,
     naca_five_digit_vertices,
 )

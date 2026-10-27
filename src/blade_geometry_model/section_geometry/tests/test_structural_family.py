@@ -3,12 +3,12 @@
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     SDFGrid,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.section_axes import (
+from blade_geometry_model.section_geometry.layout.section_axes import (
     max_thickness_chord_x,
     pitch_axis_x_from_le,
 )

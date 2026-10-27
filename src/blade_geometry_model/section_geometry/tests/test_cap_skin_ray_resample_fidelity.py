@@ -34,15 +34,15 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
+from blade_geometry_model.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
     prepare_shell_midline_junctions,
 )
 

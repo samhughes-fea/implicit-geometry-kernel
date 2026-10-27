@@ -7,10 +7,10 @@ from typing import Any
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
 
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.section_midline_host import (
+from blade_geometry_model.section_geometry.midlines.section_midline_host import (
     resolve_section_host,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.profiling import timed_stage
+from blade_geometry_model.section_geometry.profiling import timed_stage
 
 from .emitters import (
     emit_inner_cavity_polygon,

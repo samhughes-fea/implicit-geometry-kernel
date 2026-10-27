@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.mesh_utilities.area_2d import (
+from blade_geometry_model.area_2d import (
     QuadtreeSpec,
     build_area_mesh_2d,
     build_area_meshes_2d,
@@ -60,14 +60,14 @@ def test_build_area_meshes_2d_multiple_fields():
 
 @pytest.mark.parametrize("code", ["0012"])
 def test_airfoil_component_quadtree_contour(code: str):
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+    from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+    from blade_geometry_model.section_geometry.api.factory import (
         build_section_view,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+    from blade_geometry_model.section_geometry.layout.system_layout import (
         resolve_system_type,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.area_mesh import (
+    from blade_geometry_model.section_geometry.props_emit.area_mesh import (
         build_section_area_meshes,
     )
 

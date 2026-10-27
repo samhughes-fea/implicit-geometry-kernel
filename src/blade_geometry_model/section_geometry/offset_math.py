@@ -8,7 +8,7 @@ from __future__ import annotations
 import numpy as np
 from shapely.geometry import MultiPolygon, Polygon
 
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive.helpers import (
+from blade_geometry_model.section_geometry.constructive.helpers import (
     airfoil_offset_ring as _airfoil_offset_ring,
     airfoil_polygon as _airfoil_polygon,
     ensure_polygon,

@@ -14,10 +14,10 @@ from shapely import make_valid
 from shapely.geometry import LineString, MultiPolygon, Polygon
 from shapely.ops import unary_union
 
-from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+from blade_geometry_model.section_contract.errors import (
     InfeasibleSectionGeometry,
 )
-from blade_structure_utilities.integration_utilities.shoelace_integration import (
+from blade_geometry_model.shoelace_integration import (
     validate_and_orient_polygon,
 )
 

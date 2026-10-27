@@ -7,10 +7,10 @@ from dataclasses import replace
 import numpy as np
 from numpy.typing import NDArray
 
-from blade_structure_utilities.geometry_utilities.section_contract.shell_midline_strip import (
+from blade_geometry_model.section_contract.shell_midline_strip import (
     ShellMidlineStrip,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.outer_skin import (
+from blade_geometry_model.section_geometry.recipes.sdf_ir.outer_skin import (
     split_closed_ring_ss_ps,
 )
 

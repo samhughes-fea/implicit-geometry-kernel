@@ -19,12 +19,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.primitives import sdf_polygon
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.primitives import sdf_polygon
 
 # Chord-relative thicknesses, so no case is asked for a cap that cannot fit.
 _T_SKIN_FRAC = 0.003
@@ -90,13 +90,13 @@ def test_cap_midline_is_at_normal_offset_depth(airfoil_key: str, layout_key: str
 @pytest.mark.parametrize("layout_key", LAYOUTS)
 def test_cap_midline_lies_inside_the_cap_slab(airfoil_key: str, layout_key: str) -> None:
     """Clip-independent form of the same claim: inside the unclipped slab."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections.clip_algebra import (
+    from blade_geometry_model.section_geometry.sections.clip_algebra import (
         airfoil_expr,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.base import (
+    from blade_geometry_model.section_geometry.recipes.sdf_ir.base import (
         expr_callable,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import Offset, Slab
+    from blade_geometry_model.section_geometry.sdf.ir import Offset, Slab
 
     af, caps = _caps(airfoil_key, layout_key)
     poly = airfoil_expr(af)
@@ -124,7 +124,7 @@ def test_cap_midline_lies_inside_the_cap_slab(airfoil_key: str, layout_key: str)
 @pytest.mark.parametrize("layout_key", LAYOUTS)
 def test_cap_midline_satisfies_strip_contract(airfoil_key: str, layout_key: str) -> None:
     """Ascending x, non-degenerate segments, and the documented endpoints."""
-    from blade_structure_utilities.mesh_utilities.section_mesh.handoff.shell_inputs import (
+    from blade_geometry_model.section_mesh.handoff.shell_inputs import (
         _MIN_SEGMENT_LENGTH_M,
     )
 

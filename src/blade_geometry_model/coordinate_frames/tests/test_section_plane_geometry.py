@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     PIVOT_FRACTION_DEFAULT,
     naca_to_twisted_pitch_axis_blade_frame,
     naca_to_zero_twist_pitch_axis_station_frame,

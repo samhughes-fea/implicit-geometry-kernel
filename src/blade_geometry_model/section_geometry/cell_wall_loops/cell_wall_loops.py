@@ -17,7 +17,7 @@ from .cell_wall_loop_builders import (
 
 def cell_wall_loops_case_payload(*args, **kwargs):
     """Compatibility re-export of the demo payload helper."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.demos.cell_wall_loops_case_payload import (
+    from blade_geometry_model.section_geometry.visualisation.demos.cell_wall_loops_case_payload import (
         cell_wall_loops_case_payload as _impl,
     )
 

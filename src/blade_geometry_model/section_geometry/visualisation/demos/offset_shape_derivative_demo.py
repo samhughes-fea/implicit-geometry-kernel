@@ -33,7 +33,7 @@ Writes under ``visualisation/output/offset_shape_derivative/``:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/offset_shape_derivative_demo.py --presentation
+    python src/blade_geometry_model/section_geometry/visualisation/demos/offset_shape_derivative_demo.py --presentation
 """
 
 from __future__ import annotations
@@ -53,27 +53,27 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SDFGrid,
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.thickness_limits import (
+from blade_geometry_model.section_geometry.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import (
     quadtree_spec_for_airfoil,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+from blade_geometry_model.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+from blade_geometry_model.section_geometry.visualisation.palette import (
     INK,
     MUTED,
     NAVY,

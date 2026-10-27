@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+from blade_geometry_model.section_contract.errors import (
     InfeasibleSectionGeometry,
 )
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.csg import offset
+from blade_geometry_model.section_geometry.sdf.csg import offset
 
 
 def _default_y_search(airfoil_sdf, y_search=None):
@@ -190,7 +190,7 @@ def resolve_web_anchors(
     ``dropped`` is a list of :class:`DroppedWeb` — callers that step the
     layout down need to know *which* webs went, not just how many.
     """
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.worker import (
+    from blade_geometry_model.section_geometry.api.worker import (
         DroppedWeb,
     )
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
-from blade_structure_utilities.geometry_utilities.section_geometry.placement.anchoring import (
+from blade_geometry_model.section_geometry.placement.anchoring import (
     AnchoredWallGeometry,
 )
 

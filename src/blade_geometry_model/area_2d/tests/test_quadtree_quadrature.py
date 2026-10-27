@@ -5,12 +5,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.area_mesh import (
+from blade_geometry_model.section_geometry.props_emit.area_mesh import (
     _component_supports,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.grid import SDFGrid
-from blade_structure_utilities.mesh_utilities.area_2d import QuadtreeSpec, build_shared_quadtree
-from blade_structure_utilities.mesh_utilities.area_2d.quadrature import (
+from blade_geometry_model.section_geometry.sdf.grid import SDFGrid
+from blade_geometry_model.area_2d import QuadtreeSpec, build_shared_quadtree
+from blade_geometry_model.area_2d.quadrature import (
     section_properties_from_quadtree,
 )
 
@@ -84,7 +84,7 @@ def test_component_support_bbox_is_local():
 
 
 def test_effective_refine_band_scales_with_cell_size():
-    from blade_structure_utilities.mesh_utilities.area_2d.quadtree import _cell_needs_refine
+    from blade_geometry_model.area_2d.quadtree import _cell_needs_refine
 
     phi_near = np.array([0.01, 0.01, 0.01, 0.01, 0.01])
     assert _cell_needs_refine(phi_near, band_ceiling=0.02, band_scale=1.5, cell_diag=0.01)
@@ -93,12 +93,12 @@ def test_effective_refine_band_scales_with_cell_size():
 
 def test_boundary_moments_batch_matches_per_cell():
     """Vectorized boundary moments must reproduce the per-cell marching-squares path."""
-    from blade_structure_utilities.mesh_utilities.area_2d.quadrature import (
+    from blade_geometry_model.area_2d.quadrature import (
         _boundary_moments_batch,
         _inside_polygon_from_cell,
         _polygon_moments,
     )
-    from blade_structure_utilities.mesh_utilities.area_2d.quadtree import QuadCell
+    from blade_geometry_model.area_2d.quadtree import QuadCell
 
     rng = np.random.default_rng(0)
     # Cover all 16 corner sign patterns plus random magnitudes, with assorted cells.

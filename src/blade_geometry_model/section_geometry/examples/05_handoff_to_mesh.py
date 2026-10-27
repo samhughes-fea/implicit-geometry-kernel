@@ -4,7 +4,7 @@ Optionally builds a coarse strip mesh when ``--mesh`` is passed.
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/examples/05_handoff_to_mesh.py
+    python src/blade_geometry_model/section_geometry/examples/05_handoff_to_mesh.py
     python .../05_handoff_to_mesh.py --mesh
 """
 
@@ -23,12 +23,12 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SectionGeometryRunner,
     resolve_system_type,
 )
-from blade_structure_utilities.mesh_utilities.section_mesh import (
+from blade_geometry_model.section_mesh import (
     shell_mesh_inputs_from_geometry_result,
 )
 
@@ -67,7 +67,7 @@ def main() -> None:
         print(f"  {m.kind!r} {m.label!r} n={n} t={m.thickness_m}")
 
     if args.mesh:
-        from blade_structure_utilities.mesh_utilities.section_mesh import (
+        from blade_geometry_model.section_mesh import (
             build_section_strip_mesh,
         )
 

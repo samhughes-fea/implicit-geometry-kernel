@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import Expr, eval_expr_batch
+from blade_geometry_model.section_geometry.sdf.ir import Expr, eval_expr_batch
 
 
 def expr_callable(expr: Expr):
@@ -37,7 +37,7 @@ class SectionComponent:
 
 def twist_component(comp: SectionComponent, twist_rad: float) -> SectionComponent:
     """Return a component whose expr is rotated into the B-frame."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import Rotate
+    from blade_geometry_model.section_geometry.sdf.ir import Rotate
 
     if abs(float(twist_rad)) <= 1e-10:
         return comp

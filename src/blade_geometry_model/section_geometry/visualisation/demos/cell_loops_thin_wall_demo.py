@@ -33,7 +33,7 @@ Writes under ``visualisation/output/cell_loops_thin_wall/``:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/cell_loops_thin_wall_demo.py --presentation
+    python src/blade_geometry_model/section_geometry/visualisation/demos/cell_loops_thin_wall_demo.py --presentation
 """
 
 from __future__ import annotations
@@ -55,18 +55,18 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import section_plot_axes
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.coordinate_frames import section_plot_axes
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SectionGeometryRunner,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+from blade_geometry_model.section_geometry.visualisation.palette import (
     INK,
     MUTED,
     NAVY,
@@ -74,16 +74,16 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
     TEAL,
     strip_axes_chrome,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+from blade_geometry_model.section_geometry.visualisation.plot_section import (
     apply_structural_section_axes,
 )
-from blade_structure_utilities.geometry_utilities.section_properties.reference_axes.shear_centre import (
+from blade_geometry_model.section_properties.reference_axes.shear_centre import (
     shear_centre_from_midlines,
 )
-from blade_structure_utilities.geometry_utilities.section_properties.reference_axes.wall_network import (
+from blade_geometry_model.section_properties.reference_axes.wall_network import (
     network_from_midlines_props,
 )
-from blade_structure_utilities.geometry_utilities.section_properties.torsion.multi_cell import (
+from blade_geometry_model.section_properties.torsion.multi_cell import (
     torsion_from_wall_network,
 )
 

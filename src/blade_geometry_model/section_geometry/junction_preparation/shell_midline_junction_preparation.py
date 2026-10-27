@@ -10,10 +10,10 @@ from __future__ import annotations
 import warnings
 from dataclasses import dataclass
 
-from blade_structure_utilities.geometry_utilities.section_contract.shell_midline_strip import ShellMidlineStrip
-from blade_structure_utilities.geometry_utilities.section_geometry.profiling import timed_stage
+from blade_geometry_model.section_contract.shell_midline_strip import ShellMidlineStrip
+from blade_geometry_model.section_geometry.profiling import timed_stage
 
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.cap_skin_ray_resample import (
+from blade_geometry_model.section_geometry.midlines.cap_skin_ray_resample import (
     concat_skin_ring_vertices,
     pick_inward_ray_direction,
     resample_cap_interiors_from_skin_rays,

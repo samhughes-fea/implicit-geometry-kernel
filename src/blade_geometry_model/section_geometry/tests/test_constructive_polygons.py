@@ -6,11 +6,11 @@ import numpy as np
 import pytest
 from shapely.geometry import Polygon
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive import (
+from blade_geometry_model.section_geometry.constructive import (
     classify_property_labels,
     emit_constructive_polygons,
     emit_wall_solid_polygons,
@@ -20,17 +20,17 @@ from blade_structure_utilities.geometry_utilities.section_geometry.constructive 
     is_residual_label,
     section_properties_from_polygons,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive.emitters import (
+from blade_geometry_model.section_geometry.constructive.emitters import (
     emit_outer_skin_polygon,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import (
     quadtree_spec_for_airfoil,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+from blade_geometry_model.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.integration_utilities.shoelace_integration import section_properties_S
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.shoelace_integration import section_properties_S
 
 
 def test_label_classifier_cores_and_inserts_constructive():
@@ -156,7 +156,7 @@ def test_section_properties_from_polygons_handles_degenerate():
 
 def test_hybrid_5d_f_thick_skin_does_not_crash():
     """Heavy wall thicknesses (FoS-thickened geometry) must stay on hybrid path."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections import (
+    from blade_geometry_model.section_geometry.sections import (
         MultiCellSection,
     )
 
@@ -197,7 +197,7 @@ def test_hybrid_retains_core_and_optional_inserts():
     # MultiCellSection via build_section_view; enable inserts through factory if available.
     section = build_section_view(airfoil, resolve_system_type("2D-CN"), twist_angle_rad=0.0)
     # Direct MultiCellSection with inserts for constructive coverage
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections.multicell import (
+    from blade_geometry_model.section_geometry.sections.multicell import (
         MultiCellSection,
     )
 

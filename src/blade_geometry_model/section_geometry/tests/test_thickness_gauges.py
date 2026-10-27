@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.kwarg_aliases import (
+from blade_geometry_model.section_geometry.api.kwarg_aliases import (
     resolve_shear_web_thickness,
     resolve_skin_gauges,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+from blade_geometry_model.section_geometry.sdf.airfoil import (
     AirfoilSDF,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.multicell import (
+from blade_geometry_model.section_geometry.sections.multicell import (
     MultiCellSection,
 )
 
@@ -49,13 +49,13 @@ def test_multicell_asymmetric_skin_recipes():
 
 
 def test_zone_gauges_m_preserve_independent_webs(airfoil=None):
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.runner import (
+    from blade_geometry_model.section_geometry.api.runner import (
         SectionGeometryRunner,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+    from blade_geometry_model.section_geometry.layout.system_layout import (
         resolve_system_type,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+    from blade_geometry_model.section_geometry.sdf.airfoil import (
         AirfoilSDF,
     )
 
@@ -89,13 +89,13 @@ def test_zone_gauges_m_preserve_independent_webs(airfoil=None):
 
 
 def test_prep_key_distinguishes_unequal_zone_maps():
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.worker import (
+    from blade_geometry_model.section_geometry.api.worker import (
         section_geometry_prep_key,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+    from blade_geometry_model.section_geometry.layout.system_layout import (
         resolve_system_type,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+    from blade_geometry_model.section_geometry.sdf.airfoil import (
         AirfoilSDF,
     )
 

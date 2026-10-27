@@ -4,7 +4,7 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 
-from blade_structure_utilities.integration_utilities.shoelace_integration import section_properties_S
+from blade_geometry_model.shoelace_integration import section_properties_S
 
 from .tensors import (
     structural_product_moment,

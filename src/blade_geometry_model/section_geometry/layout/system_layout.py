@@ -1,7 +1,7 @@
 """SystemType-style layout keys → frozen layout specs (SDF-first; no Shapely).
 
 Registry dict keys are the **compact** ``SystemType{X}{Y}-{Z}`` tokens from
-``blade_precompute/blade_structure_utilities/geometry_utilities/section_geometry/docs/reference/system_type_xyz_taxonomy.md`` (e.g.
+``blade_precompute/src/blade_geometry_model/section_geometry/docs/reference/system_type_xyz_taxonomy.md`` (e.g.
 ``2D-CN``, ``2D-F``). Middle letter is taxonomy **Y** (``A``/``B``/``C``/``D``).
 Pass these strings to :func:`resolve_system_type`.
 """
@@ -11,10 +11,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal, Mapping, Sequence
 
-from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+from blade_geometry_model.section_contract.errors import (
     InfeasibleSectionGeometry,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.structural import StructuralFamily
+from blade_geometry_model.section_geometry.layout.structural import StructuralFamily
 
 WebOrientation = Literal["chord_normal", "flapwise"]
 WebPositioning = Literal["uniform", "structural", "fixed", "none"]
@@ -26,7 +26,7 @@ class SystemLayoutSpec:
     airfoil leading edge in section *x* (same convention as :class:`AirfoilSDF`).
 
     When ``n_webs == 0`` (catalogue keys ``0A`` / ``0B``), the sized worker still
-    builds a :class:`~blade_structure_utilities.geometry_utilities.section_geometry.sections.multicell.MultiCellSection`
+    builds a :class:`~blade_geometry_model.section_geometry.sections.multicell.MultiCellSection`
     with empty web positions (family A or B). ``geometry_mode="zero_web_catalogue"``
     remains catalogue metadata for those keys; it no longer selects a separate host class.
     """

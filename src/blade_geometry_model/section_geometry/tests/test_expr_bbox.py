@@ -13,7 +13,7 @@ import math
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import (
+from blade_geometry_model.section_geometry.sdf.ir import (
     Box,
     Capsule,
     Circle,

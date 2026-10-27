@@ -29,7 +29,7 @@ Writes under ``visualisation/output/evaluation_cost_pruning/``:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/evaluation_cost_pruning_demo.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/evaluation_cost_pruning_demo.py
 """
 
 from __future__ import annotations
@@ -51,30 +51,30 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     demo_output_dir,
     save_figure,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+from blade_geometry_model.section_geometry.visualisation.palette import (
     INK,
     MUTED,
     NAVY,
     RED,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SDFGrid,
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import (
+from blade_geometry_model.section_geometry.sdf.ir import (
     eval_expr_batch,
     expr_bbox,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+from blade_geometry_model.section_geometry.visualisation.plot_section import (
     _component_color,
 )
 

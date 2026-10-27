@@ -13,7 +13,7 @@ Builds ``MultiCellSection``, exports B-frame midline strips, then
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/cell_wall_loops_demo.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/cell_wall_loops_demo.py
 
 Outputs default to ``visualisation/output/cell_wall_loops/``.
 """
@@ -36,14 +36,14 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     demo_output_dir,
     save_figure,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     SDFGrid,
@@ -51,17 +51,17 @@ from blade_structure_utilities.geometry_utilities.section_geometry import (
 # ``interface/`` is a re-export shim and carries none of these any more: the
 # midline builder moved to ``midlines/`` and the loop builder to
 # ``cell_wall_loops/``, alongside the rest of their own stage.
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
+from blade_geometry_model.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.cell_wall_loops.cell_wall_loop_builders import (
+from blade_geometry_model.section_geometry.cell_wall_loops.cell_wall_loop_builders import (
     build_cell_wall_loops,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry import plot_section
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.section_geometry import plot_section
+from blade_geometry_model.coordinate_frames import (
     section_plot_axes,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.demos.cell_wall_loops_case_payload import (
+from blade_geometry_model.section_geometry.visualisation.demos.cell_wall_loops_case_payload import (
     cell_wall_loops_case_payload,
 )
 
@@ -184,7 +184,7 @@ def _plot_midline_loops(ax, strips, loops, title: str) -> None:
             Line2D([0], [0], color=edge, lw=2.2, label=f"cell_{lp.id}  A={lp.area_m2:.4g} mÂ²")
         )
 
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         apply_structural_section_axes,
     )
 

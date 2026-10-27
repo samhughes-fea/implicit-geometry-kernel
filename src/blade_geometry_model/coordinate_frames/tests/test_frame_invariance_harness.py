@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames.testing import (
+from blade_geometry_model.coordinate_frames.testing import (
     FRAME_B,
     assert_planar_pierce_rotates,
     assert_scalar_invariant_under_rotation,
@@ -20,10 +20,10 @@ def test_rotate_points_in_b_round_trip():
 
 
 def test_shear_centre_and_gj_are_frame_invariant_on_two_cell_box():
-    from blade_structure_utilities.geometry_utilities.section_properties.reference_axes import (
+    from blade_geometry_model.section_properties.reference_axes import (
         shear_centre_from_midlines,
     )
-    from blade_structure_utilities.geometry_utilities.section_properties.torsion import (
+    from blade_geometry_model.section_properties.torsion import (
         closed_section_torsional_stiffness,
     )
 

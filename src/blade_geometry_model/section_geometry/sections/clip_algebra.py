@@ -16,7 +16,7 @@ from typing import Any, Callable, Literal, Union
 import numpy as np
 from shapely.geometry import Polygon
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import (
+from blade_geometry_model.section_geometry.sdf.ir import (
     HalfPlane,
     Intersect,
 )

@@ -5,15 +5,15 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.placement import (
+from blade_geometry_model.section_geometry.placement import (
     anchored_wall_geometry,
     default_construction_for_kind,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 from blade_structure_utilities.material_utilities.layup import (
     SKIN_FROM_OUTER_MOULD_LINE,
     stack_for_placement,

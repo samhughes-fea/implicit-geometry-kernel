@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     fiber_extents_from_airfoil,
     fiber_extents_from_outline,

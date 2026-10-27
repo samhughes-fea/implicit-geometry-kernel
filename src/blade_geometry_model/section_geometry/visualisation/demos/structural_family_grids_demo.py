@@ -15,7 +15,7 @@ Writes under ``visualisation/output/structural_family_grids/``:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/structural_family_grids_demo.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/structural_family_grids_demo.py
     python .../structural_family_grids_demo.py --twist-deg 15 --families A D
     python .../structural_family_grids_demo.py --keys 2D-F 3D-CN
     python .../structural_family_grids_demo.py --wall
@@ -49,7 +49,7 @@ def _load_sibling(name: str, filename: str):
 _ensure_mod = _load_sibling("_ensure_repo_path", "_ensure_repo_path.py")
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     add_output_and_presentation_args,
     apply_presentation_style,
@@ -58,15 +58,15 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
 )
 _taxonomy = _load_sibling("_taxonomy_cases", "_taxonomy_cases.py")
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     SYSTEM_TYPE_KEYS,
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+from blade_geometry_model.section_geometry.visualisation.plot import (
     plot_section_hybrid,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 
 _DPI = DEFAULT_DPI
 _FAMILIES = ("A", "B", "C", "D")
@@ -233,7 +233,7 @@ def _render_taxonomy_matrix(
     column headers already say what each cell is, and 40 sets of axis numbers
     would be the loudest thing on the sheet.
     """
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+    from blade_geometry_model.section_geometry.visualisation.palette import (
         INK,
         MUTED,
         SURFACE,

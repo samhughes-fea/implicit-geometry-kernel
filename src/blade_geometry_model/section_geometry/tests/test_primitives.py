@@ -8,7 +8,7 @@ Run with:  python -m pytest tests/ -v
 
 import numpy as np
 import pytest
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.primitives import (
+from blade_geometry_model.section_geometry.sdf.primitives import (
     sdf_circle, sdf_box, sdf_half_plane,
     sdf_segment, sdf_capsule, sdf_ellipse, sdf_polygon,
 )

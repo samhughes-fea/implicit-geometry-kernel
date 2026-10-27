@@ -9,7 +9,7 @@ import numpy as np
 
 
 def render_demo_visualisation(output_path: str | Path) -> Path:
-    """Render a deterministic demo figure for src.blade_structure_utilities.integration_utilities.shoelace_integration."""
+    """Render a deterministic demo figure for src.blade_geometry_model.shoelace_integration."""
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
 
@@ -20,7 +20,7 @@ def render_demo_visualisation(output_path: str | Path) -> Path:
     fig, ax = plt.subplots(figsize=(8.0, 4.2), dpi=140)
     ax.plot(x, y_a, label="primary")
     ax.plot(x, y_b, label="secondary")
-    ax.set_title("src.blade_structure_utilities.integration_utilities.shoelace_integration demo visualisation")
+    ax.set_title("src.blade_geometry_model.shoelace_integration demo visualisation")
     ax.set_xlabel("normalised span")
     ax.set_ylabel("response")
     ax.grid(True, alpha=0.3)

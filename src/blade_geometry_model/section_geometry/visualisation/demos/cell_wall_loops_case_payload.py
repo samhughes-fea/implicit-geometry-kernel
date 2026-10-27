@@ -7,9 +7,9 @@ from typing import Sequence
 import numpy as np
 from numpy.typing import NDArray
 
-from blade_structure_utilities.geometry_utilities.section_contract.cell_wall_loop import CellWallLoop
-from blade_structure_utilities.geometry_utilities.section_contract.shell_midline_strip import ShellMidlineStrip
-from blade_structure_utilities.geometry_utilities.section_geometry.cell_wall_loops.cell_wall_loop_builders import (
+from blade_geometry_model.section_contract.cell_wall_loop import CellWallLoop
+from blade_geometry_model.section_contract.shell_midline_strip import ShellMidlineStrip
+from blade_geometry_model.section_geometry.cell_wall_loops.cell_wall_loop_builders import (
     build_cell_wall_loops,
 )
 

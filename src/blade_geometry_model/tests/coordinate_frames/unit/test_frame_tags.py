@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     FRAME_B,
     FRAME_C,
     FRAME_E,

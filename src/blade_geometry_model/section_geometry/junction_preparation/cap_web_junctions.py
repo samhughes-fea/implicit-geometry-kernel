@@ -7,7 +7,7 @@ from dataclasses import replace
 import numpy as np
 from numpy.typing import NDArray
 
-from blade_structure_utilities.geometry_utilities.section_contract.shell_midline_strip import ShellMidlineStrip
+from blade_geometry_model.section_contract.shell_midline_strip import ShellMidlineStrip
 
 from ..midlines.junction_primitives import solve_interior_cap_web_hits
 from ..midlines.ring_geometry import (

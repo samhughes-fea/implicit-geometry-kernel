@@ -27,14 +27,14 @@ from __future__ import annotations
 
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     SYSTEM_TYPE_KEYS,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+from blade_geometry_model.section_contract.errors import (
     InfeasibleSectionGeometry,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+from blade_geometry_model.section_geometry.layout.system_layout import (
     effective_layout_for_web_count,
     family_min_webs,
     step_down_cascade,

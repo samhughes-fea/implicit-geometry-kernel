@@ -7,7 +7,7 @@ from dataclasses import replace
 import numpy as np
 from numpy.typing import NDArray
 
-from blade_structure_utilities.geometry_utilities.section_contract.shell_midline_strip import ShellMidlineStrip
+from blade_geometry_model.section_contract.shell_midline_strip import ShellMidlineStrip
 
 from .ring_geometry import (
     _MIN_SEGMENT_LENGTH_M,
@@ -306,10 +306,10 @@ def _collect_cap_web_junction_seeds(
     strips: tuple[ShellMidlineStrip, ...],
 ) -> dict[int, list[NDArray[np.float64]]]:
     """Pre-resample interior crossings via junction_primitives (axis × cap)."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.midlines.junction_primitives import (
+    from blade_geometry_model.section_geometry.midlines.junction_primitives import (
         intersect_axis_cap_polyline,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.midlines.ring_geometry import (
+    from blade_geometry_model.section_geometry.midlines.ring_geometry import (
         open_polyline_prefix_lengths,
     )
 

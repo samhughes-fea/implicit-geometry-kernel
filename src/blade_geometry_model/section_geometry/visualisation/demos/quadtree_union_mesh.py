@@ -20,9 +20,9 @@ Outputs under ``visualisation/output/quadtree_union/``:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/quadtree_union_mesh.py
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/quadtree_union_mesh.py 2D-CN 2C-F
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/quadtree_union_mesh.py --list-keys
+    python src/blade_geometry_model/section_geometry/visualisation/demos/quadtree_union_mesh.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/quadtree_union_mesh.py 2D-CN 2C-F
+    python src/blade_geometry_model/section_geometry/visualisation/demos/quadtree_union_mesh.py --list-keys
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ def _load_sibling_module(name: str, filename: str):
 _ensure_mod = _load_sibling_module("_ensure_repo_path", "_ensure_repo_path.py")
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     demo_output_dir,
@@ -64,18 +64,18 @@ system_type_display_name = _taxonomy.system_type_display_name
 twist_deg_for_layout = _taxonomy.twist_deg_for_layout
 twist_rad_for_layout = _taxonomy.twist_rad_for_layout
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     SYSTEM_TYPE_KEYS,
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.area_mesh import build_shared_section_quadtree
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry.props_emit.area_mesh import build_shared_section_quadtree
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SDFGrid,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
+from blade_geometry_model.section_geometry.visualisation.plot import (
     _component_color,
     plot_section,
 )
@@ -159,13 +159,13 @@ def render_case(
             f"Square union-refined quadtree — {display_name} "
             f"(depth<={max_depth}, leaves={len(leaves)})"
         )
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         apply_structural_section_axes,
     )
 
     apply_structural_section_axes(axq)
     if presentation:
-        from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+        from blade_geometry_model.section_geometry.visualisation.palette import (
             strip_axes_chrome,
         )
 

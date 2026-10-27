@@ -13,7 +13,7 @@ cap-web T-junction vertices). Writes:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/shell_junction_topology_demo.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/shell_junction_topology_demo.py
 
 Outputs default to ``visualisation/output/shell_junction_topology/``.
 """
@@ -36,7 +36,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     add_output_and_presentation_args,
     apply_presentation_style,
@@ -44,23 +44,23 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
     save_figure,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+from blade_geometry_model.section_geometry.visualisation.plot import (
     plot_shell_midline_strip_topology,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
+from blade_geometry_model.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.ring_geometry import (
+from blade_geometry_model.section_geometry.midlines.ring_geometry import (
     point_to_open_polyline_nearest,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
     prepare_shell_midline_junctions,
 )
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     section_plot_axes,
 )
 
@@ -169,7 +169,7 @@ def _cap_web_shared_vertices(strips, *, tol_m: float = 5e-4) -> list[dict]:
 
 
 def _zoom_axes(ax, centre: np.ndarray, half_span: float) -> None:
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         apply_structural_section_axes,
     )
 

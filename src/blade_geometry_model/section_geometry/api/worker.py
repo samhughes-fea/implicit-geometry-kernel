@@ -10,29 +10,29 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Collection, Iterable, Literal, Sequence
 
-from blade_structure_utilities.geometry_utilities.section_contract.cell_wall_loop import (
+from blade_geometry_model.section_contract.cell_wall_loop import (
     CellWallLoop,
 )
-from blade_structure_utilities.geometry_utilities.section_contract.shell_midline_strip import (
+from blade_geometry_model.section_contract.shell_midline_strip import (
     ShellMidlineStrip,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.section_layout import (
+from blade_geometry_model.section_geometry.layout.section_layout import (
     SectionLayout,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+from blade_geometry_model.section_geometry.layout.system_layout import (
     SystemLayoutSpec,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.section_midline_host import (
+from blade_geometry_model.section_geometry.midlines.section_midline_host import (
     SectionMidlineHost,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+from blade_geometry_model.section_geometry.props_emit.props_compute import (
     PropsBackendArg,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+from blade_geometry_model.section_geometry.sdf.airfoil import (
     AirfoilSDF,
 )
-from blade_structure_utilities.mesh_utilities.area_2d.quadtree import QuadTreeMesh
-from blade_structure_utilities.mesh_utilities.area_2d.spec import QuadtreeSpec
+from blade_geometry_model.area_2d.quadtree import QuadTreeMesh
+from blade_geometry_model.area_2d.spec import QuadtreeSpec
 
 LayoutInput = SystemLayoutSpec | SectionLayout
 
@@ -88,7 +88,7 @@ def _as_system_layout_if_possible(layout: LayoutInput) -> SystemLayoutSpec | Non
 
 def _step_down_section_layout(layout: SectionLayout, n_webs: int) -> SectionLayout:
     """Reduce a keyless parametric layout to ``n_webs`` survivors."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.layout.cap_placement import (
+    from blade_geometry_model.section_geometry.layout.cap_placement import (
         CapPlacementRule,
     )
 
@@ -295,7 +295,7 @@ def section_geometry_prep_key(
     ``placement_digest_by_kind`` participates so a surface-aware policy change
     invalidates geometry caches (WP3 D3.3 / WP5 D5.3).
     """
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.kwarg_aliases import (
+    from blade_geometry_model.section_geometry.api.kwarg_aliases import (
         resolve_shear_web_thickness,
         resolve_skin_gauges,
         resolve_spar_cap_thickness,
@@ -379,7 +379,7 @@ def section_geometry_prep_key(
 
 def _as_section_layout(layout: LayoutInput) -> SectionLayout:
     """Normalise catalogue specs to the parametric layout SoT."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections.from_layout import (
+    from blade_geometry_model.section_geometry.sections.from_layout import (
         as_section_layout,
     )
 
@@ -392,7 +392,7 @@ def _reattach_catalogue_preset(layout: SectionLayout) -> SectionLayout:
     Returns a :class:`SectionLayout` whose ``catalogue_key`` matches the
     registry entry when one exists; otherwise returns ``layout`` unchanged.
     """
-    from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+    from blade_geometry_model.section_geometry.layout.system_layout import (
         resolve_system_type,
     )
 
@@ -501,13 +501,13 @@ def resolve_station_layout(
 
     Raises :class:`InfeasibleSectionGeometry` when no web can be anchored.
     """
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.kwarg_aliases import (
+    from blade_geometry_model.section_geometry.api.kwarg_aliases import (
         resolve_skin_thickness,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+    from blade_geometry_model.section_geometry.layout.system_layout import (
         InfeasibleSectionGeometry,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections.web_layout import (
+    from blade_geometry_model.section_geometry.sections.web_layout import (
         resolve_web_anchors,
     )
 
@@ -585,13 +585,13 @@ def build_section_with_thicknesses(
     builds a :class:`MultiCellSection`. Prefer long thickness / twist names;
     ``cap_height`` / ``web_thickness`` remain accepted aliases.
     """
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.kwarg_aliases import (
+    from blade_geometry_model.section_geometry.api.kwarg_aliases import (
         resolve_shear_web_thickness,
         resolve_skin_gauges,
         resolve_spar_cap_thickness,
         resolve_twist_rad,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections.from_layout import (
+    from blade_geometry_model.section_geometry.sections.from_layout import (
         multicell_from_layout,
     )
 
@@ -660,7 +660,7 @@ def build_section_geometry(
         When set (e.g. from :func:`resolve_station_layout`), skips a second
         :func:`resolve_web_anchors` inside ``MultiCellSection``.
     """
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.kwarg_aliases import (
+    from blade_geometry_model.section_geometry.api.kwarg_aliases import (
         resolve_shear_web_thickness,
         resolve_skin_gauges,
         resolve_spar_cap_thickness,
@@ -701,10 +701,10 @@ def build_section_geometry(
     need_midlines = "midlines" in out_set or "cell_wall_loops" in out_set
     need_void = "cell_wall_loops" in out_set
 
-    from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+    from blade_geometry_model.section_geometry.props_emit.props_backend import (
         props_backend_from_env,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.profiling import (
+    from blade_geometry_model.section_geometry.sdf.profiling import (
         profiling_enabled,
         timed_stage,
     )
@@ -747,7 +747,7 @@ def build_section_geometry(
     properties_meta: SectionPropertiesMeta | None = None
     quadtree_mesh: QuadTreeMesh | None = None
     if need_props:
-        from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+        from blade_geometry_model.section_geometry.props_emit.props_compute import (
             compute_section_properties,
         )
 
@@ -802,10 +802,10 @@ def build_section_geometry(
     if need_midlines:
         import numpy as np
 
-        from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
+        from blade_geometry_model.section_geometry.midlines.shell_midline_export import (
             build_shell_midline_strips,
         )
-        from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+        from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
             prepare_shell_midline_junctions,
         )
 
@@ -837,7 +837,7 @@ def build_section_geometry(
                 )
             )
         if need_void:
-            from blade_structure_utilities.geometry_utilities.section_geometry.cell_wall_loops.cell_wall_loops import (
+            from blade_geometry_model.section_geometry.cell_wall_loops.cell_wall_loops import (
                 build_cell_wall_loops,
             )
 
@@ -849,7 +849,7 @@ def build_section_geometry(
         # Full chord→B map (swap + pivot shift + twist), matching the midline
         # strips above. A bare rotation would leave LE/TE in the raw-NACA frame
         # while the strips were canonical B.
-        from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+        from blade_geometry_model.coordinate_frames import (
             naca_to_twisted_pitch_axis_blade_frame,
         )
 

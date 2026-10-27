@@ -6,15 +6,15 @@ import json
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.cache import SectionEvalCache
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import eval_expr_batch
+from blade_geometry_model.section_geometry.sdf.cache import SectionEvalCache
+from blade_geometry_model.section_geometry.sdf.ir import eval_expr_batch
 
 from .properties_report import SectionPropertiesReport
 
 
 def _multicell_host(section_geometry):
     """Resolve the concrete section graph host (e.g. MultiCellSection)."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.midlines.section_midline_host import (
+    from blade_geometry_model.section_geometry.midlines.section_midline_host import (
         resolve_section_host,
     )
 
@@ -95,7 +95,7 @@ def _segments_to_nested(segs: np.ndarray) -> list:
 
 def _mesh_label_boundary(mesh, label: str) -> list:
     """φ=0 boundary polylines for ``label`` from shared quadtree corner φ."""
-    from blade_structure_utilities.mesh_utilities.area_2d.quadrature import label_boundary_segments
+    from blade_geometry_model.area_2d.quadrature import label_boundary_segments
 
     def _as_key(lbl) -> str:
         return str(getattr(lbl, "value", lbl))
@@ -208,7 +208,7 @@ def export_section_json(
 
     def _constructive_boundary(lab: str):
         """Exterior (+ holes) rings from constructive wall-solid polygons when available."""
-        from blade_structure_utilities.geometry_utilities.section_geometry.constructive import (
+        from blade_geometry_model.section_geometry.constructive import (
             emit_constructive_polygons,
             is_constructive_label,
         )

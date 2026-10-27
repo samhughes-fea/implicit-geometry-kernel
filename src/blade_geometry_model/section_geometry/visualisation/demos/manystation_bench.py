@@ -7,9 +7,9 @@ Times the per-station hot path (section build + property integration,
 and optionally plot + JSON export) across ``--stations`` stations.
 
 Run from the repository root:
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/manystation_bench.py --stations 25
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/manystation_bench.py --stations 10 --backend hybrid
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/manystation_bench.py --stations 10 --compare
+    python src/blade_geometry_model/section_geometry/visualisation/demos/manystation_bench.py --stations 25
+    python src/blade_geometry_model/section_geometry/visualisation/demos/manystation_bench.py --stations 10 --backend hybrid
+    python src/blade_geometry_model/section_geometry/visualisation/demos/manystation_bench.py --stations 10 --compare
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     demo_output_dir,
@@ -51,19 +51,19 @@ if _erp.exists():
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import (
     quadtree_spec_for_airfoil,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.cache import SectionEvalCache
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.profiling import get_stats, reset_stats
+from blade_geometry_model.section_geometry.sdf.cache import SectionEvalCache
+from blade_geometry_model.section_geometry.sdf.profiling import get_stats, reset_stats
 
 
 def _station_params(n: int):
@@ -106,7 +106,7 @@ def _run_bench(args, backend: str) -> dict:
         last_meta = _meta
 
         if args.plot and mesh is not None:
-            from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+            from blade_geometry_model.section_geometry.visualisation.plot import (
                 plot_section_from_mesh,
                 plot_section_hybrid,
             )
@@ -125,11 +125,11 @@ def _run_bench(args, backend: str) -> dict:
             stage_s["plot"] += time.perf_counter() - t
 
         if args.export:
-            from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.export import (
+            from blade_geometry_model.section_geometry.props_emit.export import (
                 SectionPropertiesReport,
                 export_section_json,
             )
-            from blade_structure_utilities.geometry_utilities.section_geometry.sdf.grid import SDFGrid
+            from blade_geometry_model.section_geometry.sdf.grid import SDFGrid
 
             grid = SDFGrid.from_bbox(spec.x_min, spec.x_max, spec.y_min, spec.y_max, 384, 180)
             report = SectionPropertiesReport.from_precomputed(
@@ -203,7 +203,7 @@ def _plot_throughput(
     matplotlib.use("Agg", force=False)
     import matplotlib.pyplot as plt
 
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+    from blade_geometry_model.section_geometry.visualisation.palette import (
         INK,
         MUTED,
         NAVY,

@@ -17,7 +17,7 @@ Writes under visualisation/output/csg_tree_diff/:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/csg_tree_diff_demo.py --presentation
+    python src/blade_geometry_model/section_geometry/visualisation/demos/csg_tree_diff_demo.py --presentation
 """
 
 from __future__ import annotations
@@ -52,25 +52,25 @@ layout_tree = _tree_mod.layout_tree
 node_caption = _tree_mod.node_caption
 scalar_parameters = _tree_mod.scalar_parameters
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import Expr
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.sdf.ir import Expr
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+from blade_geometry_model.section_geometry.visualisation.palette import (
     INK,
     MUTED,
     NAVY,
     RED,
     strip_axes_chrome,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+from blade_geometry_model.section_geometry.visualisation.plot import (
     plot_section_hybrid,
 )
 

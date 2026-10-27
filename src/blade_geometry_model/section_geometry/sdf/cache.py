@@ -49,7 +49,7 @@ class SectionEvalCache:
         if cached is not None:
             return cached
 
-        from blade_structure_utilities.geometry_utilities.section_geometry.midlines.section_midline_host import (
+        from blade_geometry_model.section_geometry.midlines.section_midline_host import (
             resolve_section_host,
         )
 

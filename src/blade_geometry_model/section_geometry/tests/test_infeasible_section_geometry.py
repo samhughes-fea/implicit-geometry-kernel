@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_contract import (
+from blade_geometry_model.section_contract import (
     InfeasibleSectionGeometry,
 )
 
@@ -28,10 +28,10 @@ def test_is_a_valueerror_subclass() -> None:
 
 def test_offset_ring_deeper_than_the_section_is_infeasible() -> None:
     """The direct oracle: no locus exists at a depth past the inscribed limit."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.constructive.offset_locus import (
+    from blade_geometry_model.section_geometry.constructive.offset_locus import (
         airfoil_offset_ring,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+    from blade_geometry_model.section_geometry.sdf.airfoil import (
         AirfoilSDF,
     )
 
@@ -51,10 +51,10 @@ def test_bad_depth_argument_is_not_infeasibility() -> None:
     Keeping these distinct is the point: the sizing loop must not swallow real
     programming errors as failed trials.
     """
-    from blade_structure_utilities.geometry_utilities.section_geometry.constructive.offset_locus import (
+    from blade_geometry_model.section_geometry.constructive.offset_locus import (
         airfoil_offset_ring,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+    from blade_geometry_model.section_geometry.sdf.airfoil import (
         AirfoilSDF,
     )
 
@@ -66,10 +66,10 @@ def test_bad_depth_argument_is_not_infeasibility() -> None:
 
 def test_web_anchors_and_skin_intercepts_are_infeasibility() -> None:
     """The two cases the old message allowlist covered, now matched by type."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections.web_layout import (
+    from blade_geometry_model.section_geometry.sections.web_layout import (
         inner_y_at_x,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+    from blade_geometry_model.section_geometry.sdf.airfoil import (
         AirfoilSDF,
     )
 

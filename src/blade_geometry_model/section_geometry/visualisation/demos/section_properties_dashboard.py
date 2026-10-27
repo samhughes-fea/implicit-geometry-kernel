@@ -11,7 +11,7 @@ For a twin-web (2D-CN) NACA 2412 section, writes:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/section_properties_dashboard.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/section_properties_dashboard.py
 """
 
 from __future__ import annotations
@@ -32,26 +32,26 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     demo_output_dir,
     save_figure,
 )
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     CoordinateFrameTransforms,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import (
     quadtree_spec_for_airfoil,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+from blade_geometry_model.section_geometry.visualisation.plot import (
     plot_section_hybrid,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+from blade_geometry_model.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
 
@@ -106,7 +106,7 @@ def _ordered_labels(props: dict[str, dict[str, float]]) -> list[str]:
 
 def _sum_props(props: dict[str, dict[str, float]], labels: list[str]) -> dict[str, float]:
     """Parallel-axis assemble selected labels via the section_properties worker."""
-    from blade_structure_utilities.geometry_utilities.section_properties import (
+    from blade_geometry_model.section_properties import (
         aggregate_solid_label_properties,
     )
 

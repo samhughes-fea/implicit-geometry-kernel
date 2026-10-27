@@ -21,7 +21,7 @@ Writes under ``visualisation/output/feasibility_cascade/``:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/feasibility_cascade_demo.py --presentation
+    python src/blade_geometry_model/section_geometry/visualisation/demos/feasibility_cascade_demo.py --presentation
 """
 
 from __future__ import annotations
@@ -41,20 +41,20 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_contract import (
+from blade_geometry_model.section_contract import (
     InfeasibleSectionGeometry,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SectionGeometryRunner,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+from blade_geometry_model.section_geometry.visualisation.palette import (
     INK,
     MUTED,
     NAVY,

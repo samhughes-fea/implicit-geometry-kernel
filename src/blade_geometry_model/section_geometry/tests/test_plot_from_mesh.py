@@ -19,15 +19,15 @@ import numpy as np
 import pytest
 from matplotlib.collections import LineCollection, PolyCollection
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.export import SectionPropertiesReport
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import plot_section_from_mesh
-from blade_structure_utilities.mesh_utilities.area_2d.quadrature import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.props_emit.export import SectionPropertiesReport
+from blade_geometry_model.section_geometry.visualisation.plot import plot_section_from_mesh
+from blade_geometry_model.area_2d.quadrature import (
     label_boundary_segments,
     label_fill_polygons,
 )

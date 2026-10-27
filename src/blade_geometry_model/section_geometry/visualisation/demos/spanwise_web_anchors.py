@@ -21,7 +21,7 @@ Reported per station and per web:
 
 From the repo root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/\\
+    python src/blade_geometry_model/section_geometry/visualisation/demos/\\
         spanwise_web_anchors.py
 """
 
@@ -42,14 +42,14 @@ from spanwise_web_anchors_shared import build_stations as _build_spanwise_statio
 from blade_structure_precompute.module.section_selection.processing.adapters.scale_adapter import (  # noqa: E402
     airfoil_sdf_from_station,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry import (  # noqa: E402
+from blade_geometry_model.section_geometry import (  # noqa: E402
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.web_layout import (  # noqa: E402
+from blade_geometry_model.section_geometry.sections.web_layout import (  # noqa: E402
     inner_y_at_x,
     resolve_web_anchors,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.spar_family import (  # noqa: E402
+from blade_geometry_model.section_geometry.sections.spar_family import (  # noqa: E402
     _cap_feasibility_clamp,
 )
 
@@ -224,7 +224,7 @@ def cap_probe(family: str, airfoil, xs_resolved: list[float], layout) -> dict[st
             "cap_h_allowed_m": min(per) if per else 0.0, "requested_m": T_SPAR,
         }
     # Family B: band centred on max thickness, independent of the webs.
-    from blade_structure_utilities.geometry_utilities.section_geometry.layout.section_axes import (
+    from blade_geometry_model.section_geometry.layout.section_axes import (
         max_thickness_chord_x,
     )
 

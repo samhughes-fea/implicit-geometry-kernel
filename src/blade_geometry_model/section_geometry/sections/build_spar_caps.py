@@ -11,13 +11,13 @@ from typing import Any
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+from blade_geometry_model.section_contract.errors import (
     InfeasibleSectionGeometry,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.walls import (
+from blade_geometry_model.section_geometry.recipes.walls import (
     CapWall,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import (
+from blade_geometry_model.section_geometry.sdf.ir import (
     Expr,
     Subtract,
     union_expr,
@@ -28,7 +28,7 @@ from ..layout.section_axes import max_thickness_chord_x, pitch_axis_x_from_le
 from .cap_feasibility import cap_feasibility_clamp
 from .cap_ply_snap import snap_cap_heights
 from .clip_algebra import _parallel_web_strip_clip, web_station_projection
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.spar_cap import (
+from blade_geometry_model.section_geometry.recipes.sdf_ir.spar_cap import (
     SparCap,
 )
 from .labels import ComponentLabel

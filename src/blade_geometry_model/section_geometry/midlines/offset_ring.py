@@ -1,6 +1,6 @@
 """Midline-facing offset-ring helpers (re-export from package offset_math)."""
 
-from blade_structure_utilities.geometry_utilities.section_geometry.offset_math import (
+from blade_geometry_model.section_geometry.offset_math import (
     OFFSET_JOIN_STYLE,
     OFFSET_MITRE_LIMIT,
     OFFSET_QUAD_SEGS,

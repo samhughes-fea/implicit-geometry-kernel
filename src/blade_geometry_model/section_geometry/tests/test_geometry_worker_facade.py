@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     build_section_geometry,
     build_section_with_thicknesses,
     resolve_system_type,
     section_geometry_prep_key,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.api.worker import (
+from blade_geometry_model.section_geometry.api.worker import (
     resolve_station_layout,
 )
 
@@ -31,7 +31,7 @@ def test_build_section_with_thicknesses_multicell():
 
 
 def test_build_section_with_thicknesses_skin_only_public():
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections import (
+    from blade_geometry_model.section_geometry.sections import (
         MultiCellSection,
     )
 
@@ -48,10 +48,10 @@ def test_build_section_with_thicknesses_skin_only_public():
 
 
 def test_build_section_with_thicknesses_0B_is_multicell():
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections import (
+    from blade_geometry_model.section_geometry.sections import (
         MultiCellSection,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections.from_layout import (
+    from blade_geometry_model.section_geometry.sections.from_layout import (
         fixed_cap_anchor_from_layout,
     )
 
@@ -130,7 +130,7 @@ def test_stage_timings_attached_when_profiling_enabled(monkeypatch):
 
 def test_resolve_station_layout_anchors_skip_second_resolve_web_anchors(monkeypatch):
     """G8: layout resolution already ran resolve_web_anchors; build must not redo it."""
-    import blade_structure_utilities.geometry_utilities.section_geometry.sections.multicell as mc
+    import blade_geometry_model.section_geometry.sections.multicell as mc
 
     af = AirfoilSDF.from_naca("0012", n_points=120, chord=1.0)
     layout = resolve_system_type("2D-CN")
@@ -164,8 +164,8 @@ def test_resolve_station_layout_anchors_skip_second_resolve_web_anchors(monkeypa
 
 def test_shell_mesh_inputs_from_geometry_result_no_second_extract(monkeypatch):
     """Strips-first handoff must not re-run SDF midline export."""
-    from blade_structure_utilities.mesh_utilities.section_mesh import handoff as mesh_mod
-    from blade_structure_utilities.mesh_utilities.section_mesh.handoff import (
+    from blade_geometry_model.section_mesh import handoff as mesh_mod
+    from blade_geometry_model.section_mesh.handoff import (
         _section_to_shell_inputs as from_sec_mod,
     )
 
@@ -218,7 +218,7 @@ def test_cell_wall_loops_gate():
 
 
 def test_build_section_view_accepts_t_star_aliases():
-    from blade_structure_utilities.geometry_utilities.section_geometry import (
+    from blade_geometry_model.section_geometry import (
         build_section_view,
     )
 

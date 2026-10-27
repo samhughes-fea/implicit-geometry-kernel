@@ -5,15 +5,15 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.cache import SectionEvalCache
-from blade_structure_utilities.mesh_utilities.area_2d.quadrature import (
+from blade_geometry_model.section_geometry.sdf.cache import SectionEvalCache
+from blade_geometry_model.area_2d.quadrature import (
     label_boundary_segments,
     label_fill_polygons,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive.labels import (
+from blade_geometry_model.section_geometry.constructive.labels import (
     is_core_label,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.labels import ComponentLabel
+from blade_geometry_model.section_geometry.sections.labels import ComponentLabel
 
 
 # Colour palette for subcomponents
@@ -48,7 +48,7 @@ def fit_square_section_axes(
     Canon owner: ``coordinate_frames.section_frames.plot.fit_square_section_axes``.
     This is a compatibility delegate.
     """
-    from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    from blade_geometry_model.coordinate_frames import (
         fit_square_section_axes as _fit_square_section_axes,
     )
 
@@ -89,7 +89,7 @@ def apply_structural_section_axes(
 
     Idempotent w.r.t. horizontal inversion: safe to call after ``set_xlim``.
     """
-    from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    from blade_geometry_model.coordinate_frames import (
         setup_section_axes,
     )
 
@@ -119,7 +119,7 @@ def rotated_naca_grid_to_section_plot_axes(
 
     At zero twist: ``Y_B = x_chord - f_pivot * c``, ``X_B = y_thickness``.
     """
-    from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    from blade_geometry_model.coordinate_frames import (
         PIVOT_FRACTION_DEFAULT,
         naca_to_twisted_pitch_axis_blade_frame,
     )
@@ -162,7 +162,7 @@ def section_query_from_blade(
     ``twisted_pitch_axis_blade_frame_to_naca``, then apply ``R(+twist)`` about
     the LE when twisted.
     """
-    from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    from blade_geometry_model.coordinate_frames import (
         twisted_pitch_axis_blade_frame_to_naca,
     )
 
@@ -196,7 +196,7 @@ def blade_plot_sampling_grid(
         (horizontal = ``Y_B``, vertical = ``X_B``). ``QX``/``QY`` are the matching
         rotated-NACA query coordinates for ``section[label](QX, QY)``.
     """
-    from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    from blade_geometry_model.coordinate_frames import (
         naca_to_twisted_pitch_axis_blade_frame,
     )
 
@@ -494,7 +494,7 @@ def plot_section(section_geometry, grid, ax=None, alpha=0.45,
         if x0 is None and getattr(section_geometry, "airfoil", None) is not None:
             verts = np.asarray(section_geometry.airfoil.vertices, dtype=float)
             if verts.ndim == 2 and verts.shape[0] >= 3:
-                from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+                from blade_geometry_model.coordinate_frames import (
                     naca_to_twisted_pitch_axis_blade_frame,
                     section_plot_axes,
                 )
@@ -629,7 +629,7 @@ def plot_section_hybrid(
     from matplotlib.patches import Patch, PathPatch
     from matplotlib.path import Path
 
-    from blade_structure_utilities.geometry_utilities.section_geometry.constructive import (
+    from blade_geometry_model.section_geometry.constructive import (
         emit_constructive_polygons,
         is_residual_label,
     )

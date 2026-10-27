@@ -7,7 +7,7 @@ Reports emit/shoelace timings and per-label area errors for 2D-CN NACA 2412.
 Naive buffer is not used — emitters are recipe-faithful (WP2).
 
 Run from repository root:
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/constructive_vs_quadtree_spike.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/constructive_vs_quadtree_spike.py
 """
 
 from __future__ import annotations
@@ -25,22 +25,22 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive import (
+from blade_geometry_model.section_geometry.constructive import (
     emit_constructive_polygons,
     is_constructive_label,
     section_properties_from_polygons,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import (
     quadtree_spec_for_airfoil,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+from blade_geometry_model.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 
 
 def main() -> None:

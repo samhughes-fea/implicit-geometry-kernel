@@ -5,28 +5,28 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive import (
+from blade_geometry_model.section_geometry.constructive import (
     classify_property_labels,
     is_constructive_label,
     is_core_label,
     is_wall_solid_label,
     is_residual_label,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import (
     props_backend_from_env,
     quadtree_spec_for_airfoil,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.multicell import (
+from blade_geometry_model.section_geometry.sections.multicell import (
     MultiCellSection,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+from blade_geometry_model.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 
 
 def _assert_props_close(hy, qt, *, wall_solid: bool, le_te: bool = False):

@@ -12,14 +12,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.mesh_utilities.area_2d.quadtree import (
+from blade_geometry_model.area_2d.quadtree import (
     QuadCell,
     _cell_interior_points,
     _n_interior_probes,
     _subdivide_cell_multi,
     _subdivide_refined_reuse,
 )
-from blade_structure_utilities.mesh_utilities.area_2d.spec import QuadtreeSpec
+from blade_geometry_model.area_2d.spec import QuadtreeSpec
 
 
 def _samplers():

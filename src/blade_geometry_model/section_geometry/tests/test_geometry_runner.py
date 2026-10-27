@@ -17,17 +17,17 @@ from __future__ import annotations
 
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.api.runner import (
+from blade_geometry_model.section_geometry.api.runner import (
     SectionGeometryRunner,
 )
 
 
 @pytest.fixture(scope="module")
 def airfoil():
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+    from blade_geometry_model.section_geometry.sdf.airfoil import (
         AirfoilSDF,
     )
 
@@ -53,7 +53,7 @@ def test_resolve_yields_a_layout_without_building(airfoil, monkeypatch):
     Counts the *builder*, because "did not pay for a build" is a statement about
     work done, not about which attribute happens to be populated.
     """
-    import blade_structure_utilities.geometry_utilities.section_geometry.api.runner as mod
+    import blade_geometry_model.section_geometry.api.runner as mod
 
     calls = {"n": 0}
     real = mod.build_section_geometry
@@ -80,7 +80,7 @@ def test_execute_yields_both_products(airfoil):
 
 def test_execute_after_resolve_reuses_the_resolution(airfoil, monkeypatch):
     """Calling both must not resolve twice — the loop does exactly this."""
-    import blade_structure_utilities.geometry_utilities.section_geometry.api.runner as mod
+    import blade_geometry_model.section_geometry.api.runner as mod
 
     calls = {"n": 0}
     real = mod.resolve_station_layout
@@ -123,7 +123,7 @@ def test_a_supplied_resolution_is_not_re_resolved(airfoil, monkeypatch):
     trial's thickness could return a different web set than the station was
     frozen against.
     """
-    import blade_structure_utilities.geometry_utilities.section_geometry.api.runner as mod
+    import blade_geometry_model.section_geometry.api.runner as mod
 
     frozen = _runner(airfoil).resolve().get_layout_resolution()
 

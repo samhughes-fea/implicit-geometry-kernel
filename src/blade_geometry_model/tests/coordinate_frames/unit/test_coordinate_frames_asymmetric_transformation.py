@@ -14,7 +14,7 @@ _workspace_root = Path(__file__).parent.parent.parent.parent.parent
 if str(_workspace_root) not in sys.path:
     sys.path.insert(0, str(_workspace_root))
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import CoordinateFrameTransforms
+from blade_geometry_model.coordinate_frames import CoordinateFrameTransforms
 
 
 def transform_with_negative_theta(Ixx_S, Iyy_S, Ixy_S, theta_deg):

@@ -61,7 +61,7 @@ class SDFGrid:
     def eval(self, sdf_callable):
         """Evaluate an SDF callable on the full grid."""
         try:
-            from blade_structure_utilities.geometry_utilities.section_geometry.sdf.profiling import profiling_enabled, record_grid_eval
+            from blade_geometry_model.section_geometry.sdf.profiling import profiling_enabled, record_grid_eval
 
             if profiling_enabled():
                 record_grid_eval(n_points=int(self.X.size))

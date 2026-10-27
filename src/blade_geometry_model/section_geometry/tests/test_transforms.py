@@ -6,8 +6,8 @@ Unit tests for geometry.transforms.
 
 import numpy as np
 import pytest
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.primitives import sdf_box, sdf_circle
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.transforms import (
+from blade_geometry_model.section_geometry.sdf.primitives import sdf_box, sdf_circle
+from blade_geometry_model.section_geometry.sdf.transforms import (
     rotate_field, translate_field, scale_field,
     mirror_field_x, mirror_field_y,
     SDFFrame, rotate_points, flapwise_aligned_web_angle,

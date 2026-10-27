@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive.emitters import (
+from blade_geometry_model.section_geometry.constructive.emitters import (
     emit_leading_edge_insert_polygon,
     emit_outer_skin_polygon,
     emit_sandwich_core_polygon,
@@ -13,16 +13,16 @@ from blade_structure_utilities.geometry_utilities.section_geometry.constructive.
     emit_spar_cap_polygon,
     emit_trailing_edge_insert_polygon,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.outer_skin import (
+from blade_geometry_model.section_geometry.recipes.sdf_ir.outer_skin import (
     OuterSkin,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.sandwich_core import (
+from blade_geometry_model.section_geometry.recipes.sdf_ir.sandwich_core import (
     SandwichCore,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.shear_web import (
+from blade_geometry_model.section_geometry.recipes.sdf_ir.shear_web import (
     ShearWeb,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.spar_cap import (
+from blade_geometry_model.section_geometry.recipes.sdf_ir.spar_cap import (
     SparCap,
 )
 
@@ -218,7 +218,7 @@ class InsertWall:
 
     def to_sdf_component(self, airfoil, *, airfoil_expr_node=None):
         """Build the existing LE/TE insert component (SDF / IR path)."""
-        from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.inserts import (
+        from blade_geometry_model.section_geometry.recipes.sdf_ir.inserts import (
             LEInsert,
             TEInsert,
         )

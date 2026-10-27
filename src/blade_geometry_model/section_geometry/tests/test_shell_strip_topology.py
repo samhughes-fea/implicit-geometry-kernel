@@ -16,14 +16,14 @@ for _p in (str(_REPO),):
 
 @pytest.fixture(scope="module")
 def airfoil():
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+    from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 
     return AirfoilSDF.from_naca("0012", n_points=100, chord=1.0)
 
 
 def _strips(airfoil, layout_key: str):
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import build_section_view, resolve_system_type
-    from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import build_shell_midline_strips
+    from blade_geometry_model.section_geometry.api.factory import build_section_view, resolve_system_type
+    from blade_geometry_model.section_geometry.midlines.shell_midline_export import build_shell_midline_strips
 
     layout = resolve_system_type(layout_key)
     section = build_section_view(airfoil, layout, twist_angle_rad=0.0)
@@ -34,7 +34,7 @@ def _strips(airfoil, layout_key: str):
 
 @pytest.mark.parametrize("layout_key", ["2D-F", "2D-CN"])
 def test_prepare_shell_midline_junctions_preserves_cap_endpoints(layout_key, airfoil):
-    from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
         ShellMidlineJunctionPreparationOptions,
         prepare_shell_midline_junctions,
         split_skin_at_junctions,
@@ -59,12 +59,12 @@ def test_prepare_shell_midline_junctions_preserves_cap_endpoints(layout_key, air
 
 @pytest.mark.parametrize("layout_key", ["2C-CN", "3D-F"])
 def test_topology_inserts_cap_web_junctions(layout_key, airfoil):
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import build_section_view, resolve_system_type
-    from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    from blade_geometry_model.section_geometry.api.factory import build_section_view, resolve_system_type
+    from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
         ShellMidlineJunctionPreparationOptions,
         prepare_shell_midline_junctions,
     )
-    from blade_structure_utilities.mesh_utilities.section_mesh.handoff._section_to_shell_inputs import (
+    from blade_geometry_model.section_mesh.handoff._section_to_shell_inputs import (
         shell_mesh_inputs_from_section,
     )
 
@@ -86,7 +86,7 @@ def test_topology_inserts_cap_web_junctions(layout_key, airfoil):
 
 @pytest.mark.parametrize("layout_key, expect_kinds", [("0A", {"skin"}), ("0B", {"skin", "cap"})])
 def test_zero_web_topology_skips_web_junctions(layout_key, expect_kinds, airfoil):
-    from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
         ShellMidlineJunctionPreparationOptions,
         prepare_shell_midline_junctions,
     )
@@ -104,10 +104,10 @@ def test_zero_web_topology_skips_web_junctions(layout_key, expect_kinds, airfoil
 
 
 def test_zero_web_cell_loops_single_cavity(airfoil):
-    from blade_structure_utilities.geometry_utilities.section_geometry.cell_wall_loops import (
+    from blade_geometry_model.section_geometry.cell_wall_loops import (
         build_cell_wall_loops,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+    from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
         ShellMidlineJunctionPreparationOptions,
         prepare_shell_midline_junctions,
     )

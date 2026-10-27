@@ -25,10 +25,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     structural_product_moment,
 )
-from blade_structure_utilities.geometry_utilities.coordinate_frames.section_frames.tensors import (
+from blade_geometry_model.coordinate_frames.section_frames.tensors import (
     transform_second_moments_B_to_S,
 )
 

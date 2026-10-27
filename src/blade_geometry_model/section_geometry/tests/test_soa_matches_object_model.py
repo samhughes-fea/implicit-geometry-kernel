@@ -13,17 +13,17 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
 # Real home, not the deprecated ``engine`` shim: that shim star-imports, and
 # star-import never re-exports underscore names.
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit import area_mesh as am
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
-from blade_structure_utilities.mesh_utilities.area_2d import quadtree as qt
-from blade_structure_utilities.mesh_utilities.area_2d.quadrature import section_properties_from_quadtree
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.props_emit import area_mesh as am
+from blade_geometry_model.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
+from blade_geometry_model.area_2d import quadtree as qt
+from blade_geometry_model.area_2d.quadrature import section_properties_from_quadtree
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 
 
 def _object_model_mesh(spec, samplers, supports, multi_sampler):

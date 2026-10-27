@@ -5,10 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.cap_placement import (
+from blade_geometry_model.section_geometry.layout.cap_placement import (
     CapPlacementRule,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+from blade_geometry_model.section_geometry.layout.system_layout import (
     SystemLayoutSpec,
     WebOrientation,
     resolve_system_type,

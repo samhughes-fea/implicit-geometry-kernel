@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+from blade_geometry_model.section_contract.errors import (
     InfeasibleSectionGeometry,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import CallableField, HalfPlane, Intersect, Polygon
+from blade_geometry_model.section_geometry.sdf.ir import CallableField, HalfPlane, Intersect, Polygon
 
 
 def _ensure_f64(a):

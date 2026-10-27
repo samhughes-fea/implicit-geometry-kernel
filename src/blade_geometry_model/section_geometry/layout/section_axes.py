@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 
 
 def pitch_axis_x_from_le(airfoil: AirfoilSDF, fraction: float) -> float:

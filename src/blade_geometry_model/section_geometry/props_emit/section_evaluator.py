@@ -6,10 +6,10 @@ from typing import Any, Callable
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.section_midline_host import (
+from blade_geometry_model.section_geometry.midlines.section_midline_host import (
     resolve_section_host,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import CallableField, Expr, eval_expr_batch, union_expr
+from blade_geometry_model.section_geometry.sdf.ir import CallableField, Expr, eval_expr_batch, union_expr
 
 MultiSampler = Callable[[np.ndarray], dict[str, np.ndarray]]
 
@@ -108,7 +108,7 @@ class SectionFieldEvaluator:
             return np.empty(0, dtype=float)
         memo: dict[Expr, np.ndarray] = {}
         out = self.eval(str(label), arr[:, 0], arr[:, 1], memo=memo).reshape(-1)
-        from blade_structure_utilities.geometry_utilities.section_geometry.sdf.profiling import get_stats
+        from blade_geometry_model.section_geometry.sdf.profiling import get_stats
 
         stats = get_stats()
         if stats is not None:
@@ -130,7 +130,7 @@ class SectionFieldEvaluator:
                 return {lbl: np.empty(0, dtype=float) for lbl in lbls}
             memo: dict[Expr, np.ndarray] = {}
             result = self.eval_labels(lbls, arr, memo=memo)
-            from blade_structure_utilities.geometry_utilities.section_geometry.sdf.profiling import get_stats
+            from blade_geometry_model.section_geometry.sdf.profiling import get_stats
 
             stats = get_stats()
             if stats is not None:

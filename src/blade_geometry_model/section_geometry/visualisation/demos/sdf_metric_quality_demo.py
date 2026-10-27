@@ -19,7 +19,7 @@ Writes:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/sdf_metric_quality_demo.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/sdf_metric_quality_demo.py
 """
 
 from __future__ import annotations
@@ -39,21 +39,21 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     demo_output_dir,
     save_figure,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     SDFGrid,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_sdf import (
+from blade_geometry_model.section_geometry.visualisation.plot_sdf import (
     plot_sdf_field,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.csg import union_all
+from blade_geometry_model.section_geometry.sdf.csg import union_all
 
 _DPI = DEFAULT_DPI
 _BAND_M = 0.02  # exclude a thin band around φ=0 from residual stats
@@ -152,7 +152,7 @@ def main(argv: list[str] | None = None) -> Path:
     stats: dict[str, dict] = {}
     ridge_store: dict[str, np.ndarray] = {}
 
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         apply_structural_section_axes,
         rotated_naca_grid_to_section_plot_axes,
     )

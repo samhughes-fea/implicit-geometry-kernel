@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.root_blend_model import (
+from blade_geometry_model.root_blend_model import (
     ExactAirfoilGeometry,
     RootBlendConfig,
     RootBlendGridSpec,
@@ -21,7 +21,7 @@ from blade_structure_utilities.geometry_utilities.root_blend_model import (
     build_root_blend_stations,
     exact_airfoil_geometry_from_naca,
 )
-from blade_structure_utilities.geometry_utilities.section_models import BlendedSectionGeometry
+from blade_geometry_model.section_models import BlendedSectionGeometry
 
 
 # ---------------------------------------------------------------------------

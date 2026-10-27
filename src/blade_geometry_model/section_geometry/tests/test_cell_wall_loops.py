@@ -15,12 +15,12 @@ import warnings
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_contract import CellWallLoop, ShellMidlineStrip
-from blade_structure_utilities.geometry_utilities.section_geometry.cell_wall_loops.cell_wall_geom import (
+from blade_geometry_model.section_contract import CellWallLoop, ShellMidlineStrip
+from blade_geometry_model.section_geometry.cell_wall_loops.cell_wall_geom import (
     shoelace_area,
     stitch_skin_ring,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.cell_wall_loops.cell_wall_loops import (
+from blade_geometry_model.section_geometry.cell_wall_loops.cell_wall_loops import (
     build_cell_wall_loops,
     cell_wall_loops_case_payload,
 )
@@ -165,7 +165,7 @@ def _skin_arc_labels(loop: CellWallLoop) -> frozenset[str]:
 
 def test_a_closed_b_frame_skin_is_split_into_suction_and_pressure_by_x_b():
     """SG-015: the closed-ring split reads B, where suction is +X_B and the LE is -Y_B."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.midlines.skin_split import (
+    from blade_geometry_model.section_geometry.midlines.skin_split import (
         split_skin_at_junctions,
     )
 
@@ -228,7 +228,7 @@ def test_two_webs_on_one_junction_are_refused():
 
 def test_hierarchical_skin_arcs_use_ordered_ring_path():
     """Long skin_side/skin_arc tokens stitch via the hierarchical ring order."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.midlines.skin_split import (
+    from blade_geometry_model.section_geometry.midlines.skin_split import (
         split_skin_at_junctions,
     )
 

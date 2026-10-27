@@ -23,13 +23,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.cap_feasibility import (
+from blade_geometry_model.section_geometry.sections.cap_feasibility import (
     inner_y_at_xs,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.web_layout import (
+from blade_geometry_model.section_geometry.sections.web_layout import (
     resolve_web_anchors,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+from blade_geometry_model.section_geometry.sdf.airfoil import (
     AirfoilSDF,
 )
 

@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive import (
+from blade_geometry_model.section_geometry.constructive import (
     helpers as helpers_mod,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive import (
+from blade_geometry_model.section_geometry.constructive import (
     offset_locus,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+from blade_geometry_model.section_geometry.sdf.airfoil import (
     AirfoilSDF,
 )
 

@@ -5,14 +5,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import build_section_view, resolve_system_type
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.area_mesh import build_shared_section_quadtree
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.grid import SDFGrid
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.export import SectionPropertiesReport
-from blade_structure_utilities.mesh_utilities.area_2d.quadtree import summarize_quadtree
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.cache import SectionEvalCache
+from blade_geometry_model.section_geometry.api.factory import build_section_view, resolve_system_type
+from blade_geometry_model.section_geometry.props_emit.area_mesh import build_shared_section_quadtree
+from blade_geometry_model.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.grid import SDFGrid
+from blade_geometry_model.section_geometry.props_emit.export import SectionPropertiesReport
+from blade_geometry_model.area_2d.quadtree import summarize_quadtree
+from blade_geometry_model.section_geometry.sdf.cache import SectionEvalCache
 
 
 @pytest.mark.parametrize("layout_key", ["2D-CN", "2D-F"])

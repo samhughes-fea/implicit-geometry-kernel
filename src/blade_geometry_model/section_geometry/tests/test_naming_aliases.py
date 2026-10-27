@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     TWISTED_PITCH_AXIS_BLADE_FRAME,
     ZERO_TWIST_CENTROID_AXIS_STATION_FRAME,
     ZERO_TWIST_PITCH_AXIS_STATION_FRAME,
@@ -12,12 +12,12 @@ from blade_structure_utilities.geometry_utilities.coordinate_frames import (
     naca_to_twisted_pitch_axis_blade_frame,
     naca_to_zero_twist_pitch_axis_station_frame,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     build_section_with_thicknesses,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.api.kwarg_aliases import (
+from blade_geometry_model.section_geometry.api.kwarg_aliases import (
     resolve_shear_web_thickness,
     resolve_spar_cap_thickness,
     resolve_twist_rad,

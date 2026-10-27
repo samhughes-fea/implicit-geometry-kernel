@@ -6,7 +6,7 @@ Canon: ``coordinate_frames/section_frames/README.md`` — storage
 
 Run::
 
-    python -m blade_structure_utilities.geometry_utilities.coordinate_frames.visualisation.demos.plot_structural_frames
+    python -m blade_geometry_model.coordinate_frames.visualisation.demos.plot_structural_frames
 """
 
 from __future__ import annotations
@@ -17,14 +17,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     PIVOT_FRACTION_DEFAULT,
     fit_square_section_axes,
     naca_to_zero_twist_pitch_axis_station_frame,
     rotate_S_to_B,
     setup_section_axes,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 
 # This demo deliberately imports the *production* transforms rather than
 # defining its own. A demo that reimplements the maths can agree with the docs

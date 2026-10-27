@@ -13,7 +13,7 @@ Default sweep: depth 4..9 for two cases (untwisted and 15 deg twist). Expect
 grid baseline).
 
 Run from the repository root:
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/quadtree_convergence_study.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/quadtree_convergence_study.py
 """
 
 from __future__ import annotations
@@ -41,20 +41,20 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     demo_output_dir,
     save_figure,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.area_mesh import section_properties_via_quadtree
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry.props_emit.area_mesh import section_properties_via_quadtree
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     SDFGrid,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.profiling import get_stats, reset_stats
+from blade_geometry_model.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
+from blade_geometry_model.section_geometry.sdf.profiling import get_stats, reset_stats
 
 PROP_KEYS = ("area", "cx", "cy", "Ixx", "Iyy")
 TRACK_LABELS = ("outer_skin", "shear_web_0")

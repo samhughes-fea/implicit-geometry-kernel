@@ -4,23 +4,23 @@ from __future__ import annotations
 
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive.emitters import (
+from blade_geometry_model.section_geometry.constructive.emitters import (
     emit_sandwich_core_polygon,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive.export import (
+from blade_geometry_model.section_geometry.constructive.export import (
     emit_constructive_polygons,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes import (
+from blade_geometry_model.section_geometry.recipes import (
     SkinWall,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.walls import (
+from blade_geometry_model.section_geometry.recipes.walls import (
     InsertWall,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+from blade_geometry_model.section_geometry.sdf.airfoil import (
     AirfoilSDF,
 )
 

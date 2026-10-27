@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from shapely.geometry import box
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import Intersect
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.clip_algebra import (
+from blade_geometry_model.section_geometry.sdf.ir import Intersect
+from blade_geometry_model.section_geometry.sections.clip_algebra import (
     ChordBand,
     apply_shapely,
     to_ir,

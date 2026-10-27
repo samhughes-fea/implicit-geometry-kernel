@@ -32,7 +32,7 @@ frames and the static contact-sheet frame only.
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/spanwise_yz_plan_flyover.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/spanwise_yz_plan_flyover.py
 
 Provenance note: this script is a reconstruction. An earlier misspelled GIF
 (``spawnise_YZ_plan_flyover.gif``) sat orphaned with no generator in the repo.
@@ -68,22 +68,22 @@ from spanwise_web_anchors_shared import build_stations as _build_spanwise_statio
 from blade_structure_precompute.module.section_selection.processing.adapters.scale_adapter import (  # noqa: E402
     airfoil_sdf_from_station,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry import (  # noqa: E402
+from blade_geometry_model.section_geometry import (  # noqa: E402
     MultiCellSection,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.web_layout import (  # noqa: E402
+from blade_geometry_model.section_geometry.sections.web_layout import (  # noqa: E402
     inner_y_at_x,
     resolve_web_anchors,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (  # noqa: E402
+from blade_geometry_model.section_geometry.visualisation.figure_io import (  # noqa: E402
     apply_presentation_style,
     save_figure,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (  # noqa: E402
+from blade_geometry_model.section_geometry.visualisation.plot import (  # noqa: E402
     plot_section_hybrid,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (  # noqa: E402
+from blade_geometry_model.section_geometry.visualisation.plot_section import (  # noqa: E402
     apply_structural_section_axes,
 )
 

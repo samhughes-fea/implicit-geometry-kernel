@@ -14,7 +14,7 @@ Demonstrates:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/naca2412_section.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/naca2412_section.py
 
 Outputs under ``visualisation/output/naca2412_section/``.
 
@@ -37,7 +37,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
@@ -46,7 +46,7 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
 import numpy as np
 import matplotlib.pyplot as plt
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     SDFGrid,
@@ -56,11 +56,11 @@ from blade_structure_utilities.geometry_utilities.section_geometry import (
     plot_section,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     naca_to_twisted_pitch_axis_blade_frame,
     section_plot_axes,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+from blade_geometry_model.section_geometry.visualisation.plot_section import (
     apply_structural_section_axes,
     blade_plot_sampling_grid,
 )

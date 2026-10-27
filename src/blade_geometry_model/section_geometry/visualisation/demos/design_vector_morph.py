@@ -39,7 +39,7 @@ frames and the contact sheet only.
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/design_vector_morph.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/design_vector_morph.py
 """
 
 from __future__ import annotations
@@ -69,13 +69,13 @@ import feature_flythrough_render as _render  # noqa: E402
 import feature_flythrough_specs as _specs  # noqa: E402
 import geometry_to_mesh_flythrough as _pipeline  # noqa: E402
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (  # noqa: E402
+from blade_geometry_model.section_geometry.visualisation.figure_io import (  # noqa: E402
     apply_presentation_style,
     demo_output_dir,
     resolve_save_dpi,
     save_figure,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (  # noqa: E402
+from blade_geometry_model.section_geometry.visualisation.palette import (  # noqa: E402
     INK,
     MUTED,
     NAVY,

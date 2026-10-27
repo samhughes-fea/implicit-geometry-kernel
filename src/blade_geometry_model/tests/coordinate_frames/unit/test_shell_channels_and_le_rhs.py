@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     blade_resultants_to_shell_channels,
     naca_to_zero_twist_pitch_axis_station_frame,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 
 
 def test_blade_resultants_to_shell_channels_flap_on_Mz():

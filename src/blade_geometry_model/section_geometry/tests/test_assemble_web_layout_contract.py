@@ -10,23 +10,23 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+from blade_geometry_model.section_contract.errors import (
     InfeasibleSectionGeometry,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     build_section_with_thicknesses,
     resolve_station_layout,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.cap_placement import (
+from blade_geometry_model.section_geometry.layout.cap_placement import (
     CapPlacementRule,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+from blade_geometry_model.section_geometry.layout.system_layout import (
     layout_without_spar_caps,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.build_spar_caps import (
+from blade_geometry_model.section_geometry.sections.build_spar_caps import (
     build_spar_caps,
 )
 

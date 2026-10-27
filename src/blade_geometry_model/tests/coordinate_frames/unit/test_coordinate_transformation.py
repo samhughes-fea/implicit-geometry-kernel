@@ -21,8 +21,8 @@ _workspace_root = Path(__file__).parent.parent.parent.parent.parent
 if str(_workspace_root) not in sys.path:
     sys.path.insert(0, str(_workspace_root))
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import CoordinateFrameTransforms
-from blade_structure_utilities.integration_utilities.shoelace_integration import section_properties_S
+from blade_geometry_model.coordinate_frames import CoordinateFrameTransforms
+from blade_geometry_model.shoelace_integration import section_properties_S
 from shapely.geometry import Polygon as ShapelyPolygon
 
 

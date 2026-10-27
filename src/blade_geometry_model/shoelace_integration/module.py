@@ -1,4 +1,4 @@
-# blade_structure_utilities/integration_utilities/shoelace_integration/module.py
+# src/blade_geometry_model/shoelace_integration/module.py
 """
 Shoelace (polygon) formulae for section properties.
 

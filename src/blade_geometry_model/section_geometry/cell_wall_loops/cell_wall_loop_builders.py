@@ -26,8 +26,8 @@ from typing import Sequence
 import numpy as np
 from numpy.typing import NDArray
 
-from blade_structure_utilities.geometry_utilities.section_contract.cell_wall_loop import CellWallLoop
-from blade_structure_utilities.geometry_utilities.section_contract.shell_midline_strip import ShellMidlineStrip
+from blade_geometry_model.section_contract.cell_wall_loop import CellWallLoop
+from blade_geometry_model.section_contract.shell_midline_strip import ShellMidlineStrip
 
 from ..midlines.skin_split import split_skin_at_junctions
 from .cell_wall_geom import (

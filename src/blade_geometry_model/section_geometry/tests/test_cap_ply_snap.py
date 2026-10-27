@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.cap_feasibility import (
+from blade_geometry_model.section_geometry.sections.cap_feasibility import (
     cap_feasibility_clamp,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.cap_ply_snap import (
+from blade_geometry_model.section_geometry.sections.cap_ply_snap import (
     snap_cap_height_at_most,
     snap_cap_heights,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+from blade_geometry_model.section_geometry.sdf.airfoil import (
     AirfoilSDF,
 )
 from blade_structure_utilities.material_utilities.layup.ply_grid import PlyGrid

@@ -2,24 +2,24 @@
 from __future__ import annotations
 from typing import Any
 import numpy as np
-from blade_structure_utilities.mesh_utilities.area_2d import AreaMesh2D, QuadtreeSpec, build_area_meshes_2d
-from blade_structure_utilities.mesh_utilities.area_2d.quadtree import (
+from blade_geometry_model.area_2d import AreaMesh2D, QuadtreeSpec, build_area_meshes_2d
+from blade_geometry_model.area_2d.quadtree import (
     QuadTreeMesh,
     SupportBox,
     build_shared_quadtree,
     leaf_bounds,
     summarize_quadtree,
 )
-from blade_structure_utilities.mesh_utilities.area_2d.quadrature import (
+from blade_geometry_model.area_2d.quadrature import (
     _attach_center_phi,
     section_properties_all_labels,
 )
-from blade_structure_utilities.mesh_utilities.area_2d.types import PhiSampler
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.section_midline_host import (
+from blade_geometry_model.area_2d.types import PhiSampler
+from blade_geometry_model.section_geometry.midlines.section_midline_host import (
     resolve_section_host,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import expr_bbox
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.profiling import get_stats
+from blade_geometry_model.section_geometry.sdf.ir import expr_bbox
+from blade_geometry_model.section_geometry.sdf.profiling import get_stats
 from .section_evaluator import SectionFieldEvaluator
 
 def _label_key(label: Any) -> str:

@@ -21,7 +21,7 @@ from pathlib import Path
 _workspace_root = Path(__file__).parent.parent.parent.parent.parent
 sys.path.insert(0, str(_workspace_root))
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import CoordinateFrameTransforms
+from blade_geometry_model.coordinate_frames import CoordinateFrameTransforms
 
 
 def test_coordinate_mappings():

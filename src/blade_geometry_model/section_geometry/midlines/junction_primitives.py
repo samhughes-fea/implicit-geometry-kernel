@@ -13,10 +13,10 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.offset_ring import (
+from blade_geometry_model.section_geometry.midlines.offset_ring import (
     locus_at_depth,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.ring_geometry import (
+from blade_geometry_model.section_geometry.midlines.ring_geometry import (
     intersect_web_axis_open_polyline_2d,
 )
 

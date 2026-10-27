@@ -21,15 +21,15 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.api.worker import (
+from blade_geometry_model.section_geometry.api.worker import (
     resolve_web_x_positions,
     section_geometry_prep_key,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.web_layout import (
+from blade_geometry_model.section_geometry.sections.web_layout import (
     resolve_web_anchors,
 )
 

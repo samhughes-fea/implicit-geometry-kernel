@@ -27,7 +27,7 @@ Writes under ``visualisation/output/downstream_consumers/``:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/downstream_consumers_demo.py --presentation
+    python src/blade_geometry_model/section_geometry/visualisation/demos/downstream_consumers_demo.py --presentation
 """
 
 from __future__ import annotations
@@ -55,19 +55,19 @@ from blade_structure_utilities.fem_utilities.section_shell_fea import SectionLin
 from blade_structure_utilities.fem_utilities.section_shell_fea.pre_processing.mesh.api.bound_section_shell_inputs import (
     bind_section_shell_inputs,
 )
-from blade_structure_utilities.geometry_utilities.coordinate_frames import section_plot_axes
-from blade_structure_utilities.geometry_utilities.section_contract import BeamResultantVector
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.coordinate_frames import section_plot_axes
+from blade_geometry_model.section_contract import BeamResultantVector
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SectionGeometryRunner,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+from blade_geometry_model.section_geometry.visualisation.palette import (
     INK,
     MUTED,
     NAVY,
@@ -75,19 +75,19 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
     TEAL,
     strip_axes_chrome,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+from blade_geometry_model.section_geometry.visualisation.plot_section import (
     apply_structural_section_axes,
 )
-from blade_structure_utilities.geometry_utilities.section_properties.api.runner import (
+from blade_geometry_model.section_properties.api.runner import (
     SectionPropertiesRunner,
 )
-from blade_structure_utilities.geometry_utilities.section_properties.reference_axes.shear_centre import (
+from blade_geometry_model.section_properties.reference_axes.shear_centre import (
     shear_centre_from_midlines,
 )
-from blade_structure_utilities.geometry_utilities.section_properties.reference_axes.wall_network import (
+from blade_geometry_model.section_properties.reference_axes.wall_network import (
     network_from_midlines_props,
 )
-from blade_structure_utilities.geometry_utilities.section_properties.torsion.multi_cell import (
+from blade_geometry_model.section_properties.torsion.multi_cell import (
     torsion_from_wall_network,
 )
 from blade_structure_utilities.load_utilities.section_loads.api.runner import SectionLoadsRunner
@@ -95,8 +95,8 @@ from blade_structure_utilities.material_utilities.section_bind import (
     SectionBindRunner,
     realized_thicknesses_for_fi,
 )
-from blade_structure_utilities.mesh_utilities.section_mesh import shell_mesh_inputs_from_geometry_result
-from blade_structure_utilities.mesh_utilities.section_mesh.api import (
+from blade_geometry_model.section_mesh import shell_mesh_inputs_from_geometry_result
+from blade_geometry_model.section_mesh.api import (
     MIN_ELEMENTS_PER_PANEL,
     TARGET_ELEMENT_LENGTH_FRAC,
     build_section_strip_mesh,

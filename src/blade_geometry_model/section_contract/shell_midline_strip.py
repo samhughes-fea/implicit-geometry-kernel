@@ -13,7 +13,7 @@ for handoff from ``section_geometry`` to a shell mesh builder.
   ``+Y_B`` toward the TE and the pitch axis at the origin (see
   ``geometry_utilities.coordinate_frames``). Producers map NACA / S authoring
   arrays through
-  :func:`~blade_structure_utilities.geometry_utilities.coordinate_frames.naca_to_twisted_pitch_axis_blade_frame`
+  :func:`~blade_geometry_model.coordinate_frames.naca_to_twisted_pitch_axis_blade_frame`
   (alias ``chord_to_blade``).
 
 * It carries no MITC4-, ``Panel``-, laminate-, or ``n_elements``-level

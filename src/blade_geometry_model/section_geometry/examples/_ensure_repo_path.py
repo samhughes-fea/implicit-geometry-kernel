@@ -7,21 +7,21 @@ from pathlib import Path
 
 
 def ensure_repo_path() -> Path:
-    """Insert the checkout root (parent of ``blade_structure_utilities/``) first on ``sys.path``.
+    """Insert the checkout root (parent of ``blade_geometry_model/``) first on ``sys.path``.
 
     Raises
     ------
     RuntimeError
-        If no ancestor of this file contains ``blade_structure_utilities/__init__.py``.
+        If no ancestor of this file contains ``blade_geometry_model/__init__.py``.
     """
     for p in Path(__file__).resolve().parents:
-        if (p / "blade_structure_utilities" / "__init__.py").is_file():
+        if (p / "blade_geometry_model" / "__init__.py").is_file():
             s = str(p)
             if s not in sys.path:
                 sys.path.insert(0, s)
             return p
     raise RuntimeError(
-        "Could not find the blade_structure_utilities package. Clone the repository and run this "
+        "Could not find the blade_geometry_model package. Clone the repository and run this "
         "script from inside it, or install the project in editable mode "
         "(from the repo root: pip install -e .)."
     )

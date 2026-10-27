@@ -2,11 +2,11 @@
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.cache import SectionEvalCache
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import Circle
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.grid import SDFGrid
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.export import SectionPropertiesReport
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.transforms import rotate_field
+from blade_geometry_model.section_geometry.sdf.cache import SectionEvalCache
+from blade_geometry_model.section_geometry.sdf.ir import Circle
+from blade_geometry_model.section_geometry.sdf.grid import SDFGrid
+from blade_geometry_model.section_geometry.props_emit.export import SectionPropertiesReport
+from blade_geometry_model.section_geometry.sdf.transforms import rotate_field
 
 
 class _CountingSDF:

@@ -4,8 +4,8 @@ shell_midline_export
 Export ``section_geometry`` subcomponent midlines as FE-agnostic
 :class:`ShellMidlineStrip` records in the blade (B) frame.
 
-**Dependency rule:** this module may import from ``blade_structure_utilities.geometry_utilities.section_contract``
-and from ``blade_structure_utilities.geometry_utilities.section_geometry``, but must **never** import from
+**Dependency rule:** this module may import from ``blade_geometry_model.section_contract``
+and from ``blade_geometry_model.section_geometry``, but must **never** import from
 ``blade_structure_utilities.fem_utilities.section_shell_fea``.
 
 **Strip order:** ``build_shell_midline_strips`` yields skins and webs in
@@ -23,8 +23,8 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-from blade_structure_utilities.geometry_utilities.section_contract.shell_midline_strip import ShellMidlineStrip
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.section_midline_host import (
+from blade_geometry_model.section_contract.shell_midline_strip import ShellMidlineStrip
+from blade_geometry_model.section_geometry.midlines.section_midline_host import (
     SectionMidlineHost,
     SkinShellComponentLike,
     WebShellComponentLike,
@@ -96,7 +96,7 @@ def build_shell_midline_strips(
     tuple[ShellMidlineStrip, ...]
         Strips in dict-insertion order: skins + webs first, then caps.
     """
-    from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+    from blade_geometry_model.coordinate_frames import (
         PIVOT_FRACTION_DEFAULT,
         naca_to_twisted_pitch_axis_blade_frame,
     )

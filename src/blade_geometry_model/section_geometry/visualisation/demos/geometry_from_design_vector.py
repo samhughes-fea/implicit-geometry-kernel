@@ -38,7 +38,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     demo_output_dir,
     save_figure,
@@ -122,17 +122,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = p.parse_args(argv)
 
-    from blade_structure_utilities.geometry_utilities.section_geometry import (
+    from blade_geometry_model.section_geometry import (
         AirfoilSDF,
         MultiCellSection,
         SDFGrid,
         export_section_json,
         plot_section,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.export import (
+    from blade_geometry_model.section_geometry.props_emit.export import (
         SectionPropertiesReport,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+    from blade_geometry_model.section_geometry.props_emit.props_compute import (
         compute_section_properties,
     )
 

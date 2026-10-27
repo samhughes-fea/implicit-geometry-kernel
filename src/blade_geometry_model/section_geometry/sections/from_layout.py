@@ -11,25 +11,25 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.kwarg_aliases import (
+from blade_geometry_model.section_geometry.api.kwarg_aliases import (
     resolve_shear_web_thickness,
     resolve_skin_gauges,
     resolve_spar_cap_thickness,
     resolve_twist_rad,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.cap_placement import (
+from blade_geometry_model.section_geometry.layout.cap_placement import (
     CapPlacementRule,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.section_layout import (
+from blade_geometry_model.section_geometry.layout.section_layout import (
     SectionLayout,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+from blade_geometry_model.section_geometry.layout.system_layout import (
     SystemLayoutSpec,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.section_midline_host import (
+from blade_geometry_model.section_geometry.midlines.section_midline_host import (
     SectionMidlineHost,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+from blade_geometry_model.section_geometry.sdf.airfoil import (
     AirfoilSDF,
 )
 
@@ -91,7 +91,7 @@ def multicell_from_section_layout(
     spar_cap_ply_pitch_m: float | None = None,
 ) -> SectionMidlineHost:
     """Assemble from parametric :class:`SectionLayout` (catalogue key optional)."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections.multicell import (
+    from blade_geometry_model.section_geometry.sections.multicell import (
         MultiCellSection,
     )
 

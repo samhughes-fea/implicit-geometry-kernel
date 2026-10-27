@@ -7,7 +7,7 @@ from typing import Any, Mapping
 import numpy as np
 from shapely.geometry import MultiPolygon, Polygon
 
-from blade_structure_utilities.integration_utilities.shoelace_integration import (
+from blade_geometry_model.shoelace_integration import (
     section_properties_S,
 )
 

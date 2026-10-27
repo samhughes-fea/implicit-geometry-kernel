@@ -19,13 +19,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.spar_family import (
+from blade_geometry_model.section_geometry.sections.spar_family import (
     _cap_feasibility_clamp,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.web_layout import (
+from blade_geometry_model.section_geometry.sections.web_layout import (
     inner_y_at_x,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
 
 
 def _af(chord: float = 1.0):
@@ -90,7 +90,7 @@ def test_camber_midline_is_returned_for_the_cap_split() -> None:
 
 def test_default_camber_clip_n_samples_meets_budget() -> None:
     """SG-010: default density tracks band width for the 1 µm solid-clip budget."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections.cap_feasibility import (
+    from blade_geometry_model.section_geometry.sections.cap_feasibility import (
         default_camber_clip_n_samples,
     )
 
@@ -114,19 +114,19 @@ def test_short_chord_thick_cap_builds_for_families_b_and_c(layout_key: str) -> N
     Before clamping was wired to B/C these raised — either no offset locus at
     all, or an empty cap strip rejected by the mesh worker.
     """
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+    from blade_geometry_model.section_geometry.api.factory import (
         resolve_system_type,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.api.worker import (
+    from blade_geometry_model.section_geometry.api.worker import (
         resolve_station_layout,
     )
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections.from_layout import (
+    from blade_geometry_model.section_geometry.sections.from_layout import (
         multicell_from_layout,
     )
-    from blade_structure_utilities.mesh_utilities.section_mesh.handoff._section_to_shell_inputs import (
+    from blade_geometry_model.section_mesh.handoff._section_to_shell_inputs import (
         shell_mesh_inputs_from_section,
     )
-    from blade_structure_utilities.mesh_utilities.section_mesh import (
+    from blade_geometry_model.section_mesh import (
         build_section_strip_mesh,
     )
 

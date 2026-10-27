@@ -7,21 +7,21 @@ Unit tests for MultiCellSection and the corrected SparCap construction.
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_contract.errors import (
+from blade_geometry_model.section_contract.errors import (
     InfeasibleSectionGeometry,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     SDFGrid,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir import SparCap
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf import offset
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.thickness_limits import (
+from blade_geometry_model.section_geometry.recipes.sdf_ir import SparCap
+from blade_geometry_model.section_geometry.sdf import offset
+from blade_geometry_model.section_geometry.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M,
     MIN_REALISTIC_SPAR_WALL_THICKNESS_M,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import _DEFAULT_COLOR, _component_color
+from blade_geometry_model.section_geometry.visualisation.plot import _DEFAULT_COLOR, _component_color
 
 
 # ---------------------------------------------------------------------------

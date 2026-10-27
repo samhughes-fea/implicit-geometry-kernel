@@ -7,23 +7,23 @@ from typing import Any, Literal
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.area_mesh import (
+from blade_geometry_model.section_geometry.props_emit.area_mesh import (
     section_properties_via_quadtree,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive import (
+from blade_geometry_model.section_geometry.constructive import (
     classify_property_labels,
     emit_constructive_polygons,
     section_properties_from_polygons,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import (
     PropsBackend,
     props_backend_from_env,
     quadtree_spec_for_airfoil,
     quadtree_spec_to_dict,
 )
-from blade_structure_utilities.mesh_utilities.area_2d.spec import QuadtreeSpec
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.cache import SectionEvalCache
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.profiling import get_stats, timed_block
+from blade_geometry_model.area_2d.spec import QuadtreeSpec
+from blade_geometry_model.section_geometry.sdf.cache import SectionEvalCache
+from blade_geometry_model.section_geometry.sdf.profiling import get_stats, timed_block
 
 
 PropsBackendArg = Literal["grid", "quadtree", "hybrid"] | PropsBackend

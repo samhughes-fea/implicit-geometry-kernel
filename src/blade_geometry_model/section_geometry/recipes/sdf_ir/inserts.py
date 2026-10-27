@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import Circle, HalfPlane, Intersect, Offset, Subtract, subtract_expr
+from blade_geometry_model.section_geometry.sdf.ir import Circle, HalfPlane, Intersect, Offset, Subtract, subtract_expr
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.clip_algebra import (
+from blade_geometry_model.section_geometry.sections.clip_algebra import (
     airfoil_expr,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.labels import (
+from blade_geometry_model.section_geometry.sections.labels import (
     ComponentLabel,
 )
 from .base import SectionComponent

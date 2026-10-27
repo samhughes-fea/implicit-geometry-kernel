@@ -5,23 +5,23 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive.emitters import (
+from blade_geometry_model.section_geometry.constructive.emitters import (
     emit_leading_edge_insert_polygon,
     emit_trailing_edge_insert_polygon,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive.labels import (
+from blade_geometry_model.section_geometry.constructive.labels import (
     INSERTS_CONSTRUCTIVE_BY_DEFAULT,
     is_constructive_label,
     is_residual_label,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.recipes.walls import (
+from blade_geometry_model.section_geometry.recipes.walls import (
     InsertWall,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+from blade_geometry_model.section_geometry.sdf.airfoil import (
     AirfoilSDF,
 )
 
@@ -90,7 +90,7 @@ def test_insert_wall_allows_constructive_maturity():
 @pytest.mark.parametrize("layout_key", ["2D-F"])
 def test_insert_constructive_vs_sdf_area_parity(layout_key):
     """Constructive insert area vs SDF occupancy within wall-solid hybrid band."""
-    from blade_structure_utilities.geometry_utilities.section_geometry.sections.multicell import (
+    from blade_geometry_model.section_geometry.sections.multicell import (
         MultiCellSection,
     )
 

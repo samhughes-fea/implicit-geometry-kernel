@@ -30,7 +30,7 @@ def _load_sibling(name: str, filename: str):
 _ensure_mod = _load_sibling("_ensure_repo_path", "_ensure_repo_path.py")
 repo_root = _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     PRESENTATION_DPI,
     apply_presentation_style,
@@ -41,36 +41,36 @@ from blade_structure_utilities.geometry_utilities.section_geometry.visualisation
 from blade_structure_precompute.module.section_selection.processing.adapters.scale_adapter import (
     airfoil_sdf_from_station,
 )
-from blade_structure_utilities.geometry_utilities.coordinate_frames import section_plot_axes
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.coordinate_frames import section_plot_axes
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     SDFGrid,
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
+from blade_geometry_model.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.area_mesh import (
+from blade_geometry_model.section_geometry.props_emit.area_mesh import (
     build_shared_section_quadtree,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_backend import (
+from blade_geometry_model.section_geometry.props_emit.props_backend import (
     quadtree_spec_for_airfoil,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.props_compute import (
+from blade_geometry_model.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
     prepare_shell_midline_junctions,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+from blade_geometry_model.section_geometry.visualisation.plot import (
     apply_structural_section_axes,
     plot_section,
     plot_section_hybrid,
     plot_section_with_quadtree,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+from blade_geometry_model.section_geometry.visualisation.plot_section import (
     rotated_naca_grid_to_section_plot_axes,
 )
 

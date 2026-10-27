@@ -6,8 +6,8 @@ from typing import Any, Sequence
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_contract.shell_midline_strip import ShellMidlineStrip
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.section_contract.shell_midline_strip import ShellMidlineStrip
+from blade_geometry_model.coordinate_frames import (
     section_plot_axes,
 )
 
@@ -53,7 +53,7 @@ def plot_shell_midline_strip_topology(
             )
 
     ax.set_title(title)
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         apply_structural_section_axes,
     )
 

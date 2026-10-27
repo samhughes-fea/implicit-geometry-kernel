@@ -11,12 +11,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SectionGeometryRunner,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive.export import (
+from blade_geometry_model.section_geometry.constructive.export import (
     emit_wall_solid_polygons,
 )
 

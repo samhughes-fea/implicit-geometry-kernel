@@ -204,7 +204,7 @@ def sdf_polygon(x, y, vertices):
     """
     import time
 
-    from blade_structure_utilities.geometry_utilities.section_geometry.sdf._polygon_numba import (
+    from blade_geometry_model.section_geometry.sdf._polygon_numba import (
         sdf_polygon_numba,
     )
 
@@ -217,7 +217,7 @@ def sdf_polygon(x, y, vertices):
     out = sdf_polygon_numba(x_b.ravel(), y_b.ravel(), verts).reshape(x_b.shape)
     elapsed = time.perf_counter() - t0
     try:
-        from blade_structure_utilities.geometry_utilities.section_geometry.sdf.profiling import (
+        from blade_geometry_model.section_geometry.sdf.profiling import (
             profiling_enabled,
             record_sdf_polygon,
         )

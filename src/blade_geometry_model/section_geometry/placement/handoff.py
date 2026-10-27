@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import is_dataclass, replace
 from typing import Any, Mapping
 
-from blade_structure_utilities.geometry_utilities.section_geometry.placement.anchoring import (
+from blade_geometry_model.section_geometry.placement.anchoring import (
     default_construction_for_kind,
 )
 

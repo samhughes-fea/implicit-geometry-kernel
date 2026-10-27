@@ -14,7 +14,7 @@ Writes:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/le_trailing_edge_insert_residual_demo.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/le_trailing_edge_insert_residual_demo.py
 
 Outputs default to ``visualisation/output/le_trailing_edge_insert_residual/``.
 """
@@ -36,28 +36,28 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     demo_output_dir,
     save_figure,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     SDFGrid,
     SectionPropertiesReport,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.constructive import (
+from blade_geometry_model.section_geometry.constructive import (
     classify_property_labels,
     is_residual_label,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+from blade_geometry_model.section_geometry.visualisation.plot import (
     plot_section_hybrid,
     plot_section_with_quadtree,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf import offset
+from blade_geometry_model.section_geometry.sdf import offset
 
 _DPI = DEFAULT_DPI
 
@@ -200,7 +200,7 @@ def main(argv: list[str] | None = None) -> Path:
     _zoom(axes2[1], te[0] - 0.28, te[0] + 0.03, te[1] - 0.06, te[1] + 0.06)
     axes2[0].plot(le[0], le[1], "k*", ms=10)
     axes2[1].plot(te[0], te[1], "k*", ms=10)
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         apply_structural_section_axes,
     )
 

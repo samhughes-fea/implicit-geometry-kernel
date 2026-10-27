@@ -1,27 +1,27 @@
 """Section factory: build section views from layout specs for property reporting."""
 from __future__ import annotations
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.kwarg_aliases import (
+from blade_geometry_model.section_geometry.api.kwarg_aliases import (
     resolve_shear_web_thickness,
     resolve_skin_thickness,
     resolve_spar_cap_thickness,
     resolve_twist_rad,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.section_layout import (
+from blade_geometry_model.section_geometry.layout.section_layout import (
     SectionLayout,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+from blade_geometry_model.section_geometry.layout.system_layout import (
     SYSTEM_TYPE_KEYS,
     SystemLayoutSpec,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.section_midline_host import (
+from blade_geometry_model.section_geometry.midlines.section_midline_host import (
     SectionMidlineHost,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import (
+from blade_geometry_model.section_geometry.sdf.airfoil import (
     AirfoilSDF,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.from_layout import (
+from blade_geometry_model.section_geometry.sections.from_layout import (
     multicell_from_layout,
 )
 

@@ -4,7 +4,7 @@ Uses layout ``5D-F`` on a short tip chord so outboard anchored webs drop.
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/examples/04_spanwise_web_anchors.py
+    python src/blade_geometry_model/section_geometry/examples/04_spanwise_web_anchors.py
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     SectionGeometryRunner,
     resolve_system_type,

@@ -14,10 +14,10 @@ from typing import Any
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.layout.system_layout import (
+from blade_geometry_model.section_geometry.layout.system_layout import (
     layout_without_spar_caps,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sections.cap_feasibility import (
+from blade_geometry_model.section_geometry.sections.cap_feasibility import (
     cap_feasibility_clamp,
 )
 
@@ -43,7 +43,7 @@ def _cap_rule(layout: Any) -> Any:
     rule = getattr(layout, "cap_placement", None)
     if rule is not None:
         return rule
-    from blade_structure_utilities.geometry_utilities.section_geometry.layout.cap_placement import (
+    from blade_geometry_model.section_geometry.layout.cap_placement import (
         CapPlacementRule,
     )
 

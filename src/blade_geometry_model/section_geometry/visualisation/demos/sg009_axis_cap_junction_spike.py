@@ -14,7 +14,7 @@ Expect ~0 nm after SG-005 / SG-007 / SG-009. See docs/reports/SG009_JUNCTION_PRI
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/sg009_axis_cap_junction_spike.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/sg009_axis_cap_junction_spike.py
 """
 
 from __future__ import annotations
@@ -32,18 +32,18 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.api.factory import (
+from blade_geometry_model.section_geometry.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.ring_geometry import (
+from blade_geometry_model.section_geometry.midlines.ring_geometry import (
     intersect_web_axis_open_polyline_2d,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.midlines.shell_midline_export import (
+from blade_geometry_model.section_geometry.midlines.shell_midline_export import (
     build_shell_midline_strips,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.airfoil import AirfoilSDF
-from blade_structure_utilities.geometry_utilities.section_geometry.junction_preparation.shell_midline_junction_preparation import (
+from blade_geometry_model.section_geometry.sdf.airfoil import AirfoilSDF
+from blade_geometry_model.section_geometry.junction_preparation.shell_midline_junction_preparation import (
     prepare_shell_midline_junctions,
 )
 

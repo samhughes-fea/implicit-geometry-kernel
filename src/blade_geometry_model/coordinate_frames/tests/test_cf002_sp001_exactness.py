@@ -7,10 +7,10 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames.section_frames.stiffness import (
+from blade_geometry_model.coordinate_frames.section_frames.stiffness import (
     transform_stiffness_B_to_Sprime,
 )
-from blade_structure_utilities.geometry_utilities.section_properties.stiffness.materials import (
+from blade_geometry_model.section_properties.stiffness.materials import (
     material_eg_rho,
 )
 

@@ -13,7 +13,7 @@ Shows:
 
 Run from the repository root::
 
-    python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/le_te_exactness_demo.py
+    python src/blade_geometry_model/section_geometry/visualisation/demos/le_te_exactness_demo.py
 
 Outputs default to ``visualisation/output/le_te_exactness/``.
 """
@@ -35,32 +35,32 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.figure_io import (
+from blade_geometry_model.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     demo_output_dir,
     save_figure,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.palette import (
+from blade_geometry_model.section_geometry.visualisation.palette import (
     INK,
     NAVY,
     RED,
     TEAL,
 )
 
-from blade_structure_utilities.geometry_utilities.section_geometry import (
+from blade_geometry_model.section_geometry import (
     AirfoilSDF,
     MultiCellSection,
     SDFGrid,
     build_section_geometry,
     resolve_system_type,
 )
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (
+from blade_geometry_model.section_geometry.visualisation.plot import (
     plot_section,
     plot_section_hybrid,
     plot_sdf_field,
 )
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     naca_to_twisted_pitch_axis_blade_frame,
     section_plot_axes,
 )
@@ -221,7 +221,7 @@ def main(argv: list[str] | None = None) -> Path:
         show_legend=False,
     )
     te = np.asarray(af.trailing_edge, dtype=float)
-    from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot_section import (
+    from blade_geometry_model.section_geometry.visualisation.plot_section import (
         apply_structural_section_axes,
     )
 
@@ -238,7 +238,7 @@ def main(argv: list[str] | None = None) -> Path:
 
     # --- 2. Skin mid-surface vs aero tip ---
     # Full closed mid-ring for TE-gap demo (union of SS/PS open half-rings).
-    from blade_structure_utilities.geometry_utilities.section_geometry.recipes.sdf_ir.outer_skin import (
+    from blade_geometry_model.section_geometry.recipes.sdf_ir.outer_skin import (
         OuterSkin,
     )
 

@@ -5,11 +5,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from blade_structure_utilities.geometry_utilities.coordinate_frames import (
+from blade_geometry_model.coordinate_frames import (
     blade_resultants_to_shell_channels,
     rotate_S_to_B,
 )
-from blade_structure_utilities.geometry_utilities.section_contract import (
+from blade_geometry_model.section_contract import (
     BEAM_LOAD_AXIS_XY,
     BEAM_LOAD_AXIS_YZ,
     FRAME_B,

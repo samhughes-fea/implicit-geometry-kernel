@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from blade_structure_utilities.mesh_utilities.area_2d import QuadtreeSpec, build_shared_quadtree
-from blade_structure_utilities.mesh_utilities.area_2d.quadrature import (
+from blade_geometry_model.area_2d import QuadtreeSpec, build_shared_quadtree
+from blade_geometry_model.area_2d.quadrature import (
     _attach_center_phi,
     section_properties_from_quadtree,
 )

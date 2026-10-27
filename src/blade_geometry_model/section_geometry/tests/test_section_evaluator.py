@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from blade_structure_utilities.geometry_utilities.section_geometry.sdf.ir import Circle, Intersect, Offset, Polygon, Shell
-from blade_structure_utilities.geometry_utilities.section_geometry.props_emit.section_evaluator import SectionFieldEvaluator
+from blade_geometry_model.section_geometry.sdf.ir import Circle, Intersect, Offset, Polygon, Shell
+from blade_geometry_model.section_geometry.props_emit.section_evaluator import SectionFieldEvaluator
 
 
 def test_eval_labels_shares_polygon_subtree():

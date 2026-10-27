@@ -1,6 +1,6 @@
 """Backward-compatible re-export of plot helpers (now in ``visualisation``)."""
 
-from blade_structure_utilities.geometry_utilities.section_geometry.visualisation.plot import (  # noqa: F401
+from blade_geometry_model.section_geometry.visualisation.plot import (  # noqa: F401
     _DEFAULT_COLOR,
     _component_color,
     apply_structural_section_axes,

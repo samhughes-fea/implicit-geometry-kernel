@@ -1,0 +1,8 @@
+# section_geometry — local/dev dependencies
+# (numba is declared in the repo-root pyproject.toml core deps)
+numpy>=1.24
+scipy>=1.10
+matplotlib>=3.7
+
+# Testing
+pytest>=7.0

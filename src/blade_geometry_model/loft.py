@@ -10,8 +10,9 @@ region labels and the closed cell-wall loops, placed in the blade frame.
 Blade frame (the ``BladeBuilder`` axes): z along the span, x along the chord from the
 pitch axis towards the trailing edge, y through the thickness (suction side positive).
 Positive twist is nose up: the leading edge moves to +y. ``offset`` shifts the pitch
-axis point (prebend, sweep). The section geometry itself is built untwisted, with the
-leading edge at the origin, and then placed.
+axis point (prebend, sweep). The section geometry is built at the station's twist, so
+a layout's flapwise webs (``"-F"``) stay normal to the rotor plane (along y) while its
+chord-normal webs (``"-CN"``) turn with the chord; the two are the same untwisted.
 
 Wall thicknesses are geometry, not material: they set where each wall's midline lies
 (skins grow inward from the outer mould line, caps sit inside the skin, webs end on the
@@ -32,12 +33,16 @@ from typing import Callable, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from .blade_geometry import Airfoil, Station
+from .blade_geometry import Station
 
 Thickness = Union[float, Callable[[float], float]]
 
 # the section geometry's wall-thickness floors (layout/thickness_limits.py)
 _MIN_SKIN, _MIN_WEB, _MIN_CAP = 0.0025, 0.0040, 0.0050
+# section_geometry turns twist the other way (its positive twist is nose down). The
+# section is built twisted, so that flapwise ("-F") webs stay normal to the rotor
+# plane while chord-normal ("-CN") webs turn with the chord.
+_FORK_TWIST_SIGN = -1.0
 
 
 @dataclass(frozen=True)
@@ -65,6 +70,16 @@ class SectionWall:
     @property
     def length(self) -> float:
         return float(np.sum(np.linalg.norm(np.diff(self.xy, axis=0), axis=1)))
+
+    @property
+    def region(self) -> str:
+        """The label without its part suffix: ``"skin_suction_surface"`` for ``"skin_suction_surface:bay_0"``."""
+        return self.label.split(":")[0]
+
+    @property
+    def lookup_keys(self) -> Tuple[str, ...]:
+        """Names a property (a laminate, an element count) is looked up by, most specific first."""
+        return tuple(dict.fromkeys((self.label, self.region, self.kind)))
 
 
 @dataclass(frozen=True)
@@ -103,6 +118,157 @@ class SectionCut:
     def to_blade(self, x, y) -> np.ndarray:
         """Blade-frame (x, y) of untwisted section coordinates measured from the pitch axis."""
         return _twist_offset(np.column_stack([np.ravel(x), np.ravel(y)]), self.twist, self.offset)
+
+    def mid_surface(self) -> "MidSurface":
+        """The section's walls as one graph of straight segments on their mid-surfaces.
+
+        Skins and webs become one segment per midline segment, joined where they meet.
+        A spar cap is merged with the skin it is bonded to: along the bond the segment
+        is the cap and skin stacked (``layers`` = (cap, skin), inside first), on the
+        stack's mid-surface, and is named after the cap. Segments are oriented so that
+        z x (end - start), the laminate normal of a shell or thin wall laid along them,
+        points out of the section on the skins and towards the trailing edge on the
+        webs. Both ``ThinWalledSection.from_geometry`` and the shell mesher build on it.
+        """
+        return _mid_surface(self)
+
+
+@dataclass(frozen=True)
+class MidSegment:
+    """One straight piece of a wall mid-surface: point indices, name and wall layers (inside first)."""
+
+    start: int
+    end: int
+    name: str
+    kind: str  # "skin" or "web" ("skin" also for a cap merged into its skin)
+    layers: Tuple[str, ...]  # SectionWall labels, inside first: (cap, skin) along a bond
+
+
+@dataclass(frozen=True)
+class MidSurface:
+    """The walls of a ``SectionCut`` as a graph of oriented mid-surface segments."""
+
+    points: np.ndarray  # (n, 2) blade-frame x, y
+    segments: Tuple[MidSegment, ...]
+    z: float = 0.0
+
+    @property
+    def length(self) -> np.ndarray:
+        P = self.points
+        return np.array([float(np.linalg.norm(P[s.end] - P[s.start])) for s in self.segments])
+
+
+def _chain(strips, tol):
+    """Order open polylines into one closed loop: [(label, xy, reversed)], or None."""
+    if not strips:
+        return None
+    left = list(strips)
+    label, xy = left.pop(0)
+    out = [(label, xy, False)]
+    end = xy[-1]
+    while left:
+        for k, (lb, p) in enumerate(left):
+            if np.linalg.norm(p[0] - end) <= tol:
+                out.append((lb, p, False))
+                end = p[-1]
+                break
+            if np.linalg.norm(p[-1] - end) <= tol:
+                out.append((lb, p, True))
+                end = p[0]
+                break
+        else:
+            return None
+        left.pop(k)
+    if np.linalg.norm(end - xy[0]) > tol:
+        return None
+    return out
+
+
+def _mid_surface(cut: SectionCut) -> MidSurface:
+    tol = 1e-9 * max(1.0, max(float(np.abs(w.xy).max()) for w in cut.walls))
+    pts = []
+    lookup: Dict[Tuple[int, int], list] = {}
+
+    def index(p):
+        key = (int(round(p[0] / (100 * tol))), int(round(p[1] / (100 * tol))))
+        for dk in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)):
+            for k in lookup.get((key[0] + dk[0], key[1] + dk[1]), ()):
+                if np.linalg.norm(pts[k] - p) <= tol:
+                    return k
+        pts.append(np.array(p, float))
+        lookup.setdefault(key, []).append(len(pts) - 1)
+        return len(pts) - 1
+
+    skins, webs, caps = cut.walls_of("skin"), cut.walls_of("web"), cut.walls_of("cap")
+    # skins: orient every skin so that z x s points out of the section
+    flip = {w.label: False for w in skins}
+    loop = _chain([(w.label, w.xy) for w in skins], tol)
+    if loop is not None:
+        ring = np.vstack([xy[::-1] if rev else xy for _, xy, rev in loop])
+        area = 0.5 * np.sum(ring[:, 0] * np.roll(ring[:, 1], -1) - np.roll(ring[:, 0], -1) * ring[:, 1])
+        for label, _, rev in loop:
+            flip[label] = rev != (area > 0.0)  # counter-clockwise: z x s points in
+    # caps: which skin vertices carry which cap, and where the stack's mid-surface lies
+    capped: Dict[Tuple[str, int], str] = {}
+    moved: Dict[Tuple[str, int], np.ndarray] = {}
+    skin_of = {w.label: w for w in skins}
+    for cap in caps:
+        for host_label, (ic, ih) in cap.bonds.items():
+            host = skin_of.get(host_label)
+            if host is None:
+                continue
+            if len(ih) < 2 or np.sum(np.linalg.norm(np.diff(host.xy[ih], axis=0), axis=1)) < cap.thickness:
+                # the cap's edge reaching just past a web onto the next skin: whether that
+                # sliver holds a vertex depends on sampling, so it is left to the skin
+                continue
+            f = cap.thickness / (cap.thickness + host.thickness)
+            for a, b in zip(ic, ih):
+                capped[(host_label, int(b))] = cap.label
+                moved[(host_label, int(b))] = host.xy[b] + f * (cap.xy[a] - host.xy[b])
+            # likewise a sliver of bare skin between the cap's edge and the end of its skin
+            arc = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(host.xy, axis=0), axis=1))])
+            lo, hi = int(np.min(ih)), int(np.max(ih))
+            for edge, rest, gap in ((lo, range(0, lo), arc[lo]), (hi, range(hi + 1, len(host.xy)), arc[-1] - arc[hi])):
+                if len(rest) and gap < cap.thickness:
+                    step = moved[(host_label, edge)] - host.xy[edge]
+                    for v in rest:
+                        capped[(host_label, v)] = cap.label
+                        moved[(host_label, v)] = host.xy[v] + step
+    segments = []
+    shift: Dict[int, np.ndarray] = {}
+    for w in skins:
+        ids = [index(p) for p in w.xy]
+        for v, k in enumerate(ids):
+            if (w.label, v) in moved:
+                shift[k] = moved[(w.label, v)]
+        run = []
+        for v in range(len(ids) - 1):
+            i, j = ids[v], ids[v + 1]
+            if i == j:
+                continue
+            ca, cb = capped.get((w.label, v)), capped.get((w.label, v + 1))
+            if ca is not None and ca == cb:
+                seg = (i, j, ca, (ca, w.label))
+            else:
+                seg = (i, j, w.label, (w.label,))
+            run.append(seg)
+        if flip[w.label]:
+            run = [(j, i, name, layers) for i, j, name, layers in reversed(run)]
+        segments.extend(MidSegment(i, j, name, "skin", layers) for i, j, name, layers in run)
+    t = np.radians(cut.twist)
+    chord_dir = np.array([np.cos(t), -np.sin(t)])
+    for w in webs:
+        ids = [index(p) for p in w.xy]
+        run = [(i, j) for i, j in zip(ids[:-1], ids[1:]) if i != j]
+        if run:
+            d = pts[run[-1][1]] - pts[run[0][0]]
+            if np.array([-d[1], d[0]]) @ chord_dir < 0.0:
+                run = [(j, i) for i, j in reversed(run)]
+        segments.extend(MidSegment(i, j, w.label, "web", (w.label,)) for i, j in run)
+    P = np.array(pts)
+    for k, p in shift.items():
+        P[k] = p
+    return MidSurface(P, tuple(segments), cut.z)
 
 
 def _twist_offset(xy: np.ndarray, twist_deg: float, offset) -> np.ndarray:
@@ -226,7 +392,7 @@ class BladeGeometry:
             skin_thickness=t_skin * k,
             spar_cap_thickness=t_cap * k,
             shear_web_thickness=t_web * k,
-            twist_rad=0.0,
+            twist_rad=_FORK_TWIST_SIGN * np.radians(twist),
             outputs=("midlines", "cell_wall_loops"),
         )
         if self.web_offsets is not None:
@@ -236,7 +402,9 @@ class BladeGeometry:
         resolution = runner.get_layout_resolution()
 
         def place(pts_B):
-            naca = twisted_pitch_axis_blade_frame_to_naca(np.asarray(pts_B, float) / k, 0.0, chord, PIVOT_FRACTION_DEFAULT)
+            pts = np.asarray(pts_B, float) / k
+            naca = twisted_pitch_axis_blade_frame_to_naca(pts, _FORK_TWIST_SIGN * np.radians(twist), chord,
+                                                          PIVOT_FRACTION_DEFAULT)
             local = np.column_stack([naca[:, 0] - pitch * chord, naca[:, 1]])
             xy = _twist_offset(local, twist, offset)
             return np.column_stack([xy, np.full(len(xy), z)])
@@ -296,4 +464,4 @@ def section_at(stations: Sequence[Station], z: float, layout, skin_thickness: Th
     return BladeGeometry(stations, layout, skin_thickness, **options).section_at(z)
 
 
-__all__ = ["BladeGeometry", "CellLoop", "SectionCut", "SectionWall", "section_at"]
+__all__ = ["BladeGeometry", "CellLoop", "MidSegment", "MidSurface", "SectionCut", "SectionWall", "section_at"]

@@ -1,0 +1,7 @@
+*.egg-info/
+*.py[cod]
+.pytest_cache/
+__pycache__/
+build/
+dist/
+src/implicit_geometry_kernel/**/visualisation/output/

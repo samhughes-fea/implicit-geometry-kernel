@@ -1,13 +1,14 @@
 """Architecture gates for the G-row ownership matrix."""
 
 from __future__ import annotations
+import importlib
 
 import ast
 from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(importlib.import_module("implicit_geometry_kernel.section_geometry").__file__).resolve().parent
 
 BANNED_TOP_LEVEL = ("engine", "interface", "core")
 

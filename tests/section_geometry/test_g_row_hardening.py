@@ -1,11 +1,12 @@
 """Extend G-row architecture gates for the final hardening pass."""
 
 from __future__ import annotations
+import importlib
 
 import ast
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(importlib.import_module("implicit_geometry_kernel.section_geometry").__file__).resolve().parent
 
 
 def _iter_prod_py() -> list[Path]:

@@ -48,5 +48,5 @@ where = ["src"]
 # the forked subpackages keep their own tests and examples beside their code, in
 # folders that share names (tests/, examples/), so modules are imported by path
 addopts = "--import-mode=importlib"
-testpaths = ["tests", "src/implicit_geometry_kernel"]
+testpaths = ["tests"]
 markers = ["frame_comparison: coordinate-frame convention checks from the forked geometry"]

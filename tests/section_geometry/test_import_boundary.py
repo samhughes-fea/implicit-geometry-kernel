@@ -1,9 +1,10 @@
+import importlib
 from pathlib import Path
 import ast
 
 
 def test_contract_homes_exist() -> None:
-    root = Path(__file__).resolve().parents[1]
+    root = Path(importlib.import_module("implicit_geometry_kernel.section_geometry").__file__).resolve().parent
     assert (root / "api").is_dir()
     assert (root / "types").is_dir()
     for banned in ("engine", "interface", "core"):
@@ -11,7 +12,7 @@ def test_contract_homes_exist() -> None:
 
 
 def test_production_does_not_import_material_utilities() -> None:
-    root = Path(__file__).resolve().parents[1]
+    root = Path(importlib.import_module("implicit_geometry_kernel.section_geometry").__file__).resolve().parent
     skip = {"tests", "visualisation", "examples", "docs", "graphify-out", "__pycache__"}
     hits: list[str] = []
     for path in root.rglob("*.py"):

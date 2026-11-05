@@ -1,11 +1,12 @@
 """Production code must import offset APIs from offset_locus, not helpers."""
 
 from __future__ import annotations
+import importlib
 
 import re
 from pathlib import Path
 
-_SECTION_GEOMETRY = Path(__file__).resolve().parents[1]
+_SECTION_GEOMETRY = Path(importlib.import_module("implicit_geometry_kernel.section_geometry").__file__).resolve().parent
 _FORBIDDEN = frozenset(
     {"offset_polygon_inward", "airfoil_offset_ring", "airfoil_polygon"}
 )

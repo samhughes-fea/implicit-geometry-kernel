@@ -1,0 +1,7 @@
+{
+  "hits_before": 1,
+  "hits_after_shared_node": 0,
+  "oracle": "intersect_web_axis_open_polyline_2d (post-resample)",
+  "detector": "intersect_open_polylines_2d (strict interior; tools only)",
+  "invariant": "A component must emit its mid-surface at its true extent, so junctions coincide by construction."
+}

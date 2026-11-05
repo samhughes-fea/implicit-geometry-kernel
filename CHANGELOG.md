@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Docs and the import-boundary test follow the split of composite-laminate-model into
+  laminate-constitutive-model and shell-fem; the kernel imports neither.
 - Seven new worked examples (02 to 08) with figures and READMEs: the layout catalogue,
   signed distances and CSG, section properties, the mid-surface and cells, web
   placement, airfoils and root transitions, and coordinate frames. Each checks the

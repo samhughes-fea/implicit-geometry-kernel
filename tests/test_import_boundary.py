@@ -2,9 +2,10 @@
 
 The kernel is the base of the suite:
 
-    implicit_geometry_kernel  <-  composite_laminate_model  <-  anisotropic_section_model
+    implicit_geometry_kernel  <-  shell_fem  (with laminate_constitutive_model)
 
-so it never imports the laminate or the section model. Inside the kernel, only
+and the section model reads its cuts, so it never imports the laminate, shell or section
+packages. Inside the kernel, only
 ``plotting`` uses Matplotlib, and ``sdf`` stands on its own (it may be split out as a
 general implicit-geometry library), so it imports nothing from ``section`` or ``blade``.
 """
@@ -17,8 +18,8 @@ from pathlib import Path
 import pytest
 
 PACKAGE = Path(__file__).resolve().parents[1] / "src" / "implicit_geometry_kernel"
-FORBIDDEN = {"composite_laminate_model", "anisotropic_section_model", "laminate_modelling_package",
-             "blade_geometry_model"}
+FORBIDDEN = {"laminate_constitutive_model", "shell_fem", "composite_laminate_model", "anisotropic_section_model",
+             "laminate_modelling_package", "blade_geometry_model"}
 
 
 def _imports(path: Path):

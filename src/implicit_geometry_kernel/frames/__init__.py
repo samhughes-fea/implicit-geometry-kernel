@@ -1,7 +1,7 @@
 """
 Geometric coordinate frames R / B / S / S′ and the shell basis C, with point and
 tensor transforms. The laminate frames E / M keep their tags here; their transforms
-live in composite-laminate-model.
+live in laminate-constitutive-model.
 
 Ownership home: ``section_frames/`` (R/B/S/S′); frame ids and tags cover the shell basis C.
 Short tags: ``frame_tags`` (``FrameTag`` / ``FRAME_*`` / ``require_frame_tag``).

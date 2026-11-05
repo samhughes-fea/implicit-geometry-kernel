@@ -32,7 +32,7 @@ def scripts() -> list[Path]:
     out = []
     for path in sorted(EXAMPLES.rglob("*.py")):
         rel = path.relative_to(EXAMPLES).as_posix()
-        if path.name in HELPERS or rel in SKIP or "output" in path.parts:
+        if path.name in HELPERS or rel in SKIP or "output" in path.parts or "_shared" in path.parts:
             continue
         out.append(path)
     return out

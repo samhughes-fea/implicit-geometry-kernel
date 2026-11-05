@@ -293,7 +293,7 @@ def _draw_gap_map(section, polys, grid, out_path: Path, *, presentation: bool) -
 
 
 def main(argv: list[str] | None = None) -> Path:
-    default_out = Path(__file__).resolve().parents[1] / "output" / "dual_rep_consistency"
+    default_out = Path(__file__).resolve().parents[1] / "figures" / "dual_rep_consistency"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, default=default_out)
     parser.add_argument("--presentation", action="store_true", help="Deck styling for the gap map.")

@@ -204,7 +204,7 @@ def _plot_zoom_panel(
 
 
 def main(argv: list[str] | None = None) -> Path:
-    default_out = Path(__file__).resolve().parents[1] / "output" / "thin_feature_robustness"
+    default_out = Path(__file__).resolve().parents[1] / "figures" / "thin_feature_robustness"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, default=default_out)
     parser.add_argument("--presentation", action="store_true", help="Deck styling.")

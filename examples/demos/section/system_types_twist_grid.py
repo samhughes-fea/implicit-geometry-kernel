@@ -112,7 +112,7 @@ def main() -> int:
         "--out-dir",
         type=Path,
         default=None,
-        help="Output directory (default: visualisation/output/system_types_twist_grid).",
+        help="Output directory (default: examples/demos/figures/system_types_twist_grid).",
     )
     p.add_argument(
         "--no-section-jsons",
@@ -139,7 +139,7 @@ def main() -> int:
 
     out_dir = args.out_dir
     if out_dir is None:
-        out_dir = Path(__file__).resolve().parents[1] / "output" / "system_types_twist_grid"
+        out_dir = Path(__file__).resolve().parents[1] / "figures" / "system_types_twist_grid"
     out_dir = Path(out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 

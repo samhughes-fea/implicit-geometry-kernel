@@ -15,7 +15,7 @@ Run from the repository root::
 
     python examples/demos/section_geometry/le_te_exactness_demo.py
 
-Outputs default to ``visualisation/output/le_te_exactness/``.
+Outputs default to ``examples/demos/figures/le_te_exactness/``.
 """
 
 from __future__ import annotations
@@ -172,7 +172,7 @@ def _save_fig(fig, path: Path, *, presentation: bool = False) -> None:
 
 
 def main(argv: list[str] | None = None) -> Path:
-    default_out = Path(__file__).resolve().parents[1] / "output" / "le_te_exactness"
+    default_out = Path(__file__).resolve().parents[1] / "figures" / "le_te_exactness"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--out-dir",

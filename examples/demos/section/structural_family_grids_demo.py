@@ -8,7 +8,7 @@ twist, drawn in a **wide rectangular** frame matching the twin-web /
 torsion-box section demos (not a square data window). Skin-only ``0A`` /
 ``0B`` have no flapwise twin.
 
-Writes under ``visualisation/output/structural_family_grids/``:
+Writes under ``examples/demos/figures/structural_family_grids/``:
 
 * ``{key}.png`` — one file per registry key (e.g. ``2D-F.png``, ``3D-CN.png``)
 * ``structural_family_grids.json`` — key inventory + output map
@@ -315,7 +315,7 @@ def _render_taxonomy_matrix(
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    add_output_and_presentation_args(p, default_stem="structural_family_grids")
+    add_output_and_presentation_args(p, default_stem="structural_family_grids", root=Path(__file__).resolve().parents[1])
     p.add_argument("--twist-deg", type=float, default=15.0)
     p.add_argument("--naca", default="2412")
     p.add_argument("--chord", type=float, default=1.0)

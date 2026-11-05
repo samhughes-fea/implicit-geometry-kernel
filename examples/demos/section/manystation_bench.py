@@ -344,7 +344,7 @@ def main() -> None:
         if args.figure:
             _plot_throughput(
                 [r_hy, r_qt],
-                demo_output_dir("manystation_bench") / "manystation_throughput.png",
+                demo_output_dir("manystation_bench", repo_visualisation_root=Path(__file__).resolve().parents[1]) / "manystation_throughput.png",
                 stations_per_blade=int(args.stations_per_blade),
                 designs=int(args.designs),
                 presentation=bool(args.presentation),

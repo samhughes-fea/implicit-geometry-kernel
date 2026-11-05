@@ -16,7 +16,7 @@ where the Eikonal condition ``|grad phi| = 1`` holds. Along CSG seams (where
 That is why offsets are taken against the aerofoil polygon - which is metric -
 rather than against an already-assembled union.
 
-Writes under ``visualisation/output/thickness_as_field_offset/``:
+Writes under ``examples/demos/figures/thickness_as_field_offset/``:
 
 * ``thickness_sweep.png`` - nested interfaces, field extremes, area response.
 * ``offset_metric_validity.png`` - |grad phi| and where offsetting is trustworthy.
@@ -138,7 +138,7 @@ def main(argv: list[str] | None = None) -> int:
     apply_presentation_style(presentation)
 
     out_dir = args.out_dir or (
-        Path(__file__).resolve().parents[1] / "output" / "thickness_as_field_offset"
+        Path(__file__).resolve().parents[1] / "figures" / "thickness_as_field_offset"
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 

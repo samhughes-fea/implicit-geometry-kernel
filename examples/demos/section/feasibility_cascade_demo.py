@@ -14,7 +14,7 @@ resolve ladder for a multi-web catalogue key (default ``5D-F``):
 Uses ``SectionGeometryRunner(...).resolve().get_layout_resolution()`` — the
 cheap path documented in ``docs/guides/feasibility_and_drops.md``.
 
-Writes under ``visualisation/output/feasibility_cascade/``:
+Writes under ``examples/demos/figures/feasibility_cascade/``:
 
 * ``feasibility_cascade.png``
 * ``feasibility_cascade.json``
@@ -285,7 +285,7 @@ def _plot_cascade(payload: dict, *, presentation: bool) -> plt.Figure:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    add_output_and_presentation_args(parser, default_stem="feasibility_cascade")
+    add_output_and_presentation_args(parser, default_stem="feasibility_cascade", root=Path(__file__).resolve().parents[1])
     parser.add_argument("--layout", default="5D-F")
     parser.add_argument("--root-chord", type=float, default=1.0)
     parser.add_argument("--skin-thickness", type=float, default=0.006)

@@ -16,7 +16,7 @@ Run from the repository root::
 
     python examples/demos/section_geometry/naca2412_section.py
 
-Outputs under ``visualisation/output/naca2412_section/``.
+Outputs under ``examples/demos/figures/naca2412_section/``.
 
 For thickness-only geometry (no properties sweep), see
 ``geometry_from_design_vector.py``.
@@ -58,7 +58,7 @@ from implicit_geometry_kernel.plotting.plot_section import (
 import argparse
 
 _parser = argparse.ArgumentParser(description=__doc__)
-add_output_and_presentation_args(_parser, default_stem="naca2412_section")
+add_output_and_presentation_args(_parser, default_stem="naca2412_section", root=Path(__file__).resolve().parents[1])
 _args = _parser.parse_args()
 apply_presentation_style(bool(_args.presentation))
 _PRESENTATION = bool(_args.presentation)

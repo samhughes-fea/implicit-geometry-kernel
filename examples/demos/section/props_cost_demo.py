@@ -477,7 +477,7 @@ def _plot_pareto(all_rows: list[dict[str, Any]], path: Path) -> None:
 
 
 def main(argv: list[str] | None = None) -> Path:
-    default_out = Path(__file__).resolve().parents[1] / "output" / "props_cost"
+    default_out = Path(__file__).resolve().parents[1] / "figures" / "props_cost"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, default=default_out)
     args = parser.parse_args(argv)

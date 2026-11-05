@@ -3,7 +3,7 @@ examples/demos/section_geometry/robustness_monte_carlo_demo.py
 =======================================
 Randomized robustness sweep for implicit section geometry.
 
-Writes under ``visualisation/output/robustness_monte_carlo/``:
+Writes under ``examples/demos/figures/robustness_monte_carlo/``:
 
 * ``robustness_monte_carlo.png`` - every successful section overlaid, and the
   median-normalised spread of area, Iyy and Ixx.
@@ -82,7 +82,7 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
     apply_presentation_style(bool(args.presentation))
 
-    out_dir = args.out_dir or (Path(__file__).resolve().parents[1] / "output" / "robustness_monte_carlo")
+    out_dir = args.out_dir or (Path(__file__).resolve().parents[1] / "figures" / "robustness_monte_carlo")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rng = np.random.default_rng(int(args.seed))

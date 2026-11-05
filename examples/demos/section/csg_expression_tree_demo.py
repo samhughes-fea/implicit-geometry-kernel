@@ -14,7 +14,7 @@ visibly emerges, and counts how much of the whole section's tree is *shared*
 structure (the airfoil polygon is referenced by every wall but stored and
 evaluated once).
 
-Writes under ``visualisation/output/csg_expression_tree/``:
+Writes under ``examples/demos/figures/csg_expression_tree/``:
 
 * ``csg_expression_tree.png`` - section context, node-link tree, and the
   operator-by-operator emergence of the region.
@@ -748,7 +748,7 @@ def main(argv: list[str] | None = None) -> int:
     apply_presentation_style(presentation)
 
     out_dir = args.out_dir or (
-        Path(__file__).resolve().parents[1] / "output" / "csg_expression_tree"
+        Path(__file__).resolve().parents[1] / "figures" / "csg_expression_tree"
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 

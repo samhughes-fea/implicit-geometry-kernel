@@ -14,7 +14,7 @@ smooth/blending operators that exist in ``sdf/csg.py`` and are exported from the
 kernel but are **not** used by any current blade recipe - shown as available
 capability, labelled as such.
 
-Writes under ``visualisation/output/sdf_operator_algebra/``:
+Writes under ``examples/demos/figures/sdf_operator_algebra/``:
 
 * ``sdf_operator_algebra.png`` - one panel per operator in use.
 * ``sdf_kernel_only_operators.png`` - smooth union / subtract / blend sweeps.
@@ -167,7 +167,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     out_dir = args.out_dir or (
-        Path(__file__).resolve().parents[1] / "output" / "sdf_operator_algebra"
+        Path(__file__).resolve().parents[1] / "figures" / "sdf_operator_algebra"
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 

@@ -26,7 +26,7 @@ from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 # while the product disagrees with both -- which is exactly what happened here:
 # naca_to_zero_twist_pitch_axis_station_frame (then aliased as naca_to_S) lived
 # only in this file, and production applied a bare rotation.
-_OUT = Path(__file__).resolve().parent.parent / "output"
+_OUT = Path(__file__).resolve().parent.parent / "figures"
 _PIVOT_FRAC = PIVOT_FRACTION_DEFAULT
 _CHORD_M = 1.0
 _TWIST_DEG = 15.0

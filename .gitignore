@@ -4,5 +4,6 @@
 __pycache__/
 build/
 dist/
-src/implicit_geometry_kernel/**/visualisation/output/
-examples/**/output/
+# demo figures (PNG, GIF) are committed; their data dumps are regenerated
+examples/demos/figures/**/*.json
+examples/demos/figures/**/*.csv

@@ -35,7 +35,7 @@ in teal.
 Sizes are illustrative (5 mm skin, 12 mm cap over 0.25–0.55 c, 6 mm web), not a
 design.
 
-Writes under ``visualisation/output/brep_extend_trim/``:
+Writes under ``examples/demos/figures/brep_extend_trim/``:
 
 * ``brep_extend_trim.png``
 * ``brep_extend_trim.json``
@@ -261,7 +261,7 @@ def _draw_zoom(axis, airfoil, outline, inner_face, branch: str, x_web: float, x_
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    add_output_and_presentation_args(parser, default_stem="brep_extend_trim")
+    add_output_and_presentation_args(parser, default_stem="brep_extend_trim", root=Path(__file__).resolve().parents[1])
     parser.add_argument("--positions", type=int, default=400)
     args = parser.parse_args(argv)
     apply_presentation_style(bool(args.presentation))

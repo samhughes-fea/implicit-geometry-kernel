@@ -110,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
         "--out-dir",
         type=Path,
         default=None,
-        help="Output directory (default: visualisation/output/design_vector).",
+        help="Output directory (default: examples/demos/figures/design_vector).",
     )
     p.add_argument("--json", action="store_true", help="Write design_vector.json next to the PNG.")
     p.add_argument(
@@ -131,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
 
     out_dir = args.out_dir
     if out_dir is None:
-        out_dir = Path(__file__).resolve().parents[1] / "output" / "design_vector"
+        out_dir = Path(__file__).resolve().parents[1] / "figures" / "design_vector"
     out_dir = Path(out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 

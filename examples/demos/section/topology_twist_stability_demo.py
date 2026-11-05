@@ -287,7 +287,7 @@ def _draw_junction_story(rows, raw_by_twist, topo_by_twist, out_path: Path, *, p
 
 
 def main(argv: list[str] | None = None) -> Path:
-    default_out = Path(__file__).resolve().parents[1] / "output" / "topology_twist_stability"
+    default_out = Path(__file__).resolve().parents[1] / "figures" / "topology_twist_stability"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, default=default_out)
     parser.add_argument("--presentation", action="store_true", help="Deck styling for the junction story.")

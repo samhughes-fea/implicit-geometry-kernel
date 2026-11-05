@@ -2,8 +2,8 @@
 
 Operational suite for the coordinate-frames package: figure-producing demos and
 generated PNGs. Frame mathematics live in
-[`section_frames/`](../section_frames/README.md) and
-[`shell_frames/`](../shell_frames/README.md) (see [`../README.md`](../README.md)).
+[`section_frames/`](../../../docs/coordinate_frames/section_frames/README.md) and
+[`shell_frames/`](../../../docs/coordinate_frames/shell_frames/README.md) (see [`../README.md`](../../../docs/coordinate_frames/README.md)).
 
 ## Purpose / ownership
 
@@ -27,7 +27,7 @@ reimplement NACA↔S / S↔B / plot-axis maths locally.
 
 | Script | What it proves | Output |
 |--------|----------------|--------|
-| [`demos/plot_structural_frames.py`](demos/plot_structural_frames.py) | Shared B/S/S′ storage + plot contract (LE on RHS, \(+Y\)→TE); panel order B / S / S′ | `output/structural_frames_B_S_Sprime.png` |
+| [`demos/plot_structural_frames.py`](plot_structural_frames.py) | Shared B/S/S′ storage + plot contract (LE on RHS, \(+Y\)→TE); panel order B / S / S′ | `output/structural_frames_B_S_Sprime.png` |
 
 ```bash
 python -m blade_structure_utilities.geometry_utilities.coordinate_frames.visualisation.demos.plot_structural_frames
@@ -35,6 +35,6 @@ python -m blade_structure_utilities.geometry_utilities.coordinate_frames.visuali
 
 ## See also
 
-- Section frames: [`../section_frames/README.md`](../section_frames/README.md)
-- Shell frames: [`../shell_frames/README.md`](../shell_frames/README.md)
+- Section frames: [`../section_frames/README.md`](../../../docs/coordinate_frames/section_frames/README.md)
+- Shell frames: [`../shell_frames/README.md`](../../../docs/coordinate_frames/shell_frames/README.md)
 - Plot contract API: `section_frames.plot` (also on the package barrel)

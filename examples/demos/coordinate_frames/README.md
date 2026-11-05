@@ -1,6 +1,6 @@
 # visualisation demos
 
-Suite root: [`../`](../). Outputs write under [`../output/`](../output/).
+Suite root: [`../`](./). Outputs write under [`../output/`](../../../src/implicit_geometry_kernel/coordinate_frames/visualisation/output/).
 
 | Script | What it proves | Output |
 |--------|----------------|--------|

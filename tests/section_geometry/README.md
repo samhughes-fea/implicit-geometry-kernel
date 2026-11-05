@@ -2,7 +2,7 @@
 
 Unit and integration tests for `section_geometry`.
 
-↑ [`section_geometry`](../README.md)
+↑ [`section_geometry`](../../docs/section_geometry/README.md)
 
 ## Table of contents
 

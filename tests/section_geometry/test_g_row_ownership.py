@@ -49,7 +49,7 @@ def test_api_and_types_homes_exist() -> None:
     assert (ROOT / "api").is_dir()
     assert (ROOT / "types").is_dir()
     assert (ROOT / "recipes" / "sdf_ir").is_dir()
-    assert (ROOT / "docs" / "reference" / "G_ROW_OWNERSHIP_MATRIX.md").is_file()
+    assert (Path(__file__).resolve().parents[2] / "docs" / "section_geometry" / "reference" / "G_ROW_OWNERSHIP_MATRIX.md").is_file()
 
 
 def test_sections_does_not_export_sdf_ir_components() -> None:

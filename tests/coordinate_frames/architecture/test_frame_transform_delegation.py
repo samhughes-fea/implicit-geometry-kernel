@@ -80,7 +80,7 @@ def test_legacy_frame_apis_removed():
 
 @pytest.mark.frame_comparison
 def test_frames_inventory_exists():
-    inv = _COORD / "FRAMES_INVENTORY.md"
+    inv = Path(__file__).resolve().parents[3] / "docs" / "coordinate_frames" / "FRAMES_INVENTORY.md"
     assert inv.is_file(), "FRAMES_INVENTORY.md missing (FRAME-010)"
     text = inv.read_text(encoding="utf-8")
     assert "ARCH-MUST-016" in text

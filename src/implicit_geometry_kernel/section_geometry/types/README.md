@@ -1,6 +1,6 @@
 # types — public type aliases
 
-↑ [`section_geometry`](../README.md)
+↑ [`section_geometry`](../../../../docs/section_geometry/README.md)
 
 Public type aliases for the package barrel. Definitions and behaviour live in
 the owning modules; this home only re-exports stable names.
@@ -31,9 +31,9 @@ the owning modules; this home only re-exports stable names.
 On `SectionGeometryResult`, `properties_map` is filled under `"properties"`;
 `midline_strips` and `cell_wall_loops` under `"midlines"` / `"cell_wall_loops"`.
 Midlines and cell-wall loops are already in the twisted frame. Full field tables:
-[`../README.md` § Results](../README.md#results).
+[`../README.md` § Results](../../../../docs/section_geometry/README.md#results).
 
 ## See also
 
-- [`../api/`](../api/README.md)
-- Midline / `CellWallLoop` DTOs: [`../../section_contract/`](../../section_contract/README.md)
+- [`../api/`](../../../../docs/section_geometry/api/README.md)
+- Midline / `CellWallLoop` DTOs: [`../../section_contract/`](../../../../docs/section_contract/README.md)

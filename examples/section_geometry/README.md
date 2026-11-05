@@ -1,9 +1,9 @@
 # examples
 
 Short, runnable teaching scripts for `section_geometry`. Plot-heavy figure
-generation lives under [`../visualisation/demos/`](../visualisation/demos/README.md).
+generation lives under [`../visualisation/demos/`](../demos/section_geometry/README.md).
 
-↑ [`section_geometry`](../README.md) · [`docs index`](../docs/README.md)
+↑ [`section_geometry`](../../docs/section_geometry/README.md) · [`docs index`](../../docs/section_geometry/docs_index.md)
 
 ## Table of contents
 
@@ -42,9 +42,9 @@ Or install editable (`pip install -e .`) and run the same path.
 
 ## See also
 
-- Progressive guide: [`../docs/guides/quickstart.md`](../docs/guides/quickstart.md)
-- Call recipes: [`../docs/guides/caller_patterns.md`](../docs/guides/caller_patterns.md)
-- Anatomy on a figure: [`../docs/guides/anatomy_on_a_figure.md`](../docs/guides/anatomy_on_a_figure.md)
-- Feasibility / drops: [`../docs/guides/feasibility_and_drops.md`](../docs/guides/feasibility_and_drops.md)
-- Geometry → mesh: [`../docs/guides/geometry_to_mesh.md`](../docs/guides/geometry_to_mesh.md)
-- Figure demos: [`../visualisation/demos/`](../visualisation/demos/README.md)
+- Progressive guide: [`../docs/guides/quickstart.md`](../../docs/section_geometry/guides/quickstart.md)
+- Call recipes: [`../docs/guides/caller_patterns.md`](../../docs/section_geometry/guides/caller_patterns.md)
+- Anatomy on a figure: [`../docs/guides/anatomy_on_a_figure.md`](../../docs/section_geometry/guides/anatomy_on_a_figure.md)
+- Feasibility / drops: [`../docs/guides/feasibility_and_drops.md`](../../docs/section_geometry/guides/feasibility_and_drops.md)
+- Geometry → mesh: [`../docs/guides/geometry_to_mesh.md`](../../docs/section_geometry/guides/geometry_to_mesh.md)
+- Figure demos: [`../visualisation/demos/`](../demos/section_geometry/README.md)

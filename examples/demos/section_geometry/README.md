@@ -1,14 +1,14 @@
 # visualisation demos ? run list
 
 Demo scripts for `section_geometry` products. Outputs:
-[`../output/`](../output/) (gitignored). Artefact / regen index:
+[`../output/`](../../../src/implicit_geometry_kernel/section_geometry/visualisation/output/) (gitignored). Artefact / regen index:
 [`ARTIFACTS.md`](ARTIFACTS.md). Run from the repository root.
 
 Teaching scripts (print-first, few flags):
-[`../../examples/`](../../examples/README.md).
+[`../../examples/`](../../section_geometry/README.md).
 
-? [`section_geometry`](../../README.md) ?
-[`../README.md`](../README.md)
+? [`section_geometry`](../../../docs/section_geometry/README.md) ?
+[`../README.md`](../../../docs/section_geometry/visualisation/README.md)
 
 ```bash
 python blade_structure_utilities/geometry_utilities/section_geometry/visualisation/demos/<script>.py
@@ -36,10 +36,10 @@ Run these first (from the repository root):
 5. [`cell_wall_loops_demo.py`](cell_wall_loops_demo.py) ? cell-wall loops
 
 Checked-in gallery:
-[`../../docs/reference/structural_systems_gallery.md`](../../docs/reference/structural_systems_gallery.md).
+[`../../docs/reference/structural_systems_gallery.md`](../../../docs/section_geometry/reference/structural_systems_gallery.md).
 Regen commands: [`ARTIFACTS.md`](ARTIFACTS.md).
 
-Figures use [`../figure_io.py`](../figure_io.py) (`save_figure`, default DPI 200).
+Figures use [`../figure_io.py`](../../../src/implicit_geometry_kernel/section_geometry/visualisation/figure_io.py) (`save_figure`, default DPI 200).
 Conference-facing demos accept `--presentation` (larger fonts, DPI 220).
 
 ---
@@ -137,7 +137,7 @@ Mesh strip demos live under
 [`section_mesh/visualisation/demos/`](../../../../mesh_utilities/section_mesh/visualisation/demos/).
 
 Dual-rep acceptance narrative:
-[`../../docs/reports/DUAL_REP_ACCEPTANCE.md`](../../docs/reports/DUAL_REP_ACCEPTANCE.md).
+[`../../docs/reports/DUAL_REP_ACCEPTANCE.md`](../../../docs/section_geometry/reports/DUAL_REP_ACCEPTANCE.md).
 
 ### Plot debug tracing
 

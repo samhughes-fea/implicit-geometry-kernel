@@ -30,7 +30,7 @@ _SKIP_DIR_NAMES = frozenset(
     }
 )
 
-# Ply transforms belong to composite-laminate-model; none may be built here.
+# Ply transforms belong to laminate-constitutive-model; none may be built here.
 _PLY_TRANSFORM_ALLOW = frozenset()
 
 # Dated debt / documented local spaces (FRAME inventory). Empty after FRAME-005 removal.
@@ -59,7 +59,7 @@ def test_no_hand_built_ply_transform_matrices_outside_canon():
         if "c * c, s * s" in src or "c*c, s*s" in src:
             offenders.append(str(path.relative_to(_SRC)))
     assert offenders == [], (
-        "ply stress/strain transforms belong to composite-laminate-model, not the "
+        "ply stress/strain transforms belong to laminate-constitutive-model, not the "
         f"geometry kernel: {offenders}"
     )
 

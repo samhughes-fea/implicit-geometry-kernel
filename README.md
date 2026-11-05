@@ -12,7 +12,7 @@ axis, offset and airfoil interpolated between stations) and cuts the section at 
 
 It is the shared base of two packages:
 
-- [composite-laminate-model](https://github.com/samhughes-fea/composite-laminate-model)
+- [shell-fem](https://github.com/samhughes-fea/shell-fem)
   meshes the walls as layered shells (`BladeBuilder.from_geometry`).
 - [anisotropic-section-model](https://github.com/samhughes-fea/anisotropic-section-model)
   builds thin-walled beam sections straight from a cut (`ThinWalledSection.from_geometry`).

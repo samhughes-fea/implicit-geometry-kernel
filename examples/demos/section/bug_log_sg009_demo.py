@@ -9,7 +9,7 @@ Three panels:
 2. The skin is split and the web trimmed at the crossing: one shared node.
 3. The same detector returns nothing (touching is not an interior crossing).
 
-Writes under ``visualisation/output/bug_log_sg009/``:
+Writes under ``examples/demos/figures/bug_log_sg009/``:
 
 * ``bug_log_sg009_schematic.png``
 * ``bug_log_sg009.json``
@@ -123,7 +123,7 @@ def _draw_panel(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    add_output_and_presentation_args(parser, default_stem="bug_log_sg009")
+    add_output_and_presentation_args(parser, default_stem="bug_log_sg009", root=Path(__file__).resolve().parents[1])
     args = parser.parse_args(argv)
     apply_presentation_style(bool(args.presentation))
 

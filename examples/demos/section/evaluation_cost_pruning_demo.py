@@ -20,7 +20,7 @@ Note on scope: the culling figure reports what ``expr_bbox`` *makes available*.
 ``eval_expr_batch`` itself does not prune - it evaluates the grid it is handed.
 Bbox culling is applied by the adaptive area mesh in ``props_emit/area_mesh.py``.
 
-Writes under ``visualisation/output/evaluation_cost_pruning/``:
+Writes under ``examples/demos/figures/evaluation_cost_pruning/``:
 
 * ``support_box_culling.png`` - per-region support boxes and culled fractions.
 * ``evaluation_scaling.png`` - naive walk vs per-region memo vs one shared memo,
@@ -182,7 +182,7 @@ def main(argv: list[str] | None = None) -> int:
     apply_presentation_style(presentation)
 
     out_dir = args.out_dir or (
-        Path(__file__).resolve().parents[1] / "output" / "evaluation_cost_pruning"
+        Path(__file__).resolve().parents[1] / "figures" / "evaluation_cost_pruning"
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 

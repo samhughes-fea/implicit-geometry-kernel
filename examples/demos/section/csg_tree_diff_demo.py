@@ -10,7 +10,7 @@ drawn with the affected regions highlighted, and the whole-section census of
 distinct nodes goes in the legend. Reuses layout_tree helpers from
 csg_expression_tree_demo.py.
 
-Writes under visualisation/output/csg_tree_diff/:
+Writes under examples/demos/figures/csg_tree_diff/:
 
 * csg_tree_diff.png
 * csg_tree_diff.json
@@ -225,7 +225,7 @@ def _draw_section(axis, section, changed_regions: set[str], label: str, title: s
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    add_output_and_presentation_args(parser, default_stem="csg_tree_diff")
+    add_output_and_presentation_args(parser, default_stem="csg_tree_diff", root=Path(__file__).resolve().parents[1])
     parser.add_argument("--layout", default="2D-F")
     parser.add_argument("--label", default="shear_web_0")
     parser.add_argument("--skin-a", type=float, default=0.004)

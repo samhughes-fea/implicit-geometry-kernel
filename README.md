@@ -50,6 +50,13 @@ trailing edge, y through the thickness (suction side positive). Positive twist i
 up. Thicknesses are geometry only: skins grow inward from the outer mould line, caps sit
 inside the skin, and webs end on the skin midline.
 
+## Examples
+
+Eight worked examples, each checked against an independent reference
+([examples/README.md](examples/README.md)): the 40 layouts, signed distances and CSG,
+section properties, the mid-surface hand-off, web placement, airfoils and root
+transitions, and the coordinate frames.
+
 ## Layout
 
 ```

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Seven new worked examples (02 to 08) with figures and READMEs: the layout catalogue,
+  signed distances and CSG, section properties, the mid-surface and cells, web
+  placement, airfoils and root transitions, and coordinate frames. Each checks the
+  kernel against an independent reference. `examples/README.md` indexes them.
+- Fixed: `frames.transform_second_moments_S_to_B` (and `_B_to_S`) gave the wrong sign to
+  the Ixy term of `Ixx_B`, so Ixx + Iyy was not invariant under twist. It now matches
+  integrating the rotated outline.
+- Demo figures are written to `examples/demos/figures/`, committed and embedded in the
+  demo READMEs, instead of a git-ignored `output/` folder or a folder inside the
+  installed package. `save_figure` defaults to 150 dpi.
+
 ## 0.2.0 (unreleased)
 
 The kernel is now the geometry of blade and wing cross-sections only, regrouped into

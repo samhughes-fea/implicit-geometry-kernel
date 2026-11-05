@@ -1,6 +1,6 @@
 # Demo artefacts (regen index)
 
-Figures under `../output/` (gitignored). CDFAM deck copies live in
+Figures under [`../figures/`](../figures/), committed and shown in the [README](README.md#figures). CDFAM deck copies live in
 `docs/conferences/CDFAM-2026/presentation/images/geometry/` via
 `docs/conferences/CDFAM-2026/presentation/sync-assets.py`.
 

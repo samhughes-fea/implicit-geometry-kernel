@@ -412,7 +412,7 @@ def main() -> int:
         raise SystemExit("--min-depth must be <= --max-depth")
 
     out_dir = args.out_dir or (
-        Path(__file__).resolve().parents[1] / "output" / "quadtree_convergence"
+        Path(__file__).resolve().parents[1] / "figures" / "quadtree_convergence"
     )
     out_dir = Path(out_dir).resolve()
     chord = float(args.chord)

@@ -63,7 +63,7 @@ _ARC_COLOUR = {
 
 
 def main(argv: list[str] | None = None) -> Path:
-    default_out = Path(__file__).resolve().parents[1] / "output" / "skin_ss_ps_taxonomy"
+    default_out = Path(__file__).resolve().parents[1] / "figures" / "skin_ss_ps_taxonomy"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, default=default_out)
     args = parser.parse_args(argv)

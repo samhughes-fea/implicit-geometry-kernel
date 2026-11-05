@@ -16,7 +16,7 @@ Run from the repository root::
 
     python examples/demos/section_geometry/le_trailing_edge_insert_residual_demo.py
 
-Outputs default to ``visualisation/output/le_trailing_edge_insert_residual/``.
+Outputs default to ``examples/demos/figures/le_trailing_edge_insert_residual/``.
 """
 
 from __future__ import annotations
@@ -124,7 +124,7 @@ def _save_fig(fig, path: Path, *, presentation: bool = False) -> None:
 
 
 def main(argv: list[str] | None = None) -> Path:
-    default_out = Path(__file__).resolve().parents[1] / "output" / "le_trailing_edge_insert_residual"
+    default_out = Path(__file__).resolve().parents[1] / "figures" / "le_trailing_edge_insert_residual"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--out-dir",

@@ -29,7 +29,7 @@ sections get thinner and topologies change, and the implicit path never runs
 it. The mitre is capped at the usual limit of 4, exactly as a real
 implementation would, so the failure shown is folding and not a spike artifact.
 
-Writes under ``visualisation/output/brep_vs_implicit_offset/``:
+Writes under ``examples/demos/figures/brep_vs_implicit_offset/``:
 
 * ``brep_vs_implicit_offset.png`` - two-panel comparison: curve offset (left)
   vs level-set offset (right). Sized for full-width slide display (~2.5:1).
@@ -169,7 +169,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--n-points", type=int, default=220)
     parser.add_argument("--nx", type=int, default=1100)
     parser.add_argument("--ny", type=int, default=480)
-    add_output_and_presentation_args(parser, default_stem="brep_vs_implicit_offset")
+    add_output_and_presentation_args(parser, default_stem="brep_vs_implicit_offset", root=Path(__file__).resolve().parents[1])
     args = parser.parse_args(argv)
     presentation = bool(args.presentation)
     apply_presentation_style(presentation)

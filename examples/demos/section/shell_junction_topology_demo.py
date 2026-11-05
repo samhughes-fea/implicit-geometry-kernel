@@ -15,7 +15,7 @@ Run from the repository root::
 
     python examples/demos/section_geometry/shell_junction_topology_demo.py
 
-Outputs default to ``visualisation/output/shell_junction_topology/``.
+Outputs default to ``examples/demos/figures/shell_junction_topology/``.
 """
 
 from __future__ import annotations
@@ -271,7 +271,7 @@ def _save_fig(fig, path: Path, *, presentation: bool = False) -> None:
 
 def main(argv: list[str] | None = None) -> Path:
     parser = argparse.ArgumentParser(description=__doc__)
-    add_output_and_presentation_args(parser, default_stem="shell_junction_topology")
+    add_output_and_presentation_args(parser, default_stem="shell_junction_topology", root=Path(__file__).resolve().parents[1])
     args = parser.parse_args(argv)
     apply_presentation_style(bool(args.presentation))
     out_dir: Path = Path(args.out_dir)

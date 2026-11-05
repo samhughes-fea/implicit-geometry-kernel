@@ -17,7 +17,7 @@ The code below is deliberately *not* factored into helpers. It is meant to be
 read straight off a slide and typed, so it stays flat, and it is executed here so
 the published figure cannot drift away from the published code.
 
-Writes under ``visualisation/output/api_quickstart/``:
+Writes under ``examples/demos/figures/api_quickstart/``:
 
 * ``api_quickstart_section.png`` - the section, beside the result inventory.
 * ``api_quickstart.json`` - the inventory, for the slide caption to quote.
@@ -109,7 +109,7 @@ def inventory(result) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    add_output_and_presentation_args(parser, default_stem="api_quickstart")
+    add_output_and_presentation_args(parser, default_stem="api_quickstart", root=Path(__file__).resolve().parents[1])
     args = parser.parse_args(argv)
     presentation = bool(args.presentation)
     apply_presentation_style(presentation)

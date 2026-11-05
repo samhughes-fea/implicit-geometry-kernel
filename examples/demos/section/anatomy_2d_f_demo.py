@@ -1,6 +1,6 @@
 """Labelled anatomy figure for layout 2D-F (teaching companion to the gallery).
 
-Writes two figures to visualisation/output/anatomy_2d_f/:
+Writes two figures to examples/demos/figures/anatomy_2d_f/:
 
 * ``2D-F_labelled.png`` — the section with the standard component legend, so docs
   can name suction/pressure skin, webs, and spar caps.
@@ -254,7 +254,7 @@ def _draw_annotated(section, airfoil, web_x_m, *, twist_rad: float, out_dir: Pat
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    add_output_and_presentation_args(parser, default_stem="anatomy_2d_f")
+    add_output_and_presentation_args(parser, default_stem="anatomy_2d_f", root=Path(__file__).resolve().parents[1])
     parser.add_argument("--twist-deg", type=float, default=0.0)
     parser.add_argument("--naca", default="2412")
     parser.add_argument("--chord", type=float, default=1.0)

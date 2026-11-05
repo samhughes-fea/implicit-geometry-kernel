@@ -1,7 +1,8 @@
 """Shared figure I/O for section_geometry visualisation demos.
 
-All demos should write under ``visualisation/output/<demo_stem>/`` via
-:func:`demo_output_dir` and :func:`save_figure`.
+Demos write their figures under ``examples/demos/figures/<demo_stem>/`` (passed in as
+``root``) via :func:`demo_output_dir` and :func:`save_figure`. The figures are committed
+and embedded in the demo READMEs.
 """
 
 from __future__ import annotations
@@ -12,10 +13,8 @@ from typing import Any
 
 import matplotlib as mpl
 
-DEFAULT_DPI = 200
+DEFAULT_DPI = 150
 PRESENTATION_DPI = 220
-
-_VISUALISATION_ROOT = Path(__file__).resolve().parent
 
 
 def demo_output_dir(
@@ -23,9 +22,13 @@ def demo_output_dir(
     *,
     repo_visualisation_root: Path | None = None,
 ) -> Path:
-    """Return ``<visualisation>/output/<demo_stem>/`` (created on save, not here)."""
-    root = Path(repo_visualisation_root) if repo_visualisation_root is not None else _VISUALISATION_ROOT
-    return (root / "output" / str(demo_stem)).resolve()
+    """Return ``<root>/figures/<demo_stem>/`` (created on save, not here).
+
+    Demos pass ``examples/demos`` as the root; without one the figures land in the
+    current working directory, never inside the installed package.
+    """
+    root = Path(repo_visualisation_root) if repo_visualisation_root is not None else Path.cwd()
+    return (root / "figures" / str(demo_stem)).resolve()
 
 
 def apply_presentation_style(presentation: bool) -> None:
@@ -97,14 +100,15 @@ def add_output_and_presentation_args(
     parser: argparse.ArgumentParser,
     *,
     default_stem: str,
+    root: Path | None = None,
 ) -> None:
-    """Add ``--out-dir`` and ``--presentation`` with visualisation/output defaults."""
-    default_out = demo_output_dir(default_stem)
+    """Add ``--out-dir`` and ``--presentation``; the default is ``<root>/figures/<default_stem>/``."""
+    default_out = demo_output_dir(default_stem, repo_visualisation_root=root)
     parser.add_argument(
         "--out-dir",
         type=Path,
         default=default_out,
-        help=f"Output directory (default: visualisation/output/{default_stem}/).",
+        help=f"Output directory (default: figures/{default_stem}/).",
     )
     parser.add_argument(
         "--presentation",

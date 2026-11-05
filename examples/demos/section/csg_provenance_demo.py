@@ -3,7 +3,7 @@ examples/demos/section_geometry/csg_provenance_demo.py
 ===============================
 Demonstrate implicit-CSG component interactions via distance-field diagnostics.
 
-Writes under ``visualisation/output/csg_provenance/``:
+Writes under ``examples/demos/figures/csg_provenance/``:
 
 * ``csg_provenance_map.png`` - winner-label map, nearest-interface map and
   junction map (distance to the third-nearest region), stacked, sharing one
@@ -91,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
     apply_presentation_style(bool(args.presentation))
 
-    out_dir = args.out_dir or (Path(__file__).resolve().parents[1] / "output" / "csg_provenance")
+    out_dir = args.out_dir or (Path(__file__).resolve().parents[1] / "figures" / "csg_provenance")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     layout = resolve_system_type(str(args.key))

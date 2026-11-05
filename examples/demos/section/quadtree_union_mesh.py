@@ -13,7 +13,7 @@ By default renders **all 40** registered layout keys (``0A``, ``0B``, and every
 multicell ``{X}{Y}-{Z}`` token) at **15 deg** section twist (``--twist-deg``),
 including skin-only layouts, chord-normal webs, and flapwise webs.
 
-Outputs under ``visualisation/output/quadtree_union/``:
+Outputs under ``examples/demos/figures/quadtree_union/``:
 
   * ``quadtree_union_{key}.png`` per layout (e.g. ``quadtree_union_2D-CN.png``)
   * ``quadtree_union_summary.json`` — coverage metadata and leaf counts
@@ -227,7 +227,7 @@ def main(argv: list[str] | None = None) -> int:
     for key in keys:
         resolve_system_type(key)
 
-    out_dir = args.out_dir or (Path(__file__).resolve().parents[1] / "output" / "quadtree_union")
+    out_dir = args.out_dir or (Path(__file__).resolve().parents[1] / "figures" / "quadtree_union")
     out_dir = Path(out_dir).resolve()
     chord = float(args.chord)
     airfoil = AirfoilSDF.from_naca(str(args.naca).zfill(4), chord=chord)

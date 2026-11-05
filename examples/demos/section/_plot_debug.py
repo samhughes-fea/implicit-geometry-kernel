@@ -93,7 +93,7 @@ def _resolve_log_path(repo_root: Path) -> Path:
     if custom_dir:
         log_dir = Path(custom_dir)
     else:
-        log_dir = Path(__file__).resolve().parent / "output" / "_plot_debug"
+        log_dir = Path(__file__).resolve().parent / "figures" / "_plot_debug"
     script = Path(sys.argv[0]).stem if sys.argv and sys.argv[0] else "interactive"
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     pid = os.getpid()

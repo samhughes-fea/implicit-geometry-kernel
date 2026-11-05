@@ -15,7 +15,7 @@ Run from the repository root::
 
     python examples/demos/section_geometry/cell_wall_loops_demo.py
 
-Outputs default to ``visualisation/output/cell_wall_loops/``.
+Outputs default to ``examples/demos/figures/cell_wall_loops/``.
 """
 
 from __future__ import annotations
@@ -317,7 +317,7 @@ def _save_fig(fig, path: Path, *, presentation: bool = False) -> None:
 
 
 def main(argv: list[str] | None = None) -> Path:
-    default_out = Path(__file__).resolve().parents[1] / "output" / "cell_wall_loops"
+    default_out = Path(__file__).resolve().parents[1] / "figures" / "cell_wall_loops"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--out-dir",

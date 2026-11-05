@@ -26,7 +26,7 @@ Sweep starts at 3 mm: ``layout/thickness_limits.MIN_REALISTIC_SKIN_WALL_THICKNES
 (2.5 mm) floors the requested skin, so below it the finite difference is zero
 by construction, not by geometry.
 
-Writes under ``visualisation/output/offset_shape_derivative/``:
+Writes under ``examples/demos/figures/offset_shape_derivative/``:
 
 * ``offset_shape_derivative.png``
 * ``offset_shape_derivative.json``
@@ -119,7 +119,7 @@ def _boundary_integrals(grid: SDFGrid, phi: np.ndarray, thickness: float) -> tup
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    add_output_and_presentation_args(parser, default_stem="offset_shape_derivative")
+    add_output_and_presentation_args(parser, default_stem="offset_shape_derivative", root=Path(__file__).resolve().parents[1])
     parser.add_argument("--t-min", type=float, default=0.003)
     parser.add_argument("--t-max", type=float, default=0.030)
     parser.add_argument("--samples", type=int, default=14)

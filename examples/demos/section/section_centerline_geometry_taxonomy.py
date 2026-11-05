@@ -6,7 +6,7 @@ Owns the **geometry** half of the former FE ``repro_section_centerline_mesh_v2``
 script (40-key airfoil/layout/section generation). Mesh strip figures live under
 ``section_mesh/visualisation/demos/``.
 
-Outputs (under ``visualisation/output/section_centerline_geometry_taxonomy/``):
+Outputs (under ``examples/demos/figures/section_centerline_geometry_taxonomy/``):
 
 * ``section_geom_<layout>_i000.png`` — SDF subcomponents (skin/web/cap)
 * ``taxonomy_coverage.json`` — rendered vs full registry
@@ -193,7 +193,7 @@ def main(argv: list[str] | None = None) -> None:
     twist_rad = float(np.deg2rad(twist_deg))
 
     out_dir = (
-        Path(__file__).resolve().parents[1] / "output" / "section_centerline_geometry_taxonomy"
+        Path(__file__).resolve().parents[1] / "figures" / "section_centerline_geometry_taxonomy"
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 

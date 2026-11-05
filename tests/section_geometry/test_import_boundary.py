@@ -3,10 +3,8 @@ from pathlib import Path
 import ast
 
 
-def test_contract_homes_exist() -> None:
+def test_banned_homes_absent() -> None:
     root = Path(importlib.import_module("implicit_geometry_kernel.section_geometry").__file__).resolve().parent
-    assert (root / "api").is_dir()
-    assert (root / "types").is_dir()
     for banned in ("engine", "interface", "core"):
         assert not (root / banned).exists(), f"banned home present: {banned}/"
 

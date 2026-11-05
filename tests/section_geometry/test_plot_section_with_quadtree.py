@@ -7,8 +7,6 @@ import matplotlib
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
-import numpy as np
-import pytest
 from matplotlib.patches import Polygon, Rectangle
 
 from implicit_geometry_kernel.section_geometry.api.factory import build_section_view, resolve_system_type

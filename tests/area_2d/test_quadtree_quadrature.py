@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from implicit_geometry_kernel.section_geometry.props_emit.area_mesh import (
     _component_supports,

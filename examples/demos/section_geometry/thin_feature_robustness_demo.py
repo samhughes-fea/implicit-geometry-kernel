@@ -45,7 +45,6 @@ _ensure_mod.ensure_repo_path()
 
 from implicit_geometry_kernel.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
-    demo_output_dir,
     apply_presentation_style,
     save_figure,
 )

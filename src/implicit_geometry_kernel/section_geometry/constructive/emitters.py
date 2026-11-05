@@ -358,36 +358,3 @@ def emit_leading_edge_insert_polygon(
     disk = Point(le_x, le_y).buffer(float(radius), quad_segs=32)
     region = region.intersection(disk)
     return ensure_polygon(region, allow_empty=True)
-
-
-def emit_component_polygon(comp: Any) -> Polygon | MultiPolygon:
-    """Dispatch constructive polygon emission by component type / attributes."""
-    name = type(comp).__name__
-    if name == "OuterSkin" or (
-        hasattr(comp, "thickness") and hasattr(comp, "midline_polyline") and hasattr(comp, "_af")
-        and not hasattr(comp, "x_top") and not hasattr(comp, "cap_height")
-    ):
-        if hasattr(comp, "cap_height"):
-            return emit_spar_cap_polygon(comp)
-        if hasattr(comp, "x_top"):
-            return emit_shear_web_polygon(comp)
-        return emit_outer_skin_polygon(comp)
-    if name == "ShearWeb" or hasattr(comp, "x_top"):
-        return emit_shear_web_polygon(comp)
-    if name == "SparCap" or hasattr(comp, "cap_height"):
-        return emit_spar_cap_polygon(comp)
-    if name == "TEInsert" or (
-        hasattr(comp, "x_start") and hasattr(comp, "skin_thickness") and name.endswith("Insert")
-        and "TE" in name
-    ):
-        return emit_trailing_edge_insert_polygon(comp)
-    if name == "LEInsert" or (
-        hasattr(comp, "x_end") and hasattr(comp, "skin_thickness") and name.endswith("Insert")
-        and "LE" in name
-    ):
-        return emit_leading_edge_insert_polygon(comp)
-    if name == "SandwichCore" or hasattr(comp, "bay_mode"):
-        raise TypeError(
-            "SandwichCore requires emit_sandwich_core_polygon with wall-solid exclusions."
-        )
-    raise TypeError(f"No constructive polygon emitter for {name}.")

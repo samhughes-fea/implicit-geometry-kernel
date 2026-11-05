@@ -1,13 +1,10 @@
 """Shell midline junction preparation for strips (B-frame).
 
-Thin orchestrator over focused helpers. Canonical public names live here;
-historic ``ShellStripTopologySpec`` / ``build_shell_strip_topology`` names are
-warning aliases until 2027-03-31 (also via the ``topology`` package shim).
+Thin orchestrator over focused helpers.
 """
 
 from __future__ import annotations
 
-import warnings
 from dataclasses import dataclass
 
 from implicit_geometry_kernel.section_contract.shell_midline_strip import ShellMidlineStrip
@@ -24,17 +21,6 @@ from .cap_web_junctions import insert_cap_web_interior_junctions
 from ..midlines.ring_geometry import normal_2d_ccw, point_to_open_polyline_nearest
 from ..midlines.skin_split import split_skin_at_junctions
 
-# Compatibility aliases (historic private names used by tests / callers).
-_split_skin_at_junctions = split_skin_at_junctions
-_resample_cap_interiors_from_skin_rays = resample_cap_interiors_from_skin_rays
-_insert_cap_web_interior_junctions = insert_cap_web_interior_junctions
-_concat_skin_ring_vertices = concat_skin_ring_vertices
-_skin_ring_vertex_tangents = skin_ring_vertex_tangents
-_normal_2d_ccw = normal_2d_ccw
-_pick_inward_ray_direction = pick_inward_ray_direction
-_point_to_open_polyline_nearest = point_to_open_polyline_nearest
-
-_ALIAS_EXPIRY = "2027-03-31"
 
 
 @dataclass(frozen=True)
@@ -96,39 +82,9 @@ def prepare_shell_midline_junctions(
     return out
 
 
-def build_shell_strip_topology(
-    strips: tuple[ShellMidlineStrip, ...],
-    spec: ShellMidlineJunctionPreparationOptions | None = None,
-    *,
-    stage_sink: dict[str, float] | None = None,
-    airfoil=None,
-    cap_mid_depth_m: float | None = None,
-) -> tuple[ShellMidlineStrip, ...]:
-    """Deprecated alias of :func:`prepare_shell_midline_junctions` (expires 2027-03-31)."""
-    warnings.warn(
-        "build_shell_strip_topology is deprecated; use "
-        f"prepare_shell_midline_junctions (expires {_ALIAS_EXPIRY}).",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return prepare_shell_midline_junctions(
-        strips,
-        spec,
-        stage_sink=stage_sink,
-        airfoil=airfoil,
-        cap_mid_depth_m=cap_mid_depth_m,
-    )
-
-
-# Historic type name — prefer ShellMidlineJunctionPreparationOptions.
-ShellStripTopologySpec = ShellMidlineJunctionPreparationOptions
-
-
 __all__ = [
     "ShellMidlineJunctionPreparationOptions",
     "prepare_shell_midline_junctions",
-    "ShellStripTopologySpec",
-    "build_shell_strip_topology",
     "split_skin_at_junctions",
     "resample_cap_interiors_from_skin_rays",
     "insert_cap_web_interior_junctions",

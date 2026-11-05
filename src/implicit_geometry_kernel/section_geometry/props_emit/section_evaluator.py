@@ -59,10 +59,6 @@ class SectionFieldEvaluator:
     def labels(self) -> list[str]:
         return list(self._expr_by_label.keys())
 
-    def expr_for(self, label: str) -> Expr | None:
-        """Return the IR expression for ``label`` (or ``None`` if unknown)."""
-        return self._expr_by_label.get(str(label))
-
     def exprs_for(self, labels: list[str]) -> dict[str, Expr]:
         """Return the IR expressions for ``labels`` that are registered."""
         out: dict[str, Expr] = {}
@@ -108,7 +104,7 @@ class SectionFieldEvaluator:
             return np.empty(0, dtype=float)
         memo: dict[Expr, np.ndarray] = {}
         out = self.eval(str(label), arr[:, 0], arr[:, 1], memo=memo).reshape(-1)
-        from implicit_geometry_kernel.section_geometry.sdf.profiling import get_stats
+        from implicit_geometry_kernel.section_geometry.profiling import get_stats
 
         stats = get_stats()
         if stats is not None:
@@ -130,7 +126,7 @@ class SectionFieldEvaluator:
                 return {lbl: np.empty(0, dtype=float) for lbl in lbls}
             memo: dict[Expr, np.ndarray] = {}
             result = self.eval_labels(lbls, arr, memo=memo)
-            from implicit_geometry_kernel.section_geometry.sdf.profiling import get_stats
+            from implicit_geometry_kernel.section_geometry.profiling import get_stats
 
             stats = get_stats()
             if stats is not None:

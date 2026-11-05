@@ -33,7 +33,7 @@ from implicit_geometry_kernel.section_geometry.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
-from implicit_geometry_kernel.section_geometry.sdf.profiling import reset_stats
+from implicit_geometry_kernel.section_geometry.profiling import reset_stats
 
 BASELINE = Path(__file__).with_name("baseline_analytic_bounds.json")
 

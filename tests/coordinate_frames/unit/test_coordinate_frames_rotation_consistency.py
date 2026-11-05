@@ -87,24 +87,24 @@ Ixx_B_pos, Iyy_B_pos, Ixy_B_pos = transform_moments_formula_positive(Ixx_S, Iyy_
 # Formula with -θ
 Ixx_B_neg, Iyy_B_neg, Ixy_B_neg = transform_moments_formula_negative(Ixx_S, Iyy_S, Ixy_S, theta_deg)
 
-print(f"\nMatrix approach (R(-theta)):")
+print("\nMatrix approach (R(-theta)):")
 print(f"  Ixx_B = {Ixx_B_mat:.6f}")
 print(f"  Iyy_B = {Iyy_B_mat:.6f}")
 print(f"  Ixy_B = {Ixy_B_mat:.6f}")
 
-print(f"\nFormula with +theta:")
+print("\nFormula with +theta:")
 print(f"  Ixx_B = {Ixx_B_pos:.6f}")
 print(f"  Iyy_B = {Iyy_B_pos:.6f}")
 print(f"  Ixy_B = {Ixy_B_pos:.6f}")
 print(f"  Matches matrix? {abs(Ixx_B_pos - Ixx_B_mat) < 1e-6 and abs(Iyy_B_pos - Iyy_B_mat) < 1e-6}")
 
-print(f"\nFormula with -theta:")
+print("\nFormula with -theta:")
 print(f"  Ixx_B = {Ixx_B_neg:.6f}")
 print(f"  Iyy_B = {Iyy_B_neg:.6f}")
 print(f"  Ixy_B = {Ixy_B_neg:.6f}")
 print(f"  Matches matrix? {abs(Ixx_B_neg - Ixx_B_mat) < 1e-6 and abs(Iyy_B_neg - Iyy_B_mat) < 1e-6}")
 
-print(f"\n>>> Matrix approach uses R(-theta), so formula should use -theta for consistency")
-print(f">>> If formula with -theta matches matrix, then current implementation (+theta) is WRONG")
+print("\n>>> Matrix approach uses R(-theta), so formula should use -theta for consistency")
+print(">>> If formula with -theta matches matrix, then current implementation (+theta) is WRONG")
 
 

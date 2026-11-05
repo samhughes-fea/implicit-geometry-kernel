@@ -255,29 +255,6 @@ def _padded_world_box(geom, pad_scale: float = 2.0) -> Polygon:
     )
 
 
-def chordwise_bay_clip(
-    geom,
-    *,
-    x_start: float | None,
-    x_end: float | None,
-) -> Polygon:
-    """Axis-aligned bay clip matching SDF HalfPlane chords (open ends allowed)."""
-    box = _padded_world_box(geom)
-    minx, miny, maxx, maxy = box.bounds
-    x0 = float(x_start) if x_start is not None else minx
-    x1 = float(x_end) if x_end is not None else maxx
-    if x1 < x0:
-        x0, x1 = x1, x0
-    return Polygon(
-        [
-            (x0, miny),
-            (x1, miny),
-            (x1, maxy),
-            (x0, maxy),
-        ]
-    )
-
-
 def flapwise_bay_clip(
     geom,
     *,

@@ -9,7 +9,6 @@ from implicit_geometry_kernel.area_2d import (
     QuadtreeSpec,
     build_area_mesh_2d,
     build_area_meshes_2d,
-    contour_from_quadtree_marching_squares,
     refine_quadtree,
     build_root_quadtree,
 )

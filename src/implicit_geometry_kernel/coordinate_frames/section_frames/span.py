@@ -8,7 +8,7 @@ import numpy as np
 
 @dataclass
 class SpanFrameTransforms:
-    """
+    r"""
     Transforms between Radial (R), Blade (B), Station (S), and S′ frames.
 
     - **R**: \(r\), \(r/R\) — external turbine grid / visualization.

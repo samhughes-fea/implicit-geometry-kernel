@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from implicit_geometry_kernel.section_geometry.sdf.ir import Circle, HalfPlane, Intersect, Offset, Subtract, subtract_expr
+from implicit_geometry_kernel.section_geometry.sdf.ir import Circle, HalfPlane, Intersect, Offset, subtract_expr
 
 from implicit_geometry_kernel.section_geometry.sections.clip_algebra import (
     airfoil_expr,

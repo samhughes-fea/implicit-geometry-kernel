@@ -83,31 +83,6 @@ def skin_ring_vertex_tangents(ring: NDArray[np.float64]) -> NDArray[np.float64]:
     return out
 
 
-def _ray_segment_hit_first(
-    p: NDArray[np.float64],
-    v: NDArray[np.float64],
-    a: NDArray[np.float64],
-    b: NDArray[np.float64],
-    *,
-    t_min: float = _SKIN_RAY_T_MIN_M,
-) -> tuple[float, NDArray[np.float64]] | None:
-    """First hit of ray ``p + t v`` (``t >= t_min``) on segment ``ab``; ``v`` unit."""
-    w = b - a
-    mat = np.column_stack([v, -w])
-    det = float(np.linalg.det(mat))
-    if abs(det) < 1e-18:
-        return None
-    rhs = a - p
-    tu = np.linalg.solve(mat, rhs)
-    t = float(tu[0])
-    u = float(tu[1])
-    if t < t_min or u < -1e-10 or u > 1.0 + 1e-10:
-        return None
-    uu = float(np.clip(u, 0.0, 1.0))
-    hit = a + uu * w
-    return t, hit
-
-
 def _ray_hits_open_polyline(
     p: NDArray[np.float64],
     v: NDArray[np.float64],

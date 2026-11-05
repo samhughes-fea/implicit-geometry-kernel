@@ -53,9 +53,7 @@ _ensure_mod = _load_sibling_module("_ensure_repo_path", "_ensure_repo_path.py")
 _ensure_mod.ensure_repo_path()
 
 from implicit_geometry_kernel.section_geometry.visualisation.figure_io import (
-    DEFAULT_DPI,
     apply_presentation_style,
-    demo_output_dir,
     save_figure,
 )
 _taxonomy = _load_sibling_module("_taxonomy_cases", "_taxonomy_cases.py")

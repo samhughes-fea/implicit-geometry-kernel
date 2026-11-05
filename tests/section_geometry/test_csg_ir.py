@@ -18,7 +18,7 @@ from implicit_geometry_kernel.section_geometry.sdf.ir import (
     intersect_expr,
     union_expr,
 )
-from implicit_geometry_kernel.section_geometry.sdf.csg import intersect, offset, shell, subtract, union
+from implicit_geometry_kernel.section_geometry.sdf.csg import offset, shell, subtract, union
 from implicit_geometry_kernel.section_geometry.sdf.grid import SDFGrid
 from implicit_geometry_kernel.section_geometry.sdf.primitives import sdf_box, sdf_circle
 from implicit_geometry_kernel.section_geometry import AirfoilSDF

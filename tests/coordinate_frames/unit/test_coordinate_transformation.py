@@ -13,7 +13,6 @@ Three key areas tested:
 """
 
 import sys
-import numpy as np
 from pathlib import Path
 
 # Add workspace root to path
@@ -22,8 +21,6 @@ if str(_workspace_root) not in sys.path:
     sys.path.insert(0, str(_workspace_root))
 
 from implicit_geometry_kernel.coordinate_frames import CoordinateFrameTransforms
-from implicit_geometry_kernel.shoelace_integration import section_properties_S
-from shapely.geometry import Polygon as ShapelyPolygon
 
 
 def test_transformation_identity():
@@ -48,13 +45,13 @@ def test_transformation_identity():
     transform = CoordinateFrameTransforms()
     Ixx_B, Iyy_B, Ixy_B = transform.transform_second_moments_S_to_B(Ixx_S, Iyy_S, Ixy_S, twist_deg)
     
-    print(f"\nInput S frame:")
+    print("\nInput S frame:")
     print(f"  Ixx_S = {Ixx_S:.6e} m^4")
     print(f"  Iyy_S = {Iyy_S:.6e} m^4")
     print(f"  Ixy_S = {Ixy_S:.6e} m^4")
     print(f"  twist_deg = {twist_deg:.6f}°")
     
-    print(f"\nOutput B frame:")
+    print("\nOutput B frame:")
     print(f"  Ixx_B = {Ixx_B:.6e} m^4")
     print(f"  Iyy_B = {Iyy_B:.6e} m^4")
     print(f"  Ixy_B = {Ixy_B:.6e} m^4")
@@ -64,7 +61,7 @@ def test_transformation_identity():
     iyy_error = abs(Iyy_B - Iyy_S)
     ixy_error = abs(Ixy_B - Ixy_S)
     
-    print(f"\nIdentity Check:")
+    print("\nIdentity Check:")
     print(f"  |Ixx_B - Ixx_S| = {ixx_error:.6e} m^4")
     print(f"  |Iyy_B - Iyy_S| = {iyy_error:.6e} m^4")
     print(f"  |Ixy_B - Ixy_S| = {ixy_error:.6e} m^4")
@@ -74,14 +71,14 @@ def test_transformation_identity():
     iyy_pass = iyy_error < tolerance
     ixy_pass = ixy_error < tolerance
     
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Ixx_B identity: {'PASS' if ixx_pass else 'FAIL'}")
     print(f"  Iyy_B identity: {'PASS' if iyy_pass else 'FAIL'}")
     print(f"  Ixy_B identity: {'PASS' if ixy_pass else 'FAIL'}")
     
     all_pass = ixx_pass and iyy_pass and ixy_pass
     print(f"\nTest 1 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 def test_transformation_90_degree():
@@ -106,13 +103,13 @@ def test_transformation_90_degree():
     transform = CoordinateFrameTransforms()
     Ixx_B, Iyy_B, Ixy_B = transform.transform_second_moments_S_to_B(Ixx_S, Iyy_S, Ixy_S, twist_deg)
     
-    print(f"\nInput S frame:")
+    print("\nInput S frame:")
     print(f"  Ixx_S = {Ixx_S:.6e} m^4")
     print(f"  Iyy_S = {Iyy_S:.6e} m^4")
     print(f"  Ixy_S = {Ixy_S:.6e} m^4")
     print(f"  twist_deg = {twist_deg:.6f}°")
     
-    print(f"\nOutput B frame:")
+    print("\nOutput B frame:")
     print(f"  Ixx_B = {Ixx_B:.6e} m^4")
     print(f"  Iyy_B = {Iyy_B:.6e} m^4")
     print(f"  Ixy_B = {Ixy_B:.6e} m^4")
@@ -122,7 +119,7 @@ def test_transformation_90_degree():
     iyy_swap_error = abs(Iyy_B - Ixx_S)
     ixy_zero_error = abs(Ixy_B)
     
-    print(f"\n90° Rotation Check:")
+    print("\n90° Rotation Check:")
     print(f"  |Ixx_B - Iyy_S| = {ixx_swap_error:.6e} m^4 (should be ~0)")
     print(f"  |Iyy_B - Ixx_S| = {iyy_swap_error:.6e} m^4 (should be ~0)")
     print(f"  |Ixy_B| = {ixy_zero_error:.6e} m^4 (should be ~0)")
@@ -132,14 +129,14 @@ def test_transformation_90_degree():
     iyy_pass = iyy_swap_error < tolerance
     ixy_pass = ixy_zero_error < tolerance
     
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Ixx_B ≈ Iyy_S: {'PASS' if ixx_pass else 'FAIL'}")
     print(f"  Iyy_B ≈ Ixx_S: {'PASS' if iyy_pass else 'FAIL'}")
     print(f"  Ixy_B ≈ 0: {'PASS' if ixy_pass else 'FAIL'}")
     
     all_pass = ixx_pass and iyy_pass and ixy_pass
     print(f"\nTest 2 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 def test_transformation_45_degree():
@@ -163,13 +160,13 @@ def test_transformation_45_degree():
     transform = CoordinateFrameTransforms()
     Ixx_B, Iyy_B, Ixy_B = transform.transform_second_moments_S_to_B(Ixx_S, Iyy_S, Ixy_S, twist_deg)
     
-    print(f"\nInput S frame:")
+    print("\nInput S frame:")
     print(f"  Ixx_S = {Ixx_S:.6e} m^4")
     print(f"  Iyy_S = {Iyy_S:.6e} m^4")
     print(f"  Ixy_S = {Ixy_S:.6e} m^4")
     print(f"  twist_deg = {twist_deg:.6f}°")
     
-    print(f"\nOutput B frame:")
+    print("\nOutput B frame:")
     print(f"  Ixx_B = {Ixx_B:.6e} m^4")
     print(f"  Iyy_B = {Iyy_B:.6e} m^4")
     print(f"  Ixy_B = {Ixy_B:.6e} m^4")
@@ -186,7 +183,7 @@ def test_transformation_45_degree():
     iyy_error = abs(Iyy_B - expected_iyy)
     ixy_error = abs(Ixy_B - expected_ixy)
     
-    print(f"\n45° Rotation Check:")
+    print("\n45° Rotation Check:")
     print(f"  Expected Ixx_B = (Ixx_S + Iyy_S) / 2 = {expected_ixx:.6e} m^4")
     print(f"  Expected Iyy_B = (Ixx_S + Iyy_S) / 2 = {expected_iyy:.6e} m^4")
     print(f"  Expected Ixy_B = (Ixx_S - Iyy_S) / 2 = {expected_ixy:.6e} m^4")
@@ -199,14 +196,14 @@ def test_transformation_45_degree():
     iyy_pass = iyy_error < tolerance
     ixy_pass = ixy_error < tolerance
     
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Ixx_B formula: {'PASS' if ixx_pass else 'FAIL'}")
     print(f"  Iyy_B formula: {'PASS' if iyy_pass else 'FAIL'}")
     print(f"  Ixy_B formula: {'PASS' if ixy_pass else 'FAIL'}")
     
     all_pass = ixx_pass and iyy_pass and ixy_pass
     print(f"\nTest 3 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 def test_ei_assignment():
@@ -237,19 +234,19 @@ def test_ei_assignment():
     EI_edge = E * Ixx_B
     EI_flap = E * Iyy_B
     
-    print(f"\nInput S frame:")
+    print("\nInput S frame:")
     print(f"  Ixx_S = {Ixx_S:.6e} m^4")
     print(f"  Iyy_S = {Iyy_S:.6e} m^4")
     print(f"  Ixy_S = {Ixy_S:.6e} m^4")
     print(f"  twist_deg = {twist_deg:.6f}°")
     print(f"  E = {E:.6e} Pa")
     
-    print(f"\nTransformed B frame:")
+    print("\nTransformed B frame:")
     print(f"  Ixx_B = {Ixx_B:.6e} m^4")
     print(f"  Iyy_B = {Iyy_B:.6e} m^4")
     print(f"  Ixy_B = {Ixy_B:.6e} m^4")
     
-    print(f"\nEI Values (as computed in code):")
+    print("\nEI Values (as computed in code):")
     print(f"  EI_edge = E * Ixx_B = {EI_edge:.6e} N·m²")
     print(f"  EI_flap = E * Iyy_B = {EI_flap:.6e} N·m²")
     
@@ -259,8 +256,8 @@ def test_ei_assignment():
     # With zero twist: Ixx_B = Ixx_S, Iyy_B = Iyy_S
     # So: EI_edge should be smaller, EI_flap should be larger
     
-    print(f"\nPhysical Interpretation:")
-    print(f"  Rectangle: 5m wide × 1m tall (wider than tall)")
+    print("\nPhysical Interpretation:")
+    print("  Rectangle: 5m wide × 1m tall (wider than tall)")
     print(f"  Ixx_B (about x-axis, uses y^2) = {Ixx_B:.6e} m^4 (SMALLER)")
     print(f"  Iyy_B (about y-axis, uses x^2) = {Iyy_B:.6e} m^4 (LARGER)")
     print(f"  EI_edge = {EI_edge:.6e} N·m² (SMALLER - edgewise stiffness)")
@@ -272,7 +269,7 @@ def test_ei_assignment():
     flap_larger = EI_flap > EI_edge
     ixx_smaller = Ixx_B < Iyy_B
     
-    print(f"\nAssignment Validation:")
+    print("\nAssignment Validation:")
     print(f"  Ixx_B < Iyy_B: {'PASS' if ixx_smaller else 'FAIL'}")
     print(f"  EI_flap > EI_edge: {'PASS' if flap_larger else 'FAIL'}")
     print(f"  EI_edge = E * Ixx_B: {'PASS' if abs(EI_edge - E * Ixx_B) < 1e-6 else 'FAIL'}")
@@ -280,7 +277,7 @@ def test_ei_assignment():
     
     all_pass = flap_larger and ixx_smaller
     print(f"\nTest 4 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 def test_transformation_with_twist():
@@ -302,7 +299,7 @@ def test_transformation_with_twist():
     
     twist_angles = [0.0, 15.0, 30.0, 45.0, 60.0, 90.0]
     
-    print(f"\nInput S frame (constant):")
+    print("\nInput S frame (constant):")
     print(f"  Ixx_S = {Ixx_S:.6e} m^4")
     print(f"  Iyy_S = {Iyy_S:.6e} m^4")
     print(f"  Ixy_S = {Ixy_S:.6e} m^4")
@@ -327,7 +324,7 @@ def test_transformation_with_twist():
             all_pass = False
     
     print(f"\nTest 5 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 def test_coordinate_convention():
@@ -373,7 +370,7 @@ def test_coordinate_convention():
     Iyy_S = 41.66667  # m^4
     Ixy_S = 0.0
     
-    print(f"\nTest Case: 5m × 1m rectangle (wider than tall)")
+    print("\nTest Case: 5m × 1m rectangle (wider than tall)")
     print(f"  Ixx_S = {Ixx_S:.6e} m^4 (about x-axis, uses y^2, height=1m)")
     print(f"  Iyy_S = {Iyy_S:.6e} m^4 (about y-axis, uses x^2, width=5m)")
     print(f"  Ixy_S = {Ixy_S:.6e} m^4 (symmetric, zero product moment)")
@@ -381,14 +378,14 @@ def test_coordinate_convention():
     # Test zero twist
     transform = CoordinateFrameTransforms()
     Ixx_B_0, Iyy_B_0, Ixy_B_0 = transform.transform_second_moments_S_to_B(Ixx_S, Iyy_S, Ixy_S, 0.0)
-    print(f"\n  With twist_deg = 0° (no rotation):")
+    print("\n  With twist_deg = 0° (no rotation):")
     print(f"    Ixx_B = {Ixx_B_0:.6e} m^4 (should equal Ixx_S)")
     print(f"    Iyy_B = {Iyy_B_0:.6e} m^4 (should equal Iyy_S)")
     print(f"    Ixy_B = {Ixy_B_0:.6e} m^4 (should equal Ixy_S)")
     
     # Test 90 degree twist
     Ixx_B_90, Iyy_B_90, Ixy_B_90 = transform.transform_second_moments_S_to_B(Ixx_S, Iyy_S, Ixy_S, 90.0)
-    print(f"\n  With twist_deg = 90° (full rotation):")
+    print("\n  With twist_deg = 90° (full rotation):")
     print(f"    Ixx_B = {Ixx_B_90:.6e} m^4 (should equal Iyy_S)")
     print(f"    Iyy_B = {Iyy_B_90:.6e} m^4 (should equal Ixx_S)")
     print(f"    Ixy_B = {Ixy_B_90:.6e} m^4 (should be ~0)")
@@ -397,45 +394,18 @@ def test_coordinate_convention():
     zero_twist_ok = abs(Ixx_B_0 - Ixx_S) < 1e-6 and abs(Iyy_B_0 - Iyy_S) < 1e-6
     ninety_twist_ok = abs(Ixx_B_90 - Iyy_S) < 1e-6 and abs(Iyy_B_90 - Ixx_S) < 1e-6
     
-    print(f"\nConvention Validation:")
+    print("\nConvention Validation:")
     print(f"  Zero twist identity: {'PASS' if zero_twist_ok else 'FAIL'}")
     print(f"  90° twist swap: {'PASS' if ninety_twist_ok else 'FAIL'}")
     
     all_pass = zero_twist_ok and ninety_twist_ok
     print(f"\nTest 6 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 if __name__ == "__main__":
-    print("\n" + "=" * 80)
-    print("Coordinate Transformation and EI Assignment Validation Test")
-    print("=" * 80)
-    print("\nThis test validates:")
-    print("  1. The S-to-B frame transformation")
-    print("  2. The assignment of Ixx_B to EI_edge and Iyy_B to EI_flap")
-    print("  3. The coordinate system conventions in the transformation")
-    print("=" * 80)
-    
-    # Run all tests
-    test1_passed = test_transformation_identity()
-    test2_passed = test_transformation_90_degree()
-    test3_passed = test_transformation_45_degree()
-    test4_passed = test_ei_assignment()
-    test5_passed = test_transformation_with_twist()
-    test6_passed = test_coordinate_convention()
-    
-    # Summary
-    print("\n" + "=" * 80)
-    print("Test Summary")
-    print("=" * 80)
-    print(f"Test 1 (Zero Twist Identity): {'PASS' if test1_passed else 'FAIL'}")
-    print(f"Test 2 (90° Twist Swap): {'PASS' if test2_passed else 'FAIL'}")
-    print(f"Test 3 (45° Twist Formula): {'PASS' if test3_passed else 'FAIL'}")
-    print(f"Test 4 (EI Assignment): {'PASS' if test4_passed else 'FAIL'}")
-    print(f"Test 5 (Non-Zero Twist): {'PASS' if test5_passed else 'FAIL'}")
-    print(f"Test 6 (Coordinate Convention): {'PASS' if test6_passed else 'FAIL'}")
-    
-    all_passed = all([test1_passed, test2_passed, test3_passed, test4_passed, test5_passed, test6_passed])
-    print(f"\nOverall: {'ALL TESTS PASSED' if all_passed else 'SOME TESTS FAILED'}")
-    print("=" * 80)
+    import sys
 
+    import pytest
+
+    sys.exit(pytest.main([__file__, "-q"]))

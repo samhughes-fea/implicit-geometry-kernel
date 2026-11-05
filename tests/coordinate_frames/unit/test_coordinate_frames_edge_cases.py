@@ -51,7 +51,7 @@ def test_inverse_transformation_round_trip():
         Ixx_B, Iyy_B, Ixy_B, twist_deg
     )
     
-    print(f"\nTest 1a: Zero twist (identity)")
+    print("\nTest 1a: Zero twist (identity)")
     print(f"  Input S: Ixx={Ixx_S:.6f}, Iyy={Iyy_S:.6f}, Ixy={Ixy_S:.6f}")
     print(f"  After S->B->S: Ixx={Ixx_S_back:.6f}, Iyy={Iyy_S_back:.6f}, Ixy={Ixy_S_back:.6f}")
     
@@ -78,7 +78,7 @@ def test_inverse_transformation_round_trip():
         Ixx_B, Iyy_B, Ixy_B, twist_deg
     )
     
-    print(f"\nTest 1b: Asymmetric shape with 30° twist")
+    print("\nTest 1b: Asymmetric shape with 30° twist")
     print(f"  Input S: Ixx={Ixx_S:.6f}, Iyy={Iyy_S:.6f}, Ixy={Ixy_S:.6f}")
     print(f"  After S->B->S: Ixx={Ixx_S_back:.6f}, Iyy={Iyy_S_back:.6f}, Ixy={Ixy_S_back:.6f}")
     
@@ -121,7 +121,7 @@ def test_inverse_transformation_round_trip():
         Ixx_S, Iyy_S, Ixy_S, twist_deg
     )
     
-    print(f"\nTest 1c: B->S->B round-trip with 45 deg twist")
+    print("\nTest 1c: B->S->B round-trip with 45 deg twist")
     print(f"  Input B: Ixx={Ixx_B:.6f}, Iyy={Iyy_B:.6f}, Ixy={Ixy_B:.6f}")
     print(f"  After B->S->B: Ixx={Ixx_B_back:.6f}, Iyy={Iyy_B_back:.6f}, Ixy={Ixy_B_back:.6f}")
     
@@ -146,12 +146,12 @@ def test_inverse_transformation_round_trip():
     
     all_pass = test1a_pass and test1b_pass and test1c_pass
     if not all_pass:
-        print(f"\n  NOTE: Round-trip tests reveal potential numerical precision issues.")
-        print(f"  This may indicate the transformation formulas need verification.")
+        print("\n  NOTE: Round-trip tests reveal potential numerical precision issues.")
+        print("  This may indicate the transformation formulas need verification.")
     print(f"\nTest 1 Result: {'PASS' if all_pass else 'FAIL (see note above)'}")
     # Return True even if round-trip has issues, as this documents the behavior
     # The important thing is that the test runs and reports the errors
-    return True  # Document the issue but don't fail the test suite
+    return
 
 
 def test_error_handling_negative_moments():
@@ -211,7 +211,7 @@ def test_error_handling_negative_moments():
     
     all_pass = test2a_passed and test2b_passed and test2c_passed
     print(f"\nTest 2 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 def test_error_handling_zero_moments():
@@ -257,7 +257,7 @@ def test_error_handling_zero_moments():
     
     all_pass = test3a_passed and test3b_passed
     print(f"\nTest 3 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 def test_error_handling_non_finite():
@@ -284,7 +284,7 @@ def test_error_handling_non_finite():
         result = transform.transform_second_moments_S_to_B(np.nan, 2.0, 0.0, 0.0)
         # If it doesn't raise, check if result is NaN (which indicates the issue)
         if np.isnan(result[0]) or np.isnan(result[1]):
-            print(f"  Test 4a: NaN in Ixx_S - NOTE (produces NaN result, implementation should validate finiteness)")
+            print("  Test 4a: NaN in Ixx_S - NOTE (produces NaN result, implementation should validate finiteness)")
             print(f"    Result: Ixx_B={result[0]}, Iyy_B={result[1]} (NaN indicates missing validation)")
             # Mark as pass for now since we're testing current behavior
             test4a_passed = True
@@ -305,7 +305,7 @@ def test_error_handling_non_finite():
         result = transform.transform_second_moments_S_to_B(1.0, np.inf, 0.0, 0.0)
         # If it doesn't raise, check if result is inf (which indicates the issue)
         if np.isinf(result[0]) or np.isinf(result[1]):
-            print(f"  Test 4b: inf in Iyy_S - NOTE (produces inf result, implementation should validate finiteness)")
+            print("  Test 4b: inf in Iyy_S - NOTE (produces inf result, implementation should validate finiteness)")
             print(f"    Result: Ixx_B={result[0]}, Iyy_B={result[1]} (inf indicates missing validation)")
             # Mark as pass for now since we're testing current behavior
             test4b_passed = True
@@ -348,7 +348,7 @@ def test_error_handling_non_finite():
     
     all_pass = test4a_passed and test4b_passed and test4c_passed and test4d_passed
     print(f"\nTest 4 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 def test_array_operations():
@@ -376,7 +376,7 @@ def test_array_operations():
         Ixx_S, Iyy_S, Ixy_S, twist_deg
     )
     
-    print(f"\nTest 5a: All arrays same length (n=4)")
+    print("\nTest 5a: All arrays same length (n=4)")
     print(f"  Input shapes: Ixx_S={Ixx_S.shape}, Iyy_S={Iyy_S.shape}, Ixy_S={Ixy_S.shape}, twist={twist_deg.shape}")
     print(f"  Output shapes: Ixx_B={Ixx_B.shape}, Iyy_B={Iyy_B.shape}, Ixy_B={Ixy_B.shape}")
     
@@ -403,7 +403,7 @@ def test_array_operations():
         Ixx_S, Iyy_S, Ixy_S, twist_deg
     )
     
-    print(f"\nTest 5b: Broadcasting (scalar Ixy_S and twist_deg)")
+    print("\nTest 5b: Broadcasting (scalar Ixy_S and twist_deg)")
     print(f"  Input: Ixx_S={Ixx_S.shape}, Iyy_S={Iyy_S.shape}, Ixy_S={type(Ixy_S).__name__}, twist={type(twist_deg).__name__}")
     print(f"  Output shapes: Ixx_B={Ixx_B.shape}, Iyy_B={Iyy_B.shape}, Ixy_B={Ixy_B.shape}")
     
@@ -443,7 +443,7 @@ def test_array_operations():
     
     all_pass = test5a_pass and test5b_pass and test5c_pass
     print(f"\nTest 5 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 def test_extreme_angles():
@@ -473,7 +473,7 @@ def test_extreme_angles():
         Ixx_S, Iyy_S, Ixy_S, 360.0
     )
     
-    print(f"\nTest 6a: 360° vs 0° (should be equal)")
+    print("\nTest 6a: 360° vs 0° (should be equal)")
     print(f"  0°:   Ixx_B={Ixx_B_0:.6f}, Iyy_B={Iyy_B_0:.6f}")
     print(f"  360°: Ixx_B={Ixx_B_360:.6f}, Iyy_B={Iyy_B_360:.6f}")
     
@@ -486,7 +486,7 @@ def test_extreme_angles():
         Ixx_S, Iyy_S, Ixy_S, 720.0
     )
     
-    print(f"\nTest 6b: 720° vs 0° (should be equal)")
+    print("\nTest 6b: 720° vs 0° (should be equal)")
     print(f"  0°:   Ixx_B={Ixx_B_0:.6f}, Iyy_B={Iyy_B_0:.6f}")
     print(f"  720°: Ixx_B={Ixx_B_720:.6f}, Iyy_B={Iyy_B_720:.6f}")
     
@@ -508,7 +508,7 @@ def test_extreme_angles():
         Ixx_S_asym, Iyy_S_asym, Ixy_S_asym, -30.0
     )
     
-    print(f"\nTest 6c: Negative angles (-30° vs +30°) with asymmetric shape")
+    print("\nTest 6c: Negative angles (-30° vs +30°) with asymmetric shape")
     print(f"  +30°: Ixx_B={Ixx_B_pos30:.6f}, Iyy_B={Iyy_B_pos30:.6f}")
     print(f"  -30°: Ixx_B={Ixx_B_neg30:.6f}, Iyy_B={Iyy_B_neg30:.6f}")
     
@@ -524,7 +524,7 @@ def test_extreme_angles():
         Ixx_S, Iyy_S, Ixy_S, 1080.0  # 3 full rotations
     )
     
-    print(f"\nTest 6d: Very large angle (1080° = 3×360°)")
+    print("\nTest 6d: Very large angle (1080° = 3×360°)")
     print(f"  Ixx_B={Ixx_B_large:.6f}, Iyy_B={Iyy_B_large:.6f}")
     
     test6d_pass = (Ixx_B_large > 0 and Iyy_B_large > 0 and
@@ -533,7 +533,7 @@ def test_extreme_angles():
     
     all_pass = test6a_pass and test6b_pass and test6c_pass and test6d_pass
     print(f"\nTest 6 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 def test_numerical_stability():
@@ -561,7 +561,7 @@ def test_numerical_stability():
         Ixx_S, Iyy_S, Ixy_S, twist_deg
     )
     
-    print(f"\nTest 7a: Very small moments (1e-10)")
+    print("\nTest 7a: Very small moments (1e-10)")
     print(f"  Input: Ixx_S={Ixx_S:.2e}, Iyy_S={Iyy_S:.2e}")
     print(f"  Output: Ixx_B={Ixx_B:.2e}, Iyy_B={Iyy_B:.2e}")
     
@@ -579,7 +579,7 @@ def test_numerical_stability():
         Ixx_S, Iyy_S, Ixy_S, twist_deg
     )
     
-    print(f"\nTest 7b: Very large moments (1e10)")
+    print("\nTest 7b: Very large moments (1e10)")
     print(f"  Input: Ixx_S={Ixx_S:.2e}, Iyy_S={Iyy_S:.2e}")
     print(f"  Output: Ixx_B={Ixx_B:.2e}, Iyy_B={Iyy_B:.2e}")
     
@@ -597,7 +597,7 @@ def test_numerical_stability():
         Ixx_S, Iyy_S, Ixy_S, twist_deg
     )
     
-    print(f"\nTest 7c: Very different magnitudes (1e-6 vs 1e6)")
+    print("\nTest 7c: Very different magnitudes (1e-6 vs 1e6)")
     print(f"  Input: Ixx_S={Ixx_S:.2e}, Iyy_S={Iyy_S:.2e}")
     print(f"  Output: Ixx_B={Ixx_B:.2e}, Iyy_B={Iyy_B:.2e}")
     
@@ -607,7 +607,7 @@ def test_numerical_stability():
     
     all_pass = test7a_pass and test7b_pass and test7c_pass
     print(f"\nTest 7 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 def test_shape_validation():
@@ -663,46 +663,12 @@ def test_shape_validation():
     
     all_pass = test8a_passed and test8b_passed
     print(f"\nTest 8 Result: {'PASS' if all_pass else 'FAIL'}")
-    return all_pass
+    assert all_pass
 
 
 if __name__ == "__main__":
-    print("\n" + "=" * 80)
-    print("Coordinate Frame Transformation - Edge Cases and Error Handling Tests")
-    print("=" * 80)
-    print("\nThis test suite validates:")
-    print("  1. Inverse transformation (B_to_S) and round-trip validation")
-    print("  2. Error handling for invalid inputs (negative, zero, NaN, inf)")
-    print("  3. Array operations and broadcasting")
-    print("  4. Extreme angles and numerical stability")
-    print("  5. Shape validation")
-    print("=" * 80)
-    
-    # Run all tests
-    test1_passed = test_inverse_transformation_round_trip()
-    test2_passed = test_error_handling_negative_moments()
-    test3_passed = test_error_handling_zero_moments()
-    test4_passed = test_error_handling_non_finite()
-    test5_passed = test_array_operations()
-    test6_passed = test_extreme_angles()
-    test7_passed = test_numerical_stability()
-    test8_passed = test_shape_validation()
-    
-    # Summary
-    print("\n" + "=" * 80)
-    print("Test Summary")
-    print("=" * 80)
-    print(f"Test 1 (Inverse Transformation): {'PASS' if test1_passed else 'FAIL'}")
-    print(f"Test 2 (Negative Moments): {'PASS' if test2_passed else 'FAIL'}")
-    print(f"Test 3 (Zero Moments): {'PASS' if test3_passed else 'FAIL'}")
-    print(f"Test 4 (Non-Finite Values): {'PASS' if test4_passed else 'FAIL'}")
-    print(f"Test 5 (Array Operations): {'PASS' if test5_passed else 'FAIL'}")
-    print(f"Test 6 (Extreme Angles): {'PASS' if test6_passed else 'FAIL'}")
-    print(f"Test 7 (Numerical Stability): {'PASS' if test7_passed else 'FAIL'}")
-    print(f"Test 8 (Shape Validation): {'PASS' if test8_passed else 'FAIL'}")
-    
-    all_passed = all([test1_passed, test2_passed, test3_passed, test4_passed,
-                      test5_passed, test6_passed, test7_passed, test8_passed])
-    print(f"\nOverall: {'ALL TESTS PASSED' if all_passed else 'SOME TESTS FAILED'}")
-    print("=" * 80)
+    import sys
 
+    import pytest
+
+    sys.exit(pytest.main([__file__, "-q"]))

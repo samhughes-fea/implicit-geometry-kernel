@@ -76,14 +76,14 @@ Ixx_B_neg, Iyy_B_neg, Ixy_B_neg = transform_second_moments_S_to_B_negative_theta
     Ixx_S, Iyy_S, Ixy_S, theta_deg
 )
 
-print(f"\nUsing +theta (current):")
+print("\nUsing +theta (current):")
 print(f"  Ixx_B = {Ixx_B_pos:.6f}")
 print(f"  Iyy_B = {Iyy_B_pos:.6f}")
 print(f"  Ixy_B = {Ixy_B_pos:.6f}")
 print(f"  Sum = {Ixx_B_pos + Iyy_B_pos:.6f}")
 print(f"  Both non-negative? {Ixx_B_pos >= 0 and Iyy_B_pos >= 0}")
 
-print(f"\nUsing -theta (alternative):")
+print("\nUsing -theta (alternative):")
 print(f"  Ixx_B = {Ixx_B_neg:.6f}")
 print(f"  Iyy_B = {Iyy_B_neg:.6f}")
 print(f"  Ixy_B = {Ixy_B_neg:.6f}")
@@ -93,7 +93,7 @@ print(f"  Both non-negative? {Ixx_B_neg >= 0 and Iyy_B_neg >= 0}")
 # Expected: For 45° rotation, Ixx_B should equal Iyy_B, and both should be positive
 # The correct transformation should give Ixx_B ≈ Iyy_B ≈ 0.4167
 
-print(f"\nExpected (for 45 deg rotation back): Ixx_B ~= Iyy_B ~= 0.4167")
+print("\nExpected (for 45 deg rotation back): Ixx_B ~= Iyy_B ~= 0.4167")
 print(f"  +theta gives: Ixx_B={Ixx_B_pos:.6f}, Iyy_B={Iyy_B_pos:.6f} (match? {abs(Ixx_B_pos - 0.4167) < 0.01 and abs(Iyy_B_pos - 0.4167) < 0.01})")
 print(f"  -theta gives: Ixx_B={Ixx_B_neg:.6f}, Iyy_B={Iyy_B_neg:.6f} (match? {abs(Ixx_B_neg - 0.4167) < 0.01 and abs(Iyy_B_neg - 0.4167) < 0.01})")
 

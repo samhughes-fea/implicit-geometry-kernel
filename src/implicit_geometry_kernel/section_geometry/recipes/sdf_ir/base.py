@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import numpy as np
 
 from implicit_geometry_kernel.section_geometry.sdf.ir import Expr, eval_expr_batch
 
@@ -29,9 +28,6 @@ class SectionComponent:
         self._expr = expr
 
     def __call__(self, x, y, memo=None):
-        return eval_expr_batch(self.expr, x, y, memo)
-
-    def eval_batch(self, x, y, memo: dict | None = None):
         return eval_expr_batch(self.expr, x, y, memo)
 
 

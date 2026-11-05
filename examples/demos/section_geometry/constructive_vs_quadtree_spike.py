@@ -16,7 +16,6 @@ import importlib.util
 import time
 from pathlib import Path
 
-import numpy as np
 
 _erp = Path(__file__).resolve().parent / "_ensure_repo_path.py"
 _spec = importlib.util.spec_from_file_location("_ensure_repo_path", _erp)

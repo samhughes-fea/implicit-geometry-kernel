@@ -48,18 +48,6 @@ def strip_clip_expr(strip_clip, key: str):
     return CallableField(key=key, fn=strip_clip)
 
 
-def _chordwise_clip(x_start, x_end):
-    """Return an SDF callable that is negative between x_start and x_end."""
-
-    def _clip(x, y):
-        x = _ensure_f64(x)
-        left = x - x_start
-        right = x_end - x
-        return np.maximum(-left, -right)
-
-    return _clip
-
-
 def _parallel_web_strip_clip(nx, ny, c_a, c_b):
     """Strip between two parallel lines n·p=c_a and n·p=c_b."""
     lo = float(min(c_a, c_b))

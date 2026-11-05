@@ -2,7 +2,6 @@
 Verify that the fix (using -theta) works correctly.
 """
 
-import numpy as np
 import sys
 from pathlib import Path
 
@@ -32,7 +31,7 @@ print(f"Expected: Transformation should use -{theta_deg} deg internally")
 transform = CoordinateFrameTransforms()
 Ixx_B, Iyy_B, Ixy_B = transform.transform_second_moments_S_to_B(Ixx_S, Iyy_S, Ixy_S, theta_deg)
 
-print(f"\nResult (B frame):")
+print("\nResult (B frame):")
 print(f"  Ixx_B = {Ixx_B:.6f} {'[NEGATIVE!]' if Ixx_B < 0 else ''}")
 print(f"  Iyy_B = {Iyy_B:.6f} {'[NEGATIVE!]' if Iyy_B < 0 else ''}")
 print(f"  Ixy_B = {Ixy_B:.6f}")
@@ -43,7 +42,7 @@ print(f"  Both non-negative? {Ixx_B >= 0 and Iyy_B >= 0}")
 expected_Ixx_B = 0.108821
 expected_Iyy_B = 0.057179
 
-print(f"\nExpected (from matrix approach):")
+print("\nExpected (from matrix approach):")
 print(f"  Ixx_B = {expected_Ixx_B:.6f}")
 print(f"  Iyy_B = {expected_Iyy_B:.6f}")
 
@@ -78,7 +77,7 @@ Ixx_B_45, Iyy_B_45, Ixy_B_45 = transform.transform_second_moments_S_to_B(Ixx_S_4
 
 print(f"Input (S frame): Ixx_S={Ixx_S_45:.6f}, Iyy_S={Iyy_S_45:.6f}, Ixy_S={Ixy_S_45:.6f}")
 print(f"Output (B frame): Ixx_B={Ixx_B_45:.6f}, Iyy_B={Iyy_B_45:.6f}, Ixy_B={Ixy_B_45:.6f}")
-print(f"Expected: Ixx_B ≈ Iyy_B ≈ 0.4167 (for 45° back-transformation)")
+print("Expected: Ixx_B ≈ Iyy_B ≈ 0.4167 (for 45° back-transformation)")
 print(f"Match? {abs(Ixx_B_45 - 0.4167) < 0.01 and abs(Iyy_B_45 - 0.4167) < 0.01}")
 
 print("\n" + "=" * 80)

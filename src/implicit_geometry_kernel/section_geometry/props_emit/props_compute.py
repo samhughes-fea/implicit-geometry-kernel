@@ -23,7 +23,7 @@ from implicit_geometry_kernel.section_geometry.props_emit.props_backend import (
 )
 from implicit_geometry_kernel.area_2d.spec import QuadtreeSpec
 from implicit_geometry_kernel.section_geometry.sdf.cache import SectionEvalCache
-from implicit_geometry_kernel.section_geometry.sdf.profiling import get_stats, timed_block
+from implicit_geometry_kernel.section_geometry.profiling import get_stats, timed_block
 
 
 PropsBackendArg = Literal["grid", "quadtree", "hybrid"] | PropsBackend

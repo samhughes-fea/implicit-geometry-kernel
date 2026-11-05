@@ -45,9 +45,8 @@ def test_banned_software_layer_homes_absent() -> None:
         assert not (ROOT / name).exists(), f"banned home still present: {name}/"
 
 
-def test_api_and_types_homes_exist() -> None:
+def test_api_and_recipe_homes_exist() -> None:
     assert (ROOT / "api").is_dir()
-    assert (ROOT / "types").is_dir()
     assert (ROOT / "recipes" / "sdf_ir").is_dir()
     assert (Path(__file__).resolve().parents[2] / "docs" / "section_geometry" / "reference" / "G_ROW_OWNERSHIP_MATRIX.md").is_file()
 

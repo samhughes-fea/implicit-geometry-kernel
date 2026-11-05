@@ -66,7 +66,6 @@ from implicit_geometry_kernel.section_geometry.visualisation.figure_io import (
 from implicit_geometry_kernel.section_geometry.visualisation.palette import (
     INK,
     MUTED,
-    NAVY,
     RED,
     strip_axes_chrome,
 )

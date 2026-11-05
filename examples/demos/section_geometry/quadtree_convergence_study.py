@@ -42,8 +42,6 @@ _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
 from implicit_geometry_kernel.section_geometry.visualisation.figure_io import (
-    DEFAULT_DPI,
-    demo_output_dir,
     save_figure,
 )
 
@@ -54,7 +52,7 @@ from implicit_geometry_kernel.section_geometry import (
     SDFGrid,
 )
 from implicit_geometry_kernel.section_geometry.props_emit.props_backend import quadtree_spec_for_airfoil
-from implicit_geometry_kernel.section_geometry.sdf.profiling import get_stats, reset_stats
+from implicit_geometry_kernel.section_geometry.profiling import get_stats, reset_stats
 
 PROP_KEYS = ("area", "cx", "cy", "Ixx", "Iyy")
 TRACK_LABELS = ("outer_skin", "shear_web_0")

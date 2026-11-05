@@ -32,7 +32,6 @@ _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
 from implicit_geometry_kernel.section_geometry.visualisation.figure_io import (
-    DEFAULT_DPI,
     apply_presentation_style,
     demo_output_dir,
     save_figure,
@@ -63,7 +62,7 @@ from implicit_geometry_kernel.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
 from implicit_geometry_kernel.section_geometry.sdf.cache import SectionEvalCache
-from implicit_geometry_kernel.section_geometry.sdf.profiling import get_stats, reset_stats
+from implicit_geometry_kernel.section_geometry.profiling import get_stats, reset_stats
 
 
 def _station_params(n: int):

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Literal
 
 from implicit_geometry_kernel.section_geometry.layout.cap_placement import (
     CapPlacementRule,
@@ -101,42 +101,6 @@ class SectionLayout:
                 "SystemLayoutSpec remains the registry source of truth."
             )
         return resolve_system_type(self.catalogue_key)
-
-    def with_web_stations_m(self, stations_m: tuple[float, ...]) -> SectionLayout:
-        return SectionLayout(
-            web_chord_fracs=self.web_chord_fracs,
-            orientation=self.orientation,
-            cap_placement=self.cap_placement,
-            catalogue_key=self.catalogue_key,
-            web_stations_m=tuple(float(x) for x in stations_m),
-            web_axes_m=self.web_axes_m,
-            structural_family=self.structural_family,
-            flags=self.flags,
-        )
-
-    def to_jsonable(self) -> dict[str, Any]:
-        return {
-            "web_chord_fracs": list(self.web_chord_fracs),
-            "orientation": self.orientation,
-            "cap_placement": {
-                "kind": self.cap_placement.kind,
-                "anchor": self.cap_placement.anchor,
-                "half_width": self.cap_placement.half_width,
-            },
-            "catalogue_key": self.catalogue_key,
-            "web_stations_m": (
-                None if self.web_stations_m is None else list(self.web_stations_m)
-            ),
-            "web_axes_m": (
-                None
-                if self.web_axes_m is None
-                else [
-                    [[float(a), float(b)] for a, b in axis] for axis in self.web_axes_m
-                ]
-            ),
-            "structural_family": self.structural_family,
-            "flags": list(self.flags),
-        }
 
 
 __all__ = [

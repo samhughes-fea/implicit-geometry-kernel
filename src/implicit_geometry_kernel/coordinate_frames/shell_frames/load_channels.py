@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 
 class ShellSolverChannels(NamedTuple):
-    """Product shell FE solver DOF channels (adapter names — not element \(M_{11}\)).
+    r"""Product shell FE solver DOF channels (adapter names — not element \(M_{11}\)).
 
     Attributes
     ----------

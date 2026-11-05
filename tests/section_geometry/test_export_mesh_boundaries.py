@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import numpy as np
 
 from implicit_geometry_kernel.section_geometry.api.factory import (
     build_section_view,

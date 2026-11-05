@@ -35,7 +35,7 @@ def test_coordinate_mappings():
     print("=" * 80)
     print("COORDINATE FRAME TRANSFORMATION TESTS")
     print("=" * 80)
-    print(f"\nBlade Parameters:")
+    print("\nBlade Parameters:")
     print(f"  R (rotor radius) = {R:.3f} m")
     print(f"  L (blade length) = {L:.3f} m")
     print(f"  r_root/R (hub normalized) = {r_root_R:.6f}")
@@ -45,7 +45,7 @@ def test_coordinate_mappings():
     rR_grid = np.array([r_root_R, 0.25, 0.5, 0.75, 1.0])
     transform = CoordinateFrameTransforms(R=R, rR_grids=[rR_grid])
     
-    print(f"\nTransform Properties:")
+    print("\nTransform Properties:")
     print(f"  transform.R = {transform.R:.3f} m")
     print(f"  transform.L = {transform.L:.3f} m")
     print(f"  transform.R_hub = {transform.R_hub:.3f} m")
@@ -139,7 +139,7 @@ def test_coordinate_mappings():
     print("\nKEY FINDINGS:")
     print(f"  - At z_R = {transform.R_hub:.3f} m (hub): z_B should be 0.000 m")
     print(f"  - At z_R = {R:.3f} m (tip): z_B should be {L:.3f} m")
-    print(f"  - Use: zL_from_rR(r/R) then multiply by L to get z_B")
+    print("  - Use: zL_from_rR(r/R) then multiply by L to get z_B")
     print("=" * 80)
 
 

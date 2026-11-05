@@ -49,10 +49,6 @@ class AnchoredWallGeometry:
     placement_policy_id: str | None = None
     placement_digest: str | None = None
 
-    @property
-    def policy_key(self) -> tuple[str, str]:
-        return (self.reference_face, self.build_direction)
-
 
 def _normalise_construction(
     reference_face: str, build_direction: str

@@ -5,7 +5,6 @@ Tests transformation with non-zero Ixy (asymmetric airfoils) at various twist an
 to determine if +θ or -θ is correct for S→B transformation.
 """
 
-import numpy as np
 import sys
 from pathlib import Path
 
@@ -76,14 +75,14 @@ def test_asymmetric_shape():
             Ixx_S, Iyy_S, Ixy_S, theta_deg
         )
         
-        print(f"\nUsing +theta (current):")
+        print("\nUsing +theta (current):")
         print(f"  Ixx_B = {Ixx_B_pos:.6f} {'[NEGATIVE!]' if Ixx_B_pos < 0 else ''}")
         print(f"  Iyy_B = {Iyy_B_pos:.6f} {'[NEGATIVE!]' if Iyy_B_pos < 0 else ''}")
         print(f"  Ixy_B = {Ixy_B_pos:.6f}")
         print(f"  Sum = {Ixx_B_pos + Iyy_B_pos:.6f}")
         print(f"  Both non-negative? {Ixx_B_pos >= 0 and Iyy_B_pos >= 0}")
         
-        print(f"\nUsing -theta (alternative):")
+        print("\nUsing -theta (alternative):")
         print(f"  Ixx_B = {Ixx_B_neg:.6f} {'[NEGATIVE!]' if Ixx_B_neg < 0 else ''}")
         print(f"  Iyy_B = {Iyy_B_neg:.6f} {'[NEGATIVE!]' if Iyy_B_neg < 0 else ''}")
         print(f"  Ixy_B = {Ixy_B_neg:.6f}")
@@ -95,14 +94,14 @@ def test_asymmetric_shape():
         neg_valid = Ixx_B_neg >= 0 and Iyy_B_neg >= 0
         
         if pos_valid and not neg_valid:
-            print(f"\n>>> +theta is CORRECT (both non-negative)")
+            print("\n>>> +theta is CORRECT (both non-negative)")
         elif neg_valid and not pos_valid:
-            print(f"\n>>> -theta is CORRECT (both non-negative)")
+            print("\n>>> -theta is CORRECT (both non-negative)")
         elif pos_valid and neg_valid:
-            print(f"\n>>> Both give valid results (need further analysis)")
+            print("\n>>> Both give valid results (need further analysis)")
         else:
-            print(f"\n>>> NEITHER gives valid results (both have negatives)")
-            print(f"    This suggests a different issue (formula error, not sign)")
+            print("\n>>> NEITHER gives valid results (both have negatives)")
+            print("    This suggests a different issue (formula error, not sign)")
 
 
 def test_with_known_analytical_case():
@@ -146,12 +145,12 @@ def test_with_known_analytical_case():
         Ixx_S, Iyy_S, Ixy_S, theta_deg
     )
     
-    print(f"\nUsing +theta:")
+    print("\nUsing +theta:")
     print(f"  Ixx_B = {Ixx_B_pos:.6f} (original: {Ixx_B_original:.6f}, diff: {abs(Ixx_B_pos - Ixx_B_original):.6f})")
     print(f"  Iyy_B = {Iyy_B_pos:.6f} (original: {Iyy_B_original:.6f}, diff: {abs(Iyy_B_pos - Iyy_B_original):.6f})")
     print(f"  Match? {abs(Ixx_B_pos - Ixx_B_original) < 1e-3 and abs(Iyy_B_pos - Iyy_B_original) < 1e-3}")
     
-    print(f"\nUsing -theta:")
+    print("\nUsing -theta:")
     print(f"  Ixx_B = {Ixx_B_neg:.6f} (original: {Ixx_B_original:.6f}, diff: {abs(Ixx_B_neg - Ixx_B_original):.6f})")
     print(f"  Iyy_B = {Iyy_B_neg:.6f} (original: {Iyy_B_original:.6f}, diff: {abs(Iyy_B_neg - Iyy_B_original):.6f})")
     print(f"  Match? {abs(Ixx_B_neg - Ixx_B_original) < 1e-3 and abs(Iyy_B_neg - Iyy_B_original) < 1e-3}")
@@ -174,7 +173,7 @@ def test_invariance():
     test_angles = [0.0, 30.0, 45.0, 90.0]
     
     print(f"Sum in S frame: {sum_S:.6f}")
-    print(f"This should be invariant (same in B frame)")
+    print("This should be invariant (same in B frame)")
     
     transform = CoordinateFrameTransforms()
     for theta_deg in test_angles:

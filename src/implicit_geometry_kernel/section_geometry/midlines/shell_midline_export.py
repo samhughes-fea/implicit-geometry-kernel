@@ -21,7 +21,6 @@ from dataclasses import replace
 from typing import Any
 
 import numpy as np
-from numpy.typing import NDArray
 
 from implicit_geometry_kernel.section_contract.shell_midline_strip import ShellMidlineStrip
 from implicit_geometry_kernel.section_geometry.midlines.section_midline_host import (
@@ -150,9 +149,6 @@ def build_shell_midline_strips(
             or key.startswith("skin_pressure_surface")
             or key in {"skin_suction_surface", "skin_pressure_surface"}
         )
-
-    def _is_cap_key(key: str) -> bool:
-        return key.startswith("spar_cap")
 
     # Prefer recipe map; fall back to component iteration only for thickness
     # when a host lacks wall_recipes (should not happen for MultiCellSection).
@@ -363,8 +359,6 @@ def _insert_web_cap_junction_nodes(
 __all__ = [
     "build_shell_midline_strips",
     "SectionMidlineHost",
-    "ShellComponentLike",
     "SkinShellComponentLike",
     "WebShellComponentLike",
-    "CapShellComponentLike",
 ]

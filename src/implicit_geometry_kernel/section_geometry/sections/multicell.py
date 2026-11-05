@@ -15,7 +15,7 @@ from typing import Any
 import numpy as np
 
 from implicit_geometry_kernel.section_geometry.sdf.ir import Offset, Rotate, union_expr
-from implicit_geometry_kernel.section_geometry.sdf.profiling import timed_stage
+from implicit_geometry_kernel.section_geometry.profiling import timed_stage
 from implicit_geometry_kernel.section_geometry.sdf.transforms import rotate_field
 
 from ..layout.thickness_limits import (
@@ -611,10 +611,6 @@ class MultiCellSection:
 
     def eval(self, label, x, y, memo=None):
         return self._components[label](x, y, memo=memo)
-
-    def eval_all(self, x, y):
-        memo: dict = {}
-        return {label: comp(x, y, memo=memo) for label, comp in self._components.items()}
 
     def eval_union(self, x, y):
         from implicit_geometry_kernel.section_geometry.sdf.ir import eval_expr_batch

@@ -40,7 +40,6 @@ from implicit_geometry_kernel.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
     add_output_and_presentation_args,
     apply_presentation_style,
-    demo_output_dir,
     save_figure,
 )
 

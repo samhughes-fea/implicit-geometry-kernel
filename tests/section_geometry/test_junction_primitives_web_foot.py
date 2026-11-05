@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from implicit_geometry_kernel.section_geometry.api.factory import (
     build_section_view,

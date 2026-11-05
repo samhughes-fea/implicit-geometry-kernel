@@ -70,9 +70,6 @@ class SkinWall:
             airfoil, camber_xy=camber_xy, airfoil_expr_node=airfoil_expr_node
         ).expr
 
-    def to_sdf(self, airfoil, **kwargs):
-        return self.to_sdf_expr(airfoil, **kwargs)
-
 
 
 @dataclass(frozen=True)
@@ -125,9 +122,6 @@ class WebWall:
         return self.to_sdf_component(
             airfoil, airfoil_expr_node=airfoil_expr_node
         ).expr
-
-    def to_sdf(self, airfoil, **kwargs):
-        return self.to_sdf_expr(airfoil, **kwargs)
 
 
 
@@ -199,9 +193,6 @@ class CapWall:
             airfoil, camber_xy=camber_xy, airfoil_expr_node=airfoil_expr_node
         ).expr
 
-    def to_sdf(self, airfoil, **kwargs):
-        return self.to_sdf_expr(airfoil, **kwargs)
-
 
 
 @dataclass(frozen=True)
@@ -263,9 +254,6 @@ class InsertWall:
         return self.to_sdf_component(
             airfoil, airfoil_expr_node=airfoil_expr_node
         ).expr
-
-    def to_sdf(self, airfoil, **kwargs):
-        return self.to_sdf_expr(airfoil, **kwargs)
 
 
 
@@ -358,9 +346,6 @@ class CoreWall:
             exclusion_sdfs=exclusion_sdfs,
             strip_clip=strip_clip,
         ).expr
-
-    def to_sdf(self, airfoil, **kwargs):
-        return self.to_sdf_expr(airfoil, **kwargs)
 
 
 

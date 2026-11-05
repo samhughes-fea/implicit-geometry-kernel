@@ -78,14 +78,6 @@ def _layout_n_webs(layout: LayoutInput) -> int:
     return int(layout.n_webs or 0)
 
 
-def _as_system_layout_if_possible(layout: LayoutInput) -> SystemLayoutSpec | None:
-    if isinstance(layout, SystemLayoutSpec):
-        return layout
-    if layout.catalogue_key:
-        return layout.to_system_layout_spec()
-    return None
-
-
 def _step_down_section_layout(layout: SectionLayout, n_webs: int) -> SectionLayout:
     """Reduce a keyless parametric layout to ``n_webs`` survivors."""
     from implicit_geometry_kernel.section_geometry.layout.cap_placement import (
@@ -704,7 +696,7 @@ def build_section_geometry(
     from implicit_geometry_kernel.section_geometry.props_emit.props_backend import (
         props_backend_from_env,
     )
-    from implicit_geometry_kernel.section_geometry.sdf.profiling import (
+    from implicit_geometry_kernel.section_geometry.profiling import (
         profiling_enabled,
         timed_stage,
     )

@@ -129,9 +129,6 @@ def _cap_from_recipes(
     return None
 
 
-    return None
-
-
 def _shared_deeper_by_surface(
     section: Any,
     comps: dict[str, Any],

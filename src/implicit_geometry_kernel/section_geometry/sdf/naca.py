@@ -12,7 +12,6 @@ from __future__ import annotations
 import math
 import re
 from functools import lru_cache
-from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray

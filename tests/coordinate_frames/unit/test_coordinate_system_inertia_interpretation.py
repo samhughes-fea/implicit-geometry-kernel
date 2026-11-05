@@ -17,7 +17,6 @@ Key validation:
 """
 
 import sys
-import numpy as np
 from pathlib import Path
 
 # Add workspace root to path
@@ -86,8 +85,8 @@ def test_coordinate_system_interpretation():
     height = 1.0  # m (vertical/chord normal → X_S)
     
     print(f"\nRectangle: width={width} m (horizontal/chord), height={height} m (vertical/chord normal)")
-    print(f"In standard notation: x=horizontal, y=vertical")
-    print(f"In S frame: X_S=vertical (chord normal), Y_S=horizontal (chord parallel)")
+    print("In standard notation: x=horizontal, y=vertical")
+    print("In S frame: X_S=vertical (chord normal), Y_S=horizontal (chord parallel)")
     
     # Create polygon
     rect_poly = create_rectangle_polygon(width, height, x0=0.0, y0=0.0)
@@ -95,7 +94,7 @@ def test_coordinate_system_interpretation():
     # Compute properties in S frame
     A_S, (Cx_S, Cy_S), Ixx_S, Iyy_S, Ixy_S = section_properties_S(rect_poly)
     
-    print(f"\nS Frame Properties (computed from polygon):")
+    print("\nS Frame Properties (computed from polygon):")
     print(f"  A_S = {A_S:.6e} m²")
     print(f"  Cx_S = {Cx_S:.6e} m (centroid X_S, vertical)")
     print(f"  Cy_S = {Cy_S:.6e} m (centroid Y_S, horizontal)")
@@ -104,7 +103,7 @@ def test_coordinate_system_interpretation():
     print(f"  Ixy_S = {Ixy_S:.6e} m⁴")
     
     # Verify interpretation
-    print(f"\n" + "-" * 80)
+    print("\n" + "-" * 80)
     print("Verification 1: S Frame Interpretation")
     print("-" * 80)
     print(f"Ixx_S (about Y_S, horizontal/edgewise) = {Ixx_S:.6e} m⁴")
@@ -115,7 +114,7 @@ def test_coordinate_system_interpretation():
         print("✓ PASS: Iyy_S > Ixx_S (flapwise stiffer than edgewise for wide rectangle)")
     else:
         print("✗ FAIL: Iyy_S <= Ixx_S (INCORRECT INTERPRETATION!)")
-        return False
+        raise AssertionError("test_coordinate_system_interpretation: check failed (see output above)")
     
     # Transform to B frame (test with zero twist first)
     transform = CoordinateFrameTransforms()
@@ -125,7 +124,7 @@ def test_coordinate_system_interpretation():
         Ixx_S, Iyy_S, Ixy_S, twist_deg
     )
     
-    print(f"\n" + "-" * 80)
+    print("\n" + "-" * 80)
     print("Verification 2: B Frame Transformation (zero twist)")
     print("-" * 80)
     print(f"Ixx_B (about Y_B, horizontal/edgewise) = {Ixx_B:.6e} m⁴")
@@ -136,7 +135,7 @@ def test_coordinate_system_interpretation():
         print("✓ PASS: Iyy_B > Ixx_B (flapwise stiffer than edgewise)")
     else:
         print("✗ FAIL: Iyy_B <= Ixx_B (TRANSFORMATION ERROR!)")
-        return False
+        raise AssertionError("test_coordinate_system_interpretation: check failed (see output above)")
     
     # Test with non-zero twist
     twist_deg = 15.0
@@ -144,7 +143,7 @@ def test_coordinate_system_interpretation():
         Ixx_S, Iyy_S, Ixy_S, twist_deg
     )
     
-    print(f"\n" + "-" * 80)
+    print("\n" + "-" * 80)
     print("Verification 3: B Frame Transformation (twist = 15°)")
     print("-" * 80)
     print(f"Ixx_B (about Y_B, horizontal/edgewise) = {Ixx_B_twist:.6e} m⁴")
@@ -155,14 +154,14 @@ def test_coordinate_system_interpretation():
         print("✓ PASS: Iyy_B > Ixx_B (flapwise stiffer than edgewise with twist)")
     else:
         print("✗ FAIL: Iyy_B <= Ixx_B (TRANSFORMATION ERROR WITH TWIST!)")
-        return False
+        raise AssertionError("test_coordinate_system_interpretation: check failed (see output above)")
     
     # Verify EI assignments
     E = 1.0e9  # Pa (example modulus)
     EI_flap = E * Iyy_B
     EI_edge = E * Ixx_B
     
-    print(f"\n" + "-" * 80)
+    print("\n" + "-" * 80)
     print("Verification 4: EI Stiffness Assignments")
     print("-" * 80)
     print(f"EI_flap = E × Iyy_B = {EI_flap:.6e} N·m² (bending about X_B, vertical/flapwise)")
@@ -173,9 +172,9 @@ def test_coordinate_system_interpretation():
         print("✓ PASS: EI_flap > EI_edge (correct for wide rectangle)")
     else:
         print("✗ FAIL: EI_flap <= EI_edge (INCORRECT ASSIGNMENT!)")
-        return False
+        raise AssertionError("test_coordinate_system_interpretation: check failed (see output above)")
     
-    print(f"\n" + "=" * 80)
+    print("\n" + "=" * 80)
     print("Test Result: PASS")
     print("=" * 80)
     print("\nSummary:")
@@ -185,10 +184,12 @@ def test_coordinate_system_interpretation():
     print("  - EI_flap = E × Iyy_B > EI_edge = E × Ixx_B ✓")
     print("=" * 80)
     
-    return True
+    return
 
 
 if __name__ == "__main__":
-    success = test_coordinate_system_interpretation()
-    sys.exit(0 if success else 1)
+    import sys
 
+    import pytest
+
+    sys.exit(pytest.main([__file__, "-q"]))

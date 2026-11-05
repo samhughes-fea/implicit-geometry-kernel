@@ -79,7 +79,6 @@ def _inside_polygon_from_cell(cell: QuadCell, phi_corners: np.ndarray) -> np.nda
         return corners
     if not inside_mask.any():
         return None
-    edge_pairs = [(0, 1), (1, 2), (2, 3), (3, 0)]
     pts: list[np.ndarray] = []
     for i in range(4):
         if inside_mask[i]:

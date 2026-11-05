@@ -19,7 +19,7 @@ from implicit_geometry_kernel.section_geometry.midlines.section_midline_host imp
     resolve_section_host,
 )
 from implicit_geometry_kernel.section_geometry.sdf.ir import expr_bbox
-from implicit_geometry_kernel.section_geometry.sdf.profiling import get_stats
+from implicit_geometry_kernel.section_geometry.profiling import get_stats
 from .section_evaluator import SectionFieldEvaluator
 
 def _label_key(label: Any) -> str:

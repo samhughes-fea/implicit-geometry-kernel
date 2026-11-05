@@ -44,7 +44,6 @@ _ensure_mod.ensure_repo_path()
 
 from implicit_geometry_kernel.section_geometry.visualisation.figure_io import (
     DEFAULT_DPI,
-    demo_output_dir,
     save_figure,
 )
 from implicit_geometry_kernel.section_geometry.visualisation.palette import (
@@ -71,7 +70,7 @@ from implicit_geometry_kernel.section_geometry.props_emit.props_backend import (
 from implicit_geometry_kernel.section_geometry.props_emit.props_compute import (
     compute_section_properties,
 )
-from implicit_geometry_kernel.section_geometry.sdf.profiling import (
+from implicit_geometry_kernel.section_geometry.profiling import (
     get_stats,
     reset_stats,
 )

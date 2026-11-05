@@ -9,7 +9,7 @@ Pass these strings to :func:`resolve_system_type`.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, Mapping, Sequence
+from typing import Literal
 
 from implicit_geometry_kernel.section_contract.errors import (
     InfeasibleSectionGeometry,
@@ -42,21 +42,6 @@ class SystemLayoutSpec:
     geometry_mode: Literal["multicell", "zero_web_catalogue"]
     structural_family: StructuralFamily = "D"
     description: str = ""
-
-    def to_jsonable(self) -> dict[str, Any]:
-        return {
-            "key": self.key,
-            "n_cells": self.n_cells,
-            "n_webs": self.n_webs,
-            "has_spar_caps": self.has_spar_caps,
-            "web_orientation": self.web_orientation,
-            "web_positioning": self.web_positioning,
-            "web_chord_fracs": list(self.web_chord_fracs),
-            "spar_cap_positioning": self.spar_cap_positioning,
-            "geometry_mode": self.geometry_mode,
-            "structural_family": self.structural_family,
-            "description": self.description,
-        }
 
 
 def _uniform_fracs(n_webs: int) -> tuple[float, ...]:

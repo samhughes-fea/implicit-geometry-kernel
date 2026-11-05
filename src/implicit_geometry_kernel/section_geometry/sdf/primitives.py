@@ -140,57 +140,6 @@ def sdf_oriented_box(x, y, cx=0.0, cy=0.0, half_w=1.0, half_h=0.5, angle=0.0):
     return outside + inside
 
 
-def sdf_polygon_numpy(x, y, vertices):
-    """Exact SDF for a closed polygon (NumPy **test reference** only).
-
-    Production code must use :func:`sdf_polygon` (Numba). Keep this for
-    parity tests that compare against the vectorized reference.
-    """
-    x, y = np.broadcast_arrays(_ensure_f64(x), _ensure_f64(y))
-    verts = _ensure_f64(vertices)
-    n = int(len(verts))
-    if n < 3:
-        raise ValueError("Polygon must contain at least 3 vertices.")
-
-    xf = x.ravel()
-    yf = y.ravel()
-    m = int(xf.size)
-
-    ax = verts[:, 0]
-    ay = verts[:, 1]
-    bx = verts[(np.arange(n) + 1) % n, 0]
-    by = verts[(np.arange(n) + 1) % n, 1]
-    abx = bx - ax
-    aby = by - ay
-    ab_denom = (abx**2 + aby**2 + 1e-30)[:, None]
-
-    d_out = np.empty(m, dtype=np.float64)
-    winding_out = np.empty(m, dtype=np.int32)
-
-    chunk_size = 1 << 16
-    for start in range(0, m, chunk_size):
-        stop = min(start + chunk_size, m)
-        px = xf[start:stop][None, :]
-        py = yf[start:stop][None, :]
-
-        apx = px - ax[:, None]
-        apy = py - ay[:, None]
-        t = _clamp((apx * abx[:, None] + apy * aby[:, None]) / ab_denom, 0.0, 1.0)
-        dx = apx - t * abx[:, None]
-        dy = apy - t * aby[:, None]
-        d_out[start:stop] = np.min(dx**2 + dy**2, axis=0)
-
-        c1 = py >= ay[:, None]
-        c2 = py < by[:, None]
-        c3 = abx[:, None] * (py - ay[:, None]) - aby[:, None] * (px - ax[:, None])
-        wn_up = np.sum(c1 & c2 & (c3 > 0.0), axis=0, dtype=np.int32)
-        wn_dn = np.sum((~c1) & (~c2) & (c3 < 0.0), axis=0, dtype=np.int32)
-        winding_out[start:stop] = wn_up - wn_dn
-
-    sign = np.where(winding_out == 0, 1.0, -1.0)
-    return (sign * np.sqrt(d_out)).reshape(x.shape)
-
-
 def sdf_polygon(x, y, vertices):
     """Exact SDF for a closed polygon (winding-number sign).
 
@@ -217,7 +166,7 @@ def sdf_polygon(x, y, vertices):
     out = sdf_polygon_numba(x_b.ravel(), y_b.ravel(), verts).reshape(x_b.shape)
     elapsed = time.perf_counter() - t0
     try:
-        from implicit_geometry_kernel.section_geometry.sdf.profiling import (
+        from implicit_geometry_kernel.section_geometry.profiling import (
             profiling_enabled,
             record_sdf_polygon,
         )

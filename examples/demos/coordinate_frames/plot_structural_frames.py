@@ -125,7 +125,7 @@ def main() -> int:
     _panel(
         axes[1],
         poly_S,
-        f"S frame (zero-twist)\n$X_S$ chord-normal, $Y_S$ chord-parallel, $Z_S$ span",
+        "S frame (zero-twist)\n$X_S$ chord-normal, $Y_S$ chord-parallel, $Z_S$ span",
         r"$Y_S$ (chord-parallel) → +Y toward TE; LE on RHS",
         r"$X_S$ (chord-normal)",
         (r"$+X_S$", r"$+Y_S$"),

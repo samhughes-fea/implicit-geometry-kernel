@@ -32,7 +32,7 @@ airfoils, and Matplotlib (`[plots]`) for the visualisation subpackage.
 ## Quick start
 
 ```python
-from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
+from implicit_geometry_kernel import SYSTEM_TYPE_KEYS, Airfoil, BladeGeometry, Station
 
 stations = [Station(0.0, 2.0, Airfoil.naca4("0024"), twist=10.0, pitch_axis=0.3),
             Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3)]
@@ -42,6 +42,7 @@ cut = geo.section_at(4.0)          # SectionCut at z = 4 m
 cut.walls                          # SectionWall: label, kind, midline points, thickness
 cut.cells                          # CellLoop: closed cell polygons and their areas
 cut.mid_surface()                  # one wall graph, caps merged into their skins
+SYSTEM_TYPE_KEYS                   # the 40 layout keys: "0A", "0B", "1A-CN", ... "5D-F"
 ```
 
 Blade frame: z along the span, x along the chord from the pitch axis towards the
@@ -53,23 +54,27 @@ inside the skin, and webs end on the skin midline.
 
 ```
 src/implicit_geometry_kernel/
-├── blade_geometry.py        Airfoil, Station, SkinRegion, ShearWeb
-├── loft.py                  BladeGeometry, SectionCut, SectionWall, CellLoop, section_at
-├── section_geometry/        signed-distance section geometry: 40 layouts, midlines, cell loops
-├── section_contract/        the hand-off types (ShellMidlineStrip, CellWallLoop)
-├── coordinate_frames/       section and shell frame conventions
-├── area_2d/                 quadtree area integration
-├── shoelace_integration/    polygon area integrals
-└── FORK.md                  where the forked subpackages came from
-tests/                       loft tests and the forked package-level tests
-examples/                    worked examples, one folder each
+├── blade/          Airfoil, Station, SkinRegion, ShearWeb; BladeGeometry (loft); SectionCut
+├── section/        one 2-D section: the 40 layouts, placement, midlines, junctions,
+│                   cell-wall loops, area and second moments
+├── sdf/            2-D signed-distance modelling: primitives, CSG, offsets, Numba kernels
+├── frames/         geometric coordinate frames (R, B, S, S′, C) and point transforms
+├── integration/    quadtree and shoelace area and moment integrals
+├── contract/       the hand-off types (ShellMidlineStrip, CellWallLoop)
+├── plotting/       Matplotlib figures (needs the [plots] extra)
+└── profiling.py    optional timers (SECTION_GEOMETRY_PROFILE=1)
+tests/              one folder per subpackage, plus the loft and import-rule tests
+examples/           worked examples, one folder each; demos/ holds the figure scripts
+docs/               guides, references, ADRs, reports and bug logs, per subpackage
 ```
 
-The five forked subpackages are a one-time fork, with history, of the same code in
-[blade-structure](https://github.com/samhughes-fea/blade-structure), where
-`section_geometry` is complete and frozen (see `src/implicit_geometry_kernel/FORK.md`).
-They keep their own `tests/`, `examples/` and `docs/` beside their code, as they were
-forked, and `pytest` runs those too.
+The kernel is geometry only. Materials, plies, stiffness, loads and solvers belong to
+the packages built on it. Inside the kernel, only `plotting` uses Matplotlib, and
+`sdf` imports nothing from `section` or `blade`, so it can stand on its own.
+
+`section`, `sdf`, `frames`, `integration` and `contract` started as a one-time fork of
+the same code in [blade-structure](https://github.com/samhughes-fea/blade-structure);
+see [docs/FORK.md](docs/FORK.md) for where each part came from and how it was renamed.
 
 ## Tests
 

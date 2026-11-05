@@ -62,8 +62,8 @@ def test_sdf_stands_alone():
 
 
 @pytest.mark.parametrize("module, name", [
-    ("implicit_geometry_kernel.blade.airfoil", "Station"),
-    ("implicit_geometry_kernel.section.layout.system_layout", "SYSTEM_TYPE_KEYS"),
+    ("implicit_geometry_kernel.blade_geometry", "Station"),
+    ("implicit_geometry_kernel.section_geometry.layout.system_layout", "SYSTEM_TYPE_KEYS"),
 ])
 def test_deprecated_aliases_still_import(module, name):
     import sys

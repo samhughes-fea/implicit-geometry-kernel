@@ -1,27 +1,11 @@
-"""Regression: product shell channel map + LE-on-RHS S mapping."""
+"""Regression: LE-on-RHS S mapping."""
 
 from __future__ import annotations
 
 import numpy as np
 
-from implicit_geometry_kernel.frames import (
-    blade_resultants_to_shell_channels,
-    naca_to_zero_twist_pitch_axis_station_frame,
-)
+from implicit_geometry_kernel.frames import naca_to_zero_twist_pitch_axis_station_frame
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-
-
-def test_blade_resultants_to_shell_channels_flap_on_Mz():
-    ch = blade_resultants_to_shell_channels(
-        M_flapwise=1000.0,
-        M_edgewise=200.0,
-        V_flapwise=300.0,
-        V_edgewise=40.0,
-    )
-    assert ch.Mz == 1000.0
-    assert ch.My == 200.0
-    assert ch.Vz == 300.0
-    assert ch.Vy == 40.0
 
 
 def test_naca_to_station_leading_edge_negative_y():

@@ -1,5 +1,12 @@
 # Coordinate frames
 
+> **0.2.0:** the shell-frame home (`shell_frames/`: ply stress and strain rotations
+> E ↔ M and the shell-solver load channels) and the beam stiffness transform
+> (`section_frames/stiffness.py`) were removed. Ply transforms live in
+> composite-laminate-model (`laminate_mechanics.stress_transformation`,
+> `laminate_materials_3d.stress_rotation_3d`); see [FORK.md](../FORK.md). Mentions of
+> them below are history. The frame tags `FRAME_C`, `FRAME_E` and `FRAME_M` remain.
+
 Single source of truth for structural frames **R / B / S / S′**, the shell
 **curvilinear** strip basis **C**, and the shell **element** / ply frames
 **E** / **M**.
@@ -77,7 +84,7 @@ flowchart LR
 |---|------|------|
 | 0 | [`frame_tags.py`](../../src/implicit_geometry_kernel/frames/frame_tags.py) | Canonical short tags `FrameTag` / `FRAME_*` / `require_frame_tag` for structural dataclass fields |
 | 1 | [`section_frames/README.md`](section_frames/README.md) | Shared B/S/S′ storage + plot contract; NACA adapter; S↔B; Exact I/O for geometry helpers |
-| 2 | [`shell_frames/README.md`](shell_frames/README.md) | C / E / M axes; C≡E; \(T_\sigma\) / \(T_\varepsilon\); FI-in-M; Exact I/O for ply transforms |
+| 2 | `shell_frames/README.md` | C / E / M axes; C≡E; \(T_\sigma\) / \(T_\varepsilon\); FI-in-M; Exact I/O for ply transforms |
 
 **Container tagging.** Structural `frame` / `*_frame` fields on dataclasses across `src` should use `FrameTag` and validate with `require_frame_tag` at construction or finalize. Prefer `FRAME_B` (etc.) over bare string literals. Containers carry tags only — they must not reimplement S↔B / E↔M.
 
@@ -170,7 +177,7 @@ coordinate_frames/
 ## 8. See also
 
 - [`section_frames/README.md`](section_frames/README.md)
-- [`shell_frames/README.md`](shell_frames/README.md)
+- `shell_frames/README.md`
 - `visualisation/README.md`
 - Handoff DTOs that speak B: [`../section_contract/README.md`](../contract/README.md) (ABI-shaped geometry→mesh/load/FE vocabulary)
 - Element recovery: compute_tertiary docs

@@ -1,5 +1,11 @@
 # section_contract — ABI-shaped handoff vocabulary
 
+> **0.2.0:** `BeamResultantVector`, `load_orders.py` and the load-axis constants were
+> removed: loads belong to the section and laminate models, not the geometry kernel
+> (see [FORK.md](../FORK.md)). The sections below that describe them are kept as
+> history. The package now holds `ShellMidlineStrip`, `StripBond`, `CellWallLoop` and
+> `InfeasibleSectionGeometry`.
+
 **Package:** `implicit_geometry_kernel.contract`  
 **Role:** thin FE-agnostic DTO / invariant boundary between the geometry worker
 and downstream mesh, load, and FE workers.

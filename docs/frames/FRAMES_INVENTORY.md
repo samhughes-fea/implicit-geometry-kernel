@@ -1,5 +1,12 @@
 # Frames inventory — coordinate-frame safety baseline
 
+> **0.2.0:** the shell-frame home (`shell_frames/`: ply stress and strain rotations
+> E ↔ M and the shell-solver load channels) and the beam stiffness transform
+> (`section_frames/stiffness.py`) were removed. Ply transforms live in
+> composite-laminate-model (`laminate_mechanics.stress_transformation`,
+> `laminate_materials_3d.stress_rotation_3d`); see [FORK.md](../FORK.md). Mentions of
+> them below are history. The frame tags `FRAME_C`, `FRAME_E` and `FRAME_M` remain.
+
 **Programme:** Coordinate-Frame Safety (WP0 baseline)  
 **Date:** 2026-09-23  
 **Authority:** this file is the programme status source. Semantics and transforms

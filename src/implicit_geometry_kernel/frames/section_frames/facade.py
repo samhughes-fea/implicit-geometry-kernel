@@ -1,24 +1,23 @@
-"""Thin ``CoordinateFrameTransforms`` facade over span / tensor / stiffness kernels."""
+"""Thin ``CoordinateFrameTransforms`` facade over the span and tensor kernels."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Tuple, Union
+from typing import Tuple, Union
 
 import numpy as np
 
 from implicit_geometry_kernel.frames.section_frames.span import SpanFrameTransforms
-from implicit_geometry_kernel.frames.section_frames import stiffness as _stiffness
 from implicit_geometry_kernel.frames.section_frames import tensors as _tensors
 
 
 @dataclass
 class CoordinateFrameTransforms(SpanFrameTransforms):
-    """Stable API facade: R↔B span maps plus S↔B tensor / stiffness transforms.
+    """Stable API facade: R↔B span maps plus S↔B tensor transforms.
 
     Span state and converters live on :class:`SpanFrameTransforms`. S↔B second
-    moments, moments, forces, thickness, and B→S′ stiffness are free functions
-    in ``tensors`` / ``stiffness``; this class delegates so existing
+    moments, moments, forces, thickness, are free functions
+    in ``tensors``; this class delegates so existing
     ``CoordinateFrameTransforms().transform_*`` call sites keep working.
     """
 
@@ -42,23 +41,6 @@ class CoordinateFrameTransforms(SpanFrameTransforms):
     ) -> Tuple[Union[float, np.ndarray], Union[float, np.ndarray], Union[float, np.ndarray]]:
         return _tensors.transform_second_moments_B_to_S(
             Ixx_B, Iyy_B, Ixy_B, twist_deg
-        )
-
-    def transform_stiffness_B_to_Sprime(
-        self,
-        E: float,
-        EI_flap_B: Union[float, np.ndarray],
-        scaled_dimensions,
-        *,
-        EI_edge_B: Optional[Union[float, np.ndarray]] = None,
-        station_indices: Optional[np.ndarray] = None,
-    ) -> Tuple[Union[float, np.ndarray], Union[float, np.ndarray]]:
-        return _stiffness.transform_stiffness_B_to_Sprime(
-            E,
-            EI_flap_B,
-            scaled_dimensions,
-            EI_edge_B=EI_edge_B,
-            station_indices=station_indices,
         )
 
     def transform_moments_B_to_S(

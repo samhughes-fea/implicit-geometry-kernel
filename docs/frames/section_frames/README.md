@@ -21,7 +21,7 @@
 
 | Owns | Does **not** own |
 |------|------------------|
-| Axis sense, storage order, and **section plot** recipe for **B, S, S′** | Curvilinear strip **C**, laminate **E**, ply **M** ([shell home](../shell_frames/README.md)) |
+| Axis sense, storage order, and **section plot** recipe for **B, S, S′** | Curvilinear strip **C**, laminate **E**, ply **M** (shell home) |
 | NACA ↔ S; S ↔ B geometry maps; plot helpers | SDF solids, strip mesh density |
 | Moment / inertia S↔B polarity documentation | Product FE `My`/`Mz` channel names (adapter on parent quick start) |
 
@@ -215,7 +215,7 @@ Regenerate:
 python -m examples/demos/frames/plot_structural_frames.py
 ```
 
-Expected output: [`../visualisation/output/structural_frames_B_S_Sprime.png`](../../../src/implicit_geometry_kernel/frames/visualisation/output/structural_frames_B_S_Sprime.png) — B / S / S′ panels with data \(+Y\)→TE and display invert (LE on RHS).
+Expected output: `../visualisation/output/structural_frames_B_S_Sprime.png` — B / S / S′ panels with data \(+Y\)→TE and display invert (LE on RHS).
 
 ---
 

@@ -30,12 +30,8 @@ _SKIP_DIR_NAMES = frozenset(
     }
 )
 
-# Canon homes may define the matrices.
-_PLY_TRANSFORM_ALLOW = frozenset(
-    {
-        (_COORD / "shell_frames" / "ply.py").resolve(),
-    }
-)
+# Ply transforms belong to composite-laminate-model; none may be built here.
+_PLY_TRANSFORM_ALLOW = frozenset()
 
 # Dated debt / documented local spaces (FRAME inventory). Empty after FRAME-005 removal.
 _PLY_TRANSFORM_DATED = frozenset()
@@ -53,7 +49,7 @@ def _iter_package_sources(roots: tuple[Path, ...]):
 
 @pytest.mark.frame_comparison
 def test_no_hand_built_ply_transform_matrices_outside_canon():
-    """``c * c, s * s`` 3×3 blocks are Tσ/Tε — owned by coordinate_frames."""
+    """``c * c, s * s`` 3×3 blocks are Tσ/Tε — laminate mechanics, not kernel geometry."""
     offenders: list[str] = []
     allowed = _PLY_TRANSFORM_ALLOW | _PLY_TRANSFORM_DATED
     for path in _iter_package_sources(_SCAN_ROOTS):
@@ -63,8 +59,8 @@ def test_no_hand_built_ply_transform_matrices_outside_canon():
         if "c * c, s * s" in src or "c*c, s*s" in src:
             offenders.append(str(path.relative_to(_SRC)))
     assert offenders == [], (
-        "ply stress/strain transforms must come from coordinate_frames "
-        f"(ARCH-MUST-016 / FRAME-011): {offenders}"
+        "ply stress/strain transforms belong to composite-laminate-model, not the "
+        f"geometry kernel: {offenders}"
     )
 
 

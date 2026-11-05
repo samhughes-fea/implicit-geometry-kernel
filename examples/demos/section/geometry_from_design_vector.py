@@ -101,8 +101,8 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="For C: half width per web cap band [m]; default 0.04*chord.",
     )
-    p.add_argument("--te-insert-x-frac", type=float, default=None, help="TE insert start x/chord; omit to disable.")
-    p.add_argument("--le-insert-x-frac", type=float, default=None, help="LE insert end x/chord; omit to disable.")
+    p.add_argument("--te-insert-x-frac", dest="trailing_edge_insert_x_m_frac", type=float, default=None, help="TE insert start x/chord; omit to disable.")
+    p.add_argument("--le-insert-x-frac", dest="leading_edge_insert_x_m_frac", type=float, default=None, help="LE insert end x/chord; omit to disable.")
     p.add_argument("--no-core", action="store_true", help="Disable sandwich core regions.")
     p.add_argument("--nx", type=int, default=512, help="Grid resolution x.")
     p.add_argument("--ny", type=int, default=220, help="Grid resolution y.")

@@ -46,5 +46,35 @@ those packages.
 The package moved from `blade_geometry_model` in composite-laminate-fea to its own
 repository as `implicit_geometry_kernel`; only import lines changed. The fork's
 package-level test folders (`tests/coordinate_frames`, `tests/section_geometry`) moved
-to the repository's top-level `tests/`. Each subpackage's own `tests/`, `examples/` and
-`docs/` stay beside its code.
+to the repository's top-level `tests/`.
+
+## Reorganisation (0.2.0, November 2026)
+
+The kernel's role was fixed as the geometry of blade and wing cross-sections, with no
+materials, plies, stiffness, loads or solvers, and the package was regrouped around
+that. The file lists above use the names from before this change.
+
+| Before | After |
+|---|---|
+| `blade_geometry.py`, `loft.py` | `blade/` (`airfoil.py`, `stations.py`, `loft.py`, `cut.py`) |
+| `section_geometry/` | `section/` |
+| `section_geometry/sdf/` | `sdf/` |
+| `section_geometry/sdf/cache.py` | `section/eval_cache.py` |
+| `section_geometry/profiling.py` | `profiling.py` |
+| `section_geometry/visualisation/`, `coordinate_frames/section_frames/plot.py` | `plotting/` |
+| `coordinate_frames/` | `frames/` |
+| `section_contract/` | `contract/` |
+| `area_2d/`, `shoelace_integration/` | `integration/` (shoelace in `integration/shoelace.py`) |
+| each subpackage's `tests/`, `examples/`, `docs/` | top-level `tests/`, `examples/`, `docs/` |
+
+Deleted: the `api/` and `types/` re-export barrels, `section_geometry/topology/` and other
+compatibility aliases, the placeholder `example_plot.py` demos, functions with no
+caller in any of the four repositories, and the code that belongs to the physics on top
+of the geometry: ply stress and strain rotations (`shell_frames/ply.py`, duplicated in
+composite-laminate-model), the shell-solver load channels (`shell_frames/load_channels.py`),
+the beam stiffness transform (`section_frames/stiffness.py`) and `BeamResultantVector`
+with its load-order constants.
+
+`implicit_geometry_kernel.blade_geometry` and
+`implicit_geometry_kernel.section_geometry.layout.system_layout` still import, with a
+`DeprecationWarning`, until 0.3.0.

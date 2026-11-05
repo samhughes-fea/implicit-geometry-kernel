@@ -150,7 +150,8 @@ def main() -> int:
     grid = SDFGrid.from_airfoil(airfoil_b, nx=int(args.nx), ny=int(args.ny))
 
     systems = ("A", "B", "C")
-    n_web_list = (1, 2, 3, 4)
+    # continuous box caps (family D) need two webs to span; there is no 1D layout
+    n_web_list = (2, 3, 4)
     alignments: tuple[tuple[str, str], ...] = (
         ("chord_normal", "Chord-normal web axis"),
         ("flapwise", "Flapwise web axis"),
@@ -277,7 +278,7 @@ def main() -> int:
 
     demo = MultiCellSection(
         airfoil_sdf=airfoil,
-        web_x_positions=[0.5 * chord],
+        web_x_positions=[0.3 * chord, 0.6 * chord],
         web_thickness=0.004,
         web_alignment="chord_normal",
         cap_height=0.012,

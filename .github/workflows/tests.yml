@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,7 +19,45 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install package
         run: pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check src tests examples scripts
       - name: Run tests
         run: pytest -q
       - name: Build sdist and wheel
         run: python -m build
+
+  core-install:
+    # every module except plotting must import without Matplotlib or SciPy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the package alone
+        run: pip install .
+      - name: Import every non-plotting module
+        run: |
+          cd /tmp
+          python - <<'PY'
+          import importlib, pkgutil
+          import implicit_geometry_kernel as k
+          names = [m.name for m in pkgutil.walk_packages(k.__path__, "implicit_geometry_kernel.")
+                   if not m.name.startswith("implicit_geometry_kernel.plotting")
+                   and not m.name.endswith(("blade_geometry", "system_layout"))]
+          for name in names:
+              importlib.import_module(name)
+          print(len(names), "modules imported")
+          PY
+
+  examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install package
+        run: pip install -e ".[dev]"
+      - name: Run every example and demo
+        run: python scripts/run_examples.py

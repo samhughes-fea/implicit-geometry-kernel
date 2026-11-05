@@ -184,9 +184,9 @@ def main(argv: list[str] | None = None) -> None:
 
     argv = list(sys.argv[1:] if argv is None else argv)
 
-    # Same station fixture as the former FE centerline repro (run007 / i000).
-    chord_m = 1.655959896
-    twist_deg = 34.110405083
+    # A root-like station: large chord and steep twist.
+    chord_m = 1.6
+    twist_deg = 35.0
     airfoil = AirfoilSDF.from_naca_series(
         6, 63.0, 4.0, 15.0, n_points=200, chord=chord_m, closed_te=True
     )

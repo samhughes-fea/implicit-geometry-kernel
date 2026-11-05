@@ -14,7 +14,7 @@ Anchored wall geometry for surface-aware ply drop.
 `section_geometry` must not import `material_utilities`. Construction tokens here are
 plain strings that match the layup enums 1:1.
 
-## Defaults (COTIDE Sheffield 2026 / BL-028)
+## Defaults (BL-028)
 
 | Wall | Reference | Build | Midline |
 |------|-----------|-------|---------|

@@ -139,15 +139,15 @@ class TestItIsAdmissibleByConstruction:
             Ixy_str / np.sqrt(Ixx_str * Iyy_str), rho_geom, rtol=1e-13
         )
 
-    @pytest.mark.parametrize("twist_deg", [0.0, 5.0, 15.0, 34.1, -20.0])
+    @pytest.mark.parametrize("twist_deg", [0.0, 5.0, 15.0, 35.0, -20.0])
     @pytest.mark.parametrize("edge_over_flap", _EDGE_OVER_FLAP)
     def test_the_B_to_S_transform_accepts_any_edgewise_stiffness(
         self, twist_deg, edge_over_flap
     ):
         """The regression guard for the failure this closure was written to fix.
 
-        34.1 deg is the measured root twist on ``new_3.2m_rotor``, the station where
-        the old closure rejected everything below ``2.6 x EI_flap``.
+        35 deg is a steep root twist, like the station where the old closure
+        rejected everything below about ``2.6 x EI_flap``.
         """
         Ixx_geom, Iyy_geom, Ixy_geom = _geometric_tensor(twist_deg)
         Iyy_str = 1.234e-5
@@ -175,7 +175,7 @@ class TestItIsAdmissibleByConstruction:
         describing a section at all. If this ever stops failing, the premise of the
         closure has changed and its docstring is stale.
         """
-        twist_deg = 34.1
+        twist_deg = 35.0
         Ixx_geom, Iyy_geom, Ixy_geom = _geometric_tensor(twist_deg)
         Iyy_str = 1.234e-5
         Ixx_str = Iyy_str * edge_over_flap

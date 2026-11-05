@@ -55,7 +55,7 @@ def structural_product_moment(
     is worth stating rather than discovering later. The fallback reaches the
     edgewise ratio as ``EI_flap * (Ixx_geom / Iyy_geom) / Ixx_geom`` where the
     flapwise one is simply ``EI_flap / Iyy_geom`` -- three roundings against one.
-    Measured end to end on the ``new_3.2m_rotor`` ULS floor, the flapwise
+    Measured end to end on a 64-station rotor's ULS floor, the flapwise
     ``EI_required`` moved at **4 of 64** stations by at most **8 ULP**
     (1.1e-15 relative), with the active-station mask unchanged. That is far below
     the NLP's own constraint tolerances, but it is not zero, so a caller checking

@@ -68,7 +68,7 @@ PROFILES: dict[str, RenderProfile] = {
 }
 
 DEFAULT_PROFILE = "balanced"
-DEFAULT_ROTOR = "new_3.2m_rotor"
+DEFAULT_ROTOR = "example_rotor"
 
 SCENARIOS: dict[str, ScenarioSpec] = {
     "anchoring_cascade": ScenarioSpec(
@@ -79,7 +79,7 @@ SCENARIOS: dict[str, ScenarioSpec] = {
         panel_layout="dual",
         description="Station-relative vs root-anchored web behavior along span.",
         frame_count=64,
-        sweep_params={"driver": "station_index", "domain": "new_3.2m_rotor span"},
+        sweep_params={"driver": "station_index", "domain": "example_rotor span"},
         metric_overlays=("station", "zL", "chord", "survivors", "drops"),
     ),
     "key_cascade_spanwise": ScenarioSpec(

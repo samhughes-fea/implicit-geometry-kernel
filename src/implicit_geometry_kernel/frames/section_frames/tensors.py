@@ -141,15 +141,18 @@ def transform_second_moments_S_to_B(
     - **Right-hand rule**: Thumb aligned with z_B (root→tip direction)
     - **Blade twist**: CCW rotation from Blade frame (B) to Station frame (S) for positive twist_deg
     
-    Transformation Formulas (for rotation angle θ, where S is rotated by +θ relative to B):
-    - Uses inverse rotation (-θ) to transform FROM S TO B: I_B = R(-θ) I_S R(-θ)^T
-    - Ixx_B = Ixx_S × cos²(-θ) + Iyy_S × sin²(-θ) - 2×Ixy_S × sin(-θ) × cos(-θ)
-    - Iyy_B = Ixx_S × sin²(-θ) + Iyy_S × cos²(-θ) + 2×Ixy_S × sin(-θ) × cos(-θ)
-    - Ixy_B = (Ixx_S - Iyy_S) × sin(-θ) × cos(-θ) + Ixy_S × (cos²(-θ) - sin²(-θ))
-    
-    Note: Since cos(-θ) = cos(θ) and sin(-θ) = -sin(θ), the formulas simplify but use -θ internally.
+    Transformation formulas (θ = twist_deg), consistent with the point transform
+    ``rotate_zero_twist_pitch_axis_station_frame_to_twisted_pitch_axis_blade_frame``
+    (X_B = cos θ X_S + sin θ Y_S, Y_B = -sin θ X_S + cos θ Y_S), with Ixx = ∫Y² dA,
+    Iyy = ∫X² dA and Ixy = ∫XY dA:
+    - Ixx_B = Ixx_S cos²θ + Iyy_S sin²θ - 2 Ixy_S sinθ cosθ
+    - Iyy_B = Ixx_S sin²θ + Iyy_S cos²θ + 2 Ixy_S sinθ cosθ
+    - Ixy_B = (Ixx_S - Iyy_S) sinθ cosθ + Ixy_S (cos²θ - sin²θ)
+    Ixx + Iyy and Ixx Iyy - Ixy² are invariant. Second moments of the rotated outline,
+    integrated afresh, give the same values.
+
     Airfoils are asymmetric in S frame, so Ixy_S is typically non-zero and must be computed.
-    
+
     Parameters
     ----------
     Ixx_S : float or np.ndarray
@@ -245,29 +248,22 @@ def transform_second_moments_S_to_B(
             f"Twist angle must be finite."
         )
     
-    # Convert twist to radians
-    # CRITICAL: Use +twist_deg (not -twist_deg) because:
-    # - Testing with Station 0 shows: -twist_deg → negative Iyy_B (invalid), +twist_deg → positive Iyy_B (valid)
-    # - The transformation formula requires +twist_deg and correct cross-term signs to produce physically valid results
-    # - Root cause: The coordinate system convention or transformation formula interpretation differs
-    #   from the documented inverse rotation approach. Further investigation needed to understand why.
+    # The points rotate S -> B as X_B = c X_S + s Y_S, Y_B = -s X_S + c Y_S (see
+    # rotate_zero_twist_pitch_axis_station_frame_to_twisted_pitch_axis_blade_frame), so with
+    # Ixx = int Y^2, Iyy = int X^2 and Ixy = int X Y the second moments follow by substitution.
+    # Ixx + Iyy and Ixx Iyy - Ixy^2 are invariant.
     twist_rad = np.deg2rad(twist_deg)
-    
-    # Compute trigonometric values
     cos_theta = np.cos(twist_rad)
     sin_theta = np.sin(twist_rad)
     cos2 = cos_theta ** 2
     sin2 = sin_theta ** 2
     sin_cos = sin_theta * cos_theta
-    cos2_sin2 = cos2 - sin2  # cos(2θ) = cos²(θ) - sin²(θ)
-    
-    # Apply transformation formulas
-    # CRITICAL: Ixx_B cross-term uses + sign (not -) to ensure positive results
-    # Testing confirmed: +twist_deg with + cross-term for Ixx_B produces valid (positive) results
-    Ixx_B = Ixx_S * cos2 + Iyy_S * sin2 + 2.0 * Ixy_S * sin_cos
+    cos2_sin2 = cos2 - sin2  # cos(2θ)
+
+    Ixx_B = Ixx_S * cos2 + Iyy_S * sin2 - 2.0 * Ixy_S * sin_cos
     Iyy_B = Ixx_S * sin2 + Iyy_S * cos2 + 2.0 * Ixy_S * sin_cos
     Ixy_B = (Ixx_S - Iyy_S) * sin_cos + Ixy_S * cos2_sin2
-    
+
     # Output validation: Validate B frame properties are physically valid
     if np.any(Ixx_B <= 0):
         if Ixx_B.ndim == 0:

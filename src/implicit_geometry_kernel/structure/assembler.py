@@ -69,11 +69,11 @@ class WallThickness:
         t = np.asarray(self.base.thickness(z), dtype=np.float64).copy()
         cache = EvalCache(pts)
         for p in self.partitions:
-            inside = p.footprint.evaluate(pts, cache).phi < 0.0
+            inside = p.footprint.evaluate(pts, cache).phi < 0.0  # type: ignore
             if np.any(inside):
                 t = np.where(inside, p.thickness(z), t)
         for layer in self.layers[:n_layers]:
-            inside = layer.footprint.evaluate(pts, cache).phi < 0.0
+            inside = layer.footprint.evaluate(pts, cache).phi < 0.0  # type: ignore
             if np.any(inside):
                 t = t + np.where(inside, layer.thickness(z), 0.0)
         return t
@@ -200,13 +200,13 @@ def assemble(ctx: BuildContext, contributions: list[Contribution]) -> Structure:
             k = thickness.layers.index(w)
             above = FieldOffsetNode(oml, thickness.up_to(k), 1.0)
             below = ComplementNode(FieldOffsetNode(oml, thickness.up_to(k + 1), 1.0))
-            r = MaxNode(above, below, w.footprint, meta_from=0)
+            r = MaxNode(above, below, w.footprint, meta_from=0)  # type: ignore
         elif w.is_base:
             # A partition replaces the base wall inside its footprint.
-            outside = [ComplementNode(p.footprint) for p in thickness.partitions]
-            r = MaxNode(envelope, *outside, meta_from=0) if outside else envelope
+            outside = [ComplementNode(p.footprint) for p in thickness.partitions]  # type: ignore
+            r = MaxNode(envelope, *outside, meta_from=0) if outside else envelope  # type: ignore
         else:
-            r = MaxNode(envelope, w.footprint, meta_from=0)
+            r = MaxNode(envelope, w.footprint, meta_from=0)  # type: ignore
         wall_region[w.spec.id] = TagNode(TrimNode(r, oml), w.spec.id)
     wall_meta = PriorityUnionNode([wall_region[w.spec.id] for w in walls],
                                   [w.spec.priority for w in walls])

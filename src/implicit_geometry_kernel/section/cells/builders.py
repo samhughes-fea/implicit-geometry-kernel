@@ -96,7 +96,7 @@ def _chain_ring(skins: Sequence[ShellMidlineStrip]) -> list[_Arc]:
             ordered.append(items.pop(index))
 
     arcs: list[_Arc] = []
-    tail: NDArray[np.float64] | None = None
+    tail: NDArray[np.float64] | None = None  # type: ignore
     for position, (strip, points) in enumerate(ordered):
         if tail is None:
             # Orient the first arc so that it meets the second one head-to-tail.

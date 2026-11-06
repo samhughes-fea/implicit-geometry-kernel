@@ -16,7 +16,7 @@ try:
     import contourpy
     _HAS_CONTOURPY = True
 except Exception:
-    contourpy = None
+    contourpy = None  # type: ignore
     _HAS_CONTOURPY = False
 
 

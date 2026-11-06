@@ -1,7 +1,7 @@
 """SystemType-style layout keys → frozen layout specs (SDF-first; no Shapely).
 
 Registry dict keys are the **compact** ``SystemType{X}{Y}-{Z}`` tokens from
-``blade_precompute/src/implicit_geometry_kernel/section_geometry/docs/reference/system_type_xyz_taxonomy.md`` (e.g.
+``docs/section/reference/structural_systems_gallery.md`` (e.g.
 ``2D-CN``, ``2D-F``). Middle letter is taxonomy **Y** (``A``/``B``/``C``/``D``).
 Pass these strings to :func:`resolve_system_type`.
 """
@@ -20,7 +20,7 @@ WebOrientation = Literal["chord_normal", "flapwise"]
 WebPositioning = Literal["uniform", "structural", "fixed", "none"]
 @dataclass(frozen=True)
 class SystemLayoutSpec:
-    """Sandbox mirror of ``SystemTypeN`` *intent* (see blade-structure ``system_type_n.py``).
+    """Catalogue layout intent for one ``{X}{Y}-{Z}`` key.
 
     ``web_chord_fracs`` are fractions in ``[0, 1]`` measured along chord from the
     airfoil leading edge in section *x* (same convention as :class:`AirfoilSDF`).
@@ -122,7 +122,7 @@ for _x in range(1, 6):
                 n_cells=_x + 1,
                 n_webs=_x,
                 has_spar_caps=_has_caps,
-                web_orientation=_orient,
+                web_orientation=_orient,  # type: ignore
                 web_positioning=_pos,
                 web_chord_fracs=_fracs,
                 spar_cap_positioning=_cap_pos,

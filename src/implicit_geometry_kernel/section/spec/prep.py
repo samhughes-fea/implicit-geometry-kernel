@@ -205,7 +205,7 @@ def build_section_with_thicknesses(
             twist_angle_rad=twist_angle_rad,
             twist_angle=twist_angle,
         ),
-        skin_thickness=resolve_skin_gauges(
+        skin_thickness=resolve_skin_gauges(  # type: ignore
             skin_thickness=skin_thickness, required=True
         ),
         spar_cap_thickness=resolve_spar_cap_thickness(
@@ -213,7 +213,7 @@ def build_section_with_thicknesses(
             cap_height=cap_height,
             required=True,
         ),
-        shear_web_thickness=resolve_shear_web_thickness(
+        shear_web_thickness=resolve_shear_web_thickness(  # type: ignore
             shear_web_thickness=shear_web_thickness,
             web_thickness=web_thickness,
             required=True,

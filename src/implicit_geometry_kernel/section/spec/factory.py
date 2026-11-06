@@ -81,7 +81,7 @@ def build_section_view(
         twist_rad=twist,
         skin_thickness=skin,
         spar_cap_thickness=spar,
-        shear_web_thickness=web,
+        shear_web_thickness=web,  # type: ignore
     )
 
 

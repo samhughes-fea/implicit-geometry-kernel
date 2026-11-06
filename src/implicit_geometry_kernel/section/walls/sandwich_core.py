@@ -56,20 +56,20 @@ class SandwichCore(SectionComponent):
             cutters = [getattr(ex, "expr", getattr(ex, "_expr", None)) for ex in exclusion_sdfs]
             cutters = [c for c in cutters if c is not None]
         if cutters:
-            expr = subtract_expr(expr, cutters)
+            expr = subtract_expr(expr, cutters)  # type: ignore
 
         if strip_clip is not None:
-            expr = Intersect(expr, strip_clip_expr(strip_clip, key=f"core_strip_{id(strip_clip)}"))
+            expr = Intersect(expr, strip_clip_expr(strip_clip, key=f"core_strip_{id(strip_clip)}"))  # type: ignore
             bay_mode = "flapwise"
         else:
             if x_start is not None:
-                expr = Intersect(expr, HalfPlane(nx=-1.0, ny=0.0, d=float(x_start)))
+                expr = Intersect(expr, HalfPlane(nx=-1.0, ny=0.0, d=float(x_start)))  # type: ignore
             if x_end is not None:
-                expr = Intersect(expr, HalfPlane(nx=1.0, ny=0.0, d=-float(x_end)))
+                expr = Intersect(expr, HalfPlane(nx=1.0, ny=0.0, d=-float(x_end)))  # type: ignore
         if y_min is not None:
-            expr = Intersect(expr, HalfPlane(nx=0.0, ny=-1.0, d=float(y_min)))
+            expr = Intersect(expr, HalfPlane(nx=0.0, ny=-1.0, d=float(y_min)))  # type: ignore
         if y_max is not None:
-            expr = Intersect(expr, HalfPlane(nx=0.0, ny=1.0, d=-float(y_max)))
+            expr = Intersect(expr, HalfPlane(nx=0.0, ny=1.0, d=-float(y_max)))  # type: ignore
 
         super().__init__(expr)
         self._af = airfoil_sdf

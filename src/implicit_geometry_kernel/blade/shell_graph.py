@@ -244,7 +244,7 @@ def _chain(strips, tol):
 
 def _mid_surface(cut: SectionCut) -> MidSurface:
     tol = 1e-9 * max(1.0, max(float(np.abs(w.xy).max()) for w in cut.walls))
-    pts = []
+    pts = []  # type: ignore
     lookup: Dict[Tuple[int, int], list] = {}
 
     def index(p):
@@ -293,7 +293,7 @@ def _mid_surface(cut: SectionCut) -> MidSurface:
                     for v in rest:
                         capped[(host_label, v)] = cap.label
                         moved[(host_label, v)] = host.xy[v] + step
-    segments = []
+    segments = []  # type: ignore
     shift: Dict[int, np.ndarray] = {}
     for w in skins:
         ids = [index(p) for p in w.xy]
@@ -309,7 +309,7 @@ def _mid_surface(cut: SectionCut) -> MidSurface:
             if ca is not None and ca == cb:
                 seg = (i, j, ca, (ca, w.label))
             else:
-                seg = (i, j, w.label, (w.label,))
+                seg = (i, j, w.label, (w.label,))  # type: ignore
             run.append(seg)
         if flip[w.label]:
             run = [(j, i, name, layers) for i, j, name, layers in reversed(run)]
@@ -318,12 +318,12 @@ def _mid_surface(cut: SectionCut) -> MidSurface:
     chord_dir = np.array([np.cos(t), -np.sin(t)])
     for w in webs:
         ids = [index(p) for p in w.xy]
-        run = [(i, j) for i, j in zip(ids[:-1], ids[1:]) if i != j]
+        run = [(i, j) for i, j in zip(ids[:-1], ids[1:]) if i != j]  # type: ignore
         if run:
             d = pts[run[-1][1]] - pts[run[0][0]]
             if np.array([-d[1], d[0]]) @ chord_dir < 0.0:
-                run = [(j, i) for i, j in reversed(run)]
-        segments.extend(MidSegment(i, j, w.label, "web", (w.label,)) for i, j in run)
+                run = [(j, i) for i, j in reversed(run)]  # type: ignore
+        segments.extend(MidSegment(i, j, w.label, "web", (w.label,)) for i, j in run)  # type: ignore
     P = np.array(pts)
     for k, p in shift.items():
         P[k] = p

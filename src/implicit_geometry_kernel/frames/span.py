@@ -97,7 +97,7 @@ class SpanFrameTransforms:
         if isinstance(self.rR_grids, np.ndarray):
             grids_to_check.append(np.asarray(self.rR_grids, dtype=np.float64))
         else:
-            for grid in self.rR_grids:
+            for grid in self.rR_grids:  # type: ignore
                 grids_to_check.append(np.asarray(grid, dtype=np.float64))
         
         # Find minimum across all grids

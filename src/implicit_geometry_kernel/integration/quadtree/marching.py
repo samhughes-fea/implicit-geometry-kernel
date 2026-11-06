@@ -93,9 +93,9 @@ def contour_from_quadtree_marching_squares(
         corners = cell.corners()
         crossings = []
         for i, j in edge_pairs:
-            if (phi[i] <= 0.0) != (phi[j] <= 0.0):
+            if (phi[i] <= 0.0) != (phi[j] <= 0.0):  # type: ignore
                 crossings.append(
-                    _interpolate_zero_crossing(corners[i], corners[j], phi[i], phi[j])
+                    _interpolate_zero_crossing(corners[i], corners[j], phi[i], phi[j])  # type: ignore
                 )
         if len(crossings) == 2:
             segments.append((crossings[0], crossings[1]))

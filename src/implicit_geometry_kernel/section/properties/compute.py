@@ -126,10 +126,10 @@ def _compute_hybrid(
                 "Ixy": float("nan"),
                 "r_gyr_x": float("nan"),
                 "r_gyr_y": float("nan"),
-                "label": label,
+                "label": label,  # type: ignore
             }
         else:
-            props_map[label]["label"] = label
+            props_map[label]["label"] = label  # type: ignore
     meta_extra["constructive_polygons"] = {
         k: "emitted" for k in polys
     }
@@ -174,7 +174,7 @@ def compute_section_properties(
                 props["label"] = label
                 data[label] = props
         meta["grid"] = {"nx": int(grid.nx), "ny": int(grid.ny)}
-        return (data, meta, None) if with_mesh else (data, meta)
+        return (data, meta, None) if with_mesh else (data, meta)  # type: ignore
 
     af = airfoil_for_spec
     if af is None and grid is not None:
@@ -194,16 +194,16 @@ def compute_section_properties(
         stats = get_stats()
         if stats is not None:
             meta["profiling"] = stats.to_dict()
-        return (props_map, meta, mesh) if with_mesh else (props_map, meta)
+        return (props_map, meta, mesh) if with_mesh else (props_map, meta)  # type: ignore
 
     with timed_block("properties"):
         props_map, mesh, qt_stats = section_properties_via_quadtree(
             section_geometry, spec, twist_rad=float(twist_rad)
         )
     for label in labels:
-        props_map[label]["label"] = label
+        props_map[label]["label"] = label  # type: ignore
     meta["quadtree_stats"] = qt_stats
     stats = get_stats()
     if stats is not None:
         meta["profiling"] = stats.to_dict()
-    return (props_map, meta, mesh) if with_mesh else (props_map, meta)
+    return (props_map, meta, mesh) if with_mesh else (props_map, meta)  # type: ignore

@@ -14,7 +14,7 @@ _SRC = Path(__file__).resolve().parents[3] / "src" / "implicit_geometry_kernel"
 _COORD = _SRC / "frames"
 
 # Packages scanned for banned hand-built transforms (the forked geometry only;
-# blade-structure's mesh, load, FE and material packages did not come across).
+# mesh, load, FE and material packages did not come across in the fork).
 _SCAN_ROOTS = (_SRC,)
 
 _SKIP_DIR_NAMES = frozenset(

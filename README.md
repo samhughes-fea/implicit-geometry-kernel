@@ -39,7 +39,7 @@ Three **products**. Loft wraps them in `SectionCut`; a station returns `SectionG
 | Product | Gate / API | What it is |
 | --- | --- | --- |
 | Integrated section properties | `"properties"` → `properties_map` | Area, first and second moments of the solids. Not stiffness. |
-| Mesh | `"midlines"` → `ShellMidlineStrip`; loft also `SectionCut.walls` / `mid_surface()` / `shell_graph()` | Wall midlines + thickness + region labels. Downstream (shell-fem) turns this into a shell mesh. Not a 3-D mesh; not `quadtree_mesh` (`retain_mesh` debug). |
+| Mesh | `"midlines"` → `ShellMidlineStrip`; loft also `SectionCut.walls` / `mid_surface()` / `shell_graph()` | Wall midlines + thickness + region labels. A downstream mesher turns this into a shell mesh. Not a 3-D mesh; not `quadtree_mesh` (`retain_mesh` debug). |
 | Cell wall loops | `"cell_wall_loops"` → `CellWallLoop` | Closed cell circuits for the beam/section model. Distinct from loft `CellPolygon` interiors on `SectionCut`. |
 | Failures | `InfeasibleSectionGeometry` | Cavity too thin, empty offset, last web dropped, etc. |
 

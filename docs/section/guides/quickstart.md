@@ -217,8 +217,8 @@ Handoff to meshing (requires midlines). Runnable twin:
 Guide: [`geometry_to_mesh.md`](geometry_to_mesh.md).
 
 ```python
-from blade_structure_utilities.mesh_utilities.section_mesh import (
-    shell_mesh_inputs_from_geometry_result,
-)
-shell_inputs = shell_mesh_inputs_from_geometry_result(result)
+# Midlines are the mesh hand-off. A 3-D shell mesh is built downstream from
+# result.midline_strips (and, on a loft, cut.shell_graph()).
+for strip in result.midline_strips or ():
+    _ = strip.label, strip.thickness_m, strip.midline_twisted_pitch_axis_blade_frame
 ```

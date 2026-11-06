@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Live `docs/` no longer import or path into downstream packages; fork history
+  stays in `docs/FORK.md`.
+
 - Dual names warn until 0.6.0: `CellLoop` → `CellPolygon`, `station_at` →
   `interpolate`, `SectionGeometryRunner` → `SectionGeometry`,
   `web_x_positions_m` → `web_offsets`, `SpanWeb` → `ShearWeb`.

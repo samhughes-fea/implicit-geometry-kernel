@@ -1,6 +1,7 @@
 # area_2d
 
-`implicit_geometry_kernel.integration` is a shared worker package in `blade_structure_utilities`.
+`implicit_geometry_kernel.integration` holds the kernel's area and moment workers
+(quadtree and shoelace).
 
 ## Purpose
 

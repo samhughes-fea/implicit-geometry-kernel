@@ -1,5 +1,9 @@
 # Frames inventory — coordinate-frame safety baseline
 
+In this repository, live frame code is `src/implicit_geometry_kernel/frames/`.
+Rows below that name `blade_structure_*` or `material_utilities` are the fork
+baseline (see [FORK.md](../FORK.md)), not in-tree packages.
+
 > **0.2.0:** the shell-frame home (`shell_frames/`: ply stress and strain rotations
 > E ↔ M and the shell-solver load channels) and the beam stiffness transform
 > (`section_frames/stiffness.py`) were removed. Ply transforms live in
@@ -109,21 +113,10 @@ Status: `compliant` | `remediation-required` | `N/A` | `dated exception`.
 
 ## Baseline tests (WP0)
 
-Existing focused coverage before remediation:
-
-| Suite | Path |
-|-------|------|
-| Frame tags | `geometry_utilities/coordinate_frames/tests/test_frame_tags.py` |
-| Section plane | `mesh_utilities/section_mesh/tests/test_section_plane_canon.py` |
-| FE canon | `fem_utilities/section_shell_fea/tests/test_section_frame_canon.py` |
-| Beam resultant tags | `geometry_utilities/section_contract/tests/test_beam_resultant_frames.py` |
-| Ply E↔M | `geometry_utilities/coordinate_frames/tests/test_ply_frame_transforms.py` |
-| Campaign S/B packing | `blade_structure_precompute/.../test_campaign_section_property_frames.py` |
-
-Run (non-slow):
+Existing focused coverage in this repo:
 
 ```bash
-pytest -q -m "not slow" src/src/implicit_geometry_kernel/frames/tests src/blade_structure_utilities/mesh_utilities/section_mesh/tests/test_section_plane_canon.py src/blade_structure_utilities/fem_utilities/section_shell_fea/tests/test_section_frame_canon.py src/blade_structure_utilities/geometry_utilities/section_contract/tests/test_beam_resultant_frames.py
+pytest -q tests/frames
 ```
 
 ---

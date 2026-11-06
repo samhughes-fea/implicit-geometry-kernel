@@ -94,11 +94,9 @@ for strip in result.midline_strips or ():
 # Draw the assembled section
 plot_section(result.section)
 
-# Handoff to the mesh package (requires midlines)
-from blade_structure_utilities.mesh_utilities.section_mesh import (
-    shell_mesh_inputs_from_geometry_result,
-)
-shell_inputs = shell_mesh_inputs_from_geometry_result(result)
+# Mesh hand-off is the midline strips (requires the midlines gate).
+for strip in result.midline_strips or ():
+    _ = strip.label, strip.thickness_m, strip.midline_twisted_pitch_axis_blade_frame
 ```
 
 To resolve which webs fit the local cavity without assembling solids:
@@ -427,13 +425,10 @@ This is per-region 2-D geometry, not beam `EA` / `EI` / `GJ`
 
 ## Notes
 
-- Thickness kwargs are geometric wall gauges, not layups — materials via `section_bind`.
-- This package is gauge-agnostic: it does not import `section_gauge` or
-  `material_utilities`, and it does not quantise ply counts. `zone_gauges_m` is
-  a one-way zone-id → wall-gauge projection; production BSP supplies it from an
-  accepted `StationGaugeRealization`. Scalar skin/spar/web kwargs remain the
-  non-gauge API. Geometry's legacy safety clamp remains observationally no-op
-  for valid gauge-path input.
+- Thickness kwargs are geometric wall gauges, not layups. Materials stay downstream.
+- This package is gauge-agnostic: it does not import a layup library and it does
+  not quantise ply counts. `zone_gauges_m` is a one-way zone-id → wall-gauge
+  projection. Scalar skin/spar/web kwargs remain the non-gauge API.
 - Emit midlines are in the twisted blade frame.
 - Unfittable webs appear on `StationLayoutResolution.dropped`. If no required
   web can be anchored → `InfeasibleSectionGeometry` (distinct from “too thick”).

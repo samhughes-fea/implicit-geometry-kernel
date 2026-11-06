@@ -25,10 +25,10 @@ Grid:
 Airfoil:
     AirfoilSDF (adapter; prefer Airfoil.naca4(...).to_sdf())
 
-CSG IR:
+CSG shapes (each an SDFNode; evaluate directly or with eval_expr_batch):
     Expr, Circle, Box, RoundedBox, OrientedBox, Capsule, HalfPlane, Polygon,
-    CallableField, Union, Intersect, Subtract, Offset, Rotate,
-    eval_expr, compile_expr
+    CallableField, Union, Intersect, Subtract, Offset, Rotate, Shell, Slab,
+    eval_expr, eval_expr_batch, compile_expr
 
 Feature field (2.5-D):
     FieldSample, FeatureTable, FeatureSpec, NO_FEATURE, SDFNode,

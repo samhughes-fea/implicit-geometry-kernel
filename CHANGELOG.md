@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- One shape model: the CSG shapes in `sdf.ir` (`Circle`, `Polygon`, `Union`, `Offset`,
+  `Rotate`, `Slab`, ...) are now `SDFNode` subclasses that evaluate themselves, carry
+  feature ids through combinators and have a `bbox()` method. The compile step is gone:
+  `compile_expr_to_node` returns its argument and `eval_via_nodes` equals
+  `eval_expr_batch` (both kept until 0.6.0). `UnionNode`, `IntersectNode`,
+  `SubtractNode`, `OffsetNode`, `RotateNode`, `ShellNode` and `SlabNode` are now the
+  same classes as `Union`, `Intersect`, ... (positional arguments unchanged).
+  `ExprSDF(expr, meta)` only stamps a feature id. Geometry unchanged.
 - Sections are assembled through `structure`. `MultiCellSection` now plans its inputs
   (`section/assembly/plan.py`), runs member builders (`section/assembly/members.py`:
   skin, webs, caps, cores, inserts) and assembles the result; `MultiCellSection.structure`

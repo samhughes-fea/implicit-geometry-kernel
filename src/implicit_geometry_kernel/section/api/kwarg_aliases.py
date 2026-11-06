@@ -145,7 +145,7 @@ def resolve_twist_rad(
     twist_angle: float | None = None,
     default: float = 0.0,
 ) -> float:
-    """Canonical twist [rad]. Aliases are also radians (not degrees)."""
+    """Canonical twist [rad]. ``twist_angle`` / ``twist_angle_rad`` are aliases (also radians)."""
     return _pick_exclusive(
         twist_rad,
         (twist_angle_rad, twist_angle),

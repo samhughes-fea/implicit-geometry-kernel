@@ -51,18 +51,18 @@ Display form: `SystemType{X}{Y}-{Z}`. `resolve_system_type("2D-F")` → frozen
 - **F** (flapwise): vertical in the **twisted** blade frame.
 
 Compare
-`../visualisation/output/structural_family_grids/2D-CN.png`
+`../../../examples/demos/figures/structural_family_grids/2D-CN.png`
 vs
-`../visualisation/output/structural_family_grids/2D-F.png`.
+`../../../examples/demos/figures/structural_family_grids/2D-F.png`.
 
 ### Implementation note (S / B frames)
 
 - **CN**: Web mid-surface runs chord-normal in the chord (**S**) frame before
   section twist.
-- **F**: Chord-frame `ShearWeb` uses tilted S-frame endpoints so that, after
+- **F**: Chord-frame `ShearWebComponent` uses tilted S-frame endpoints so that, after
   the section’s global `+twist`, the axis is B-frame vertical and meets the
   same rotated inner-skin clip as skin and caps (`MultiCellSection` flapwise
-  branch — not a `ShearWeb` counter-rotation).
+  branch — not a `ShearWebComponent` counter-rotation).
 
 Spar-cap clipping follows the same chord-vertical vs parallel-strip logic as
 webs.

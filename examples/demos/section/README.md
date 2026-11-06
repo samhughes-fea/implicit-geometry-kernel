@@ -40,7 +40,7 @@ Checked-in gallery:
 `../../docs/reference/structural_systems_gallery.md`.
 Regen commands: [`ARTIFACTS.md`](ARTIFACTS.md).
 
-Figures use [`figure_io.py`](../../../src/implicit_geometry_kernel/plotting/figure_io.py) (`save_figure`, default DPI 150).
+Figures use [`figure_io.py`](../../../plotting/figure_io.py) (`save_figure`, default DPI 150).
 Conference-facing demos accept `--presentation` (larger fonts, DPI 220).
 
 ---

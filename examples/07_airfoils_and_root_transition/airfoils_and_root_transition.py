@@ -75,7 +75,7 @@ def check_transition(geo):
     tc, linear = [], []
     st = geo.stations
     for zi in z:
-        chord, *_rest, (x, upper, lower) = geo.station_at(zi)
+        chord, *_rest, (x, upper, lower) = geo.interpolate(zi)
         tc.append(float(np.max(upper - lower)))
         k = 0 if zi <= st[1].z else 1
         w = (zi - st[k].z) / (st[k + 1].z - st[k].z)

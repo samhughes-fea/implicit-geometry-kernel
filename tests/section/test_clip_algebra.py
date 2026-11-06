@@ -5,7 +5,7 @@ from __future__ import annotations
 from shapely.geometry import box
 
 from implicit_geometry_kernel.sdf.ir import Intersect
-from implicit_geometry_kernel.section.sections.clip_algebra import (
+from implicit_geometry_kernel.section.assembly.clip_algebra import (
     ChordBand,
     apply_shapely,
     to_ir,

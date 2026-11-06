@@ -63,13 +63,13 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.section import AirfoilSDF
-from implicit_geometry_kernel.plotting.figure_io import (
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from implicit_geometry_kernel.plotting.palette import (
+from plotting.palette import (
     INK,
     MUTED,
     NAVY,

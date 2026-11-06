@@ -1,6 +1,6 @@
 """Areas and second moments of a section's walls: exact solids against closed forms and midlines.
 
-``SectionGeometryRunner(..., outputs=("properties",))`` integrates every wall solid of
+``SectionGeometry(..., outputs=("properties",))`` integrates every wall solid of
 a section (skins, caps, webs, and the cavities between them, labelled
 ``sandwich_core_*``) and returns its area, centroid and second moments about its own
 centroid in ``properties_map``. Downstream models often use the thin-walled idealisation
@@ -29,7 +29,11 @@ import numpy as np  # noqa: E402
 
 from _shared.plotting import REFERENCE, SERIES, TEXT_SECONDARY, draw_cut, note, plt, save  # noqa: E402
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station  # noqa: E402
-from implicit_geometry_kernel.section import AirfoilSDF, SectionGeometryRunner, resolve_system_type  # noqa: E402
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.section import (
+    SectionGeometry,
+    resolve_system_type,
+)
 
 CHORD = 2.0
 BASE = {"skin": 0.004, "cap": 0.012, "web": 0.006}
@@ -39,7 +43,7 @@ SCALES = (1, 2, 4, 8)  # below 1 the solids would hit section_geometry's minimum
 # --------------------------------------------------------------- integrals
 def solid_props(layout, vertices, chord, skin, cap=0.0, web=0.0):
     """Per-label properties of the wall solids (cavities left out), in the section frame (x from the LE)."""
-    result = SectionGeometryRunner(layout=resolve_system_type(layout), airfoil=AirfoilSDF(vertices, chord=chord),
+    result = SectionGeometry(layout=resolve_system_type(layout), airfoil=AirfoilSDF(vertices, chord=chord),
                                    skin_thickness=skin, spar_cap_thickness=cap, shear_web_thickness=web,
                                    outputs=("properties",)).execute().get_results()
     return {k: v for k, v in result.properties_map.items() if not k.startswith("sandwich_core")}

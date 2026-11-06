@@ -23,9 +23,9 @@ Layout `"2D-F"`: two shear webs, family-D continuous box caps, flapwise webs.
 Demo thicknesses (NACA 2412, chord 1 m). Legend names the wall solids listed
 below.
 
-![2D-F labelled](../../../src/implicit_geometry_kernel/plotting/output/anatomy_2d_f/2D-F_labelled.png)
+![2D-F labelled](../../../examples/demos/figures/anatomy_2d_f/2D-F_labelled.png)
 
-Generated, not checked in. Regenerate with:
+Committed under `examples/demos/figures/anatomy_2d_f/`. Regenerate with:
 
 ```bash
 python examples/demos/section/anatomy_2d_f_demo.py
@@ -99,4 +99,4 @@ Gate `"cell_wall_loops"`. Closed loops of the structural cavities, LE → TE:
 - Gallery of all keys: [`../reference/structural_systems_gallery.md`](../reference/structural_systems_gallery.md)
 - Taxonomy decode: [`../reference/system_type_xyz_taxonomy.md`](../reference/system_type_xyz_taxonomy.md)
 - Midlines module: [`../midlines/`](../midlines/README.md)
-- Cell-wall loops module: [`../cell_wall_loops/`](../cell_wall_loops/README.md)
+- Cell-wall loops module: [`../cells/`](../cells/README.md)

@@ -7,7 +7,7 @@ from typing import Any
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
 
-from implicit_geometry_kernel.section.midlines.section_midline_host import (
+from implicit_geometry_kernel.section.midlines.host import (
     resolve_section_host,
 )
 from implicit_geometry_kernel.profiling import timed_stage

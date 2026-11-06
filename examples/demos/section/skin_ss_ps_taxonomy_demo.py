@@ -32,22 +32,22 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     save_figure,
 )
 
-from implicit_geometry_kernel.plotting.frames import section_plot_axes
+from plotting.frames import section_plot_axes
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     MultiCellSection,
 )
-from implicit_geometry_kernel.section.midlines.shell_midline_export import (
+from implicit_geometry_kernel.section.midlines.export import (
     build_shell_midline_strips,
 )
-from implicit_geometry_kernel.section.junction_preparation.shell_midline_junction_preparation import (
+from implicit_geometry_kernel.section.junctions.prepare import (
     prepare_shell_midline_junctions,
 )
-from implicit_geometry_kernel.plotting.plot import (
+from plotting.plot import (
     plot_section_hybrid,
     plot_shell_midline_strip_topology,
 )

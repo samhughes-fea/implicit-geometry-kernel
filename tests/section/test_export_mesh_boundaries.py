@@ -10,14 +10,14 @@ from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.props_emit.props_backend import (
+from implicit_geometry_kernel.section.props.backend import (
     quadtree_spec_for_airfoil,
 )
-from implicit_geometry_kernel.section.props_emit.export import (
+from implicit_geometry_kernel.section.props.export import (
     SectionPropertiesReport,
     export_section_json,
 )
-from implicit_geometry_kernel.section.props_emit.props_compute import (
+from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF

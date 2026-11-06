@@ -1,10 +1,10 @@
 # midlines — centreline strip emit
 
-↑ [`section_geometry`](../README.md)
+↑ [`section`](../README.md)
 
 Emits wall centrelines as `(N, 2)` polylines (`ShellMidlineStrip`: `skin` /
 `web` / `cap`) from component recipes, then applies geometric twist once into
-the blade frame ([`section_contract`](../../contract/README.md)).
+the blade frame ([`contract`](../../contract/README.md)).
 Mid-loci follow the recipe (aerofoil offset, web capsule axis, IML offset),
 not post-boolean SDF zero contours.
 
@@ -21,8 +21,8 @@ not post-boolean SDF zero contours.
 
 | File | Role |
 |------|------|
-| `shell_midline_export.py` | `build_shell_midline_strips` |
-| `section_midline_host.py` | Host protocol |
+| `export.py` | `build_shell_midline_strips` |
+| `host.py` | Host protocol |
 | `skin_split.py` | Split skin arcs at junctions |
 | `cap_skin_ray_resample.py` | Cap–skin resampling |
 | `ring_geometry.py` | Closed-ring helpers |
@@ -31,8 +31,8 @@ not post-boolean SDF zero contours.
 
 | Name | File | Role |
 |------|------|------|
-| `build_shell_midline_strips` | `shell_midline_export.py` | Section → twisted strips |
-| `SectionMidlineHost` | `section_midline_host.py` | Protocol |
+| `build_shell_midline_strips` | `export.py` | Section → twisted strips |
+| `SectionMidlineHost` | `host.py` | Protocol |
 | `split_skin_at_junctions` | `skin_split.py` | Panelise skin |
 
 `ShellMidlineStrip` fields (`label`, `kind`,
@@ -54,5 +54,5 @@ Do not apply a second twist to `midline_twisted_pitch_axis_blade_frame`.
 
 ## See also
 
-- [`../junction_preparation/`](../junction_preparation/README.md)
+- [`../junctions/`](../junctions/README.md)
 - [`../../section_contract/`](../../contract/README.md)

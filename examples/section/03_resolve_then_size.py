@@ -19,9 +19,9 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    SectionGeometryRunner,
+    SectionGeometry,
     resolve_system_type,
 )
 
@@ -32,7 +32,7 @@ def main() -> None:
     t_skin_min = 0.002
 
     frozen = (
-        SectionGeometryRunner(
+        SectionGeometry(
             layout=layout,
             airfoil=airfoil,
             skin_thickness=t_skin_min,
@@ -54,7 +54,7 @@ def main() -> None:
     )
     for skin_thickness, spar_cap_thickness, shear_web_thickness in trials:
         result = (
-            SectionGeometryRunner(
+            SectionGeometry(
                 layout=frozen.layout,
                 airfoil=airfoil,
                 skin_thickness=skin_thickness,

@@ -1,6 +1,6 @@
-"""Midline-facing offset-ring helpers (re-export from package offset_math)."""
+"""Midline-facing offset-ring helpers (sibling ``offset_math``)."""
 
-from implicit_geometry_kernel.section.offset_math import (
+from implicit_geometry_kernel.section.midlines.offset_math import (
     OFFSET_JOIN_STYLE,
     OFFSET_MITRE_LIMIT,
     OFFSET_QUAD_SEGS,

@@ -23,10 +23,10 @@ from implicit_geometry_kernel.section.constructive import (
 from implicit_geometry_kernel.section.constructive.emitters import (
     emit_outer_skin_polygon,
 )
-from implicit_geometry_kernel.section.props_emit.props_backend import (
+from implicit_geometry_kernel.section.props.backend import (
     quadtree_spec_for_airfoil,
 )
-from implicit_geometry_kernel.section.props_emit.props_compute import (
+from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
@@ -156,7 +156,7 @@ def test_section_properties_from_polygons_handles_degenerate():
 
 def test_hybrid_5d_f_thick_skin_does_not_crash():
     """Heavy wall thicknesses (FoS-thickened geometry) must stay on hybrid path."""
-    from implicit_geometry_kernel.section.sections import (
+    from implicit_geometry_kernel.section.assembly import (
         MultiCellSection,
     )
 
@@ -197,7 +197,7 @@ def test_hybrid_retains_core_and_optional_inserts():
     # MultiCellSection via build_section_view; enable inserts through factory if available.
     section = build_section_view(airfoil, resolve_system_type("2D-CN"), twist_angle_rad=0.0)
     # Direct MultiCellSection with inserts for constructive coverage
-    from implicit_geometry_kernel.section.sections.multicell import (
+    from implicit_geometry_kernel.section.assembly.multicell import (
         MultiCellSection,
     )
 

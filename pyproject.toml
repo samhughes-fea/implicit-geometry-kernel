@@ -29,6 +29,8 @@ classifiers = [
 splines = ["scipy>=1.8"]
 plots = ["matplotlib>=3.5"]
 dev = ["scipy>=1.8", "matplotlib>=3.5", "pytest>=7", "build>=1.0", "ruff>=0.6"]
+reference = ["pyyaml>=6"]
+mesh = ["gmsh"]
 
 [project.urls]
 Homepage = "https://github.com/samhughes-fea/implicit-geometry-kernel"
@@ -39,7 +41,9 @@ Issues = "https://github.com/samhughes-fea/implicit-geometry-kernel/issues"
 version = { attr = "implicit_geometry_kernel.__version__" }
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "."]
+include = ["implicit_geometry_kernel*", "plotting", "plotting.*"]
+exclude = ["tests*", "examples*", "docs*", "scripts*", "reference_blades*"]
 
 
 [tool.pytest.ini_options]
@@ -47,6 +51,7 @@ where = ["src"]
 # modules are imported by path
 addopts = "--import-mode=importlib"
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = ["frame_comparison: coordinate-frame convention checks from the forked geometry"]
 
 [tool.ruff]

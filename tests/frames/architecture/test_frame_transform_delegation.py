@@ -67,7 +67,7 @@ def test_no_hand_built_ply_transform_matrices_outside_canon():
 @pytest.mark.frame_comparison
 def test_legacy_frame_apis_removed():
     """FRAME-004 / FRAME-005: dated wrappers are gone from live surfaces."""
-    midline = _SRC / "section" / "midlines" / "shell_midline_export.py"
+    midline = _SRC / "section" / "midlines" / "export.py"
     midline_src = midline.read_text(encoding="utf-8")
     assert "def rotate_chord_to_blade" not in midline_src
     assert '"rotate_chord_to_blade"' not in midline_src

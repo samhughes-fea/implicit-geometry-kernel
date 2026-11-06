@@ -6,7 +6,7 @@ which physical face stays fixed, where the wall midsurface sits, and how far
 each free face is from the reference.
 
 Construction tokens are plain strings matching the layup enums so this package
-never imports ``material_utilities`` (section_geometry G-row boundary).
+never imports ``material_utilities`` (section G-row boundary).
 """
 
 from __future__ import annotations

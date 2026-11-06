@@ -7,7 +7,7 @@ boundary polygons from the same recipes and integrates area / second moments
 by shoelace. Residual φ remains available as a debug backend when an insert
 recipe sets `emission_maturity='residual_phi'`. Parity:
 [`../docs/reports/DUAL_REP_ACCEPTANCE.md`](../reports/DUAL_REP_ACCEPTANCE.md). Packaging:
-[`../props_emit/`](../props_emit/README.md).
+[`../props/`](../props/README.md).
 
 Prefer `emit_wall_solid_polygons` / `is_wall_solid_label`. Wall solids are
 geometric thickness regions (skin / web / spar cap), not composite layup —
@@ -47,10 +47,10 @@ flowchart LR
   MCS[MultiCellSection] --> Class[classify_labels]
   Class --> Poly[emit_polygons]
   Poly --> Shoe[shoelace]
-  Shoe --> Props[props_emit]
+  Shoe --> Props[props]
 ```
 
 ## See also
 
-- [`../props_emit/`](../props_emit/README.md)
+- [`../props/`](../props/README.md)
 - [`../docs/reports/DUAL_REP_ACCEPTANCE.md`](../reports/DUAL_REP_ACCEPTANCE.md)

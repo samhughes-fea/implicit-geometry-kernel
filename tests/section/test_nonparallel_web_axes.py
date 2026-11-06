@@ -11,7 +11,7 @@ from implicit_geometry_kernel.section.layout.section_layout import (
 from implicit_geometry_kernel.sdf.airfoil import (
     AirfoilSDF,
 )
-from implicit_geometry_kernel.section.sections.from_layout import (
+from implicit_geometry_kernel.section.assembly.from_layout import (
     multicell_from_section_layout,
 )
 

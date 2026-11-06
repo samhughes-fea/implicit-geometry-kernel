@@ -19,16 +19,16 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    SectionGeometryRunner,
+    SectionGeometry,
     resolve_system_type,
 )
 
 
 def main() -> None:
     result = (
-        SectionGeometryRunner(
+        SectionGeometry(
             layout=resolve_system_type("2D-F"),
             airfoil=AirfoilSDF.from_naca("2412", chord=1.0),
             skin_thickness=0.004,

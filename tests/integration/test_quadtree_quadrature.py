@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from implicit_geometry_kernel.section.props_emit.area_mesh import (
+from implicit_geometry_kernel.section.props.area_mesh import (
     _component_supports,
 )
 from implicit_geometry_kernel.sdf.grid import SDFGrid

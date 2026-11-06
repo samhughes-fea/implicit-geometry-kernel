@@ -122,3 +122,45 @@ def test_mid_surface_graph(cut):
     # oriented runs: every point is left by at most one segment of each wall
     starts = [(s.start, s.name) for s in mid.segments]
     assert len(starts) == len(set(starts))
+
+
+def test_oml_polyline_closed_and_contains_skin():
+    from shapely.geometry import LineString, Polygon
+
+    geo = BladeGeometry(_prismatic(), "2D-F", 0.003, spar_cap_thickness=0.008, shear_web_thickness=0.002,
+                        web_positions=(0.18, 0.48))
+    z = 1.0
+    oml = geo.oml_polyline(z)
+    assert oml.shape[1] == 3
+    assert np.allclose(oml[:, 2], z)
+    assert np.allclose(oml[0], oml[-1])
+    cut = geo.section_at(z)
+    assert (cut.chord, cut.twist, cut.pitch_axis) == pytest.approx(geo.station_at(z)[:3])
+    hull = Polygon(oml[:, :2]).buffer(1e-6)
+    for wall in cut.walls_of("skin"):
+        assert hull.contains(LineString(wall.xy))
+
+
+def test_span_tables_override_station_scalars_not_airfoils():
+    stations = [Station(0.0, 2.0, AIRFOIL, pitch_axis=0.3),
+                Station(10.0, 1.0, AIRFOIL, twist=10.0, pitch_axis=0.3, offset=(0.0, 0.2))]
+    z = np.array([0.0, 5.0, 10.0])
+    geo = BladeGeometry(
+        stations, "2D-F", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
+        chord=(z, np.array([2.0, 2.0, 1.0])),
+        twist=(z, np.array([0.0, 0.0, 10.0])),
+        offset=(z, np.array([[0.0, 0.0], [0.4, 0.0], [0.0, 0.2]])),
+    )
+    chord, twist, pitch, offset, _ = geo.station_at(5.0)
+    assert (chord, twist, *offset) == pytest.approx((2.0, 0.0, 0.4, 0.0))
+    assert pitch == pytest.approx(0.3)
+    plain = BladeGeometry(stations, "2D-F", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004)
+    assert plain.station_at(5.0)[0] == pytest.approx(1.5)
+    cut = geo.section_at(5.0)
+    assert cut.chord == pytest.approx(2.0)
+    assert np.allclose(geo.oml_polyline(5.0)[:, 2], 5.0)
+
+
+def test_bad_span_table():
+    with pytest.raises(ValueError, match="chord"):
+        BladeGeometry(_prismatic(), "2D-F", 0.003, chord=([0.0], [1.0]))

@@ -1,4 +1,4 @@
-# `section_geometry`
+# `section`
 
 Build a 2-D structural cross-section of a wind-turbine blade.
 
@@ -52,17 +52,17 @@ in parallel via `section_properties`.
 ## Quick start
 
 ```python
+from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    SectionGeometryRunner,
-    plot_section,
+    SectionGeometry,
     resolve_system_type,
 )
+from plotting import plot_section
 
 layout = resolve_system_type("2D-F")
-airfoil = AirfoilSDF.from_naca("2412", chord=1.0)
+airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)
 
-result = SectionGeometryRunner(
+result = SectionGeometry(
     layout=layout,
     airfoil=airfoil,
     skin_thickness=0.004,
@@ -73,9 +73,9 @@ result = SectionGeometryRunner(
 ).execute().get_results()
 ```
 
-`SectionGeometryRunner` is the public call path; `build_section_geometry` is
-the test surface. Import from the package barrel. Returns
-`SectionGeometryResult` or raises (e.g. `InfeasibleSectionGeometry`).
+`SectionGeometry` is the public call path (`SectionGeometryRunner` is an
+alias). `build_section_geometry` is a deep import (`section.api`) for tests.
+Returns `SectionGeometryResult` or raises (e.g. `InfeasibleSectionGeometry`).
 
 Guided paths: [`docs/guides/quickstart.md`](guides/quickstart.md).
 Runnable twins: `examples/`.
@@ -103,12 +103,12 @@ shell_inputs = shell_mesh_inputs_from_geometry_result(result)
 To resolve which webs fit the local cavity without assembling solids:
 
 ```python
-resolution = SectionGeometryRunner(
+resolution = SectionGeometry(
     layout=layout, airfoil=airfoil, skin_thickness=0.004,
 ).resolve().get_layout_resolution()
 # resolution.layout          — effective SystemLayoutSpec
 # resolution.dropped         — webs that did not fit
-# resolution.web_x_positions_m
+# resolution.web_x_positions_m  — metres from LE (same quantity as web_offsets)
 ```
 
 ## Learning path
@@ -126,12 +126,11 @@ resolution = SectionGeometryRunner(
 
 A twin-web family-D section (layout `"2D-F"`):
 
-![2D-F structural family grid](../../src/implicit_geometry_kernel/plotting/output/structural_family_grids/2D-F.png)
+![2D-F structural family grid](../../examples/demos/figures/structural_family_grids/2D-F.png)
 
-Figures on this page are **generated, not checked in** —
-`visualisation/output/` is gitignored, so they render locally once the gallery
-demo has been run and are absent in a fresh clone. Full regen list:
-`visualisation/demos/ARTIFACTS.md`.
+Figures on this page are committed under
+[`examples/demos/figures/`](../../examples/demos/figures/). Full regen list:
+[`examples/demos/section/ARTIFACTS.md`](../../examples/demos/section/ARTIFACTS.md).
 
 ```bash
 python examples/demos/section/structural_family_grids_demo.py
@@ -146,11 +145,11 @@ orientation. Teasers by web count **X** (≠ spar-cap family **Y**):
 
 | `0A` — 0 webs, no caps | `1A-F` — 1 web, no caps, flapwise | `2D-F` — 2 webs, box caps, flapwise |
 |------|-------|-------|
-| ![0A](../../src/implicit_geometry_kernel/plotting/output/structural_family_grids/0A.png) | ![1A-F](../../src/implicit_geometry_kernel/plotting/output/structural_family_grids/1A-F.png) | ![2D-F](../../src/implicit_geometry_kernel/plotting/output/structural_family_grids/2D-F.png) |
+| ![0A](../../examples/demos/figures/structural_family_grids/0A.png) | ![1A-F](../../examples/demos/figures/structural_family_grids/1A-F.png) | ![2D-F](../../examples/demos/figures/structural_family_grids/2D-F.png) |
 
 | `3B-F` — 3 webs, single band | `4C-F` — 4 webs, discrete caps | `5A-F` — 5 webs, no caps |
 |--------|-------|-------|
-| ![3B-F](../../src/implicit_geometry_kernel/plotting/output/structural_family_grids/3B-F.png) | ![4C-F](../../src/implicit_geometry_kernel/plotting/output/structural_family_grids/4C-F.png) | ![5A-F](../../src/implicit_geometry_kernel/plotting/output/structural_family_grids/5A-F.png) |
+| ![3B-F](../../examples/demos/figures/structural_family_grids/3B-F.png) | ![4C-F](../../examples/demos/figures/structural_family_grids/4C-F.png) | ![5A-F](../../examples/demos/figures/structural_family_grids/5A-F.png) |
 
 Full catalogue with every key:
 [`docs/reference/structural_systems_gallery.md`](reference/structural_systems_gallery.md).
@@ -189,34 +188,34 @@ Internal ownership matrix:
 ```mermaid
 flowchart TB
   Api[api] --> Layout[layout]
-  Api --> Sections[sections]
-  Layout --> Sections
-  Recipes[recipes] --> Sections
+  Api --> Assembly[assembly]
+  Layout --> Assembly
+  Recipes[recipes] --> Assembly
   Sdf[sdf] --> Recipes
-  Sections --> Constructive[constructive]
-  Sections --> Mid[midlines]
-  Mid --> Topo[topology]
-  Topo --> CellWall[cell_wall_loops]
-  Sections --> PropsEmit[props_emit]
+  Assembly --> Constructive[constructive]
+  Assembly --> Mid[midlines]
+  Mid --> Topo[junctions]
+  Topo --> CellWall[cells]
+  Assembly --> Props[props]
   Mid --> Mesh[section_mesh]
   CellWall --> Loads[section_loads]
-  PropsEmit --> SecProps[section_properties]
+  Props --> SecProps[section_properties]
 ```
 
 Build flow (same package, finer grain):
 
 ```mermaid
 flowchart TB
-  Runner[SectionGeometryRunner] --> Build[build_section_geometry]
+  Runner[SectionGeometry] --> Build[build_section_geometry]
   Build --> Resolve[resolve_station_layout]
   Resolve --> Sized[build_section_with_thicknesses]
   SL[SectionLayout] --> Sized
   Sized --> MCS[MultiCellSection]
   Recipes[wall_recipes] --> MCS
   MCS --> Mid[midlines]
-  Mid --> Topo[topology]
-  Topo --> CellWall[cell_wall_loops]
-  MCS --> Props[props_emit]
+  Mid --> Topo[junctions]
+  Topo --> CellWall[cells]
+  MCS --> Props[props]
 ```
 
 **Extension points**
@@ -228,9 +227,8 @@ flowchart TB
 | New optional product | Gate in `normalize_output_gates` + field on `SectionGeometryResult` + home module |
 | Shape primitives | [`sdf/`](sdf/README.md) (recipe-agnostic) |
 
-Preferred call: `SectionGeometryRunner`. Free function: `build_section_geometry`.
-Assemble-only: `build_section_with_thicknesses` / `multicell_from_layout`.
-Demo view: `build_section_view` (same MultiCell path).
+Preferred call: `SectionGeometry`. Assemble-only and `build_section_geometry`
+are `section.api` (tests). Demo view: `build_section_view`.
 
 ## Concepts
 
@@ -253,7 +251,7 @@ Spine vocabulary: `../../docs/CASCADE_GLOSSARY.md`.
 
 Each region is an SDF `φ(x, y)` (negative inside). CSG uses `min` / `max` for
 union, intersection, difference, and offsets. The station outline is an
-`AirfoilSDF`, typically `from_naca(...)`.
+`AirfoilSDF` from `Airfoil.to_sdf()` (or `sdf.airfoil`).
 
 ### Layout identifiers
 
@@ -302,20 +300,16 @@ midlines. Detail: [`coordinate_frames`](../frames/README.md) ·
 ## Package structure
 
 ```text
-section_geometry/
+section/
 ├── api/            # runner and build entrypoints
-├── types/          # public type aliases
 ├── layout/         # layout id → SystemLayoutSpec / SectionLayout
-├── sdf/            # SDF primitives and AirfoilSDF
-├── sections/       # MultiCellSection assembly
+├── assembly/       # MultiCellSection host
 ├── recipes/        # dual-emission wall recipes (SDF / polygon / midline)
 ├── constructive/   # polygons for area / inertia
-├── props_emit/     # gated properties_map
-├── midlines/       # centreline strip emit
-├── junction_preparation/  # junction snap for meshing (topology/ alias → 2027-03-31)
-├── cell_wall_loops/ # cell-wall loops
-├── visualisation/  # plots and demos
-└── docs/           # layout taxonomy, dual-rep notes
+├── props/          # gated properties_map
+├── midlines/       # centreline strip emit + offset_math
+├── junctions/      # junction snap for meshing
+├── cells/          # cell-wall loops
 ```
 
 | Module | Role |
@@ -323,15 +317,15 @@ section_geometry/
 | [`api/`](api/README.md) | Public lifecycle: resolve, build, return `SectionGeometryResult` |
 | `types/` | Stable aliases for result types |
 | [`layout/`](layout/README.md) | Catalogue ids, parametric `SectionLayout`, web-drop rules |
-| [`sdf/`](sdf/README.md) | Domain-agnostic shape kernel |
-| [`sections/`](sections/README.md) | Blade recipes → `MultiCellSection` (components) |
+| `implicit_geometry_kernel.sdf` | Domain-agnostic shape kernel (not under `section/`) |
+| [`assembly/`](assembly/README.md) | Blade recipes → `MultiCellSection` |
 | [`recipes/`](recipes/README.md) | One wall description → SDF / polygon / midline projections |
 | [`constructive/`](constructive/README.md) | Polygon path for mature regions |
-| [`props_emit/`](props_emit/README.md) | Orchestrates `properties_map` |
+| [`props/`](props/README.md) | Orchestrates `properties_map` |
 | [`midlines/`](midlines/README.md) | Wall → centreline polyline |
-| [`junction_preparation/`](junction_preparation/README.md) | Snap strip endpoints for meshing |
-| [`cell_wall_loops/`](cell_wall_loops/README.md) | Closed loops around empty cells |
-| [`visualisation/`](visualisation/README.md) | Plotting and demos |
+| [`junctions/`](junctions/README.md) | Snap strip endpoints for meshing |
+| [`cells/`](cells/README.md) | Closed loops around empty cells |
+| sibling `plotting/` | Matplotlib (`[plots]`); not a section module |
 
 ## Public API
 
@@ -339,33 +333,27 @@ Primary (use these first):
 
 | Name | Role |
 |------|------|
-| `SectionGeometryRunner` | Preferred entry: construct → `resolve()` / `execute()` → `get_results()` |
-| `build_section_geometry` | Free-function build (tests / scripts) |
+| `SectionGeometry` | Preferred entry: construct → `resolve()` / `execute()` → `get_results()` |
 | `resolve_system_type` | Layout string → `SystemLayoutSpec` |
 | `SystemLayoutSpec` | Frozen layout configuration |
-| `AirfoilSDF` | Aerofoil as an SDF |
+| `SectionLayout` | Parametric layout (or catalogue preset) |
 | `MultiCellSection` | Assembled named regions |
-| `SectionGeometryResult` | Worker product |
+| `SectionGeometryResult` | Worker product (properties, midlines, cell-wall loops) |
 | `StationLayoutResolution` | Effective layout after web drops |
-| `plot_section` | Draw an assembled section |
 
 Also exported from the barrel (secondary):
 
 | Name | Role |
 |------|------|
-| `build_section_with_thicknesses` | Assemble-only sized `MultiCellSection` (any key) |
-| `build_section_view` | Demo / properties view (same MultiCell path; long thickness kwargs) |
-| `multicell_from_layout` | Layout → MultiCell helper (`sections.from_layout`) |
-| `section_geometry_prep_key` | Cache key for a build |
+| `SectionGeometryRunner` | Alias of `SectionGeometry` (kept for one release) |
+| `resolve_station_layout` | Cheap web-drop / catalogue step-down |
 | `SYSTEM_TYPE_KEYS` | All registered layout ids |
-| `SDFGrid` | Dense SDF sampling grid |
-| `StructuralFamily`, `FixedCapAnchor` | Cap-family / anchor enums (**Y** axis only) |
-| `parse_structural_family`, `parse_fixed_cap_anchor` | Parsers |
-| `pitch_axis_x_from_le`, `max_thickness_chord_x` | Section-axis helpers |
-| `SDFCallable` | Protocol for `φ(x, y)` |
-| `SectionPropertiesReport`, `export_section_json` | Properties export |
-| `fiber_extents_from_*`, `outer_polygon_from_airfoil`, `topology_for_section_properties` | Handoffs to `section_properties` |
-| `plot_sdf_field` | Raw SDF field plot |
+| `SystemLayoutSpec` | Frozen catalogue layout |
+| `SectionPropertiesMeta` | Backend metadata on a properties result |
+
+Deep imports (not on the barrel): `section.api.build_section_geometry`,
+`section.api.build_section_view`, clamps in `section.layout.thickness_limits`,
+plots from sibling `plotting`.
 
 ## Results
 
@@ -480,10 +468,10 @@ This is per-region 2-D geometry, not beam `EA` / `EI` / `GJ`
 
   | To see | Script |
   |--------|--------|
-  | All layout families | `visualisation/demos/structural_family_grids_demo.py` |
-  | Junction snap | `visualisation/demos/shell_junction_topology_demo.py` |
-  | Cell-wall loops | `visualisation/demos/cell_wall_loops_demo.py` |
-  | Polygon vs SDF area | `visualisation/demos/dual_rep_consistency_demo.py` |
-  | Twin-web walkthrough | `visualisation/demos/naca2412_section.py` |
+  | All layout families | `examples/demos/section/structural_family_grids_demo.py` |
+  | Junction snap | `examples/demos/section/shell_junction_topology_demo.py` |
+  | Cell-wall loops | `examples/demos/section/cell_wall_loops_demo.py` |
+  | Polygon vs SDF area | `examples/demos/section/dual_rep_consistency_demo.py` |
+  | Twin-web walkthrough | `examples/demos/section/naca2412_section.py` |
 
-  Full list: `visualisation/demos/`.
+  Full list: `examples/demos/section/`.

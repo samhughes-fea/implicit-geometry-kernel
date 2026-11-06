@@ -1,8 +1,8 @@
 # api — public entrypoints
 
-↑ [`section_geometry`](../README.md)
+↑ [`section`](../README.md)
 
-Public surface: construct `SectionGeometryRunner`, optionally `resolve()` the
+Public surface: construct `SectionGeometry`, optionally `resolve()` the
 layout, `execute()` the build, read `SectionGeometryResult`. Validates inputs,
 sequences work, and packages the product; domain maths lives in the other
 modules.
@@ -31,7 +31,7 @@ Spine context: `CASCADE_GLOSSARY` ·
 
 | Call | When |
 |------|------|
-| `SectionGeometryRunner` | Public call path |
+| `SectionGeometry` | Public call path |
 | `build_section_geometry` | Free-function / tests |
 | `build_section_with_thicknesses` | Assemble solids only (any key → `MultiCellSection`) |
 | `build_section_view` | Demos / properties report (same MultiCell path; long thickness kwargs) |
@@ -40,7 +40,7 @@ Spine context: `CASCADE_GLOSSARY` ·
 
 | File | Role |
 |------|------|
-| `runner.py` | `SectionGeometryRunner` |
+| `runner.py` | `SectionGeometry` |
 | `worker.py` | `build_section_geometry`, `resolve_station_layout`, result dataclasses |
 | `factory.py` | `build_section_view` and related helpers |
 
@@ -48,7 +48,7 @@ Spine context: `CASCADE_GLOSSARY` ·
 
 | Name | File | Role |
 |------|------|------|
-| `SectionGeometryRunner` | `runner.py` | Preferred lifecycle |
+| `SectionGeometry` | `runner.py` | Preferred lifecycle |
 | `build_section_geometry` | `worker.py` | Free-function build |
 | `resolve_station_layout` | `worker.py` | Drop webs that do not fit |
 | `StationLayoutResolution` | `worker.py` | Effective layout + survivors + drops |
@@ -60,7 +60,7 @@ Product field tables: [`../README.md` § Results](../README.md#results).
 
 ## Caller parameters
 
-Important keyword arguments on `SectionGeometryRunner` /
+Important keyword arguments on `SectionGeometry` /
 `build_section_geometry`:
 
 | Parameter | Role |
@@ -70,7 +70,7 @@ Important keyword arguments on `SectionGeometryRunner` /
 | `skin_thickness`, `spar_cap_thickness`, `shear_web_thickness` | Geometric wall thicknesses [m] (material-bind agnostic). Short `t_skin` / `t_spar` / `t_web` are **not** accepted. Optional resolve aliases: `cap_height` ↔ `spar_cap_thickness`, `web_thickness` ↔ `shear_web_thickness` |
 | `twist_rad` | Geometric twist [rad] for emit |
 | `outputs` | `"properties"` / `"midlines"` / `"cell_wall_loops"` |
-| `web_x_positions_m` | Absolute web x offsets from LE [m], fixed across span. If omitted, positions are `frac × local_chord` and webs are never dropped for taper |
+| `web_offsets` | Absolute web x from LE [m], same as loft `BladeGeometry.web_offsets`. Alias: `web_x_positions_m`. The resolved field on `StationLayoutResolution` is still `web_x_positions_m`. If omitted, positions are `frac × local_chord` |
 | `resolution` | Precomputed `StationLayoutResolution` — skip re-resolve |
 | `min_cavity_depth_m` | Drop a web whose local cavity is too shallow for min-gauge caps |
 | `airfoil_for_spec` | Aerofoil used to size the quadtree domain; pass the **twisted** outline so the AABB does not clip rotated tips |
@@ -100,7 +100,7 @@ Environment knobs: `SECTION_GEOMETRY_PROPS_BACKEND=hybrid|quadtree|grid`;
 
 ```mermaid
 flowchart LR
-  Runner[SectionGeometryRunner] --> Resolve[resolve]
+  Runner[SectionGeometry] --> Resolve[resolve]
   Resolve --> Eff[StationLayoutResolution]
   Runner --> Exec[execute]
   Exec --> Build[build_section_geometry]

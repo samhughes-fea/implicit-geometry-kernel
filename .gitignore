@@ -1,3 +1,6 @@
+# Private blade catalogue: clone locally, never commit (see that repo's README).
+/reference_blades/
+
 *.egg-info/
 *.py[cod]
 .pytest_cache/
@@ -7,3 +10,4 @@ dist/
 # demo figures (PNG, GIF) are committed; their data dumps are regenerated
 examples/demos/figures/**/*.json
 examples/demos/figures/**/*.csv
+examples/09_reference_blades/figures/**/*.msh

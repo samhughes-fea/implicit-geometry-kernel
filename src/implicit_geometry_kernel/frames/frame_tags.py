@@ -1,8 +1,8 @@
 """Canonical short frame tags for structural containers across ``src``.
 
 Source of truth for the R / B / S / S′ / C / E / M letter vocabulary. Long-form
-section IDs live in :mod:`.section_frames.frame_ids`; transforms live in
-``section_frames``. Containers should type ``frame`` /
+section IDs live in :mod:`.frame_ids`; transforms live in this package.
+Containers should type ``frame`` /
 ``*_frame`` fields as :data:`FrameTag` and validate with
 :func:`require_frame_tag` at construction or finalize boundaries.
 

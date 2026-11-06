@@ -13,20 +13,20 @@ import pytest
 from implicit_geometry_kernel.contract.errors import (
     InfeasibleSectionGeometry,
 )
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     MultiCellSection,
-    build_section_with_thicknesses,
     resolve_station_layout,
     resolve_system_type,
 )
+from implicit_geometry_kernel.section.api import build_section_with_thicknesses
 from implicit_geometry_kernel.section.layout.cap_placement import (
     CapPlacementRule,
 )
 from implicit_geometry_kernel.section.layout.system_layout import (
     layout_without_spar_caps,
 )
-from implicit_geometry_kernel.section.sections.build_spar_caps import (
+from implicit_geometry_kernel.section.assembly.build_spar_caps import (
     build_spar_caps,
 )
 

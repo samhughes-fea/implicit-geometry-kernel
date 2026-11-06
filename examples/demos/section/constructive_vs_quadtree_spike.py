@@ -33,10 +33,10 @@ from implicit_geometry_kernel.section.constructive import (
     is_constructive_label,
     section_properties_from_polygons,
 )
-from implicit_geometry_kernel.section.props_emit.props_backend import (
+from implicit_geometry_kernel.section.props.backend import (
     quadtree_spec_for_airfoil,
 )
-from implicit_geometry_kernel.section.props_emit.props_compute import (
+from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF

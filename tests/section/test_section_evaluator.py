@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from implicit_geometry_kernel.sdf.ir import Circle, Intersect, Offset, Polygon, Shell
-from implicit_geometry_kernel.section.props_emit.section_evaluator import SectionFieldEvaluator
+from implicit_geometry_kernel.section.props.section_evaluator import SectionFieldEvaluator
 
 
 def test_eval_labels_shares_polygon_subtree():

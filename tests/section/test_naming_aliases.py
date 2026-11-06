@@ -12,11 +12,9 @@ from implicit_geometry_kernel.frames import (
     naca_to_twisted_pitch_axis_blade_frame,
     naca_to_zero_twist_pitch_axis_station_frame,
 )
-from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    build_section_with_thicknesses,
-    resolve_system_type,
-)
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.section import resolve_system_type
+from implicit_geometry_kernel.section.api import build_section_with_thicknesses
 from implicit_geometry_kernel.section.api.kwarg_aliases import (
     resolve_shear_web_thickness,
     resolve_spar_cap_thickness,

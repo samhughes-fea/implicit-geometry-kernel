@@ -21,15 +21,12 @@ from implicit_geometry_kernel.sdf.ir import (
 from implicit_geometry_kernel.sdf.csg import offset, shell, subtract, union
 from implicit_geometry_kernel.sdf.grid import SDFGrid
 from implicit_geometry_kernel.sdf.primitives import sdf_box, sdf_circle
-from implicit_geometry_kernel.section import AirfoilSDF
-from implicit_geometry_kernel.section.recipes.sdf_ir import (
-    LEInsert,
-    OuterSkin,
-    SandwichCore,
-    ShearWeb,
-    SparCap,
-    TEInsert,
-)
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.section.recipes.inserts import LEInsert, TEInsert
+from implicit_geometry_kernel.section.recipes.outer_skin import OuterSkin
+from implicit_geometry_kernel.section.recipes.sandwich_core import SandwichCore
+from implicit_geometry_kernel.section.recipes.shear_web import ShearWebComponent
+from implicit_geometry_kernel.section.recipes.spar_cap import SparCap
 
 
 def test_compile_expr_matches_callable_csg():
@@ -84,7 +81,7 @@ def test_leading_edge_insert_expr_matches_callable():
 
 def test_shear_web_expr_matches_callable_chord_normal():
     af = AirfoilSDF.from_naca("2412", n_points=180, chord=1.0)
-    comp = ShearWeb(
+    comp = ShearWebComponent(
         af,
         skin_thickness=0.003,
         x_top=0.25,
@@ -104,7 +101,7 @@ def test_shear_web_expr_matches_callable_chord_normal():
 
 def test_shear_web_expr_matches_callable_flapwise():
     af = AirfoilSDF.from_naca("2412", n_points=180, chord=1.0)
-    comp = ShearWeb(
+    comp = ShearWebComponent(
         af,
         skin_thickness=0.003,
         x_top=0.25,
@@ -140,7 +137,7 @@ def test_sandwich_core_expr_matches_callable_chord_clips():
 
 def test_sandwich_core_expr_matches_callable_with_exclusion():
     af = AirfoilSDF.from_naca("2412", n_points=180, chord=1.0)
-    web = ShearWeb(
+    web = ShearWebComponent(
         af,
         skin_thickness=0.003,
         x_top=0.3,

@@ -21,9 +21,9 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    SectionGeometryRunner,
+    SectionGeometry,
     resolve_system_type,
 )
 
@@ -50,7 +50,7 @@ def main() -> None:
     anchored = tuple(float(f) * ROOT_CHORD_M for f in layout.web_chord_fracs)
 
     legacy = (
-        SectionGeometryRunner(
+        SectionGeometry(
             layout=layout,
             airfoil=tip,
             skin_thickness=T_SKIN,
@@ -64,7 +64,7 @@ def main() -> None:
     _report("legacy local fractions (no drops for taper)", legacy)
 
     anchored_res = (
-        SectionGeometryRunner(
+        SectionGeometry(
             layout=layout,
             airfoil=tip,
             skin_thickness=T_SKIN,

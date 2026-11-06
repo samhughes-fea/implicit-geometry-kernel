@@ -1,8 +1,8 @@
-# section_geometry docs
+# section docs
 
 Guides and reference (overview: package README).
 
-↑ [`section_geometry`](docs_index.md)
+↑ [`section`](docs_index.md)
 
 ## Table of contents
 
@@ -49,10 +49,10 @@ flowchart TB
   Examples --> Handoff
   Modules --> Api[api]
   Modules --> Layout[layout]
-  Modules --> Sections[sections]
+  Modules --> Assembly[assembly]
   Modules --> Mid[midlines]
-  Modules --> CellWall[cell_wall_loops]
-  Modules --> PropsEmit[props_emit]
+  Modules --> CellWall[cells]
+  Modules --> Props[props]
 ```
 
 ## Examples
@@ -61,8 +61,8 @@ Runnable teaching scripts (not plot demos):
 
 | Path | Role |
 |------|------|
-| `../examples/` | `01`–`05` newcomer path: first station → properties → resolve/size → spanwise anchors → mesh handoff |
-| `../visualisation/demos/` | Figure generation / gallery regeneration |
+| `../../examples/section/` | `01`–`04` newcomer path: first station → properties → resolve/size → spanwise anchors |
+| `../../examples/demos/` | Figure generation / gallery regeneration |
 
 ## Guides
 
@@ -90,6 +90,7 @@ Runnable teaching scripts (not plot demos):
 | [`reports/DUAL_REP_ACCEPTANCE.md`](reports/DUAL_REP_ACCEPTANCE.md) | Polygon vs SDF area acceptance |
 | [`reports/PERFORMANCE_WORK_SUMMARY.md`](reports/PERFORMANCE_WORK_SUMMARY.md) | Hybrid / quadtree performance notes |
 | [`reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md`](reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md) | SG-009 design spike — post-resample axis×cap junctions |
+| [`reports/MERGED_SHELL_GAPS.md`](reports/MERGED_SHELL_GAPS.md) | Pass 2 shell-graph gaps G1–G11 (measured, not closed) |
 | [`bug_log.md`](bug_log.md) | Debug log — junction/tolerance findings and the standing invariant |
 
 ## Module pages
@@ -99,14 +100,13 @@ Runnable teaching scripts (not plot demos):
 | [`../api/`](api/README.md) | Public runner, caller parameters, feasibility |
 | `../tests/` | How to run the package tests |
 | [`../layout/`](layout/README.md) | Layout ids and web cascade |
-| [`../sdf/`](sdf/README.md) | Shape kernel |
-| [`../sections/`](sections/README.md) | `MultiCellSection` |
-| `../sections/components/` | Skin / web / cap / core recipes |
+| [`sdf` package](../../src/implicit_geometry_kernel/sdf) | Shape kernel (`implicit_geometry_kernel.sdf`, not under `section/`) |
+| [`../assembly/`](assembly/README.md) | `MultiCellSection` |
 | [`../recipes/`](recipes/README.md) | Dual-emission wall recipes |
 | [`../constructive/`](constructive/README.md) | Polygons for area |
-| [`../props_emit/`](props_emit/README.md) | `properties_map` |
+| [`../props/`](props/README.md) | `properties_map` |
 | [`../midlines/`](midlines/README.md) | Centreline strips |
-| [`../junction_preparation/`](junction_preparation/README.md) | Junction snap |
-| [`../cell_wall_loops/`](cell_wall_loops/README.md) | Cell-wall loops |
+| [`../junctions/`](junctions/README.md) | Junction snap |
+| [`../cells/`](cells/README.md) | Cell-wall loops |
 | `../examples/` | Teaching scripts `01`–`05` |
-| `../visualisation/demos/` | Demo run list |
+| `../../examples/demos/` | Demo run list |

@@ -11,7 +11,7 @@ resolve ladder for a multi-web catalogue key (default ``5D-F``):
 * each dropped web is marked with its ``reason``
 * the final chord where resolve raises ``InfeasibleSectionGeometry``
 
-Uses ``SectionGeometryRunner(...).resolve().get_layout_resolution()`` — the
+Uses ``SectionGeometry(...).resolve().get_layout_resolution()`` — the
 cheap path documented in ``docs/guides/feasibility_and_drops.md``.
 
 Writes under ``examples/demos/figures/feasibility_cascade/``:
@@ -44,17 +44,17 @@ _ensure_mod.ensure_repo_path()
 from implicit_geometry_kernel.contract import (
     InfeasibleSectionGeometry,
 )
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    SectionGeometryRunner,
+    SectionGeometry,
     resolve_system_type,
 )
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from implicit_geometry_kernel.plotting.palette import (
+from plotting.palette import (
     INK,
     NAVY,
     RED,
@@ -84,7 +84,7 @@ def _sweep_cascade(
 
     for chord in chord_values_m:
         airfoil = AirfoilSDF.from_naca("2412", chord=float(chord), n_points=160)
-        runner = SectionGeometryRunner(
+        runner = SectionGeometry(
             layout=layout,
             airfoil=airfoil,
             skin_thickness=float(skin_thickness),

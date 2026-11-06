@@ -31,7 +31,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     apply_presentation_style,
     demo_output_dir,
     save_figure,
@@ -54,14 +54,14 @@ from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.props_emit.props_backend import (
+from implicit_geometry_kernel.section.props.backend import (
     quadtree_spec_for_airfoil,
 )
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.section.props_emit.props_compute import (
+from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
-from implicit_geometry_kernel.section.eval_cache import SectionEvalCache
+from implicit_geometry_kernel.section.props.eval_cache import SectionEvalCache
 from implicit_geometry_kernel.profiling import get_stats, reset_stats
 
 
@@ -105,7 +105,7 @@ def _run_bench(args, backend: str) -> dict:
         last_meta = _meta
 
         if args.plot and mesh is not None:
-            from implicit_geometry_kernel.plotting.plot import (
+            from plotting.plot import (
                 plot_section_from_mesh,
                 plot_section_hybrid,
             )
@@ -124,7 +124,7 @@ def _run_bench(args, backend: str) -> dict:
             stage_s["plot"] += time.perf_counter() - t
 
         if args.export:
-            from implicit_geometry_kernel.section.props_emit.export import (
+            from implicit_geometry_kernel.section.props.export import (
                 SectionPropertiesReport,
                 export_section_json,
             )
@@ -202,7 +202,7 @@ def _plot_throughput(
     matplotlib.use("Agg", force=False)
     import matplotlib.pyplot as plt
 
-    from implicit_geometry_kernel.plotting.palette import (
+    from plotting.palette import (
         INK,
         MUTED,
         NAVY,

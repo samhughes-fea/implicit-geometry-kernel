@@ -3,10 +3,10 @@
 import numpy as np
 import pytest
 
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.grid import SDFGrid
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     MultiCellSection,
-    SDFGrid,
 )
 from implicit_geometry_kernel.section.layout.section_axes import (
     max_thickness_chord_x,

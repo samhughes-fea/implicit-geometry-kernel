@@ -59,8 +59,12 @@ class SkinRegion:
 
 @dataclass(frozen=True)
 class ShearWeb:
-    """A flat web joining the surfaces at chord fraction ``position`` with ``n`` elements."""
+    """A shear web joining the surfaces at chord fraction ``position``, meshed with ``n`` shell elements."""
 
     name: str
     position: float
     n: int = 4
+
+
+# Name used in 0.4.0 only. Remove in 0.5.0.
+SpanWeb = ShearWeb

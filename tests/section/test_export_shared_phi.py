@@ -16,8 +16,8 @@ from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.props_emit.props_backend import quadtree_spec_for_airfoil
-from implicit_geometry_kernel.section.props_emit.export import (
+from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_airfoil
+from implicit_geometry_kernel.section.props.export import (
     _multicell_host,
     _shared_grid_phi,
 )

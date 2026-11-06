@@ -41,17 +41,17 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     save_figure,
 )
 
-from implicit_geometry_kernel.section.props_emit.area_mesh import section_properties_via_quadtree
+from implicit_geometry_kernel.section.props.area_mesh import section_properties_via_quadtree
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.grid import SDFGrid
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     MultiCellSection,
-    SDFGrid,
 )
-from implicit_geometry_kernel.section.props_emit.props_backend import quadtree_spec_for_airfoil
+from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.profiling import get_stats, reset_stats
 
 PROP_KEYS = ("area", "cx", "cy", "Ixx", "Iyy")

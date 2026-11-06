@@ -19,7 +19,7 @@ from typing import Any
 from implicit_geometry_kernel.section.api.worker import SectionGeometryResult, StationLayoutResolution, build_section_geometry, resolve_station_layout, section_geometry_prep_key
 
 
-class SectionGeometryRunner:
+class SectionGeometry:
     """Resolve the effective station layout, then build the section geometry.
 
     Parameters
@@ -61,6 +61,7 @@ class SectionGeometryRunner:
         twist_angle: float | None = None,
         outputs: Iterable[str] = ("properties", "midlines", "cell_wall_loops"),
         web_x_positions_m: Sequence[float] | None = None,
+        web_offsets: Sequence[float] | None = None,
         min_cavity_depth_m: float = 0.0,
         n_web_samples: int = 20,
         n_cap_samples: int = 80,
@@ -113,7 +114,11 @@ class SectionGeometryRunner:
             twist_angle=twist_angle,
         )
         self._outputs = tuple(outputs)
-        self._web_x_positions_m = web_x_positions_m
+        if web_offsets is not None and web_x_positions_m is not None:
+            raise ValueError("pass web_offsets or web_x_positions_m, not both")
+        self._web_x_positions_m = (
+            web_offsets if web_offsets is not None else web_x_positions_m
+        )
         self._min_cavity_depth_m = float(min_cavity_depth_m)
         self._n_web_samples = int(n_web_samples)
         self._n_cap_samples = int(n_cap_samples)
@@ -137,6 +142,7 @@ class SectionGeometryRunner:
         # at the minimum skin so the design-variable set is fixed for the whole
         # search; re-resolving at each trial's thickness could hand back a
         # different web set than the station was frozen against.
+        self._layout_frozen = resolution is not None
         self._resolution: StationLayoutResolution | None = resolution
         self._result: SectionGeometryResult | None = None
         self._spar_cap_ply_pitch_m = (
@@ -145,7 +151,7 @@ class SectionGeometryRunner:
             else None
         )
 
-    def resolve(self) -> "SectionGeometryRunner":
+    def resolve(self) -> "SectionGeometry":
         """Resolve the effective layout **without building geometry**.
 
         The cheap half of the stage: which webs this station can actually anchor,
@@ -172,17 +178,9 @@ class SectionGeometryRunner:
             )
         return self
 
-    def execute(self) -> "SectionGeometryRunner":
-        """Resolve layout then build geometry. Idempotent; returns ``self``."""
-        if self._executed:
-            return self
-        self.resolve()
-        resolution = self._resolution
-        assert resolution is not None  # set by resolve()
-        # Build against the *effective* layout: the nominal one may name webs
-        # this station cannot anchor, and sizing must not allocate design
-        # variables for components the section does not have.
-        self._result = build_section_geometry(
+    def _assemble(self, resolution: StationLayoutResolution, *, live_y: bool = False):
+        y = None if live_y else getattr(resolution, "web_y_coords", None)
+        return build_section_geometry(
             resolution.layout,
             self._airfoil,
             **(
@@ -203,10 +201,61 @@ class SectionGeometryRunner:
             quadtree_spec=self._quadtree_spec,
             airfoil_for_spec=self._airfoil_for_spec,
             web_x_positions_m=resolution.web_x_positions_m,
-            web_y_coords=getattr(resolution, "web_y_coords", None),
+            web_y_coords=y,
             spar_cap_ply_pitch_m=self._spar_cap_ply_pitch_m,
         )
-        self._resolution = resolution
+
+    def _assemble_dropping_webs(self, resolution: StationLayoutResolution, last_exc):
+        """Wave 4: step down webs when flapwise re-anchor fails (not a frozen sizing freeze)."""
+        from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
+        from implicit_geometry_kernel.section.api.worker import (
+            DroppedWeb,
+            StationLayoutResolution,
+            _reattach_catalogue_preset,
+            _step_down_section_layout,
+        )
+
+        xs = list(resolution.web_x_positions_m)
+        dropped = list(resolution.dropped)
+        while len(xs) > 1:
+            lost = float(xs.pop())
+            dropped.append(
+                DroppedWeb(lost, "flapwise web cannot re-anchor under twist; dropped at this station")
+            )
+            sl = _step_down_section_layout(resolution.nominal_layout, len(xs))
+            sl = _reattach_catalogue_preset(sl)
+            new_res = StationLayoutResolution(
+                sl, tuple(xs), tuple(dropped), resolution.nominal_layout, web_y_coords=()
+            )
+            try:
+                result = self._assemble(new_res, live_y=True)
+                self._resolution = new_res
+                return result
+            except InfeasibleSectionGeometry as exc:
+                last_exc = exc
+        raise last_exc
+
+    def execute(self) -> "SectionGeometry":
+        """Resolve layout then build geometry. Idempotent; returns ``self``."""
+        from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
+
+        if self._executed:
+            return self
+        self.resolve()
+        resolution = self._resolution
+        assert resolution is not None  # set by resolve()
+        # Build against the *effective* layout: the nominal one may name webs
+        # this station cannot anchor, and sizing must not allocate design
+        # variables for components the section does not have.
+        try:
+            self._result = self._assemble(resolution)
+        except InfeasibleSectionGeometry as exc:
+            if self._layout_frozen or "re-anchor" not in str(exc).lower():
+                raise
+            try:
+                self._result = self._assemble(resolution, live_y=True)
+            except InfeasibleSectionGeometry:
+                self._result = self._assemble_dropping_webs(resolution, exc)
         self._executed = True
         return self
 
@@ -214,7 +263,7 @@ class SectionGeometryRunner:
         """Return the built :class:`SectionGeometryResult`. Requires :meth:`execute`."""
         if not self._executed or self._result is None:
             raise RuntimeError(
-                "SectionGeometryRunner.execute() must be called before get_results()"
+                "SectionGeometry.execute() must be called before get_results()"
             )
         return self._result
 
@@ -226,7 +275,7 @@ class SectionGeometryRunner:
         """
         if self._resolution is None:
             raise RuntimeError(
-                "SectionGeometryRunner.resolve() or .execute() must be called "
+                "SectionGeometry.resolve() or .execute() must be called "
                 "before get_layout_resolution()"
             )
         return self._resolution
@@ -258,4 +307,6 @@ class SectionGeometryRunner:
         )
 
 
-__all__ = ["SectionGeometryRunner"]
+SectionGeometryRunner = SectionGeometry
+
+__all__ = ["SectionGeometry", "SectionGeometryRunner"]

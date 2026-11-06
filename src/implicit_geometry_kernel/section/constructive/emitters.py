@@ -12,7 +12,7 @@ from implicit_geometry_kernel.section.constructive.offset_locus import airfoil_p
 
 
 def _clip_algebra():
-    from implicit_geometry_kernel.section.sections.clip_algebra import CamberSide, ChordBand, FlapwiseStrip, apply_shapely
+    from implicit_geometry_kernel.section.assembly.clip_algebra import CamberSide, ChordBand, FlapwiseStrip, apply_shapely
 
     return CamberSide, ChordBand, FlapwiseStrip, apply_shapely
 

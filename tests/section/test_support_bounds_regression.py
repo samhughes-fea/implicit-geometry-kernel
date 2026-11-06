@@ -27,10 +27,10 @@ from implicit_geometry_kernel.section.api.factory import (
 )
 # Real home, not the deprecated ``engine`` shim: that shim star-imports, and
 # star-import never re-exports underscore names.
-from implicit_geometry_kernel.section.props_emit import area_mesh as am
-from implicit_geometry_kernel.section.props_emit.props_backend import quadtree_spec_for_airfoil
+from implicit_geometry_kernel.section.props import area_mesh as am
+from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.section.props_emit.props_compute import (
+from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
 from implicit_geometry_kernel.profiling import reset_stats

@@ -4,24 +4,24 @@ from __future__ import annotations
 
 import numpy as np
 
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     MultiCellSection,
 )
 from implicit_geometry_kernel.section.constructive import (
     emit_wall_solid_polygons,
     is_skin_label,
 )
-from implicit_geometry_kernel.section.midlines.shell_midline_export import (
+from implicit_geometry_kernel.section.midlines.export import (
     build_shell_midline_strips,
 )
-from implicit_geometry_kernel.section.junction_preparation.shell_midline_junction_preparation import (
+from implicit_geometry_kernel.section.junctions.prepare import (
     prepare_shell_midline_junctions,
 )
-from implicit_geometry_kernel.section.cell_wall_loops.cell_wall_loops import (
+from implicit_geometry_kernel.section.cells.loops import (
     build_cell_wall_loops,
 )
-from implicit_geometry_kernel.section.recipes.sdf_ir.outer_skin import (
+from implicit_geometry_kernel.section.recipes.outer_skin import (
     OuterSkin,
 )
 

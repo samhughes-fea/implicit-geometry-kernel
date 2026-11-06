@@ -36,28 +36,28 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
 
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.grid import SDFGrid
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     MultiCellSection,
-    SDFGrid,
 )
 # ``interface/`` is a re-export shim and carries none of these any more: the
 # midline builder moved to ``midlines/`` and the loop builder to
 # ``cell_wall_loops/``, alongside the rest of their own stage.
-from implicit_geometry_kernel.section.midlines.shell_midline_export import (
+from implicit_geometry_kernel.section.midlines.export import (
     build_shell_midline_strips,
 )
-from implicit_geometry_kernel.section.cell_wall_loops.cell_wall_loop_builders import (
+from implicit_geometry_kernel.section.cells.builders import (
     build_cell_wall_loops,
 )
-from implicit_geometry_kernel.plotting import plot_section
-from implicit_geometry_kernel.plotting.frames import section_plot_axes
+from plotting import plot_section
+from plotting.frames import section_plot_axes
 from cell_wall_loops_case_payload import (
     cell_wall_loops_case_payload,
 )
@@ -181,7 +181,7 @@ def _plot_midline_loops(ax, strips, loops, title: str) -> None:
             Line2D([0], [0], color=edge, lw=2.2, label=f"cell_{lp.id}  A={lp.area_m2:.4g} mÂ²")
         )
 
-    from implicit_geometry_kernel.plotting.plot_section import (
+    from plotting.plot_section import (
         apply_structural_section_axes,
     )
 

@@ -23,16 +23,16 @@ Grid:
     SDFGrid
 
 Airfoil:
-    AirfoilSDF
-
-NACA generators:
-    naca_four_digit_vertices, naca_five_digit_vertices, naca_six_series_vertices,
-    airfoil_vertices_from_spanwise, spanwise_airfoil_label
+    AirfoilSDF (adapter; prefer Airfoil.naca4(...).to_sdf())
 
 CSG IR:
     Expr, Circle, Box, RoundedBox, OrientedBox, Capsule, HalfPlane, Polygon,
     CallableField, Union, Intersect, Subtract, Offset, Rotate,
     eval_expr, compile_expr
+
+Feature field (2.5-D):
+    FieldSample, FeatureTable, FeatureSpec, NO_FEATURE, SDFNode,
+    TagNode, PriorityUnionNode, LoftedPolygonSDF, GeometrySolver
 
 Protocol:
     SDFCallable
@@ -53,8 +53,12 @@ from implicit_geometry_kernel.sdf.csg import blend, intersect, intersect_all, of
 from implicit_geometry_kernel.sdf.transforms import SDFFrame, flapwise_aligned_web_angle, mirror_field_x, mirror_field_y, rotate_field, rotate_points, scale_field, translate_field
 from implicit_geometry_kernel.sdf.grid import SDFGrid  # noqa: E402
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF  # noqa: E402
-from implicit_geometry_kernel.sdf.naca import airfoil_vertices_from_spanwise, naca_five_digit_vertices, naca_four_digit_vertices, naca_six_series_vertices, spanwise_airfoil_label
 from implicit_geometry_kernel.sdf.ir import CallableField, Capsule, Circle, Box, Expr, HalfPlane, Intersect, Offset, OrientedBox, Polygon, RoundedBox, Rotate, Shell, Slab, Subtract, Union, compile_expr, eval_expr, eval_expr_batch, intersect_expr, subtract_expr, union_expr
+from implicit_geometry_kernel.sdf.compile import compile_expr_to_node
+from implicit_geometry_kernel.sdf.field import FeatureKind, FeatureSpec, FeatureTable, FieldSample, NO_FEATURE, SDFNode
+from implicit_geometry_kernel.sdf.nodes import PriorityUnionNode, TagNode
+from implicit_geometry_kernel.sdf.lofted import LoftedPolygonSDF
+from implicit_geometry_kernel.sdf.solve import GeometrySolver, SolveResult
 
 __all__ = [
     "SDFCallable",
@@ -73,15 +77,14 @@ __all__ = [
     "SDFGrid",
     # airfoil
     "AirfoilSDF",
-    # naca
-    "naca_four_digit_vertices", "naca_five_digit_vertices",
-    "naca_six_series_vertices", "airfoil_vertices_from_spanwise",
-    "spanwise_airfoil_label",
     # ir
     "Expr", "Circle", "Box", "RoundedBox", "OrientedBox", "Capsule",
     "HalfPlane", "Polygon", "CallableField",
     "Union", "Intersect", "Subtract", "Offset", "Rotate", "Shell", "Slab",
-    "eval_expr", "eval_expr_batch", "compile_expr",
+    "eval_expr", "eval_expr_batch", "compile_expr", "compile_expr_to_node",
     "union_expr", "intersect_expr", "subtract_expr",
-    # cache
+    # feature field
+    "FieldSample", "FeatureTable", "FeatureSpec", "FeatureKind", "NO_FEATURE", "SDFNode",
+    "TagNode", "PriorityUnionNode",
+    "LoftedPolygonSDF", "GeometrySolver", "SolveResult",
 ]

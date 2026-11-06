@@ -1,7 +1,7 @@
 # examples
 
-Short, runnable teaching scripts for `section_geometry`. Plot-heavy figure
-generation lives under `../visualisation/demos/`.
+Short, runnable teaching scripts for `section`. Plot-heavy figure
+generation lives under `../demos/section/`.
 
 ↑ `section_geometry` · `docs index`
 
@@ -47,4 +47,4 @@ Or install editable (`pip install -e .`) and run the same path.
 - Anatomy on a figure: `../docs/guides/anatomy_on_a_figure.md`
 - Feasibility / drops: `../docs/guides/feasibility_and_drops.md`
 - Geometry → mesh: `../docs/guides/geometry_to_mesh.md`
-- Figure demos: `../visualisation/demos/`
+- Figure demos: `../demos/section/`

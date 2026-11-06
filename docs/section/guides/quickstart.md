@@ -3,7 +3,7 @@
 Progressive call paths. Overview: [`../README.md`](../docs_index.md). Recipes:
 [`caller_patterns.md`](caller_patterns.md).
 
-↑ [`section_geometry`](../docs_index.md)
+↑ [`section`](../docs_index.md)
 
 Returns `SectionGeometryResult` or raises (e.g. `InfeasibleSectionGeometry`).
 
@@ -25,17 +25,17 @@ One station. Runnable twin:
 `../examples/01_first_station.py`.
 
 ```python
+from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    SectionGeometryRunner,
-    plot_section,
+    SectionGeometry,
     resolve_system_type,
 )
+from plotting import plot_section
 
 layout = resolve_system_type("2D-F")
-airfoil = AirfoilSDF.from_naca("2412", chord=1.0)
+airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)
 
-result = SectionGeometryRunner(
+result = SectionGeometry(
     layout=layout,
     airfoil=airfoil,
     skin_thickness=0.004,
@@ -48,8 +48,9 @@ result = SectionGeometryRunner(
 plot_section(result.section)
 ```
 
-`SectionGeometryRunner` is the public call path; `build_section_geometry` is
-the test surface. Gate `"cell_wall_loops"` also fills midlines.
+`SectionGeometry` is the public call path (`SectionGeometryRunner` is an alias).
+`build_section_geometry` is a deep import (`section.api`) for tests. Gate
+`"cell_wall_loops"` also fills midlines.
 
 ---
 
@@ -118,12 +119,12 @@ skin ± optional caps (no web junctions). See
 
 ## 4. Thickness-driven build
 
-Thicknesses are metres on the runner
+Thicknesses are metres on `SectionGeometry`
 (`skin_thickness`, `spar_cap_thickness`, `shear_web_thickness`).
 Same layout, different stacks:
 
 ```python
-result = SectionGeometryRunner(
+result = SectionGeometry(
     layout=resolve_system_type("2D-F"),
     airfoil=AirfoilSDF.from_naca("2412", chord=1.0),
     skin_thickness=0.006,
@@ -148,7 +149,7 @@ Runnable twin:
 Feasibility notes: [`feasibility_and_drops.md`](feasibility_and_drops.md).
 
 ```python
-frozen = SectionGeometryRunner(
+frozen = SectionGeometry(
     layout=layout,
     airfoil=airfoil,
     skin_thickness=t_skin_min,
@@ -156,7 +157,7 @@ frozen = SectionGeometryRunner(
     shear_web_thickness=0.0,
 ).resolve().get_layout_resolution()
 
-result = SectionGeometryRunner(
+result = SectionGeometry(
     layout=frozen.layout,
     airfoil=airfoil,
     skin_thickness=skin_thickness,
@@ -181,7 +182,7 @@ Runnable twin:
 `../examples/04_spanwise_web_anchors.py`.
 
 ```python
-result = SectionGeometryRunner(
+result = SectionGeometry(
     layout=layout,
     airfoil=airfoil_at_station,
     skin_thickness=0.004,
@@ -199,7 +200,7 @@ result = SectionGeometryRunner(
 
 | Goal | Go to |
 |------|--------|
-| Runnable examples `01`–`05` | `../examples/` |
+| Runnable examples `01`–`04` | `../../../examples/section/` |
 | More call recipes | [`caller_patterns.md`](caller_patterns.md) |
 | Labels on a `"2D-F"` figure | [`anatomy_on_a_figure.md`](anatomy_on_a_figure.md) |
 | Feasibility / dropped webs | [`feasibility_and_drops.md`](feasibility_and_drops.md) |
@@ -208,7 +209,7 @@ result = SectionGeometryRunner(
 | Layout id decode / cascade | [`../reference/system_type_xyz_taxonomy.md`](../reference/system_type_xyz_taxonomy.md) |
 | Module map | [`../README.md`](../docs_index.md#package-structure) |
 | Run tests | `../tests/README.md` |
-| Figure demos | `../visualisation/demos/` |
+| Figure demos | `../../../examples/demos/section/` |
 
 Handoff to meshing (requires midlines). Runnable twin:
 `../examples/05_handoff_to_mesh.py`.

@@ -21,15 +21,15 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     resolve_system_type,
 )
 from implicit_geometry_kernel.section.api.worker import (
     resolve_web_x_positions,
     section_geometry_prep_key,
 )
-from implicit_geometry_kernel.section.sections.web_layout import (
+from implicit_geometry_kernel.section.assembly.web_layout import (
     resolve_web_anchors,
 )
 

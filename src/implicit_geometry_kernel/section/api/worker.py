@@ -6,9 +6,8 @@ output gates (compute-cost knobs) and interpret results in orchestration.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from dataclasses import dataclass
-from typing import Any, Collection, Iterable, Literal, Sequence
+from collections.abc import Collection, Mapping
+from typing import Any, Iterable, Sequence
 
 from implicit_geometry_kernel.contract.cell_wall_loop import (
     CellWallLoop,
@@ -16,16 +15,27 @@ from implicit_geometry_kernel.contract.cell_wall_loop import (
 from implicit_geometry_kernel.contract.shell_midline_strip import (
     ShellMidlineStrip,
 )
-from implicit_geometry_kernel.section.layout.section_layout import (
-    SectionLayout,
+from implicit_geometry_kernel.section.api.layout_resolution import (
+    StationLayoutResolution,
+    _as_section_layout,
+    _layout_web_fracs,
+    resolve_station_layout,
+    resolve_web_x_positions,
 )
-from implicit_geometry_kernel.section.layout.system_layout import (
-    SystemLayoutSpec,
+from implicit_geometry_kernel.section.api.results import (
+    ALL_OUTPUT_GATES,
+    DroppedWeb,
+    LayoutInput,
+    OutputGate,
+    SectionGeometryResult,
+    SectionPropertiesMeta,
+    normalize_output_gates,
 )
-from implicit_geometry_kernel.section.midlines.section_midline_host import (
+from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
+from implicit_geometry_kernel.section.midlines.host import (
     SectionMidlineHost,
 )
-from implicit_geometry_kernel.section.props_emit.props_compute import (
+from implicit_geometry_kernel.section.props.compute import (
     PropsBackendArg,
 )
 from implicit_geometry_kernel.sdf.airfoil import (
@@ -33,8 +43,6 @@ from implicit_geometry_kernel.sdf.airfoil import (
 )
 from implicit_geometry_kernel.integration.quadtree import QuadTreeMesh
 from implicit_geometry_kernel.integration.spec import QuadtreeSpec
-
-LayoutInput = SystemLayoutSpec | SectionLayout
 
 
 def _compat_kwargs_from_zone_gauges(zone_gauges_m: Mapping[str, float]) -> dict[str, Any]:
@@ -66,197 +74,6 @@ def _compat_kwargs_from_zone_gauges(zone_gauges_m: Mapping[str, float]) -> dict[
         "spar_cap_thickness": float(max(caps) if caps else 0.0),
         "shear_web_thickness": web_kw,
     }
-
-
-def _layout_web_fracs(layout: LayoutInput) -> tuple[float, ...]:
-    return tuple(float(f) for f in (layout.web_chord_fracs or ()))
-
-
-def _layout_n_webs(layout: LayoutInput) -> int:
-    if isinstance(layout, SectionLayout):
-        return int(layout.n_webs)
-    return int(layout.n_webs or 0)
-
-
-def _step_down_section_layout(layout: SectionLayout, n_webs: int) -> SectionLayout:
-    """Reduce a keyless parametric layout to ``n_webs`` survivors."""
-    from implicit_geometry_kernel.section.layout.cap_placement import (
-        CapPlacementRule,
-    )
-
-    n = int(n_webs)
-    if n < 0:
-        raise ValueError(f"n_webs must be >= 0; got {n_webs!r}.")
-    fracs = tuple(float(f) for f in layout.web_chord_fracs[:n])
-    stations = (
-        None
-        if layout.web_stations_m is None
-        else tuple(float(x) for x in layout.web_stations_m[:n])
-    )
-    axes = (
-        None
-        if layout.web_axes_m is None
-        else tuple(layout.web_axes_m[:n])
-    )
-    cap = layout.cap_placement
-    # Mirror catalogue D→C: a continuous box needs ≥2 webs.
-    if n < 2 and cap.kind == "continuous_box":
-        cap = CapPlacementRule.per_web_pads()
-    fam = layout.structural_family
-    if n < 2 and str(fam or "").upper() == "D":
-        fam = "C"
-    return SectionLayout(
-        web_chord_fracs=fracs,
-        orientation=layout.orientation,
-        cap_placement=cap,
-        # Survivors are parametric until a catalogue preset is re-attached.
-        catalogue_key=None if n != _layout_n_webs(layout) else layout.catalogue_key,
-        web_stations_m=stations,
-        web_axes_m=axes,
-        structural_family=fam,
-        flags=layout.flags,
-    )
-
-
-OutputGate = Literal["properties", "midlines", "cell_wall_loops"]
-ALL_OUTPUT_GATES: frozenset[str] = frozenset(
-    {"properties", "midlines", "cell_wall_loops"}
-)
-
-
-def normalize_output_gates(outputs: Collection[str]) -> frozenset[str]:
-    """Validate ``outputs`` gate names.
-
-    Unknown names raise ``ValueError``.
-    """
-    raw = {str(o) for o in outputs}
-    unknown = raw - ALL_OUTPUT_GATES
-    if unknown:
-        raise ValueError(f"Unknown section geometry outputs: {sorted(unknown)}")
-    return frozenset(raw)
-
-
-@dataclass(frozen=True)
-class DroppedWeb:
-    """Web dropped while resolving spanwise anchors at a station."""
-
-    x_m: float
-    reason: str
-
-
-@dataclass(frozen=True)
-class SectionPropertiesMeta:
-    """Frozen bag of property-backend metadata from :func:`compute_section_properties`."""
-
-    backend: str
-    grid: dict[str, int] | None = None
-    quadtree_spec: dict[str, Any] | None = None
-    constructive_labels: tuple[str, ...] | None = None
-    wall_solid_labels: tuple[str, ...] | None = None
-    residual_labels: tuple[str, ...] | None = None
-    residual_maturity: dict[str, str] | None = None
-    constructive_s: float | None = None
-    polygon_count: int | None = None
-    residual_quadtree_s: float | None = None
-    quadtree_stats: dict[str, Any] | None = None
-    constructive_polygons: dict[str, str] | None = None
-    profiling: dict[str, Any] | None = None
-
-    @classmethod
-    def from_mapping(cls, meta: Mapping[str, Any]) -> SectionPropertiesMeta:
-        def _str_tuple(key: str) -> tuple[str, ...] | None:
-            raw = meta.get(key)
-            if raw is None:
-                return None
-            return tuple(str(x) for x in raw)
-
-        grid_raw = meta.get("grid")
-        grid: dict[str, int] | None = None
-        if isinstance(grid_raw, Mapping):
-            grid = {str(k): int(v) for k, v in grid_raw.items()}
-
-        maturity_raw = meta.get("residual_maturity")
-        maturity: dict[str, str] | None = None
-        if isinstance(maturity_raw, Mapping):
-            maturity = {str(k): str(v) for k, v in maturity_raw.items()}
-
-        polys_raw = meta.get("constructive_polygons")
-        polys: dict[str, str] | None = None
-        if isinstance(polys_raw, Mapping):
-            polys = {str(k): str(v) for k, v in polys_raw.items()}
-
-        qt_stats = meta.get("quadtree_stats")
-        profiling = meta.get("profiling")
-        return cls(
-            backend=str(meta.get("backend", "")),
-            grid=grid,
-            quadtree_spec=(
-                dict(meta["quadtree_spec"])
-                if isinstance(meta.get("quadtree_spec"), Mapping)
-                else None
-            ),
-            constructive_labels=_str_tuple("constructive_labels"),
-            wall_solid_labels=_str_tuple("wall_solid_labels"),
-            residual_labels=_str_tuple("residual_labels"),
-            residual_maturity=maturity,
-            constructive_s=(
-                float(meta["constructive_s"])
-                if meta.get("constructive_s") is not None
-                else None
-            ),
-            polygon_count=(
-                int(meta["polygon_count"])
-                if meta.get("polygon_count") is not None
-                else None
-            ),
-            residual_quadtree_s=(
-                float(meta["residual_quadtree_s"])
-                if meta.get("residual_quadtree_s") is not None
-                else None
-            ),
-            quadtree_stats=dict(qt_stats) if isinstance(qt_stats, Mapping) else None,
-            constructive_polygons=polys,
-            profiling=dict(profiling) if isinstance(profiling, Mapping) else None,
-        )
-
-
-@dataclass(frozen=True)
-class SectionGeometryResult:
-    """Stable worker output; gated carriers are ``None`` when not requested.
-
-    When midlines are gated, also fills shell-handoff scalars (``chord_m``,
-    ``twist_rad``, ``leading_edge_twisted_pitch_axis_blade_frame``, ``trailing_edge_twisted_pitch_axis_blade_frame``) so FE can build
-    ``ShellStripMeshingInputs`` without re-evaluating SDF.
-
-    ``section`` implements :class:`SectionMidlineHost` for midline / mesh export.
-
-    ``properties_map`` (when gated) carries area / first / second moments in the
-    **solids' authoring frame as built** — with host twist that is LE-origin
-    rotated-NACA, **not** frame **B** (`twisted_pitch_axis_blade_frame`). Do not
-    silently re-twist the map to match emit midlines.
-
-    ``quadtree_mesh`` is **G-PROPS debug only** (populated when ``retain_mesh``
-    is true). It is not a shell-mesh product; density / Q4 / +x3 stay in
-    ``section_mesh``.
-
-    ``stage_timings`` is a small ``{stage: seconds}`` dict populated when
-    ``SECTION_GEOMETRY_PROFILE=1`` (assemble / assemble_* / properties /
-    properties_* / emit_* / midlines / junction_preparation /
-    junction_preparation_* / cell_wall_loops).
-    """
-
-    section: SectionMidlineHost
-    prep_key: tuple[Any, ...]
-    properties_map: dict[str, dict[str, float]] | None = None
-    properties_meta: SectionPropertiesMeta | None = None
-    midline_strips: tuple[ShellMidlineStrip, ...] | None = None
-    cell_wall_loops: tuple[CellWallLoop, ...] | None = None
-    quadtree_mesh: QuadTreeMesh | None = None
-    chord_m: float | None = None
-    twist_rad: float | None = None
-    leading_edge_twisted_pitch_axis_blade_frame: tuple[float, float] | None = None
-    trailing_edge_twisted_pitch_axis_blade_frame: tuple[float, float] | None = None
-    stage_timings: dict[str, float] | None = None
 
 
 def _thickness_cache_token(value: Any) -> Any:
@@ -369,190 +186,6 @@ def section_geometry_prep_key(
     )
 
 
-def _as_section_layout(layout: LayoutInput) -> SectionLayout:
-    """Normalise catalogue specs to the parametric layout SoT."""
-    from implicit_geometry_kernel.section.sections.from_layout import (
-        as_section_layout,
-    )
-
-    return as_section_layout(layout)
-
-
-def _reattach_catalogue_preset(layout: SectionLayout) -> SectionLayout:
-    """Best-effort ``N{family}-{orient}`` preset re-attach after a parametric drop.
-
-    Returns a :class:`SectionLayout` whose ``catalogue_key`` matches the
-    registry entry when one exists; otherwise returns ``layout`` unchanged.
-    """
-    from implicit_geometry_kernel.section.layout.system_layout import (
-        resolve_system_type,
-    )
-
-    n = int(layout.n_webs)
-    fam = str(layout.structural_family or "").upper()
-    if not fam:
-        return layout
-    orient = "F" if str(layout.orientation) == "flapwise" else "CN"
-    key = f"{n}{fam}-{orient}"
-    try:
-        preset = resolve_system_type(key)
-    except KeyError:
-        return layout
-    # Preserve survivor stations / axes from the parametric drop; only
-    # re-attach the catalogue key and registry cap rule / orientation.
-    reattached = SectionLayout.from_system_layout_spec(preset)
-    return SectionLayout(
-        web_chord_fracs=layout.web_chord_fracs or reattached.web_chord_fracs,
-        orientation=reattached.orientation,
-        cap_placement=reattached.cap_placement,
-        catalogue_key=reattached.catalogue_key,
-        web_stations_m=layout.web_stations_m,
-        web_axes_m=layout.web_axes_m,
-        structural_family=reattached.structural_family,
-        flags=reattached.flags,
-    )
-
-
-def resolve_web_x_positions(
-    layout: LayoutInput,
-    airfoil: AirfoilSDF,
-    web_x_positions_m: Sequence[float] | None = None,
-) -> list[float]:
-    """Web chordwise positions in metres for one section.
-
-    ``web_x_positions_m`` is the **spanwise-anchored** form: absolute offsets
-    from the leading edge, resolved once for the blade (conventionally at the
-    root) and reused unchanged at every station, so the web centroid does not
-    migrate as the chord tapers. Webs that no longer fit the local cavity are
-    dropped downstream by ``resolve_web_anchors``, not slid forward.
-
-    Omitting it falls back to the legacy per-station form ``frac × local_chord``,
-    under which every web shrinks with the section and none is ever dropped.
-    Absolute ``web_stations_m`` on a :class:`SectionLayout` win over fractions
-    when anchors are not supplied.
-    """
-    if web_x_positions_m is not None:
-        return [float(x) for x in web_x_positions_m]
-    if isinstance(layout, SectionLayout) and layout.web_stations_m is not None:
-        return [float(x) for x in layout.web_stations_m]
-    return [float(f) * float(airfoil.chord) for f in _layout_web_fracs(layout)]
-
-
-@dataclass(frozen=True)
-class StationLayoutResolution:
-    """What a station actually builds, once webs that do not fit are dropped.
-
-    ``layout`` and ``nominal_layout`` are always :class:`SectionLayout`
-    (catalogue :class:`SystemLayoutSpec` is normalised at resolve). For keyed
-    presets, survivors re-attach the matching ``N{family}-{orient}`` catalogue
-    key when one exists (``2D`` may hand over to ``1C``). For keyless layouts,
-    survivors stay parametric: ``N`` webs + :class:`CapPlacementRule`
-    (continuous box demotes to per-web pads when ``N < 2``).
-    ``web_x_positions_m`` are the survivors, still at their anchored offsets.
-    ``web_y_coords`` are the matching ``(y_top, y_bot)`` pairs from the same
-    :func:`resolve_web_anchors` call — pass them into
-    :func:`build_section_geometry` so ``MultiCellSection`` does not re-resolve.
-    ``dropped`` records each lost web with a reason.
-    """
-
-    layout: SectionLayout
-    web_x_positions_m: tuple[float, ...]
-    dropped: tuple[DroppedWeb, ...]
-    nominal_layout: SectionLayout
-    web_y_coords: tuple[tuple[float, float], ...] = ()
-
-    @property
-    def stepped_down(self) -> bool:
-        eff = self.layout
-        nom = self.nominal_layout
-        return (
-            _layout_n_webs(eff) != _layout_n_webs(nom)
-            or eff.structural_family != nom.structural_family
-            or eff.cap_placement != nom.cap_placement
-            or eff.catalogue_key != nom.catalogue_key
-        )
-
-
-def resolve_station_layout(
-    layout: LayoutInput,
-    airfoil: AirfoilSDF,
-    *,
-    skin_thickness: float | None = None,
-    web_x_positions_m: Sequence[float] | None = None,
-    min_cavity_depth_m: float = 0.0,
-    y_search: Any | None = None,
-    phi_inner: Any | None = None,
-) -> StationLayoutResolution:
-    """Resolve the layout a station can actually carry, before building anything.
-
-    One drop interpreter: survivors → parametric ``N`` webs +
-    :class:`CapPlacementRule` via :func:`_step_down_section_layout`. Catalogue
-    keys are presets — when the nominal layout carried a key, the effective
-    result is re-attached to the matching ``N{family}-{orient}`` registry entry
-    when one exists (so callers still see ``1C-F`` after a ``5D-F`` drop).
-
-    Raises :class:`InfeasibleSectionGeometry` when no web can be anchored.
-    """
-    from implicit_geometry_kernel.section.api.kwarg_aliases import (
-        resolve_skin_thickness,
-    )
-    from implicit_geometry_kernel.section.layout.system_layout import (
-        InfeasibleSectionGeometry,
-    )
-    from implicit_geometry_kernel.section.sections.web_layout import (
-        resolve_web_anchors,
-    )
-
-    t_skin_v = resolve_skin_thickness(
-        skin_thickness=skin_thickness, required=True
-    )
-
-    wanted_preset = isinstance(layout, SystemLayoutSpec) or (
-        isinstance(layout, SectionLayout) and bool(layout.catalogue_key)
-    )
-    nominal_sl = _as_section_layout(layout)
-
-    requested = resolve_web_x_positions(layout, airfoil, web_x_positions_m)
-    if not requested:
-        # Zero-web layouts (0A / 0B) are selected, never stepped into.
-        return StationLayoutResolution(
-            nominal_sl, (), (), nominal_sl, web_y_coords=()
-        )
-
-    resolved, dropped = resolve_web_anchors(
-        airfoil,
-        float(t_skin_v),
-        requested,
-        y_search=y_search,
-        phi_inner=phi_inner,
-        min_cavity_depth_m=float(min_cavity_depth_m),
-        return_dropped=True,
-    )
-    survivors = tuple(float(a[0]) for a in resolved)
-    y_coords = tuple((float(a[1]), float(a[2])) for a in resolved)
-
-    if len(survivors) == 0 and _layout_n_webs(nominal_sl) > 0:
-        label = nominal_sl.catalogue_key or "SectionLayout"
-        raise InfeasibleSectionGeometry(
-            f"{label} cannot anchor a single web at this station. The "
-            "drop cascade floors at one web, because a section with no web "
-            "has no shear path; 0A/0B are selectable layouts, not degradation "
-            "targets. Report this station as over-constrained."
-        )
-
-    effective_sl = _step_down_section_layout(nominal_sl, len(survivors))
-    if wanted_preset:
-        effective_sl = _reattach_catalogue_preset(effective_sl)
-
-    return StationLayoutResolution(
-        effective_sl,
-        survivors,
-        tuple(dropped),
-        nominal_sl,
-        web_y_coords=y_coords,
-    )
-
-
 def build_section_with_thicknesses(
     airfoil: AirfoilSDF,
     layout: LayoutInput,
@@ -583,7 +216,7 @@ def build_section_with_thicknesses(
         resolve_spar_cap_thickness,
         resolve_twist_rad,
     )
-    from implicit_geometry_kernel.section.sections.from_layout import (
+    from implicit_geometry_kernel.section.assembly.from_layout import (
         multicell_from_layout,
     )
 
@@ -633,6 +266,7 @@ def build_section_geometry(
     quadtree_spec: QuadtreeSpec | None = None,
     airfoil_for_spec: AirfoilSDF | None = None,
     web_x_positions_m: Sequence[float] | None = None,
+    web_offsets: Sequence[float] | None = None,
     web_y_coords: Sequence[tuple[float, float]] | None = None,
     spar_cap_ply_pitch_m: float | None = None,
     zone_gauges_m: Mapping[str, float] | None = None,
@@ -686,6 +320,10 @@ def build_section_geometry(
         twist_angle_rad=twist_angle_rad,
         twist_angle=twist_angle,
     )
+    if web_offsets is not None and web_x_positions_m is not None:
+        raise ValueError("pass web_offsets or web_x_positions_m, not both")
+    if web_offsets is not None:
+        web_x_positions_m = web_offsets
 
     out_set = set(normalize_output_gates(outputs))
 
@@ -693,7 +331,7 @@ def build_section_geometry(
     need_midlines = "midlines" in out_set or "cell_wall_loops" in out_set
     need_void = "cell_wall_loops" in out_set
 
-    from implicit_geometry_kernel.section.props_emit.props_backend import (
+    from implicit_geometry_kernel.section.props.backend import (
         props_backend_from_env,
     )
     from implicit_geometry_kernel.profiling import (
@@ -739,7 +377,7 @@ def build_section_geometry(
     properties_meta: SectionPropertiesMeta | None = None
     quadtree_mesh: QuadTreeMesh | None = None
     if need_props:
-        from implicit_geometry_kernel.section.props_emit.props_compute import (
+        from implicit_geometry_kernel.section.props.compute import (
             compute_section_properties,
         )
 
@@ -794,10 +432,10 @@ def build_section_geometry(
     if need_midlines:
         import numpy as np
 
-        from implicit_geometry_kernel.section.midlines.shell_midline_export import (
+        from implicit_geometry_kernel.section.midlines.export import (
             build_shell_midline_strips,
         )
-        from implicit_geometry_kernel.section.junction_preparation.shell_midline_junction_preparation import (
+        from implicit_geometry_kernel.section.junctions.prepare import (
             prepare_shell_midline_junctions,
         )
 
@@ -829,7 +467,7 @@ def build_section_geometry(
                 )
             )
         if need_void:
-            from implicit_geometry_kernel.section.cell_wall_loops.cell_wall_loops import (
+            from implicit_geometry_kernel.section.cells.loops import (
                 build_cell_wall_loops,
             )
 

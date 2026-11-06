@@ -2,10 +2,10 @@
 
 import numpy as np
 
-from implicit_geometry_kernel.section.eval_cache import SectionEvalCache
+from implicit_geometry_kernel.section.props.eval_cache import SectionEvalCache
 from implicit_geometry_kernel.sdf.ir import Circle
 from implicit_geometry_kernel.sdf.grid import SDFGrid
-from implicit_geometry_kernel.section.props_emit.export import SectionPropertiesReport
+from implicit_geometry_kernel.section.props.export import SectionPropertiesReport
 from implicit_geometry_kernel.sdf.transforms import rotate_field
 
 

@@ -23,10 +23,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.section.sections.cap_feasibility import (
+from implicit_geometry_kernel.section.assembly.cap_feasibility import (
     inner_y_at_xs,
 )
-from implicit_geometry_kernel.section.sections.web_layout import (
+from implicit_geometry_kernel.section.assembly.web_layout import (
     resolve_web_anchors,
 )
 from implicit_geometry_kernel.sdf.airfoil import (

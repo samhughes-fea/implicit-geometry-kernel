@@ -2,8 +2,8 @@
 
 Run from the repository root::
 
-    python src/implicit_geometry_kernel/section_geometry/examples/01_first_station.py
-    python .../01_first_station.py --plot
+    python examples/section/01_first_station.py
+    python examples/section/01_first_station.py --plot
 """
 
 from __future__ import annotations
@@ -21,8 +21,12 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.section import AirfoilSDF, SectionGeometryRunner, resolve_system_type
-from implicit_geometry_kernel.plotting import plot_section
+from implicit_geometry_kernel import Airfoil
+from implicit_geometry_kernel.section import (
+    SectionGeometry,
+    resolve_system_type,
+)
+from plotting import plot_section
 
 
 def main() -> None:
@@ -35,9 +39,9 @@ def main() -> None:
     args = parser.parse_args()
 
     layout = resolve_system_type("2D-F")
-    airfoil = AirfoilSDF.from_naca("2412", chord=1.0)
+    airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)
 
-    result = SectionGeometryRunner(
+    result = SectionGeometry(
         layout=layout,
         airfoil=airfoil,
         skin_thickness=0.004,

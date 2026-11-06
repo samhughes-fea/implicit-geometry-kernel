@@ -11,7 +11,7 @@ from implicit_geometry_kernel.section.api.kwarg_aliases import (
 from implicit_geometry_kernel.sdf.airfoil import (
     AirfoilSDF,
 )
-from implicit_geometry_kernel.section.sections.multicell import (
+from implicit_geometry_kernel.section.assembly.multicell import (
     MultiCellSection,
 )
 

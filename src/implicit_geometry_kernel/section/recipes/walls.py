@@ -13,16 +13,16 @@ from implicit_geometry_kernel.section.constructive.emitters import (
     emit_spar_cap_polygon,
     emit_trailing_edge_insert_polygon,
 )
-from implicit_geometry_kernel.section.recipes.sdf_ir.outer_skin import (
+from implicit_geometry_kernel.section.recipes.outer_skin import (
     OuterSkin,
 )
-from implicit_geometry_kernel.section.recipes.sdf_ir.sandwich_core import (
+from implicit_geometry_kernel.section.recipes.sandwich_core import (
     SandwichCore,
 )
-from implicit_geometry_kernel.section.recipes.sdf_ir.shear_web import (
-    ShearWeb,
+from implicit_geometry_kernel.section.recipes.shear_web import (
+    ShearWebComponent,
 )
-from implicit_geometry_kernel.section.recipes.sdf_ir.spar_cap import (
+from implicit_geometry_kernel.section.recipes.spar_cap import (
     SparCap,
 )
 
@@ -86,8 +86,8 @@ class WebWall:
     twist_angle: float = 0.0
     emission_maturity: EmissionMaturity = "constructive"
 
-    def _component(self, airfoil, *, airfoil_expr_node=None) -> ShearWeb:
-        return ShearWeb(
+    def _component(self, airfoil, *, airfoil_expr_node=None) -> ShearWebComponent:
+        return ShearWebComponent(
             airfoil,
             float(self.skin_thickness),
             float(self.x_top),
@@ -209,7 +209,7 @@ class InsertWall:
 
     def to_sdf_component(self, airfoil, *, airfoil_expr_node=None):
         """Build the existing LE/TE insert component (SDF / IR path)."""
-        from implicit_geometry_kernel.section.recipes.sdf_ir.inserts import (
+        from implicit_geometry_kernel.section.recipes.inserts import (
             LEInsert,
             TEInsert,
         )

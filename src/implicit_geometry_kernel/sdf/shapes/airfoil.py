@@ -108,8 +108,8 @@ class AirfoilSDF:
     def from_naca(cls, naca_code, n_points=200, chord=1.0, closed_te=True):
         """Generate a NACA 4-digit airfoil.
 
-        The returned contour polygon *is* the section geometry for this package
-        (SG-008): downstream offsets and junctions are exact w.r.t. these
+        The returned contour polygon *is* the section geometry for this package:
+        downstream offsets and junctions are exact w.r.t. these
         vertices. Default ``n_points=200`` is ~62 µm from the analytic LE on
         NACA 2412 at 1 m chord — discretisation of the generator, not an error
         to close in the junction path.

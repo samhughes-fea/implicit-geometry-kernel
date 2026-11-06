@@ -315,7 +315,7 @@ def flapwise_web_sframe_inputs(
         )
     except (ValueError, InfeasibleSectionGeometry) as exc:
         # Do not rotate stale S-frame IML anchors into B: under twist that lands
-        # the web feet off the skin mid-surface by ~t_skin/2 (SG-002 tip mono).
+        # the web feet off the skin mid-surface by ~t_skin/2 (tip mono).
         # Callers that froze web_y at a thinner skin must re-resolve or step down.
         raise InfeasibleSectionGeometry(
             "flapwise web cannot re-anchor on the twisted inner skin at "

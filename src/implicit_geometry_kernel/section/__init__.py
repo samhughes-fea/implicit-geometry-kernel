@@ -1,11 +1,11 @@
 """Section geometry worker package public barrel.
 
-G-row public products (see ``docs/section/reference/G_ROW_OWNERSHIP_MATRIX.md``):
+Public products (see ``docs/section/reference/G_ROW_OWNERSHIP_MATRIX.md``):
 ``SectionGeometry``, ``SectionGeometryResult``, ``MultiCellSection``,
 ``resolve_system_type`` / ``SYSTEM_TYPE_KEYS``, ``SectionLayout``.
 
 Prefer ``Airfoil.to_sdf()`` (or ``sdf.airfoil.AirfoilSDF``) for implicit
-airfoils. Quadtree / hybrid props backends are G-PROPS debug — import from
+airfoils. Quadtree / hybrid props backends are debug — import from
 ``section.properties``, not this barrel. Thickness clamps live in
 ``section.layout.thickness_limits``. ``build_section_geometry`` is
 ``section.spec`` (``section.api`` remains an alias until 0.6.0).

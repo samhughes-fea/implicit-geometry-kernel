@@ -1,4 +1,4 @@
-"""Family-D box caps must stay flush against both outer webs under twist (SG-011).
+"""Family-D box caps must stay flush against both outer webs under twist.
 
 At twist=0, ChordBand(x_start, x_end) coincides with flapwise web midplanes, so
 a CapWall that ignored flapwise_* still looked flush. Under twist the webs sit
@@ -74,7 +74,7 @@ def test_family_d_cap_web_solid_and_midline_flush_under_twist(twist_deg):
             assert gap <= _MAX_SOLID_GAP_M, (
                 f"2D-F @ {twist_deg} deg: solid {cap_key} to {web_key} gap "
                 f"{gap * 1e3:.3f} mm (limit {_MAX_SOLID_GAP_M * 1e3:.3f} mm). "
-                "CapWall flapwise strip must match web midplanes under twist (SG-011)."
+                "CapWall flapwise strip must match web midplanes under twist."
             )
 
     web_mid = [
@@ -92,5 +92,5 @@ def test_family_d_cap_web_solid_and_midline_flush_under_twist(twist_deg):
             assert d_web <= _MAX_MIDLINE_GAP_M, (
                 f"2D-F @ {twist_deg} deg: midline {strip.label} end{end_i} is "
                 f"{d_web * 1e3:.3f} mm from nearest web mid-surface "
-                f"(limit {_MAX_MIDLINE_GAP_M * 1e3:.3f} mm). SG-011."
+                f"(limit {_MAX_MIDLINE_GAP_M * 1e3:.3f} mm)."
             )

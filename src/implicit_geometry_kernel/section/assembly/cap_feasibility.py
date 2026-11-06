@@ -14,9 +14,9 @@ from implicit_geometry_kernel.section.assembly.web_layout import inner_y_at_xs
 MIN_CAP_VOID_ABS_M = 0.001
 MIN_CAP_VOID_FRAC = 0.15
 
-# Solids camber-clip resolution (SG-010). Chord-approx error of the cavity
+# Solids camber-clip resolution. Chord-approx error of the cavity
 # midline scales ~ band / n² for similar sections. Budget is well below the
-# airfoil-polygon LE floor (~62 µm at n_points=200 / 1 m chord, SG-008), so
+# airfoil-polygon LE floor (~62 µm at n_points=200 / 1 m chord), so
 # solid areas inherit the polygon contract rather than this knob.
 CAMBER_CLIP_DEV_BUDGET_M = 1e-6  # 1 µm
 _CAMBER_CLIP_N_MIN = 33
@@ -95,7 +95,7 @@ def _symmetric_extent_about_center(
 ) -> tuple[float, float]:
     """Largest ``[center-half_w, center+half_w]`` still feasible and inside the authored band.
 
-    Equal trim on both sides keeps family-C pads centred on the web (SG-013).
+    Equal trim on both sides keeps family-C pads centred on the web.
     Never grows past ``[x_lo, x_hi]``.
     """
     feasible = caps_sum_q <= allowed + 1e-12
@@ -176,8 +176,7 @@ def cap_feasibility_clamp(
 
     * ``"band_center"`` (default, families B/C) — keep the pad **symmetric**
       about ``center_x`` (default midpoint of the authored band / web station).
-      Shrink half-width equally on both sides; never slide the midpoint
-      (SG-013).
+      Shrink half-width equally on both sides; never slide the midpoint.
     * ``"deepest"`` — legacy growth of the contiguous feasible island from
       ``argmax(depth)``. Kept for explicit comparisons only.
 
@@ -188,7 +187,7 @@ def cap_feasibility_clamp(
 
     Returns ``(x_lo_eff, x_hi_eff, cap_h_upper_eff, cap_h_lower_eff, info)``.
     ``info["camber_xy"]`` holds sampled cavity-midline points for the cap split
-    (solids / properties only — not shell midlines; see bug_log SG-010).
+    (solids / properties only — not shell midlines; see ``docs/section/bug_log.md``).
 
     Default ``n_samples`` is derived from band width so the clip polyline's
     chord-approximation stays within :data:`CAMBER_CLIP_DEV_BUDGET_M`.
@@ -316,7 +315,7 @@ def cap_feasibility_clamp(
     if (x_hi_eff - x_lo_eff) < 0.5 * authored_width:
         # Barely-feasible / collapsed band: thin the caps rather than emit a
         # needle-thin pad (stiffness must not decrease as height grows).
-        # band_center (SG-013): scale to the worst sample in the full authored
+        # band_center: scale to the worst sample in the full authored
         # band so the symmetric +/- half-width about the web can recover.
         # deepest: keep the historic central-half rule.
         if extent_anchor == "band_center":

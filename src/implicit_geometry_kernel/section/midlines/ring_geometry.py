@@ -247,10 +247,10 @@ def intersect_web_axis_open_polyline_2d(
     ``tb`` is the parameter on the discrete web edge that carries the same point
     along the axis (for insertion into the sampled web polyline).
 
-    This is the production interior-junction solver (SG-009). Prefer it over
+    This is the production interior-junction solver. Prefer it over
     :func:`intersect_open_polylines_2d` for topology truth: polyline×polyline
     detection cannot verify its own work once a shared node has been inserted
-    (tangency trap, SG-005).
+    (tangency trap).
     """
     web = np.asarray(web_pts, dtype=float)
     cap = np.asarray(cap_pts, dtype=float)

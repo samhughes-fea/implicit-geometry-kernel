@@ -98,7 +98,7 @@ def test_wall_mid_near_stacked_cap_and_bare_skin():
     mid = geo.wall_mid_sdf()
     cap = next(r for r in g.loop if r.kind == "cap")
     p_cap = cap.points[len(cap.points) // 2]
-    # Wave 0: Pass 1 bound is run interiors only (not cap/skin joint vertices).
+    # Pass 1 bound is run interiors only (not cap/skin joint vertices).
     assert abs(mid.evaluate(p_cap.reshape(1, 3)).phi[0]) < 5e-4
     skin = next(r for r in g.loop if r.kind == "skin")
     p_skin = skin.points[len(skin.points) // 2]

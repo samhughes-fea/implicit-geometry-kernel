@@ -253,9 +253,8 @@ spec is the source of truth.
 
 Not a status-table step. 3d is already tracked as step 5.
 
-- **3a.** Replace internal tracking codes in code comments (G-POLY, G-MID, SG-009,
-  BL-028, "Wave 0") with plain sentences; link `docs/section/bug_log.md` where history
-  matters.
+- **3a.** Done: tracking codes in `src/` and `tests/` comments are plain sentences;
+  history still lives in `docs/section/bug_log.md`.
 - **3b.** `Airfoil` is the shape; `AirfoilSDF` is its field, made through
   `Airfoil.to_sdf()`. NACA maths lives in one place.
 - **3c.** One name per concept; deprecate the other: CellPolygon/CellLoop,

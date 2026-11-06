@@ -248,7 +248,7 @@ class CapBuilder(WallTypeMixin, MemberBuilder):
                 f"returned suction={upper is not None} "
                 f"pressure={lower is not None}. Use "
                 "layout_without_spar_caps when the cavity cannot hold "
-                "minimum-gauge caps (BL-006); do not assemble None caps."
+                "minimum-gauge caps (run-out when a cap cannot be built at gauge); do not assemble None caps."
             )
         out: list[Contribution] = []
         for label, comp, height, first in (

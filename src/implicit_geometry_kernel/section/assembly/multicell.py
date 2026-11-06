@@ -73,7 +73,7 @@ class MultiCellSection:
 
         ``spar_cap_ply_pitch_m`` (optional): floor post-clamp cap heights onto
         this ply pitch so CapWall / midlines stay on-grid for Catalog FI bind
-        (BL-019).
+        (ply-count bind).
 
         ``registry`` (optional): the member builders to run; defaults to
         :func:`section_registry`. A new member type is one more builder.

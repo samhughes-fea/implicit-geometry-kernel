@@ -6,7 +6,7 @@ continuous, web-independent cap band on :class:`MultiCellSection` (family B,
 zero webs, max-thickness anchor). That only works if the cap is actually sized.
 
 Historically ``OuterSkinOnlySection`` built caps from a hardcoded height and
-ignored ``spar_cap_thickness`` (docs/bug_log.md BL-008). The sized worker now always builds
+ignored ``spar_cap_thickness`` (see ``docs/section/bug_log.md``). The sized worker now always builds
 ``MultiCellSection`` and passes ``spar_cap_thickness`` as ``cap_height``.
 
 Above the height at which the caps stop fitting the local cavity, the clamp

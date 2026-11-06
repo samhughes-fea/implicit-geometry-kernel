@@ -1,4 +1,4 @@
-"""Build void-cell wall loops as the faces of the labelled wall graph (SG-014).
+"""Build void-cell wall loops as the faces of the labelled wall graph.
 
 The skin is already split at every web foot (``split_skin_at_junctions``), so
 the section is a planar graph whose **nodes** are the skin-arc junctions and
@@ -9,9 +9,9 @@ follow the ring, and turn onto a web wherever one starts.
 Nothing here reads a coordinate axis. The loop builder this replaces sorted webs
 on ``x`` and chose each web's top on ``y`` -- a chord-first convention applied to
 canonical B midlines, where ``X_B`` is flapwise. It paired the wrong web ends
-and emitted overlapping cells on most multi-web sections (SG-014). The only
+and emitted overlapping cells on most multi-web sections. The only
 geometric test left is that a web end **coincides** with a skin junction, which
-holds to ~1e-13 m by construction (SG-002: walls emit at their true extent), so
+holds to ~1e-13 m by construction (walls emit at their true extent), so
 a mismatch is a defect to report, never a tolerance to widen.
 
 Each loop carries ``wall_labels``: the exact strips that bound it. That is the
@@ -32,8 +32,8 @@ from implicit_geometry_kernel.contract.shell_midline_strip import ShellMidlineSt
 from implicit_geometry_kernel.section.midlines.skin_split import split_skin_at_junctions
 from implicit_geometry_kernel.section.cells.geom import _normalise_skin_arc, _normalise_skin_side, _skin_ring_order_key, drop_closing_vertex, shoelace_area
 
-#: A web end and the skin junction it was split at are the same point (SG-002);
-#: measured <= 5e-13 m on 1 m and 0.2 m chords. 1 nm matches SG-007's coincide
+#: A web end and the skin junction it was split at are the same point;
+#: measured <= 5e-13 m on 1 m and 0.2 m chords. 1 nm matches the coincide
 #: tolerance and sits ~6 orders below the closest pair of junctions seen (4 mm).
 WEB_FOOT_COINCIDENCE_TOL_M = 1e-9
 
@@ -128,7 +128,7 @@ def _node_of(point: NDArray[np.float64], nodes: NDArray[np.float64], *, web: str
     if float(distances[index]) > WEB_FOOT_COINCIDENCE_TOL_M:
         raise ValueError(
             f"web {web!r} ends {float(distances[index]):.3e} m from the nearest skin junction; "
-            "a web must end on the skin mid-surface where the skin was split (SG-002). "
+            "a web must end on the skin mid-surface where the skin was split. "
             "Emit feet via ShearWebComponent._extend_to_skin_mid_surface / solve_web_foot_on_skin_mid; "
             "prepare strips with prepare_shell_midline_junctions (index-only — do not relocate feet); "
             "and do not pass frozen web_y that is stale relative to the current skin under twist."

@@ -3,7 +3,7 @@
 Production web feet use :func:`solve_web_foot_on_skin_mid` (same
 ``offset_locus`` join contract as constructive polygons). Cap interiors close
 post-resample via :func:`intersect_axis_cap_polyline` (web axis × final cap —
-the discrete offset locus under SG-008). When an untwisted airfoil and cap mid
+the discrete offset locus). When an untwisted airfoil and cap mid
 depth are supplied, :func:`solve_interior_cap_web_hits` prefers
 axis × ``locus_at_depth`` hits that land on the final cap polyline.
 """
@@ -59,9 +59,9 @@ def intersect_axis_cap_polyline(
     *,
     endpoint_tol_m: float = 1e-9,
 ) -> list[tuple[int, int, float, float, NDArray[np.float64]]]:
-    """Production interior detector: web axis × final cap polyline (SG-009).
+    """Production interior detector: web axis × final cap polyline.
 
-    The final cap polyline is the discrete mid-surface locus (SG-008); this is
+    The final cap polyline is the discrete mid-surface locus; this is
     the same geometric contract as :func:`intersect_axis_offset_ring`, evaluated
     on the band-clipped sample rather than the full airfoil ring.
     """

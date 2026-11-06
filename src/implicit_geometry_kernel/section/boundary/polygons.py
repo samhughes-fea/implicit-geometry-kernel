@@ -7,7 +7,7 @@ rest of the section needs (``Polygon``, ``MultiPolygon``, ``LineString``, ``Poin
 and ``unary_union`` are re-exported from here.
 
 Offsets use one operator, :func:`offset_polygon_inward`, whose mitre join settings
-are the package's parallelism contract (bug log SG-001 / SG-003).
+are the package's parallelism contract (see ``docs/section/bug_log.md``).
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ def offset_polygon_inward(poly, depth: float, *, quad_segs: int | None = None):
     """Inward normal offset of ``poly`` by ``depth``, the one offset operator.
 
     Prefer this over ``poly.buffer(-d, ...)``: the join settings are the
-    package's parallelism contract (bug_log SG-001 / SG-003).
+    package's parallelism contract (see ``docs/section/bug_log.md``).
     """
     d = float(depth)
     if not np.isfinite(d) or d < 0.0:

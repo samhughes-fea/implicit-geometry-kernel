@@ -12,7 +12,7 @@ returns nothing once both strips carry the shared node (strict-interior
 intersection becomes a tangency). A test built on it would pass vacuously on a
 correct fix and also on a fix that deleted every junction. Crossings are located
 independently via :func:`intersect_web_axis_open_polyline_2d` — the same
-axis×cap primitive production now uses (SG-009), applied to the *prepared*
+axis×cap primitive production now uses, applied to the *prepared*
 strips as an existence oracle.
 
 That trap is not hypothetical: an earlier attempt inserted the web node at emit,
@@ -20,7 +20,7 @@ which made the polylines tangent and stopped the cap side being found —
 ``4D-F`` swapped from web 1570 um / cap 0 um to web 0 um / cap 1056 um. Hence
 the second test, which pins the cap side against exactly that regression.
 
-See ``docs/bug_log.md`` SG-005 / SG-009.
+See ``docs/section/bug_log.md``.
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ CHORD_M = [1.0, 0.241]
 _MAX_WEB_GAP_M = 1e-9
 #: Cap side used to allow a 1 µm absolute window (merge floor and
 #: ``vertex_coincide_tol_m``), which left a 0.89 µm residual on ``5C-CN`` when a
-#: resampled vertex sat just inside that window of the true crossing (SG-007).
+#: resampled vertex sat just inside that window of the true crossing.
 #: Both floors are gone / tightened to 1 nm, so both sides share the same bound.
 _MAX_CAP_GAP_M = 1e-9
 
@@ -131,5 +131,5 @@ def test_cap_still_carries_its_node_at_every_interior_crossing(layout_key, twist
             f"{layout_key} @ {twist_deg} deg, chord {chord_m} m: the cap's nearest node "
             f"is {gap * 1e6:.1f} um from an interior web crossing. Placing a web vertex "
             "exactly on the cap turns a polyline×polyline crossing into a tangency — "
-            "axis×cap detection (SG-009) must still place the shared node on both strips."
+            "axis×cap detection must still place the shared node on both strips."
         )

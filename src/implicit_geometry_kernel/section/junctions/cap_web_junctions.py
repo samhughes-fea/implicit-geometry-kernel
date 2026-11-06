@@ -78,7 +78,7 @@ def insert_cap_web_interior_junctions(
     :func:`midlines.junction_primitives.solve_interior_cap_web_hits` —
     preferably axis × offset locus at ``cap_mid_depth_m`` when ``airfoil`` is
     supplied (same frame as the strips), otherwise web axis × final cap
-    polyline (SG-009 / SG-008 discrete locus). Each hit is solved once and the
+    polyline (the discrete mid-surface locus). Each hit is solved once and the
     *same* point is inserted into both strips.
     (2) Optional **proximity** to each shear-web **foot** (endpoint on skin): when
     enabled (``foot_proximity_tol_m > 0``) and the foot is within tolerance of the
@@ -97,9 +97,9 @@ def insert_cap_web_interior_junctions(
     the cap it would compute against is not the cap that survives resampling.
     Nor can the web side be done first and the cap side detected afterwards —
     placing a web vertex exactly on the cap turns a polyline×polyline crossing
-    into a tangency (SG-005 ``4D-F`` swap). Axis×cap detection does not have that
+    into a tangency (the ``4D-F`` swap). Axis×cap detection does not have that
     trap, but insertions are still held and applied afterwards so both sides get
-    the same solved point. See ``docs/bug_log.md`` SG-005 / SG-009.
+    the same solved point. See ``docs/section/bug_log.md``.
     """
     from implicit_geometry_kernel.section.assembly.members import wall_cell_face
 
@@ -213,7 +213,7 @@ def insert_cap_web_interior_junctions(
         # guard skipped it, and a family-B/C free end is 38.6-148.6 mm from the
         # nearest web, so the tolerance guard skipped it. Removed after
         # confirming byte-identical output across 108 layout x twist x chord
-        # configurations with the branch disabled. See ``docs/bug_log.md`` SG-004.
+        # configurations with the branch disabled. See ``docs/section/bug_log.md``.
 
         def _queue_web_nodes(final_cap_pts: NDArray[np.float64]) -> None:
             """Queue the web half of every crossing the cap actually carries.

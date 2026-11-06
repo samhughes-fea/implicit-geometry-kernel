@@ -10,15 +10,14 @@ Anchored wall geometry for surface-aware ply drop.
 
 | Concern | Package |
 |---------|---------|
-| Ply order / drop face / policy digest | `material_utilities.layup.types.placement` |
-| Physical face offsets / midsurface depth | this package (`section_geometry.placement`) |
-| Stamp onto `ShellMidlineStrip` | `stamp_strip_identities` (gauge) + `placement.handoff` |
-| Cache / lifecycle | `section_selection` (`placement_lifecycle`, `shell_prep_cache_key`) |
+| Ply order / drop face / policy digest | downstream layup library |
+| Physical face offsets / midsurface depth | this package (`section.layout`) |
+| Stamp onto `ShellMidlineStrip` | `section.layout.handoff` |
 
-`section_geometry` must not import `material_utilities`. Construction tokens here are
-plain strings that match the layup enums 1:1.
+This package must not import a layup library. Construction tokens here are
+plain strings.
 
-## Defaults (BL-028)
+## Defaults
 
 | Wall | Reference | Build | Midline |
 |------|-----------|-------|---------|

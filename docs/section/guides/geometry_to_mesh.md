@@ -21,15 +21,14 @@ Turn gated midlines into `section_mesh` inputs. Overview:
 ## Pipeline
 
 ```text
-section_geometry (midlines) → shell_mesh_inputs_from_geometry_result
-                           → section_mesh (strips)
-                           → section_bind (materials; after mesh)
+section (midlines) → ShellMidlineStrip list / shell_graph()
+                   → downstream mesher
 ```
 
 This package stays material-bind agnostic: handoff is wall centrelines and
 thicknesses only.
 
-## Spanwise geometry for shell-fem (2.5-D)
+## Spanwise geometry for a shell mesher (2.5-D)
 
 Isolated `section_at(z)` midlines remain the layout oracle. Solids stay split
 (`cut.walls` still lists caps). The **shell graph** is one wall: consume
@@ -143,18 +142,10 @@ Strip `kind` / `label` match the anatomy table in
 
 ## Optional coarse strip mesh
 
-```python
-from blade_structure_utilities.mesh_utilities.section_mesh import (
-    build_section_strip_mesh,
-)
-
-mesh = build_section_strip_mesh(shell, n_elements_per_panel=4, endpoint_tol=1e-6)
-```
+The kernel does not build a strip mesh. Consume `ShellMidlineStrip` (and, on a
+loft, `shell_graph()`) in the downstream mesher.
 
 Example flag: `python .../05_handoff_to_mesh.py --mesh`.
-
-Figure demos for strip meshes live under
-`../../../mesh_utilities/section_mesh/visualisation/demos/`.
 
 ---
 
@@ -162,9 +153,6 @@ Figure demos for strip meshes live under
 
 | Goal | Go to |
 |------|--------|
-| Bind materials on the mesh | `section_bind` · `examples/` |
-| Shape `SectionForceVector` | `section_loads` · `examples/` · `quickstart` |
-| Spine ownership | `COEXISTENCE_IMPLICIT_SHELL` |
 | Midline emit details | [`../midlines/`](../midlines/README.md) |
 
 Waves 0–7 are this page. G10/G11 stay parked in

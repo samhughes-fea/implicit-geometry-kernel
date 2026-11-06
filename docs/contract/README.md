@@ -16,7 +16,7 @@ S↔B polarity are **not** re-derived here — they live in
 
 Canonical import: `implicit_geometry_kernel.contract`.
 
-Spanwise consumers (shell-fem) also use the 2.5-D fields on `BladeGeometry`
+Spanwise consumers also use the 2.5-D fields on `BladeGeometry`
 (`oml_sdf`, `wall_mid_sdf`, `wall_meta`) and `GeometrySolver.project(..., plane=True)`.
 Those are geometry oracles, not DTOs: they do not replace `ShellMidlineStrip`.
 
@@ -378,8 +378,4 @@ Production producers should emit strips via
 - B / S / S′: [`../coordinate_frames/README.md`](../frames/README.md)
 - Geometry worker: [`../section_geometry/README.md`](../section/README.md)
 - Midline / void emit: [`../section_geometry/midlines/README.md`](../section/midlines/README.md) · `../section_geometry/topology/README.md` · [`../section_geometry/cell_wall_loops/README.md`](../section/cells/README.md)
-- Mesh worker: `../../mesh_utilities/section_mesh/README.md`
-- Bind worker: `../../material_utilities/section_bind/README.md`
-- Loads worker: `../../load_utilities/section_loads/README.md`
-- FE worker: `../../fem_utilities/section_shell_fea/README.md`
-- Ownership table: `../../docs/COEXISTENCE_IMPLICIT_SHELL.md`
+- Midline contract types: [`../section/midlines/README.md`](../section/midlines/README.md)

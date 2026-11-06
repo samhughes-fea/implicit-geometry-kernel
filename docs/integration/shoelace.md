@@ -1,6 +1,7 @@
 # shoelace_integration
 
-`implicit_geometry_kernel.integration.shoelace` is a shared worker package in `blade_structure_utilities`.
+`implicit_geometry_kernel.integration.shoelace` is the kernel's polygon area and
+moment worker.
 
 ## Purpose
 

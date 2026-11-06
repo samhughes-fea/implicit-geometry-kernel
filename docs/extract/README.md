@@ -4,7 +4,7 @@ In-plane geometry extractors. This is a **subpackage** of
 `implicit_geometry_kernel`, not a kernel-barrel export: import
 `implicit_geometry_kernel.extract`, not `from implicit_geometry_kernel import ...`.
 
-It returns **polylines**, not meshes. A 3-D FEM mesh stays downstream (shell-fem).
+It returns **polylines**, not meshes. A 3-D FEM mesh stays downstream.
 
 ## Public names
 

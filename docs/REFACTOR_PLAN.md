@@ -263,7 +263,8 @@ Not a status-table step. 3d is already tracked as step 5.
   `ShearWeb`/`SpanWeb`).
 - **3d.** The tree moves (step 5). Moves only, no logic.
 - **3e.** Plots package (open decision 1). Blocked until the maintainer chooses.
-- Also: remove leftover mentions of downstream package names from `docs/`.
+- Also: Done: leftover downstream package names stripped from live `docs/`
+  (fork history stays in `docs/FORK.md`).
 
 ## Step 6: seams with materials and meshing
 

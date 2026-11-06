@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `Airfoil` grows CST, NACA 5/6, camber-line t/c families, flatback TE,
+  Selig/Lednicer readers and interpolation by thickness. NACA vertex maths
+  stays in `sdf.shapes.naca`.
+
 - `Stringer` on `BladeGeometry` is a free-end or through branch, optionally
   limited by `extent`. Inside that interval it appears on `ShellGraph.branches`;
   the ends are topology events and `forced_stations()`.

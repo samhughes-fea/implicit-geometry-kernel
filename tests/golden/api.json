@@ -3,14 +3,22 @@
   "kind": "class",
   "members": {
    "contour_points": "(self, n: 'int' = 161) -> 'np.ndarray'",
+   "cst": "",
    "ellipse": "",
+   "from_lednicer": "",
+   "from_selig": "",
+   "interpolate_by_thickness": "",
    "max_thickness": "",
    "naca4": "",
+   "naca5": "",
+   "naca6": "",
    "surface": "(self, side: 'str', x_c: 'Union[float, np.ndarray]') -> 'np.ndarray'",
    "thickness": "(self, x_c) -> 'np.ndarray'",
-   "to_sdf": "(self, *, chord: 'float' = 1.0, n: 'int' = 161)"
+   "to_sdf": "(self, *, chord: 'float' = 1.0, n: 'int' = 161)",
+   "with_te_thickness": "(self, te: 'float', n: 'int' = 161) -> \"'Airfoil'\"",
+   "with_thickness": "(self, t_c: 'float', n: 'int' = 161) -> \"'Airfoil'\""
   },
-  "signature": "(points: 'Sequence[Sequence[float]]', name: 'str' = 'airfoil')"
+  "signature": "(points: 'Sequence[Sequence[float]] | np.ndarray', name: 'str' = 'airfoil')"
  },
  "implicit_geometry_kernel.BladeGeometry": {
   "kind": "class",

@@ -1,7 +1,7 @@
 """Characterization of parked Pass 2 gaps. Does not close them.
 
 Numbers here are the inventory in ``docs/section/reports/MERGED_SHELL_GAPS.md``.
-Wave 0 policy: loft from ``shell_graph``; snap with ``wall_mid_sdf``. Joint
+Loft from ``shell_graph``; snap with ``wall_mid_sdf``. Joint
 vertices are out of the Pass 1 ``|phi| < 5e-4`` check (max 4 mm = t_cap/2).
 """
 

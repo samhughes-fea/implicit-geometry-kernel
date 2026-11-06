@@ -261,7 +261,7 @@ def layout_without_spar_caps(layout: SystemLayoutSpec) -> SystemLayoutSpec:
     webs. This function exists for the other case: the local cavity cannot
     contain a minimum-gauge spar cap, so the cap *runs out* — which is what real
     blades do outboard, and what the alternative (sizing a cap thinner than the
-    material can be laid up) is not (``docs/bug_log.md`` BL-006).
+    material can be laid up) is not (see ``docs/section/bug_log.md``).
 
     The cascade's floor-at-one-web rule does not apply here and its rationale is
     worth separating: a section with no web has no shear path, so losing the last

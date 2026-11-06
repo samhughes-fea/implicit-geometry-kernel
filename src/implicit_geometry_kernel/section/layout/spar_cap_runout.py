@@ -1,4 +1,4 @@
-"""BL-006 spar-cap run-out: terminate caps when they cannot be built at gauge.
+"""Spar-cap run-out: terminate caps when they cannot be built at gauge.
 
 Web cascade and cap run-out are separate events. This module is the single
 pre-assemble gate for the latter: global cavity room *and* placement
@@ -193,7 +193,7 @@ def apply_spar_cap_runout(
     capless = layout_without_spar_caps(layout)
     logger.warning(
         "[Station %d] spar cap runs out: %s. Terminating the cap and building %s "
-        "instead of %s -- every web is kept. See docs/bug_log.md BL-006.",
+        "instead of %s -- every web is kept. See docs/section/bug_log.md.",
         int(station_idx),
         "; ".join(reasons),
         getattr(capless, "key", capless),

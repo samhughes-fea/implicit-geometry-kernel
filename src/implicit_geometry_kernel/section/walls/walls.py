@@ -147,7 +147,7 @@ class CapWall:
     flapwise_c_lo: float | None = None
     flapwise_c_hi: float | None = None
     flapwise_clip_mode: FlapwiseClipMode | None = None
-    # Cavity-midline samples from cap_feasibility_clamp (SG-010 / SG-012).
+    # Cavity-midline samples from cap_feasibility_clamp (clip budget; split on the cavity midline).
     # Stored on the recipe so constructive emit does not fall back to y=0.
     camber_xy: tuple[tuple[float, float], ...] | None = None
     emission_maturity: EmissionMaturity = "constructive"

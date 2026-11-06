@@ -93,7 +93,7 @@ class ShearWebComponent(SectionComponent):
         contract; falls back to SDF ray-march on the mid-surface field.
 
         Never returns an unverified blind offset. A foot that cannot be placed
-        on the mid-surface raises :class:`InfeasibleSectionGeometry` (SG-002)
+        on the mid-surface raises :class:`InfeasibleSectionGeometry`
         instead of handing ``cell_wall_loops`` a millimetre-scale miss.
         """
         from implicit_geometry_kernel.contract.errors import (
@@ -182,7 +182,7 @@ class ShearWebComponent(SectionComponent):
             "ShearWebComponent foot cannot reach the skin mid-surface along its axis "
             f"(anchor={origin.tolist()}, skin_thickness={float(self.skin_thickness):.6g}). "
             "Frozen web_y anchors are usually stale relative to the current skin, "
-            "or the local cavity is thinner than the skin gauge (SG-002)."
+            "or the local cavity is thinner than the skin gauge."
         )
 
     def midline_polyline(self, n=20):

@@ -1,4 +1,4 @@
-"""Constructive spar-cap solids must split on the cavity midline (SG-012).
+"""Constructive spar-cap solids must split on the cavity midline.
 
 ``cap_feasibility_clamp`` already samples ``camber_xy`` and the SDF SparCap path
 honours it. CapWall recipes used by ``emit_wall_solid_polygons`` previously

@@ -374,7 +374,7 @@ class BladeGeometry:
     def wall_mid_sdf(self, meta: int = 0):
         """Stacked wall mid-surface: ``(oml + cavity) / 2``.
 
-        Snap oracle (Wave 0). Run interiors match ``shell_graph`` midpoints;
+        Snap oracle: run interiors match ``shell_graph`` midpoints;
         partition vertices are not a Newton spec (``|phi|`` up to ``t_cap/2``).
         """
         from implicit_geometry_kernel.sdf.nodes.tagged import MidSurfaceNode

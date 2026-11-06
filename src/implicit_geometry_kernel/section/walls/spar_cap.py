@@ -81,7 +81,7 @@ class SparCap(SectionComponent):
         self.twist_angle = float(twist_angle)
         self._af = airfoil_sdf
         # CapWall carries flapwise_* without an explicit callable strip; derive
-        # the same midplane-to-midplane clip cores already honor (SG-011).
+        # the same midplane-to-midplane clip cores already honor.
         if strip_clip is None and self._flapwise_strip_ready():
             strip_clip = _parallel_web_strip_clip(
                 float(flapwise_nx),

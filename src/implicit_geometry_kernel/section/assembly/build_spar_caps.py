@@ -171,7 +171,7 @@ def build_spar_caps(
 
     ``spar_cap_ply_pitch_m`` (optional): after cavity feasibility reduces a
     continuous height, floor onto this pitch so CapWall / midline thickness
-    stays on the ply pitch grid (BL-019). Geometry remains material-agnostic —
+    stays on the ply pitch grid. Geometry remains material-agnostic —
     callers pass the catalogue spar-cap ``PlyGrid.pitch`` when known.
     """
     rule = cap_placement
@@ -215,7 +215,7 @@ def build_spar_caps(
         cap_fw: dict[str, Any] = {}
         if all_flapwise and c_station is not None:
             # Web midplane stations are the strip SoT (same as sandwich cores).
-            # Do not recompute from camber at x_cap — that drifts under twist (SG-011).
+            # Do not recompute from camber at x_cap — that drifts under twist.
             c_lo_cap = float(c_station[0])
             c_hi_cap = float(c_station[-1])
             d_stat = abs(c_lo_cap - c_hi_cap)
@@ -388,7 +388,7 @@ def build_spar_caps(
         cap_h_upper, cap_h_lower = snap_cap_heights(
             cap_h_upper, cap_h_lower, spar_cap_ply_pitch_m
         )
-        # Second pass (SG-013): re-clamp extents at the shared height so pads
+        # Second pass: re-clamp extents at the shared height so pads
         # that were over-trimmed at the taller request can grow back
         # symmetrically within +/- dhw about each web.
         _clamped_c = [

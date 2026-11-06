@@ -122,11 +122,11 @@ def test_web_foot_lands_exactly_on_a_skin_node(layout_key, twist_deg):
 
 
 def test_tip_absolute_2a_f_loops_build_under_twist():
-    """Tip-scale 2A-F with absolute LE web + tip twist must emit SG-002-clean feet.
+    """Tip-scale 2A-F with absolute LE web + tip twist must emit feet on the skin mid-surface.
 
     Captured from WP6 confirmatory tip mono DV (chord ≈ 88 mm, skin 3.536 mm,
     web 4.42 mm, twist ≈ 0.41 deg). Fractional layouts already passed; this pins
-    the absolute-web tip path that BL-006 steps into (TE web dropped → 1A-F).
+    the absolute-web tip path that cap run-out steps into (TE web dropped → 1A-F).
     """
     from implicit_geometry_kernel.section.api.worker import (
         build_section_geometry,
@@ -179,12 +179,12 @@ def test_tip_fractional_2a_f_loops_build_under_twist():
     assert result.cell_wall_loops and len(result.cell_wall_loops) == 3
 
 
-def test_stale_frozen_web_y_under_twist_raises_infeasible_not_sg002_gap():
+def test_stale_frozen_web_y_under_twist_raises_infeasible_not_blind_foot_gap():
     """Frozen thin-skin web_y + thicker skin + twist must not emit a blind foot.
 
     Pre-fix: flapwise_web_sframe_inputs rotated stale IML anchors and
     ShearWebComponent._extend_to_skin_mid_surface returned origin+t/2, leaving the foot
-    ~3.5 mm off the skin mid (SG-002). Now the assemble path raises
+    ~3.5 mm off the skin mid. Now the assemble path raises
     InfeasibleSectionGeometry so mono can keep prior gauges.
     """
     from implicit_geometry_kernel.contract.errors import (
@@ -236,7 +236,7 @@ def test_stale_frozen_web_y_under_twist_raises_infeasible_not_sg002_gap():
 
 
 def test_frozen_runner_resolution_does_not_retry_reanchor():
-    """Sizing freeze: ``resolution=`` must raise, not live-y retry / drop (SG-002)."""
+    """Sizing freeze: ``resolution=`` must raise, not live-y retry / drop."""
     from implicit_geometry_kernel.contract.errors import (
         InfeasibleSectionGeometry,
     )

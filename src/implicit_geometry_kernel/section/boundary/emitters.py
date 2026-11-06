@@ -160,7 +160,7 @@ def emit_spar_cap_polygon(
         # empty bounds rather than returning an empty geometry.
         return Polygon()
     # Prefer CapWall flapwise_* (same contract as SandwichCore) so recipe-driven
-    # emission stays flush to web midplanes under twist (SG-011). Explicit
+    # emission stays flush to web midplanes under twist. Explicit
     # ``_strip_clip`` still requires the flapwise params for the Shapely path.
     strip_clip = getattr(comp, "_strip_clip", None)
     fw_nx = getattr(comp, "flapwise_nx", None)

@@ -40,7 +40,7 @@ class CellWallLoop:
         ``skin_pressure_surface:bay_1``, ``shear_web_1``). This **is** the
         wall-to-cell membership: a strip label appearing in two loops is a wall
         shared by those cells. Consumers read membership from it and never
-        re-derive it from coordinates (SG-014).
+        re-derive it from coordinates.
     """
 
     id: int

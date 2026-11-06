@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Comments in `src/` and `tests/` use plain sentences instead of tracking codes
+  (SG-/BL-/G-POLY/"Wave 0"); `docs/section/bug_log.md` still holds the history.
+
 - CI: mypy on `src/implicit_geometry_kernel`, a consumer-name grep on `src/` and
   `tests/`, and `py.typed`. Branch protection on `main` requires the test jobs.
 

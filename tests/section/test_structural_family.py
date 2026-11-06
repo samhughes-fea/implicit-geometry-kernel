@@ -102,7 +102,7 @@ def test_structural_C_discrete_caps(af):
     [0.25, 0.45, 0.65],
 ])
 def test_structural_C_cap_recipes_centered_on_webs(af, web_xs):
-    """SG-013: each CapWall midpoint stays on its web station."""
+    """Each CapWall midpoint stays on its web station."""
     m = MultiCellSection(
         af,
         web_x_positions=web_xs,

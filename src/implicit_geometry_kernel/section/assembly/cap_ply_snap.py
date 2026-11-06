@@ -1,4 +1,4 @@
-"""Snap continuous spar-cap heights onto a ply pitch (BL-019).
+"""Snap continuous spar-cap heights onto a ply pitch.
 
 Geometry stays material-agnostic: callers pass `pitch_m` (catalogue
 `PlyGrid.pitch` for the spar-cap stack). After cavity feasibility reduces a

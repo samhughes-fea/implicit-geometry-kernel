@@ -344,7 +344,7 @@ Fix: refuse the rotate fallback (`InfeasibleSectionGeometry`); harden
 offset); mono gauge projection keeps prior gauges when raise is infeasible.
 Pinned by `test_tip_absolute_2a_f_loops_build_under_twist`,
 `test_tip_fractional_2a_f_loops_build_under_twist`, and
-`test_stale_frozen_web_y_under_twist_raises_infeasible_not_sg002_gap`.
+`test_stale_frozen_web_y_under_twist_raises_infeasible_not_blind_foot_gap`.
 
 ### Cleanup, 2026-08-30
 

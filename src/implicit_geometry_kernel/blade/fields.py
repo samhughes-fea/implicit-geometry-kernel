@@ -32,7 +32,7 @@ class StackThickness:
     """Skin thickness everywhere, plus cap thickness inside cap footprints.
 
     Nearest loop-run ``T`` (a step, not a ramp). Shared cap/skin vertices may
-    evaluate to either side. Not a Newton joint spec (Wave 0).
+    evaluate to either side. Not a Newton joint spec.
     """
 
     def __init__(self, geo, cache_size: int = 256) -> None:

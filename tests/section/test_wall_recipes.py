@@ -8,12 +8,8 @@ from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.constructive.emitters import (
-    emit_sandwich_core_polygon,
-)
-from implicit_geometry_kernel.section.constructive.export import (
-    emit_constructive_polygons,
-)
+from implicit_geometry_kernel.section.boundary.emitters import emit_sandwich_core_polygon
+from implicit_geometry_kernel.section.boundary.cores import emit_constructive_polygons
 from implicit_geometry_kernel.section.walls import (
     SkinWall,
 )

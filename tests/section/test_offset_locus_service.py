@@ -4,12 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from implicit_geometry_kernel.section.constructive import (
-    helpers as helpers_mod,
-)
-from implicit_geometry_kernel.section.constructive import (
-    offset_locus,
-)
+from implicit_geometry_kernel.section.constructive import helpers as helpers_mod
+from implicit_geometry_kernel.section.constructive import offset_locus
 from implicit_geometry_kernel.sdf.shapes.airfoil import (
     AirfoilSDF,
 )

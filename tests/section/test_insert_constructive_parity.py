@@ -5,11 +5,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.section.constructive.emitters import (
+from implicit_geometry_kernel.section.boundary.emitters import (
+
     emit_leading_edge_insert_polygon,
+
     emit_trailing_edge_insert_polygon,
+
 )
-from implicit_geometry_kernel.section.constructive.labels import (
+from implicit_geometry_kernel.section.boundary.labels import (
     INSERTS_CONSTRUCTIVE_BY_DEFAULT,
     is_constructive_label,
     is_residual_label,

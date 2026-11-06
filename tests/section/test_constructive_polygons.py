@@ -10,19 +10,17 @@ from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.constructive import (
+from implicit_geometry_kernel.section.boundary.labels import (
     classify_property_labels,
-    emit_constructive_polygons,
-    emit_wall_solid_polygons,
     is_constructive_label,
     is_core_label,
     is_wall_solid_label,
     is_residual_label,
-    section_properties_from_polygons,
 )
-from implicit_geometry_kernel.section.constructive.emitters import (
-    emit_outer_skin_polygon,
-)
+from implicit_geometry_kernel.section.boundary.cores import emit_constructive_polygons
+from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
+from implicit_geometry_kernel.section.properties.polygons import section_properties_from_polygons
+from implicit_geometry_kernel.section.boundary.emitters import emit_outer_skin_polygon
 from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
 )

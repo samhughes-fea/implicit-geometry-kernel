@@ -8,10 +8,8 @@ from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )
-from implicit_geometry_kernel.section.constructive import (
-    emit_wall_solid_polygons,
-    is_skin_label,
-)
+from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
+from implicit_geometry_kernel.section.boundary.labels import is_skin_label
 from implicit_geometry_kernel.section.midlines.export import (
     build_shell_midline_strips,
 )
@@ -34,9 +32,7 @@ def test_is_skin_label_ss_ps():
 
 
 def test_ss_ps_skin_areas_sum_near_full_annulus():
-    from implicit_geometry_kernel.section.constructive.emitters import (
-        emit_outer_skin_polygon,
-    )
+    from implicit_geometry_kernel.section.boundary.emitters import emit_outer_skin_polygon
 
     af = AirfoilSDF.from_naca("2412", n_points=120, chord=1.0)
     t = 0.005

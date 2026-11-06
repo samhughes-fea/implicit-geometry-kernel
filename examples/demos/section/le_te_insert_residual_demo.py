@@ -48,7 +48,7 @@ from implicit_geometry_kernel.section.properties.export import SectionProperties
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )
-from implicit_geometry_kernel.section.constructive import (
+from implicit_geometry_kernel.section.boundary.labels import (
     classify_property_labels,
     is_residual_label,
 )

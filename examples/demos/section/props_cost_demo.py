@@ -60,10 +60,8 @@ from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )
-from implicit_geometry_kernel.section.constructive import (
-    emit_constructive_polygons,
-    section_properties_from_polygons,
-)
+from implicit_geometry_kernel.section.boundary.cores import emit_constructive_polygons
+from implicit_geometry_kernel.section.properties.polygons import section_properties_from_polygons
 from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
 )

@@ -28,9 +28,7 @@ def test_is_a_valueerror_subclass() -> None:
 
 def test_offset_ring_deeper_than_the_section_is_infeasible() -> None:
     """The direct oracle: no locus exists at a depth past the inscribed limit."""
-    from implicit_geometry_kernel.section.constructive.offset_locus import (
-        airfoil_offset_ring,
-    )
+    from implicit_geometry_kernel.section.boundary import airfoil_offset_ring
     from implicit_geometry_kernel.sdf.shapes.airfoil import (
         AirfoilSDF,
     )
@@ -51,9 +49,7 @@ def test_bad_depth_argument_is_not_infeasibility() -> None:
     Keeping these distinct is the point: the sizing loop must not swallow real
     programming errors as failed trials.
     """
-    from implicit_geometry_kernel.section.constructive.offset_locus import (
-        airfoil_offset_ring,
-    )
+    from implicit_geometry_kernel.section.boundary import airfoil_offset_ring
     from implicit_geometry_kernel.sdf.shapes.airfoil import (
         AirfoilSDF,
     )

@@ -47,10 +47,8 @@ from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )
-from implicit_geometry_kernel.section.constructive import (
-    emit_wall_solid_polygons,
-    is_residual_label,
-)
+from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
+from implicit_geometry_kernel.section.boundary.labels import is_residual_label
 from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
 )

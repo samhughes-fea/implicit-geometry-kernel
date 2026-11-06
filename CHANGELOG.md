@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- `section/constructive` folded into its target homes (moves only, geometry unchanged):
+  `export.py` is split into `section/boundary/walls.py` (skin, web and cap solids) and
+  `section/boundary/cores.py` (cores, inserts, the combined set); `emitters.py` and
+  `labels.py` move to `section/boundary/`; `properties.py` becomes
+  `section/properties/polygons.py`. `section.constructive` and its modules remain as
+  aliases until 0.6.0. `docs/REFACTOR_PLAN.md` status is updated: 5a/5b done, next is
+  5c (`placement` into `layout`); Step↔Phase numbering is mapped in the status section.
+
 - `section/` subpackages renamed to their target names (moves only, geometry
   unchanged): `section.props` is now `section.properties` and `section.recipes` is now
   `section.walls`. The old package and module paths remain as aliases until 0.6.0.
@@ -62,7 +70,6 @@
   (`ConstantLaw`, `TableLaw` with monotone PCHIP, and combinators). It assembles the wall
   thickness field, wall reference surface, cavity and a priority-owned material field,
   and reports the stations where members start or end. See `docs/structure/README.md`.
-  `section` does not use it yet.
 - New SDF nodes `ComplementNode`, `MaxNode`, `LawOffsetNode` and `SpanIntervalNode`;
   `FeatureKind` gains `core`, `stringer`, `transverse` and `bond`.
 - Fixed: an opaque `CallableField` leaf now compares by its token and its callable. Comparing

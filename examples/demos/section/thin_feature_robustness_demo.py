@@ -59,9 +59,7 @@ from implicit_geometry_kernel.section import (
 from implicit_geometry_kernel.section.properties.area_mesh import (
     section_properties_via_quadtree,
 )
-from implicit_geometry_kernel.section.constructive import (
-    emit_wall_solid_polygons,
-)
+from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
 from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
 )

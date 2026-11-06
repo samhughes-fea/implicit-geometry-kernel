@@ -7,19 +7,46 @@ same PR that finishes a step.
 
 ## Status (resume here)
 
+Status keys are **Steps 1–9**. Phase numbers in the body are historical names for
+the same work; they are not extra steps.
+
+| Step | Phase names in the body | What |
+|------|-------------------------|------|
+| 1 | — | Stabilise |
+| 2 | — | Safety net |
+| 3 | — | `structure/` member model |
+| 4 | — | Sections assembled through `structure/` |
+| 5 | Phase 1 (done), Phase 2 / 2d (after the remaining moves), Phase 3d | Target tree, then `SectionSpec` / `SectionOptions` |
+| 6 | — | Seams with materials and meshing |
+| 7 | Phase 5 | Completeness |
+| 8 | Phase 4 | Exactness |
+| 9 | — | Optional separate blade-model package |
+| — | Phase 3a–c, 3e | Naming and plots; 3e is blocked on open decision 1 |
+
 | Step | What | State |
 |------|------|-------|
-| 1 | Stabilise: lint fix, naming fix, data clean-up | Done (PR #4, #5). Tag `v0.4.1` and branch protection on `main` are still to be done by the maintainer |
+| 1 | Stabilise: lint fix, naming fix, data clean-up | Done (PR #4, #5). Tag `v0.4.1`, branch protection on `main`, consumer-name CI grep, and mypy on `src/` are still to be done by the maintainer |
 | 2 | Safety net: golden numbers, API snapshot, downstream check script | Done (PR #6) |
 | 3 | Member model in `structure/` (contributions, builders, assembler, span laws, span field nodes) | Done (PR #6) |
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
+| 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **In progress** — breakdown below. Tag 0.5.0 after Phase 2 |
+| 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started. Coupling location is open decision 4 |
+| 7 | Completeness (Phase 5 list below) | Not started |
+| 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Not started. Mid-surface row is blocked on open decision 2 |
+| 9 | Separate blade-model package (only if the maintainer chooses it) | Not decided (open decision 4) |
+
+Step 5 breakdown (next slice is **5c**):
+
+| Slice | What | State |
+|-------|------|-------|
 | Phase 1a/1b | One shape model: CSG shapes are `SDFNode` subclasses, compile step removed | Done (PR #8) |
 | Phase 1c | One Shapely gateway: `section/boundary/polygons.py` | Done (PR #9) |
-| 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **In progress**: `sdf/` (PR #10), `integration/` (PR #11) and `frames/` (PR #12) done. `section/` goes in several PRs: (a) `props` to `properties` and `recipes` to `walls` is the open PR; (b) `constructive` into `boundary` (split `export.py` into `boundary/walls.py` and `cores.py`, move `labels`, `emitters`, `properties`); (c) `placement` into `layout`; `api` becomes `spec` in Phase 2. Then `blade/` (split `cut.py`), then Phase 2. Tag 0.5.0 after |
-| 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started |
-| 7 | Completeness (Phase 5 list below) | Not started |
-| 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Not started |
-| 9 | Separate blade-model package (only if the maintainer chooses it) | Not decided |
+| `sdf/`, `integration/`, `frames/` | Move to the target tree | Done (PR #10, #11, #12) |
+| 5a | `props` → `properties`, `recipes` → `walls` | Done (PR #13) |
+| 5b | `constructive` into `boundary` and `properties` (`export.py` → `boundary/walls.py` and `cores.py`; `labels` and `emitters` → `boundary/`; `properties.py` → `properties/polygons.py`) | Done (PR #14) |
+| 5c | `placement` into `layout` | Not started |
+| 5d | `blade/` split `cut.py` (`shell_graph.py`) | Not started |
+| Phase 2 | `SectionSpec`, `SectionOptions`, `api` → `spec`; then tag 0.5.0 | After 5c and 5d |
 
 Decisions already made by the maintainer:
 
@@ -37,16 +64,17 @@ Decisions already made by the maintainer:
 - `section/` stays one package, with subpackages in pipeline order (decided 6 Nov).
 - Release tags are made by the maintainer only.
 
-Open decisions (ask the maintainer; do not assume):
+Open decisions (ask the maintainer; do not assume; do not start the blocked work):
 
 1. Plots package: rename it to `implicit_geometry_kernel_plots`, or move it back inside
-   the kernel behind the `[plots]` extra?
+   the kernel behind the `[plots]` extra? Blocks Phase 3e.
 2. Phase 4 mid-surface: rebuild it from the polygons, or keep the field and add a drift
-   check?
+   check? Blocks the mid-surface row of step 8.
 3. Should any of the 41 older demos in `examples/demos/section` be retired rather than
-   moved?
+   moved? Blocks relocating those demos.
 4. Where the coupling with materials and Gmsh lives (recommended: a separate blade-model
-   package that imports the kernel; the kernel stays free of Gmsh).
+   package that imports the kernel; the kernel stays free of Gmsh). Blocks step 9 and
+   the packaging of step 6.
 
 ## How to work on a step
 
@@ -126,14 +154,14 @@ implicit_geometry_kernel/
   structure/       contributions, builders, assembler, span laws   (done)
   section/         in pipeline order:
     spec/            SectionSpec, SectionOptions, validation (from api/worker, kwarg_aliases)
-    layout/          catalogue and layout resolution
-    walls/           one module per wall type, registered (skin, cap, web, core, insert)
+    layout/          catalogue and layout resolution (placement still separate until 5c)
+    walls/           one module per wall type, registered (skin, cap, web, core, insert)   (done)
     assembly/        plan, members, MultiCellSection
-    boundary/        polygons (done), walls, cores (from constructive/export)
+    boundary/        polygons, walls, cores, emitters, labels   (done)
     midlines/
     junctions/
     cells/
-    properties/      (from props/)
+    properties/      including polygons.py from constructive   (done)
   blade/           loft, stations, cut, shell_graph, transverse members
   extract/         curves and surfaces
 ```
@@ -150,15 +178,17 @@ Large modules and where they go:
 
 | Module today | Split into |
 |--------------|-----------|
-| `integration/quadtree.py` | Done: `quadtree/tree.py`, `refine.py`, `refine_multi.py`, `soa.py`, `marching.py`. Still to do (a logic PR, not a move): keep the array-based path (`soa.py`) only and drop the object-model duplicates (`refine.py`, `refine_multi.py`) once nothing uses them |
-| `section/assembly/multicell.py` | webs, caps, skin and a short `section.py` (partly done by `plan.py` and `members.py`) |
+| `integration/quadtree.py` | Done: `quadtree/tree.py`, `refine.py`, `refine_multi.py`, `soa.py`, `marching.py`. Still to do (a logic PR, not a move; keep it out of step 5): keep the array-based path (`soa.py`) only and drop the object-model duplicates (`refine.py`, `refine_multi.py`) once nothing uses them |
+| `section/assembly/multicell.py` | webs, caps, skin and a short `section.py` (partly done by `plan.py` and `members.py`; ~261 lines) |
 | `frames/tensors.py` | Done: `tensors/inertia.py`, `moments.py`, `forces.py`, `thickness.py` |
-| `section/constructive/export.py` | `boundary/walls.py`, `boundary/cores.py` |
+| `section/constructive/export.py` | Done: `boundary/walls.py`, `boundary/cores.py` |
 | `integration/quadrature.py` | Done: `quadtree/moments.py`, `quadtree/quadrature.py` |
-| `section/api/worker.py` | `spec/` (validation) and a short build module, after Phase 2 |
-| `blade/cut.py` | `cut.py` (SectionCut, walls, cells) and `shell_graph.py` (graph, partitions, topology diff) |
+| `section/api/worker.py` | `spec/` (validation) and a short build module, after Phase 2 (~533 lines) |
+| `blade/cut.py` | `cut.py` (SectionCut, walls, cells) and `shell_graph.py` (graph, partitions, topology diff) (~510 lines; step 5d) |
 
-## Phase 2: one section input, no hidden settings (step 5, after the moves)
+## Step 5 (continued): Phase 2 — one section input, no hidden settings
+
+After 5c and 5d. This is still part of step 5, not a new status row.
 
 - **2a.** `SectionSpec`, a frozen dataclass with one name per quantity: `layout`,
   `airfoil`, `twist_rad`, `gauges` (a `Gauges` object for skin SS/PS, cap and web,
@@ -173,16 +203,17 @@ Large modules and where they go:
   point. The keyword form becomes a thin wrapper that builds a spec and warns.
   `BladeGeometry.section_at` builds a `SectionSpec` internally.
 
-## Phase 2d: one place per wall type
+## Step 5 (continued): Phase 2d — one place per wall type
 
 Adding a member type should mean one module in `section/walls/` plus a registration,
-with no edits elsewhere. Today kinds are found by string prefixes (`is_skin_label`,
-`startswith("shear_web_")`, `startswith("spar_cap")`) across `constructive/labels.py`,
-`constructive/export.py`, `constructive/emitters.py`, `assembly/multicell.py`,
-`midlines/export.py`, `props/export_section_json.py` and `blade/cut.py`.
+with no edits elsewhere. Today kinds are still found by string prefixes (`is_skin_label`,
+`startswith("shear_web_")`, `startswith("spar_cap")`) across `boundary/labels.py`,
+`boundary/walls.py`, `boundary/cores.py`, `boundary/emitters.py`, `assembly/multicell.py`,
+`midlines/export.py`, `properties/export_section_json.py` and `blade/cut.py` (old
+`constructive/` and `props/` paths remain aliases until 0.6.0).
 
-Target: a wall-type protocol and registry (the `structure` builders and
-`SECTION_BUILDERS` are the start of this):
+Phase 2d **extends** the existing `structure` builders and `SECTION_BUILDERS`. Do not
+add a second, parallel registry.
 
 ```python
 class WallType(Protocol):
@@ -219,6 +250,8 @@ spec is the source of truth.
 
 ## Phase 3: names a new reader can follow
 
+Not a status-table step. 3d is already tracked as step 5.
+
 - **3a.** Replace internal tracking codes in code comments (G-POLY, G-MID, SG-009,
   BL-028, "Wave 0") with plain sentences; link `docs/section/bug_log.md` where history
   matters.
@@ -228,13 +261,13 @@ spec is the source of truth.
   interpolate/station_at, SectionGeometry/SectionGeometryRunner,
   web_offsets/web_x_positions_m, SpanWeb/ShearWeb. Remove in 0.6.0.
 - **3d.** The tree moves (step 5). Moves only, no logic.
-- **3e.** Plots package (open decision 2).
+- **3e.** Plots package (open decision 1). Blocked until the maintainer chooses.
 - Also: remove leftover mentions of downstream package names from `docs/`.
 
 ## Step 6: seams with materials and meshing
 
 The kernel defines small interfaces; the other side plugs in. The kernel imports
-neither side.
+neither side. Where the other side lives is open decision 4.
 
 | Seam | Kernel provides | Other side provides |
 |------|-----------------|---------------------|
@@ -275,7 +308,7 @@ reference. Golden numbers are regenerated in these PRs with the change stated.
 | Gap | Today | Change | Check |
 |-----|-------|--------|-------|
 | Airfoil nose | surfaces looked up by x after a cubic resample, split at the smallest-x vertex (NACA 0015 upper surface 8e-5 c off at x = 0) | split at the spline's true LE (farthest point from TE), look up by arc length, evaluate NACA from the formula | error against analytic NACA thickness at x/c 0 to 0.01 below 1e-8 |
-| Mid-surface field | `(outer + cavity) / 2`, only a true mid-surface where thickness is uniform | build the midline from the exact wall polygons and use the field only for queries, or add a gradient drift check (open decision 3) | midline against polygon midline on all 40 layouts, worst gap reported |
+| Mid-surface field | `(outer + cavity) / 2`, only a true mid-surface where thickness is uniform | build the midline from the exact wall polygons and use the field only for queries, or add a gradient drift check (open decision 2) | midline against polygon midline on all 40 layouts, worst gap reported |
 | Quadtree remainder | LE/TE inserts still integrated on a depth-7 quadtree | emit inserts as polygons; keep the quadtree as a test cross-check | insert area and moments match shoelace sums to 1e-12 |
 | Loft scalars | chord, twist, pitch axis, offset linear between stations | optional PCHIP (monotone, no overshoot); airfoils stay linear blends | reference planforms match their tables with smooth first derivatives |
 

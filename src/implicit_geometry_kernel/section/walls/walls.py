@@ -5,13 +5,20 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from implicit_geometry_kernel.section.constructive.emitters import (
+from implicit_geometry_kernel.section.boundary.emitters import (
+
     emit_leading_edge_insert_polygon,
+
     emit_outer_skin_polygon,
+
     emit_sandwich_core_polygon,
+
     emit_shear_web_polygon,
+
     emit_spar_cap_polygon,
+
     emit_trailing_edge_insert_polygon,
+
 )
 from implicit_geometry_kernel.section.walls.outer_skin import (
     OuterSkin,

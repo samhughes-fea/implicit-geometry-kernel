@@ -208,10 +208,8 @@ def export_section_json(
 
     def _constructive_boundary(lab: str):
         """Exterior (+ holes) rings from constructive wall-solid polygons when available."""
-        from implicit_geometry_kernel.section.constructive import (
-            emit_constructive_polygons,
-            is_constructive_label,
-        )
+        from implicit_geometry_kernel.section.boundary.cores import emit_constructive_polygons
+        from implicit_geometry_kernel.section.boundary.labels import is_constructive_label
 
         if not is_constructive_label(lab):
             return None

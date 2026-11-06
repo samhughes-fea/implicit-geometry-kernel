@@ -148,7 +148,7 @@ def apply_shapely(clip: ClipSpec, polygon, *, camber_xy: Any = None):
     if isinstance(clip, CamberSide):
         cam = None if camber_xy is None else np.asarray(camber_xy, dtype=float)
         if cam is not None and cam.ndim == 2 and cam.shape[0] >= 2 and cam.shape[1] >= 2:
-            from implicit_geometry_kernel.section.constructive.emitters import _camber_clip
+            from implicit_geometry_kernel.section.boundary.emitters import _camber_clip
 
             return ensure_polygon(
                 _camber_clip(polygon, cam, surface=str(clip.surface)),

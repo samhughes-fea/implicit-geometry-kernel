@@ -16,9 +16,7 @@ from implicit_geometry_kernel.section import (
     SectionGeometryRunner,
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.constructive.export import (
-    emit_wall_solid_polygons,
-)
+from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
 
 
 @pytest.mark.parametrize("twist_deg", [0.0, 2.7])

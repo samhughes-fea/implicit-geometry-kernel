@@ -28,11 +28,9 @@ from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.constructive import (
-    emit_constructive_polygons,
-    is_constructive_label,
-    section_properties_from_polygons,
-)
+from implicit_geometry_kernel.section.boundary.cores import emit_constructive_polygons
+from implicit_geometry_kernel.section.boundary.labels import is_constructive_label
+from implicit_geometry_kernel.section.properties.polygons import section_properties_from_polygons
 from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
 )

@@ -9,7 +9,7 @@ from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.constructive import (
+from implicit_geometry_kernel.section.boundary.labels import (
     classify_property_labels,
     is_constructive_label,
     is_core_label,

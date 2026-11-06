@@ -7,6 +7,7 @@ from implicit_geometry_kernel import (
     Airfoil,
     BladeGeometry,
     Station,
+    Stringer,
     TransverseMember,
     partition_edge_curve,
     shared_loft_names,
@@ -229,3 +230,28 @@ def test_rib_face_at_member_z_only():
     gained = topology_diff(other, at_rib.shell_graph())
     assert any(e.kind == "gained_rib" and e.side == "gained" for e in gained.events)
     assert all(not n.startswith("rib_mid") for n in diff.shared)
+
+
+def test_partial_span_stringer_branch_and_topology():
+    stringer = Stringer("str_le", position=0.12, thickness=0.008, depth=0.04,
+                        extent=(2.0, 6.0), side="pressure")
+    stations = [
+        Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
+        Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(stations, "2D-F", 0.003, spar_cap_thickness=0.008,
+                        shear_web_thickness=0.002, web_positions=(0.18, 0.48),
+                        stringers=(stringer,))
+    assert geo.forced_stations() == (2.0, 6.0)
+    inside = geo.section_at(4.0).shell_graph()
+    assert len(inside.branches) == 1
+    run = inside.branches[0]
+    assert run.surface == "stringer" and run.name == "str_le"
+    assert run.points.shape == (2, 3)
+    assert float(np.linalg.norm(run.points[1, :2] - run.points[0, :2])) == pytest.approx(0.04, rel=0.2)
+    assert geo.section_at(0.5).shell_graph().branches == ()
+    assert geo.section_at(8.0).shell_graph().branches == ()
+    assert all(r.surface != "stringer" for r in inside.runs())
+    diff = topology_diff(inside, geo.section_at(8.0).shell_graph())
+    assert any(e.kind == "lost_stringer" and e.name == "str_le" for e in diff.events)
+    assert "str_le" not in diff.shared

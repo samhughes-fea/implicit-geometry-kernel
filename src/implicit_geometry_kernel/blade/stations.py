@@ -12,7 +12,7 @@ y through the thickness (suction side positive). The pitch axis sits at x = 0.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Optional, Tuple
 
 from implicit_geometry_kernel.blade.airfoil import Airfoil
 
@@ -85,6 +85,40 @@ class ShearWeb:
     name: str
     position: float
     n: int = 4
+
+
+@dataclass(frozen=True)
+class Stringer:
+    """A free-end or through branch standing off one skin, optionally over part of the span.
+
+    ``extent`` is the inclusive ``(z_start, z_end)`` interval; ``None`` means the
+    whole blade. Ends are topology events and ``forced_stations()`` mesh hints.
+    """
+
+    name: str
+    position: float
+    thickness: float
+    depth: float
+    extent: Optional[Tuple[float, float]] = None
+    side: str = "pressure"
+    free_end: bool = True
+
+    def __post_init__(self):
+        if not str(self.name).strip():
+            raise ValueError("name is required")
+        if not 0.0 < self.position < 1.0:
+            raise ValueError("position must be a chord fraction inside (0, 1)")
+        if self.thickness <= 0.0:
+            raise ValueError("thickness must be positive")
+        if self.depth <= 0.0:
+            raise ValueError("depth must be positive")
+        if self.side not in ("pressure", "suction"):
+            raise ValueError("side must be 'pressure' or 'suction'")
+        if self.extent is not None:
+            z0, z1 = float(self.extent[0]), float(self.extent[1])
+            if z0 >= z1:
+                raise ValueError("extent needs z_start < z_end")
+            object.__setattr__(self, "extent", (z0, z1))
 
 
 def __getattr__(name: str):

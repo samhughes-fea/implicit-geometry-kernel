@@ -42,7 +42,7 @@ from typing import Callable, Optional, Sequence, Union
 import numpy as np
 
 from implicit_geometry_kernel.blade.cut import CellPolygon, SectionCut, SectionWall, _twist_offset
-from implicit_geometry_kernel.blade.stations import Station, TransverseMember
+from implicit_geometry_kernel.blade.stations import Station, Stringer, TransverseMember
 from implicit_geometry_kernel.section.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M as _MIN_SKIN,
     MIN_REALISTIC_SPAR_WALL_THICKNESS_M as _MIN_CAP,
@@ -130,6 +130,9 @@ class BladeGeometry:
     transverse:
         Ribs, bulkheads and frames at fixed ``z``. A member appears as a closed
         rib face on ``section_at(z).shell_graph().faces`` at that station only.
+    stringers:
+        Partial-span or free-end branches. Present on ``shell_graph().branches``
+        inside ``extent``; ends are topology events.
     """
 
     def __init__(
@@ -148,6 +151,7 @@ class BladeGeometry:
         offset: Optional[SpanTable] = None,
         cap_windows: Optional[SpanTable] = None,
         transverse: Sequence[TransverseMember] = (),
+        stringers: Sequence[Stringer] = (),
     ):
         from implicit_geometry_kernel.section.layout.system_layout import resolve_system_type
 
@@ -198,21 +202,39 @@ class BladeGeometry:
         self._offset = _as_span_table(offset, "offset", cols=2)
         self.n_airfoil_points = int(n_airfoil_points)
         self.transverse = tuple(transverse)
+        self.stringers = tuple(stringers)
         # Live fields (wall_meta / stack T) key stations by round(z, 9). Cache the
         # cut itself so those fields do not rebuild geometry on a second hit.
         self._section_cache: OrderedDict[float, SectionCut] = OrderedDict()
         self._section_cache_size = 256
 
     def forced_stations(self) -> tuple[float, ...]:
-        """Sorted unique transverse-member stations (mesh hint; this does not mesh)."""
+        """Sorted unique member stations (ribs and stringer ends; mesh hint)."""
         by_key: dict[float, float] = {}
         for member in self.transverse:
             by_key[round(float(member.z), 9)] = float(member.z)
+        for stringer in self.stringers:
+            if stringer.extent is None:
+                continue
+            for z in stringer.extent:
+                by_key[round(float(z), 9)] = float(z)
         return tuple(by_key[key] for key in sorted(by_key))
 
     def _transverse_at(self, z: float) -> tuple[TransverseMember, ...]:
         key = round(float(z), 9)
         return tuple(m for m in self.transverse if round(float(m.z), 9) == key)
+
+    def _stringers_at(self, z: float) -> tuple[Stringer, ...]:
+        key = round(float(z), 9)
+        out = []
+        for stringer in self.stringers:
+            if stringer.extent is None:
+                out.append(stringer)
+                continue
+            z0, z1 = round(float(stringer.extent[0]), 9), round(float(stringer.extent[1]), 9)
+            if z0 <= key <= z1:
+                out.append(stringer)
+        return tuple(out)
 
     def _layout_at(self, z: float):
         from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
@@ -376,7 +398,7 @@ class BladeGeometry:
         dropped = tuple(f"web at {d.x_m / k:.6g} m from the LE: {d.reason}" for d in resolution.dropped)
         key = getattr(resolution.layout, "catalogue_key", None) or self.layout
         cut = SectionCut(z, chord, twist, pitch, (float(offset[0]), float(offset[1])), str(key), tuple(walls), cells,
-                         dropped, self._transverse_at(z))
+                         dropped, self._transverse_at(z), self._stringers_at(z))
         self._section_cache[z] = cut
         while len(self._section_cache) > self._section_cache_size:
             self._section_cache.popitem(last=False)

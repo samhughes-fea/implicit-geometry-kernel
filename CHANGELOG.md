@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `blade/cut.py` split (moves only, geometry unchanged): wall/cell types stay in
+  `cut.py`; the mid-surface graph, shell graph, partitions and topology diff live
+  in `blade/shell_graph.py`. `blade.cut` still exports the graph names until 0.6.0.
+
 - `section/placement` folded into `section/layout` (moves only, geometry unchanged):
   `anchoring.py`, `collision.py` and `handoff.py` now live beside the catalogue
   modules. `section.placement` and its modules remain as aliases until 0.6.0.

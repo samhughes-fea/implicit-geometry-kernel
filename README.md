@@ -119,7 +119,7 @@ airfoils, and Matplotlib (`[plots]`) for the sibling `plotting` package.
 
 ```
 src/implicit_geometry_kernel/
-├── blade/          Airfoil, Station, SkinRegion, ShearWeb; BladeGeometry (loft); SectionCut
+├── blade/          Airfoil, Station, SkinRegion, ShearWeb; BladeGeometry (loft); SectionCut; shell_graph
 ├── section/        one 2-D station: 40 layouts, placement, midlines, junctions,
 │                   cell-wall loops, area and second moments
 ├── sdf/            2-D signed-distance modelling: primitives, CSG, offsets, Numba kernels

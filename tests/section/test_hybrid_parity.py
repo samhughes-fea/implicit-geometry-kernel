@@ -16,14 +16,14 @@ from implicit_geometry_kernel.section.constructive import (
     is_wall_solid_label,
     is_residual_label,
 )
-from implicit_geometry_kernel.section.props_emit.props_backend import (
+from implicit_geometry_kernel.section.props.backend import (
     props_backend_from_env,
     quadtree_spec_for_airfoil,
 )
-from implicit_geometry_kernel.section.sections.multicell import (
+from implicit_geometry_kernel.section.assembly.multicell import (
     MultiCellSection,
 )
-from implicit_geometry_kernel.section.props_emit.props_compute import (
+from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF

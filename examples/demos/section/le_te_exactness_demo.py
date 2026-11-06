@@ -35,31 +35,28 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
-from implicit_geometry_kernel.plotting.palette import (
+from plotting.palette import (
     NAVY,
     RED,
     TEAL,
 )
 
-from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    MultiCellSection,
-    SDFGrid,
-    build_section_geometry,
-    resolve_system_type,
-)
-from implicit_geometry_kernel.plotting.plot import (
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.section import MultiCellSection, resolve_system_type
+from implicit_geometry_kernel.section.api import build_section_geometry
+from plotting.plot import (
     plot_section,
     plot_section_hybrid,
     plot_sdf_field,
 )
 from implicit_geometry_kernel.frames import naca_to_twisted_pitch_axis_blade_frame
-from implicit_geometry_kernel.plotting.frames import section_plot_axes
+from plotting.frames import section_plot_axes
 
 _DPI = DEFAULT_DPI
 
@@ -217,7 +214,7 @@ def main(argv: list[str] | None = None) -> Path:
         show_legend=False,
     )
     te = np.asarray(af.trailing_edge, dtype=float)
-    from implicit_geometry_kernel.plotting.plot_section import (
+    from plotting.plot_section import (
         apply_structural_section_axes,
     )
 
@@ -234,7 +231,7 @@ def main(argv: list[str] | None = None) -> Path:
 
     # --- 2. Skin mid-surface vs aero tip ---
     # Full closed mid-ring for TE-gap demo (union of SS/PS open half-rings).
-    from implicit_geometry_kernel.section.recipes.sdf_ir.outer_skin import (
+    from implicit_geometry_kernel.section.recipes.outer_skin import (
         OuterSkin,
     )
 

@@ -39,11 +39,11 @@ from implicit_geometry_kernel.section.api.factory import (
 from implicit_geometry_kernel.section.midlines.ring_geometry import (
     intersect_web_axis_open_polyline_2d,
 )
-from implicit_geometry_kernel.section.midlines.shell_midline_export import (
+from implicit_geometry_kernel.section.midlines.export import (
     build_shell_midline_strips,
 )
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.section.junction_preparation.shell_midline_junction_preparation import (
+from implicit_geometry_kernel.section.junctions.prepare import (
     prepare_shell_midline_junctions,
 )
 

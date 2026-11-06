@@ -47,12 +47,12 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from implicit_geometry_kernel.plotting.palette import (
+from plotting.palette import (
     INK,
     MUTED,
     NAVY,
@@ -64,17 +64,17 @@ from implicit_geometry_kernel.plotting.palette import (
 
 def run_quickstart():
     """The README quickstart, verbatim. Do not refactor — this is the exhibit."""
+    from implicit_geometry_kernel import Airfoil
     from implicit_geometry_kernel.section import (
-        AirfoilSDF,
-        SectionGeometryRunner,
+        SectionGeometry,
         resolve_system_type,
     )
 
     layout = resolve_system_type("2D-F")
-    airfoil = AirfoilSDF.from_naca("2412", chord=1.0)
+    airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)
 
     result = (
-        SectionGeometryRunner(
+        SectionGeometry(
             layout=layout,
             airfoil=airfoil,
             skin_thickness=0.004,
@@ -120,8 +120,9 @@ def main(argv: list[str] | None = None) -> int:
     result = run_quickstart()
     facts = inventory(result)
 
-    from implicit_geometry_kernel.section import AirfoilSDF, SDFGrid
-    from implicit_geometry_kernel.plotting import plot_section
+    from implicit_geometry_kernel import Airfoil
+    from implicit_geometry_kernel.sdf.grid import SDFGrid
+    from plotting import plot_section
 
     # Stacked, not side by side: this sits in a half-width slide panel of about
     # 1.5:1, and a wide two-column figure letterboxes down to a thin strip there.
@@ -132,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
     # plot_section samples the regions, so it needs a grid. The quickstart never
     # builds one — drawing is not part of the twelve lines — so it is made here.
     grid = SDFGrid.from_airfoil(
-        AirfoilSDF.from_naca("2412", chord=1.0), nx=900, ny=400
+        Airfoil.naca4("2412").to_sdf(chord=1.0), nx=900, ny=400
     )
     plot_section(
         result.section,

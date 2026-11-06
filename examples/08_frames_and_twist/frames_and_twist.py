@@ -37,7 +37,7 @@ from shapely.geometry import Polygon  # noqa: E402
 from _shared.plotting import REFERENCE, SERIES, draw_cut, note, plt, save  # noqa: E402
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station  # noqa: E402
 from implicit_geometry_kernel.frames import S_to_naca, naca_to_S, rotate_B_to_S, rotate_S_to_B  # noqa: E402
-from implicit_geometry_kernel.frames.section_frames.tensors import transform_second_moments_S_to_B  # noqa: E402
+from implicit_geometry_kernel.frames.tensors import transform_second_moments_S_to_B  # noqa: E402
 from implicit_geometry_kernel.integration import section_properties_S  # noqa: E402
 
 CHORD, PITCH = 2.0, 0.3

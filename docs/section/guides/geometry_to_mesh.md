@@ -13,7 +13,8 @@ Turn gated midlines into `section_mesh` inputs. Overview:
 3. [Adapter](#adapter)
 4. [What `ShellMeshInputs` carries](#what-shellmeshinputs-carries)
 5. [Optional coarse strip mesh](#optional-coarse-strip-mesh)
-6. [What next](#what-next)
+6. [Oracle policy](#oracle-policy-wave-0)
+7. [What next](#what-next)
 
 ---
 
@@ -28,6 +29,61 @@ section_geometry (midlines) → shell_mesh_inputs_from_geometry_result
 This package stays material-bind agnostic: handoff is wall centrelines and
 thicknesses only.
 
+## Spanwise geometry for shell-fem (2.5-D)
+
+Isolated `section_at(z)` midlines remain the layout oracle. Solids stay split
+(`cut.walls` still lists caps). The **shell graph** is one wall: consume
+`mid_surface()` / `shell_graph()` plus the live fields, not a second cap surface.
+Sandwich cores and trailing-edge inserts stay constructive solids (not loop runs).
+
+| Kernel | Role |
+|---|---|
+| `cut.shell_graph()` | Loftable skin loop (caps as partitions) + web branches; combined `T` |
+| `graph.partition_edges()` / `partition_edge_curve` | Named feature lines `(z, name_a, name_b) → xy`; omit if a name is missing |
+| `topology_diff` / `shared_loft_names` | Cap runout, dropped web, bay split; loft intersection only (no lerp) |
+| `shell_strips_from_graph(cut)` | Shell `ShellMidlineStrip`s from the graph (no extra cap loop) |
+| `ShellGraph.with_web_feet_on_loop()` | Web endpoints on the stacked loop (applied by `shell_graph`) |
+| `BladeGeometry.section_at(z)` | Cut at `z`; LRU 256 keyed by `round(z, 9)` (no BVH) |
+| `web_positions_from_windio_structure` | Chord fractions from windIO `structure.anchors` `nd_arc` |
+| `geo.oml_sdf()` | Exact polygon SDF at each point's own `z` |
+| `geo.cavity_sdf()` / `geo.wall_mid_sdf()` | `oml + T` with `T = t_skin` except `t_skin + t_cap` in cap footprints; mid is `(oml + cavity)/2` |
+| `geo.wall_meta()` | Tagged bands of that graph; `evaluate((x,y,z)).meta` is the partition id |
+| `GeometrySolver.project(..., plane=True)` | Snap nodes onto `phi = 0` in the station plane |
+| `station_network(cut)` | Discrete graph from `shell_graph()` (loop runs + webs) |
+| `station_network_from_meta(wall_mid, wall_meta, z, bounds, table)` | Samples the stacked mid loop, not a nested cap |
+| `extract.feature_curve(a, b, zs, guess)` | Spanwise junction locator (`phi_a = phi_b = 0`) |
+
+Do **not** copy Gmsh ThruSections, element `feature` arrays, or ply stacks into this
+kernel. Colouring and conformal loft belong downstream, querying these fields.
+
+---
+
+## Oracle policy (Wave 0)
+
+Two oracles, on purpose:
+
+| Use | Source |
+|---|---|
+| Loft / conformal strips | Discrete `cut.shell_graph()` polylines |
+| In-plane snap | `geo.wall_mid_sdf()` + `GeometrySolver.project(..., plane=True)` (`snap_wall_mid`) |
+
+`T` is a **step**: skin gauge everywhere, `t_skin + t_cap` inside cap footprints
+(`StackThickness`). No geometric taper (not ply stagger). On the 2D-F inventory
+fixture that jump is **8 mm**; a shared cap/skin vertex may evaluate as either
+3 mm or 11 mm.
+
+**Partition joints are not a Newton spec.** Pass 1 `|φ| < 5e-4` applies to
+**run interiors** (cap midpoint ~0). At cap/skin ends, `|wall_mid_sdf φ|` reaches
+`t_cap/2` (**4.000 mm** on that fixture). Solver defaults (`tolerance=1e-6`,
+`snap_wall_mid` `1e-8`) do not make the discrete joint land on `φ = 0`. Do not
+project along the thickness jump expecting the graph vertex.
+
+Numbers and remaining waves: [`MERGED_SHELL_GAPS.md`](../reports/MERGED_SHELL_GAPS.md).
+
+`ShellMidlineStrip` is unchanged. Shell loft uses `shell_strips_from_graph` /
+`shell_graph` (no extra cap surface). If a run name is missing at a station,
+`shared_loft_names` omits that strip (`topology_diff` records the event).
+
 ---
 
 ## Required geometry gates
@@ -35,7 +91,7 @@ thicknesses only.
 Include `"midlines"` (or `"cell_wall_loops"`, which also fills midlines):
 
 ```python
-result = SectionGeometryRunner(
+result = SectionGeometry(
     layout=resolve_system_type("2D-F"),
     airfoil=airfoil,
     skin_thickness=0.004,
@@ -54,15 +110,19 @@ junctions). See
 
 ## Adapter
 
-```python
-from blade_structure_utilities.mesh_utilities.section_mesh import (
-    shell_mesh_inputs_from_geometry_result,
-)
+Shell consumers in this kernel:
 
-shell = shell_mesh_inputs_from_geometry_result(result, layout_key="2D-F")
+```python
+from implicit_geometry_kernel import shell_strips_from_graph
+
+strips = shell_strips_from_graph(cut)  # one strip per ShellRun; no extra cap surface
 ```
 
-Raises `ValueError` if `midline_strips` (or chord / twist / LE/TE) are missing.
+`cut.walls` still lists solid caps. `ShellMidlineStrip` is unchanged.
+
+The out-of-repo solids path (`build_shell_midline_strips` →
+`shell_mesh_inputs_from_geometry_result`) still emits separate cap strips until
+that adapter is pointed here.
 
 ---
 
@@ -70,7 +130,7 @@ Raises `ValueError` if `midline_strips` (or chord / twist / LE/TE) are missing.
 
 | Field | Role |
 |-------|------|
-| `midlines` | `ShellMidlineStrip` list (skin / web / cap polylines + `thickness_m`) |
+| `midlines` | `ShellMidlineStrip` list. Shell path: `shell_strips_from_graph` (partitions). Solids path: still includes separate cap strips. |
 | `chord_m`, `twist_rad` | Station scalars |
 | `leading_edge_…`, `trailing_edge_…` | Twisted LE/TE markers in the blade frame |
 | `layout_key` | Optional catalogue key for downstream logging |
@@ -106,3 +166,7 @@ Figure demos for strip meshes live under
 | Shape `SectionForceVector` | `section_loads` · `examples/` · `quickstart` |
 | Spine ownership | `COEXISTENCE_IMPLICIT_SHELL` |
 | Midline emit details | [`../midlines/`](../midlines/README.md) |
+
+Waves 0–7 are this page. G10/G11 stay parked in
+[`MERGED_SHELL_GAPS.md#waves`](../reports/MERGED_SHELL_GAPS.md#waves).
+Do not treat cores or inserts as missing from `shell_graph()`.

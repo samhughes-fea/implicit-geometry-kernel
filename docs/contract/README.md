@@ -16,6 +16,17 @@ S↔B polarity are **not** re-derived here — they live in
 
 Canonical import: `implicit_geometry_kernel.contract`.
 
+Spanwise consumers (shell-fem) also use the 2.5-D fields on `BladeGeometry`
+(`oml_sdf`, `wall_mid_sdf`, `wall_meta`) and `GeometrySolver.project(..., plane=True)`.
+Those are geometry oracles, not DTOs: they do not replace `ShellMidlineStrip`.
+
+Wave 0: loft strips from `shell_graph` polylines; snap with `wall_mid_sdf`.
+`T` is a step (no taper). Newton is **not** a spec at cap/skin partition
+vertices (`|φ|` can be `t_cap/2`). Wave 3: shell consumers use
+`shell_strips_from_graph`; `ShellMidlineStrip` is not versioned; `cut.walls`
+still lists solid caps. See
+[`guides/geometry_to_mesh.md`](../section/guides/geometry_to_mesh.md#oracle-policy-wave-0).
+
 **Do not** merge this package into `section_geometry`, `section_shell_fea`,
 `section_bind`, or `section_loads`. Workers speak the handoff vocabulary; none
 owns it.
@@ -95,7 +106,7 @@ source.
 
 All polyline coordinates in `ShellMidlineStrip.midline_twisted_pitch_axis_blade_frame` and
 `CellWallLoop.polyline_twisted_pitch_axis_blade_frame` are **canonical B** — same sense as
-[`section_frames`](../frames/section_frames/README.md):
+[`section_frames`](../frames/README.md):
 
 | Rule | Statement |
 |------|-----------|
@@ -300,7 +311,7 @@ orchestrate this pipeline as **examples only**.
 | S↔B on resultants | Delegates to `coordinate_frames` (no local `cos`/`sin` polarity) |
 | Flap/edge → `My`/`Mz` | Via `from_flap_edge` / `blade_resultants_to_shell_channels` |
 | Flat package layout | Intentional — thin DTO sibling, not a worker with nested homes |
-| Twisted SDF query space ≠ full B | Still rotated-NACA in places inside geometry — do not treat SDF query coords as contract B without mapping ([section_frames Provenance](../frames/section_frames/README.md#provenance--what-happens-today)) |
+| Twisted SDF query space ≠ full B | Still rotated-NACA in places inside geometry — do not treat SDF query coords as contract B without mapping ([section_frames Provenance](../frames/README.md#provenance--what-happens-today)) |
 
 ---
 
@@ -364,9 +375,9 @@ Production producers should emit strips via
 ## 11. See also
 
 - Coordinate frames: [`../coordinate_frames/README.md`](../frames/README.md)
-- B / S / S′: [`../coordinate_frames/section_frames/README.md`](../frames/section_frames/README.md)
+- B / S / S′: [`../coordinate_frames/README.md`](../frames/README.md)
 - Geometry worker: [`../section_geometry/README.md`](../section/README.md)
-- Midline / void emit: [`../section_geometry/midlines/README.md`](../section/midlines/README.md) · `../section_geometry/topology/README.md` · [`../section_geometry/cell_wall_loops/README.md`](../section/cell_wall_loops/README.md)
+- Midline / void emit: [`../section_geometry/midlines/README.md`](../section/midlines/README.md) · `../section_geometry/topology/README.md` · [`../section_geometry/cell_wall_loops/README.md`](../section/cells/README.md)
 - Mesh worker: `../../mesh_utilities/section_mesh/README.md`
 - Bind worker: `../../material_utilities/section_bind/README.md`
 - Loads worker: `../../load_utilities/section_loads/README.md`

@@ -14,7 +14,7 @@ is the numeric parity check (polygon ≠ exact SDF zero set).
 
 ↑ [`section_geometry`](../docs_index.md) ·
 [`../constructive/`](../constructive/README.md) ·
-[`../props_emit/`](../props_emit/README.md) ·
+[`../props/`](../props/README.md) ·
 [`../recipes/`](../recipes/README.md)
 
 ## Table of contents
@@ -30,11 +30,11 @@ is the numeric parity check (polygon ≠ exact SDF zero set).
 
 | Claim | Figure | Demo |
 |-------|--------|------|
-| Polygon boundary vs SDF contour gap is measurable | `../visualisation/output/dual_rep_consistency/dual_rep_boundary_overlay.png` | `dual_rep_consistency_demo.py` |
-| LE/TE inserts on constructive path (opt residual for debug) | `../visualisation/output/le_trailing_edge_insert_residual/inserts_hybrid_quadtree.png` | `le_trailing_edge_insert_residual_demo.py` |
+| Polygon boundary vs SDF contour gap is measurable | `../../../examples/demos/figures/dual_rep_consistency/dual_rep_boundary_overlay.png` | `dual_rep_consistency_demo.py` |
+| LE/TE inserts on constructive path (opt residual for debug) | `../../../examples/demos/figures/le_trailing_edge_insert_residual/inserts_le_te_zooms.png` | `le_te_insert_residual_demo.py` |
 
 Metrics JSON (regenerate with the demo):
-`../visualisation/output/dual_rep_consistency/dual_rep_consistency.json`.
+`../../../examples/demos/figures/dual_rep_consistency/dual_rep_consistency.json`.
 
 ## Label split (hybrid default)
 

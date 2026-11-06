@@ -27,31 +27,29 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
-from implicit_geometry_kernel.plotting.palette import (
+from plotting.palette import (
     INK,
     MUTED,
     RED,
     TEAL,
     strip_axes_chrome,
 )
-from implicit_geometry_kernel.plotting.plot import (
+from plotting.plot import (
     plot_section_hybrid,
 )
 
-from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    build_section_view,
-    resolve_system_type,
-)
-from implicit_geometry_kernel.section.props_emit.props_backend import (
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.section import resolve_system_type
+from implicit_geometry_kernel.section.api import build_section_view
+from implicit_geometry_kernel.section.props.backend import (
     quadtree_spec_for_airfoil,
 )
-from implicit_geometry_kernel.section.props_emit.props_compute import (
+from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
 

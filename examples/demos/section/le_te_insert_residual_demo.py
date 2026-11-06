@@ -36,23 +36,23 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
 
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.section.props.export import SectionPropertiesReport
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     MultiCellSection,
-    SDFGrid,
-    SectionPropertiesReport,
 )
 from implicit_geometry_kernel.section.constructive import (
     classify_property_labels,
     is_residual_label,
 )
-from implicit_geometry_kernel.plotting.plot import (
+from plotting.plot import (
     plot_section_hybrid,
     plot_section_with_quadtree,
 )
@@ -199,7 +199,7 @@ def main(argv: list[str] | None = None) -> Path:
     _zoom(axes2[1], te[0] - 0.28, te[0] + 0.03, te[1] - 0.06, te[1] + 0.06)
     axes2[0].plot(le[0], le[1], "k*", ms=10)
     axes2[1].plot(te[0], te[1], "k*", ms=10)
-    from implicit_geometry_kernel.plotting.plot_section import (
+    from plotting.plot_section import (
         apply_structural_section_axes,
     )
 

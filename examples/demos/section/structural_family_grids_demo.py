@@ -49,7 +49,7 @@ def _load_sibling(name: str, filename: str):
 _ensure_mod = _load_sibling("_ensure_repo_path", "_ensure_repo_path.py")
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     DEFAULT_DPI,
     add_output_and_presentation_args,
     apply_presentation_style,
@@ -62,7 +62,8 @@ from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from implicit_geometry_kernel.plotting.plot import (
+from plotting.palette import strip_axes_chrome
+from plotting.plot import (
     plot_section_hybrid,
 )
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
@@ -131,6 +132,7 @@ def _render_system(
     )
     # Keep equal scale without expanding to a square data window (twin-web style).
     ax.set_aspect("equal", adjustable="box")
+    strip_axes_chrome(ax)
     fig.tight_layout()
 
     out_png = out_dir / _png_name(key)
@@ -232,7 +234,7 @@ def _render_taxonomy_matrix(
     column headers already say what each cell is, and 40 sets of axis numbers
     would be the loudest thing on the sheet.
     """
-    from implicit_geometry_kernel.plotting.palette import (
+    from plotting.palette import (
         INK,
         MUTED,
         SURFACE,

@@ -1,6 +1,6 @@
 """Plot B / S / S′ structural frames on a NACA section (LE on RHS).
 
-Canon: ``coordinate_frames/section_frames/README.md`` — storage
+Canon: ``coordinate_frames/README.md`` — storage
 ``(X_*, Y_*)`` with ``+Y`` toward TE (``Y_LE < 0 < Y_TE``); plot horizontal
 ``Y_*``, vertical ``X_*``, invert horizontal (display-only) so LE is on the RHS.
 
@@ -18,7 +18,9 @@ import numpy as np
 from numpy.typing import NDArray
 
 from implicit_geometry_kernel.frames import PIVOT_FRACTION_DEFAULT, naca_to_zero_twist_pitch_axis_station_frame, rotate_S_to_B
-from implicit_geometry_kernel.plotting.frames import fit_square_section_axes, setup_section_axes
+from plotting.figure_io import apply_doc_style, save_figure
+from plotting.frames import fit_square_section_axes, setup_section_axes
+from plotting.palette import RED, TEAL
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 
 # This demo deliberately imports the *production* transforms rather than
@@ -57,8 +59,8 @@ def _centroid_xy(poly: NDArray[np.float64]) -> tuple[float, float]:
 def _draw_triad(ax, origin, ex, ey, labels, scale: float) -> None:
     o = np.asarray(origin, dtype=float)
     for vec, lab, color in (
-        (np.asarray(ex, dtype=float), labels[0], "C3"),
-        (np.asarray(ey, dtype=float), labels[1], "C0"),
+        (np.asarray(ex, dtype=float), labels[0], RED),
+        (np.asarray(ey, dtype=float), labels[1], TEAL),
     ):
         v = vec / (np.linalg.norm(vec) + 1e-30) * scale
         ax.annotate(
@@ -90,6 +92,7 @@ def _panel(ax, poly, title: str, xlab: str, ylab: str, triad, le_xy, origin, r_n
 
 
 def main() -> int:
+    apply_doc_style()
     _OUT.mkdir(parents=True, exist_ok=True)
     af = AirfoilSDF.from_naca("2412", n_points=240, chord=_CHORD_M)
     poly_S = naca_to_zero_twist_pitch_axis_station_frame(af.vertices, _CHORD_M)
@@ -148,7 +151,7 @@ def main() -> int:
     fig.tight_layout()
     out = _OUT / "structural_frames_B_S_Sprime.png"
     # Do not use bbox_inches='tight' — it fights square box_aspect panels.
-    fig.savefig(out, dpi=150)
+    save_figure(fig, out, bbox_inches=None)
     plt.close(fig)
     print(f"Wrote {out}")
 

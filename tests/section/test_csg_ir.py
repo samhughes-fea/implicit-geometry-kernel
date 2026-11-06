@@ -21,15 +21,12 @@ from implicit_geometry_kernel.sdf.ir import (
 from implicit_geometry_kernel.sdf.csg import offset, shell, subtract, union
 from implicit_geometry_kernel.sdf.grid import SDFGrid
 from implicit_geometry_kernel.sdf.primitives import sdf_box, sdf_circle
-from implicit_geometry_kernel.section import AirfoilSDF
-from implicit_geometry_kernel.section.recipes.sdf_ir import (
-    LEInsert,
-    OuterSkin,
-    SandwichCore,
-    ShearWeb,
-    SparCap,
-    TEInsert,
-)
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.section.recipes.inserts import LEInsert, TEInsert
+from implicit_geometry_kernel.section.recipes.outer_skin import OuterSkin
+from implicit_geometry_kernel.section.recipes.sandwich_core import SandwichCore
+from implicit_geometry_kernel.section.recipes.shear_web import ShearWeb
+from implicit_geometry_kernel.section.recipes.spar_cap import SparCap
 
 
 def test_compile_expr_matches_callable_csg():

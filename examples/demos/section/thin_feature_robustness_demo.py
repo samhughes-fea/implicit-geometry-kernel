@@ -43,36 +43,36 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
-from implicit_geometry_kernel.plotting.palette import (
+from plotting.palette import (
     strip_axes_chrome,
 )
 
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     MultiCellSection,
 )
-from implicit_geometry_kernel.section.props_emit.area_mesh import (
+from implicit_geometry_kernel.section.props.area_mesh import (
     section_properties_via_quadtree,
 )
 from implicit_geometry_kernel.section.constructive import (
     emit_wall_solid_polygons,
 )
-from implicit_geometry_kernel.section.props_emit.props_backend import (
+from implicit_geometry_kernel.section.props.backend import (
     quadtree_spec_for_airfoil,
 )
-from implicit_geometry_kernel.plotting.plot import (
+from plotting.plot import (
     plot_section_hybrid,
 )
-from implicit_geometry_kernel.plotting.plot_section import (
+from plotting.plot_section import (
     _naca_xy_to_plot_hv,
     apply_structural_section_axes,
 )
-from implicit_geometry_kernel.section.props_emit.props_compute import (
+from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
 from implicit_geometry_kernel.integration.quadrature import label_boundary_segments

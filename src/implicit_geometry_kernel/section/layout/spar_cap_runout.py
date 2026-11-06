@@ -17,7 +17,7 @@ import numpy as np
 from implicit_geometry_kernel.section.layout.system_layout import (
     layout_without_spar_caps,
 )
-from implicit_geometry_kernel.section.sections.cap_feasibility import (
+from implicit_geometry_kernel.section.assembly.cap_feasibility import (
     cap_feasibility_clamp,
 )
 

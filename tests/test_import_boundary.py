@@ -5,14 +5,12 @@ The kernel is the base of the suite:
     implicit_geometry_kernel  <-  shell_fem  (with laminate_constitutive_model)
 
 and the section model reads its cuts, so it never imports the laminate, shell or section
-packages. Inside the kernel, only
-``plotting`` uses Matplotlib, and ``sdf`` stands on its own (it may be split out as a
-general implicit-geometry library), so it imports nothing from ``section`` or ``blade``.
+packages. Matplotlib lives in the sibling ``plotting`` package, not the kernel.
+``sdf`` stands on its own (it may be split out as a general implicit-geometry
+library), so it imports nothing from ``section`` or ``blade``.
 """
 
 import ast
-import importlib
-import warnings
 from pathlib import Path
 
 import pytest
@@ -43,13 +41,13 @@ def test_no_imports_of_the_models_built_on_it():
             assert module.split(".")[0] not in FORBIDDEN, (rel, module)
 
 
-def test_only_plotting_uses_matplotlib():
-    for path, rel in _library_files(exclude=("plotting",)):
+def test_kernel_does_not_import_matplotlib_or_plotting():
+    for path, rel in _library_files():
         for module in _imports(path):
             if rel.as_posix() == "sdf/grid.py" and module.startswith("matplotlib"):
                 continue  # contour fallback inside a function when contourpy is missing
             assert not module.startswith("matplotlib"), (rel, module)
-            assert not module.startswith("implicit_geometry_kernel.plotting"), (rel, module)
+            assert module.split(".")[0] != "plotting", (rel, module)
 
 
 def test_sdf_stands_alone():
@@ -62,16 +60,10 @@ def test_sdf_stands_alone():
                 assert top in {"sdf", "profiling"}, (rel, module)
 
 
-@pytest.mark.parametrize("module, name", [
-    ("implicit_geometry_kernel.blade_geometry", "Station"),
-    ("implicit_geometry_kernel.section_geometry.layout.system_layout", "SYSTEM_TYPE_KEYS"),
+@pytest.mark.parametrize("rel", [
+    "blade_geometry.py",
+    "section_geometry",
+    "frames/section_frames",
 ])
-def test_deprecated_aliases_still_import(module, name):
-    import sys
-
-    sys.modules.pop(module, None)
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        mod = importlib.import_module(module)
-    assert hasattr(mod, name)
-    assert any(issubclass(w.category, DeprecationWarning) for w in caught)
+def test_deprecated_top_level_aliases_removed(rel):
+    assert not (PACKAGE / rel).exists(), f"0.3.0 removed path still present: {rel}"

@@ -19,13 +19,13 @@ One station, all optional outputs. Same as the package quick start.
 Runnable twin: `../examples/01_first_station.py`.
 
 ```python
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    SectionGeometryRunner,
+    SectionGeometry,
     resolve_system_type,
 )
 
-result = SectionGeometryRunner(
+result = SectionGeometry(
     layout=resolve_system_type("2D-F"),
     airfoil=AirfoilSDF.from_naca("2412", chord=1.0),
     skin_thickness=0.004,
@@ -42,7 +42,7 @@ re-resolving (so the design-variable set stays fixed). Runnable twin:
 `../examples/03_resolve_then_size.py`.
 
 ```python
-runner0 = SectionGeometryRunner(
+runner0 = SectionGeometry(
     layout=layout,
     airfoil=airfoil,
     skin_thickness=t_skin_min,
@@ -52,7 +52,7 @@ runner0 = SectionGeometryRunner(
 frozen = runner0.resolve().get_layout_resolution()
 
 for skin_thickness, spar_cap_thickness, shear_web_thickness in trials:
-    result = SectionGeometryRunner(
+    result = SectionGeometry(
         layout=frozen.layout,
         airfoil=airfoil,
         skin_thickness=skin_thickness,
@@ -74,7 +74,7 @@ Webs that no longer fit are **dropped**, not slid. Runnable twin:
 Guide: [`feasibility_and_drops.md`](feasibility_and_drops.md).
 
 ```python
-result = SectionGeometryRunner(
+result = SectionGeometry(
     layout=layout,
     airfoil=airfoil_at_station,
     skin_thickness=0.004,

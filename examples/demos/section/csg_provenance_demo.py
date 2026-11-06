@@ -32,28 +32,26 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
-from implicit_geometry_kernel.plotting.palette import (
+from plotting.palette import (
     NAVY,
     RED,
     strip_axes_chrome,
     tighten_to_section,
 )
 
-from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    SDFGrid,
-    build_section_view,
-    resolve_system_type,
-)
-from implicit_geometry_kernel.plotting.plot import (
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.section import resolve_system_type
+from implicit_geometry_kernel.section.api import build_section_view
+from plotting.plot import (
     _component_color,
 )
-from implicit_geometry_kernel.plotting.plot_section import (
+from plotting.plot_section import (
     apply_structural_section_axes,
     rotated_naca_grid_to_section_plot_axes,
 )

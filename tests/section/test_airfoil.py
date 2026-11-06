@@ -9,7 +9,7 @@ import pytest
 import tempfile
 import os
 
-from implicit_geometry_kernel.section import AirfoilSDF
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.naca import (
     airfoil_vertices_from_spanwise,
     naca_five_digit_vertices,

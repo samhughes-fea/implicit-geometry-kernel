@@ -17,8 +17,8 @@ import pytest
 from implicit_geometry_kernel.contract.errors import (
     InfeasibleSectionGeometry,
 )
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     resolve_system_type,
 )
 from implicit_geometry_kernel.section.api.worker import (

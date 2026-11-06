@@ -1,10 +1,10 @@
 # layout — layout identifiers and web cascade
 
-↑ [`section_geometry`](../README.md)
+↑ [`section`](../README.md)
 
 Resolves a layout id such as `"2D-F"` (web count · spar-cap family ·
 orientation) to a frozen `SystemLayoutSpec`, and owns the taper-time web-drop
-cascade. Solid assembly is [`../sections/`](../sections/README.md). Decode:
+cascade. Solid assembly is [`../assembly/`](../assembly/README.md). Decode:
 [`../docs/reference/system_type_xyz_taxonomy.md`](../reference/system_type_xyz_taxonomy.md).
 
 Absolute web x-offsets [m from LE] may come from spanwise anchoring. Webs
@@ -55,7 +55,7 @@ the structural family (`none` / `fixed_band` / `per_web_pads` /
 fraction into `CapPlacementRule.half_width` before `build_spar_caps`.
 Catalogue keys are presets; `multicell_from_section_layout` /
 `multicell_from_layout(SectionLayout, …)` assemble without requiring a key.
-`SectionGeometryRunner` / `build_section_geometry` /
+`SectionGeometry` / `build_section_geometry` /
 `resolve_station_layout` accept the same `SectionLayout`: keyless drop is
 ``N`` surviving webs + `CapPlacementRule` (continuous box demotes when
 ``N < 2``); keyed layouts still use the catalogue cascade.
@@ -89,11 +89,12 @@ flowchart LR
 Station resolve is orchestrated from [`../api/`](../api/README.md)
 (`resolve_station_layout`).
 
-**Visual SoT for root-anchored vs station-relative webs:** the demo
-`../visualisation/demos/spanwise_yz_plan_flyover.py`
-animates absolute LE tracks along the planform and shows webs **dropped** when
-the local cavity can no longer hold them (not slid). BSP L2 stamps
-`web_x_positions_m`; this package owns the drop / catalogue step-down.
+**Visual SoT for root-anchored vs station-relative webs:**
+`examples/section/04_spanwise_web_anchors.py` (and loft
+`examples/06_web_placement`) show webs **dropped** when the local cavity can
+no longer hold them (not slid). `StationLayoutResolution.web_x_positions_m`
+is the resolved metres-from-LE list; loft input `web_offsets` is the same
+quantity. This package owns the drop / catalogue step-down.
 `section_schedule` does **not** own this policy (thickness presence is a
 different spanwise product — see BSP
 `glossary`).
@@ -101,6 +102,6 @@ different spanwise product — see BSP
 ## See also
 
 - [`../docs/reference/system_type_xyz_taxonomy.md`](../reference/system_type_xyz_taxonomy.md)
-- [`../sections/`](../sections/README.md)
-- `../visualisation/demos/spanwise_yz_plan_flyover.py`
+- [`../assembly/`](../assembly/README.md)
+- `../../../examples/section/04_spanwise_web_anchors.py`
 - BSP `package_boundaries.md` §3.2 / §3.10

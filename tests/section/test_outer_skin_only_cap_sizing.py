@@ -19,12 +19,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.section import (
-    AirfoilSDF,
-    MultiCellSection,
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.section import MultiCellSection, resolve_system_type
+from implicit_geometry_kernel.section.api import (
     build_section_geometry,
     build_section_with_thicknesses,
-    resolve_system_type,
 )
 
 ROOT_CHORD = 0.2409

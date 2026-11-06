@@ -17,16 +17,16 @@ FORBIDDEN_IMPORT_PREFIXES: dict[str, tuple[str, ...]] = {
     "layout": (
         "implicit_geometry_kernel.section.recipes",
         "implicit_geometry_kernel.section.constructive",
-        "implicit_geometry_kernel.section.junction_preparation",
-        "implicit_geometry_kernel.section.sections.components",
+        "implicit_geometry_kernel.section.junctions",
+        "implicit_geometry_kernel.section.assembly.components",
     ),
-    "junction_preparation": (
+    "junctions": (
         "implicit_geometry_kernel.sdf",
         "implicit_geometry_kernel.section.constructive",
         "implicit_geometry_kernel.section.recipes",
         "implicit_geometry_kernel.section.layout",
     ),
-    "cell_wall_loops": (
+    "cells": (
         "implicit_geometry_kernel.sdf",
         "implicit_geometry_kernel.section.constructive",
         "implicit_geometry_kernel.section.recipes",
@@ -34,7 +34,7 @@ FORBIDDEN_IMPORT_PREFIXES: dict[str, tuple[str, ...]] = {
     "midlines": (
         "implicit_geometry_kernel.section.constructive",
         "implicit_geometry_kernel.sdf",
-        "implicit_geometry_kernel.section.props_emit",
+        "implicit_geometry_kernel.section.props",
     ),
 }
 
@@ -46,12 +46,16 @@ def test_banned_software_layer_homes_absent() -> None:
 
 def test_api_and_recipe_homes_exist() -> None:
     assert (ROOT / "api").is_dir()
-    assert (ROOT / "recipes" / "sdf_ir").is_dir()
+    assert (ROOT / "recipes").is_dir()
+    assert (ROOT / "assembly").is_dir()
+    assert (ROOT / "junctions").is_dir()
+    assert (ROOT / "cells").is_dir()
+    assert (ROOT / "props").is_dir()
     assert (Path(__file__).resolve().parents[2] / "docs" / "section" / "reference" / "G_ROW_OWNERSHIP_MATRIX.md").is_file()
 
 
-def test_sections_does_not_export_sdf_ir_components() -> None:
-    from implicit_geometry_kernel.section import sections
+def test_assembly_does_not_export_sdf_ir_components() -> None:
+    from implicit_geometry_kernel.section import assembly
 
     banned = {
         "OuterSkin",
@@ -61,12 +65,34 @@ def test_sections_does_not_export_sdf_ir_components() -> None:
         "LEInsert",
         "TEInsert",
     }
-    exported = set(getattr(sections, "__all__", ()))
-    assert banned.isdisjoint(exported), f"sections still exports {banned & exported}"
+    exported = set(getattr(assembly, "__all__", ()))
+    assert banned.isdisjoint(exported), f"assembly still exports {banned & exported}"
 
 
 def test_sections_components_dir_absent() -> None:
-    assert not (ROOT / "sections" / "components").exists()
+    assert not (ROOT / "assembly" / "components").exists()
+    assert not (ROOT / "sections").exists()
+
+
+_REMOVED_SHIM_PACKAGES = (
+    "sections",
+    "junction_preparation",
+    "cell_wall_loops",
+    "props_emit",
+)
+
+
+def test_deprecated_section_packages_absent() -> None:
+    for name in _REMOVED_SHIM_PACKAGES:
+        assert not (ROOT / name).exists(), f"deprecated package still present: {name}/"
+    assert not (ROOT / "recipes" / "sdf_ir").exists()
+    kernel = ROOT.parent
+    assert not (kernel / "blade_geometry.py").exists()
+    assert not (kernel / "section_geometry").exists()
+    assert not (kernel / "frames" / "section_frames").exists()
+    assert not (ROOT / "tagged.py").exists()
+    assert not (ROOT / "eval_cache.py").exists()
+    assert not (ROOT / "offset_math.py").exists()
 
 
 

@@ -1,11 +1,18 @@
 """Spanwise blade geometry: the implicit section geometry lofted between stations.
 
 ``BladeGeometry`` takes the ``Station`` list a ``BladeBuilder`` takes (chord, twist,
-pitch axis, offset and airfoil at each span position, interpolated linearly between
-them) and a structural layout from ``section_geometry`` (one of its 40 system types,
-such as ``"2D-F"``: two webs and a box spar cap between them), and cuts the section at
-any span position: ``section_at(z)`` returns the wall midlines with their thickness,
-region labels and the closed cell-wall loops, placed in the blade frame.
+pitch axis, offset and airfoil at each span position) and a structural layout from
+``section`` (one of its 40 system types, such as ``"2D-F"``: two webs and a
+box spar cap between them). ``interpolate(z)`` is the only interpolator: it blends the
+airfoil graphs linearly between the bounding stations and reads chord, twist, pitch
+axis and offset either from those stations or from optional span tables. ``section_at``
+and ``oml_polyline`` both call it. Tables and station scalars are linear in this
+release; a later PCHIP may apply to scalars only (``[splines]``), never to 3-D-morph
+airfoils.
+
+``section_at(z)`` returns the wall midlines with their thickness, region labels and the
+closed cell-wall loops, placed in the blade frame. ``oml_polyline(z)`` is the closed
+outer mould line in the same frame.
 
 Blade frame (the ``BladeBuilder`` axes): z along the span, x along the chord from the
 pitch axis towards the trailing edge, y through the thickness (suction side positive).
@@ -28,11 +35,12 @@ are dropped rather than slid, and ``SectionCut.dropped_webs`` lists them.
 
 from __future__ import annotations
 
+from collections import OrderedDict
 from typing import Callable, Optional, Sequence, Union
 
 import numpy as np
 
-from implicit_geometry_kernel.blade.cut import CellLoop, SectionCut, SectionWall, _twist_offset
+from implicit_geometry_kernel.blade.cut import CellPolygon, SectionCut, SectionWall, _twist_offset
 from implicit_geometry_kernel.blade.stations import Station
 from implicit_geometry_kernel.section.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M as _MIN_SKIN,
@@ -41,6 +49,8 @@ from implicit_geometry_kernel.section.layout.thickness_limits import (
 )
 
 Thickness = Union[float, Callable[[float], float]]
+# A span table: f(z), or (z, values) with values shape (n,) or (n, 2) for offset.
+SpanTable = Union[Callable, Sequence]
 
 # section_geometry turns twist the other way (its positive twist is nose down). The
 # section is built twisted, so that flapwise ("-F") webs stay normal to the rotor
@@ -57,6 +67,36 @@ def _as_function(value: Thickness, name: str) -> Callable[[float], float]:
     return lambda z: v
 
 
+def _as_span_table(value: Optional[SpanTable], name: str, *, cols: int = 1):
+    """Linear lookup ``f(z)``. ``None`` means use the bounding stations."""
+    if value is None:
+        return None
+    if callable(value):
+        return value
+    if not isinstance(value, (tuple, list)) or len(value) != 2:
+        raise ValueError(f"{name} must be a callable or a (z, values) pair")
+    z = np.asarray(value[0], float).reshape(-1)
+    v = np.asarray(value[1], float)
+    if z.size < 2 or np.any(np.diff(z) <= 0.0):
+        raise ValueError(f"{name} needs strictly increasing z of length >= 2")
+    if v.shape[0] != z.size:
+        raise ValueError(f"{name} values must match z")
+    if cols == 1:
+        v = np.asarray(v, float).reshape(z.size)
+
+        def lookup(zz: float) -> float:
+            return float(np.interp(zz, z, v))
+
+        return lookup
+    if v.ndim != 2 or v.shape[1] != cols:
+        raise ValueError(f"{name} values must have shape (n, {cols})")
+
+    def lookup_vec(zz: float):
+        return tuple(float(np.interp(zz, z, v[:, i])) for i in range(cols))
+
+    return lookup_vec
+
+
 class BladeGeometry:
     """A blade or wing lofted from stations, cut into thin-walled sections on demand.
 
@@ -65,19 +105,27 @@ class BladeGeometry:
     stations:
         Two or more ``Station`` objects in increasing ``z``.
     layout:
-        A ``section_geometry`` system type key (``"2D-F"``, ``"3D-F"``, ``"0B"``,
-        ...; ``section_geometry.SYSTEM_TYPE_KEYS`` lists all 40) or a
-        ``SystemLayoutSpec``.
+        A catalogue key (``"2D-F"``, …), a ``SystemLayoutSpec``, or a parametric
+        ``SectionLayout`` (web fractions and cap rule, as for reference blades).
     skin_thickness, spar_cap_thickness, shear_web_thickness:
         Wall thicknesses in metres, as numbers or functions of z.
     web_positions:
-        Web chord fractions, LE to TE (default: the layout's).
+        Web chord fractions, LE to TE (default: the layout's). A callable ``f(z)``
+        or ``(z, values)`` table with shape ``(n, n_webs)`` varies stations along
+        the span.
+    cap_windows:
+        Optional chord windows ``((lo, hi), …)`` or a span table of the same,
+        used as a ``CapPlacementRule`` when ``layout`` does not already carry one.
     web_offsets:
         Web positions in metres from the leading edge, fixed along the span. Exclusive
         with ``web_positions``.
     n_airfoil_points:
         Points per surface used to hand the interpolated airfoil to the section
         geometry.
+    chord, twist, pitch_axis, offset:
+        Optional span tables that override the station scalars at ``z`` (callable or
+        ``(z, values)``; ``offset`` values are shape ``(n, 2)``). Airfoil graphs still
+        blend linearly between the bounding ``Station`` foils.
     """
 
     def __init__(
@@ -87,40 +135,108 @@ class BladeGeometry:
         skin_thickness: Thickness,
         spar_cap_thickness: Thickness = 0.0,
         shear_web_thickness: Thickness = 0.0,
-        web_positions: Optional[Sequence[float]] = None,
+        web_positions: Optional[SpanTable] = None,
         web_offsets: Optional[Sequence[float]] = None,
         n_airfoil_points: int = 161,
+        chord: Optional[SpanTable] = None,
+        twist: Optional[SpanTable] = None,
+        pitch_axis: Optional[SpanTable] = None,
+        offset: Optional[SpanTable] = None,
+        cap_windows: Optional[SpanTable] = None,
     ):
-        from implicit_geometry_kernel.section import resolve_system_type
+        from implicit_geometry_kernel.section.layout.system_layout import resolve_system_type
 
         self.stations = tuple(sorted(stations, key=lambda s: s.z))
         if len(self.stations) < 2:
             raise ValueError("a blade needs at least two stations")
         if np.any(np.diff([s.z for s in self.stations]) <= 0.0):
             raise ValueError("stations need distinct z")
-        spec = resolve_system_type(layout) if isinstance(layout, str) else layout
+        if isinstance(layout, str):
+            spec = resolve_system_type(layout)
+        else:
+            spec = layout
         if web_positions is not None and web_offsets is not None:
             raise ValueError("give web_positions or web_offsets, not both")
-        if web_positions is not None:
+        self._web_positions_fn = None
+        if web_positions is not None and callable(web_positions):
+            self._web_positions_fn = web_positions
+        elif web_positions is not None and isinstance(web_positions, (tuple, list)) and len(web_positions) == 2 and not _is_frac_sequence(web_positions):
+            n_cols = int(np.asarray(web_positions[1], float).reshape(len(web_positions[0]), -1).shape[1])
+            self._web_positions_fn = _as_span_table(web_positions, "web_positions", cols=n_cols)
+        elif web_positions is not None:
             fr = tuple(float(f) for f in web_positions)
             if len(fr) != spec.n_webs:
-                raise ValueError(f"layout {spec.key} has {spec.n_webs} webs; got {len(fr)} positions")
+                raise ValueError(f"layout has {spec.n_webs} webs; got {len(fr)} positions")
             if any(not 0.0 < f < 1.0 for f in fr) or np.any(np.diff(fr) <= 0.0):
                 raise ValueError("web_positions must be increasing chord fractions inside (0, 1)")
             spec = _with_web_fractions(spec, fr)
         self.spec = spec
-        self.layout = spec.key
+        self.layout = getattr(spec, "key", None) or getattr(spec, "catalogue_key", None)
         self.web_offsets = None if web_offsets is None else tuple(float(v) for v in web_offsets)
         if self.web_offsets is not None and len(self.web_offsets) != spec.n_webs:
-            raise ValueError(f"layout {spec.key} has {spec.n_webs} webs; got {len(self.web_offsets)} offsets")
+            raise ValueError(f"layout has {spec.n_webs} webs; got {len(self.web_offsets)} offsets")
+        self._cap_windows_fn = None
+        if cap_windows is not None:
+            if callable(cap_windows):
+                self._cap_windows_fn = cap_windows
+            elif isinstance(cap_windows, (tuple, list)) and cap_windows and isinstance(cap_windows[0], (tuple, list)):
+                frozen = tuple((float(a), float(b)) for a, b in cap_windows)
+                self._cap_windows_fn = lambda z, _w=frozen: _w
+            else:
+                self._cap_windows_fn = _as_span_table(cap_windows, "cap_windows", cols=2)
         self._skin = _as_function(skin_thickness, "skin_thickness")
         self._cap = _as_function(spar_cap_thickness, "spar_cap_thickness")
         self._web = _as_function(shear_web_thickness, "shear_web_thickness")
+        self._chord = _as_span_table(chord, "chord")
+        self._twist = _as_span_table(twist, "twist")
+        self._pitch = _as_span_table(pitch_axis, "pitch_axis")
+        self._offset = _as_span_table(offset, "offset", cols=2)
         self.n_airfoil_points = int(n_airfoil_points)
+        # Live fields (wall_meta / stack T) key stations by round(z, 9). Cache the
+        # cut itself so those fields do not rebuild geometry on a second hit.
+        self._section_cache: OrderedDict[float, SectionCut] = OrderedDict()
+        self._section_cache_size = 256
+
+    def _layout_at(self, z: float):
+        from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
+        from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
+        from implicit_geometry_kernel.section.layout.system_layout import SystemLayoutSpec
+
+        spec = self.spec
+        if self._web_positions_fn is None and self._cap_windows_fn is None:
+            return spec
+        if isinstance(spec, SystemLayoutSpec):
+            layout = SectionLayout.from_system_layout_spec(spec)
+        else:
+            layout = spec
+        fracs = None
+        if self._web_positions_fn is not None:
+            raw = self._web_positions_fn(float(z))
+            fracs = tuple(float(f) for f in np.atleast_1d(raw).reshape(-1))
+        if fracs is not None:
+            layout = _with_web_fractions(layout, fracs)
+        if self._cap_windows_fn is not None and layout.n_webs == 0:
+            windows = self._cap_windows_fn(float(z))
+            layout = SectionLayout(
+                web_chord_fracs=layout.web_chord_fracs,
+                orientation=layout.orientation,
+                cap_placement=CapPlacementRule.from_chord_windows(windows),
+                catalogue_key=layout.catalogue_key,
+                web_stations_m=layout.web_stations_m,
+                web_axes_m=layout.web_axes_m,
+                structural_family=layout.structural_family,
+                flags=layout.flags,
+            )
+        return layout
 
     # ------------------------------------------------------------ stations
-    def station_at(self, z: float):
-        """(chord, twist, pitch_axis, offset, (upper, lower) surfaces) interpolated at z."""
+    def interpolate(self, z: float):
+        """(chord, twist, pitch_axis, offset, (x, upper, lower)) interpolated at z.
+
+        Airfoil graphs blend linearly between the bounding stations. Chord, twist,
+        pitch axis and offset come from span tables when given, otherwise from those
+        stations.
+        """
         zs = np.array([s.z for s in self.stations])
         if z < zs[0] - 1e-12 * max(1.0, abs(zs[0])) or z > zs[-1] + 1e-12 * max(1.0, abs(zs[-1])):
             raise ValueError(f"z = {z} lies outside the stations ({zs[0]} to {zs[-1]})")
@@ -134,18 +250,53 @@ class BladeGeometry:
         x = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, self.n_airfoil_points)))
         upper = lerp(a.airfoil.surface("upper", x), b.airfoil.surface("upper", x))
         lower = lerp(a.airfoil.surface("lower", x), b.airfoil.surface("lower", x))
-        return (float(lerp(a.chord, b.chord)), float(lerp(a.twist, b.twist)), float(lerp(a.pitch_axis, b.pitch_axis)),
-                tuple(lerp(a.offset, b.offset)), (x, upper, lower))
+        zz = float(z)
+        chord = float(self._chord(zz)) if self._chord is not None else float(lerp(a.chord, b.chord))
+        twist = float(self._twist(zz)) if self._twist is not None else float(lerp(a.twist, b.twist))
+        pitch = float(self._pitch(zz)) if self._pitch is not None else float(lerp(a.pitch_axis, b.pitch_axis))
+        if self._offset is not None:
+            off = self._offset(zz)
+            offset = (float(off[0]), float(off[1]))
+        else:
+            offset = tuple(lerp(a.offset, b.offset))
+        return (chord, twist, pitch, offset, (x, upper, lower))
+
+    station_at = interpolate  # alias through 0.4.x
+
+    def oml_polyline(self, z: float) -> np.ndarray:
+        """Closed outer mould line in the blade frame at ``z``, shape ``(N, 3)``.
+
+        Same interpolator and placement as ``section_at`` (pitch axis, twist, offset).
+        """
+        z = float(z)
+        chord, twist, pitch, offset, (x, upper, lower) = self.interpolate(z)
+        naca = np.vstack([np.column_stack([x[::-1], upper[::-1]]), np.column_stack([x[1:], lower[1:]])]) * chord
+        if np.allclose(naca[0], naca[-1]):
+            naca = naca[:-1]
+        local = np.column_stack([naca[:, 0] - pitch * chord, naca[:, 1]])
+        xy = _twist_offset(local, twist, offset)
+        pts = np.column_stack([xy, np.full(len(xy), z)])
+        return np.vstack([pts, pts[0]])
 
     # ------------------------------------------------------------ cutting
     def section_at(self, z: float) -> SectionCut:
-        """The wall midlines, thicknesses, labels and cell loops of the section at z."""
-        from implicit_geometry_kernel.frames import PIVOT_FRACTION_DEFAULT, twisted_pitch_axis_blade_frame_to_naca
-        from implicit_geometry_kernel.section import AirfoilSDF, SectionGeometryRunner
+        """The wall midlines, thicknesses, labels and cell loops of the section at z.
 
-        z = float(z)
-        chord, twist, pitch, offset, (x, upper, lower) = self.station_at(z)
-        t_skin, t_cap, t_web = self._skin(z), (self._cap(z) if self.spec.has_spar_caps else 0.0), self._web(z)
+        Cuts are cached per ``round(z, 9)`` (LRU 256). ``CutWallMetaSDF`` and
+        ``StackThickness`` use the same key; this is the G7 cost fix, not a BVH.
+        """
+        from implicit_geometry_kernel.frames import PIVOT_FRACTION_DEFAULT, twisted_pitch_axis_blade_frame_to_naca
+        from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+        from implicit_geometry_kernel.section import SectionGeometry
+
+        z = round(float(z), 9)
+        hit = self._section_cache.get(z)
+        if hit is not None:
+            self._section_cache.move_to_end(z)
+            return hit
+        chord, twist, pitch, offset, (x, upper, lower) = self.interpolate(z)
+        layout = self._layout_at(z)
+        t_skin, t_cap, t_web = self._skin(z), (self._cap(z) if layout.has_spar_caps else 0.0), self._web(z)
         # section_geometry floors wall thicknesses at wind-turbine manufacturing minima
         # (2.5 mm skin, 4 mm web, 5 mm cap). The geometry is similar under scaling, so a
         # thinner-walled section is built k times larger and scaled back: exact, and the
@@ -153,12 +304,9 @@ class BladeGeometry:
         k = max(1.0, *(lo / t for lo, t in ((_MIN_SKIN, t_skin), (_MIN_WEB, t_web), (_MIN_CAP, t_cap)) if t > 0.0))
         if k > 1.0:
             k *= 1.0 + 1e-9
-        verts = np.vstack([np.column_stack([x[::-1], upper[::-1]]), np.column_stack([x[1:], lower[1:]])]) * chord * k
-        if np.allclose(verts[0], verts[-1]):
-            verts = verts[:-1]  # closed trailing edge: one TE point
         kwargs = dict(
-            layout=self.spec,
-            airfoil=AirfoilSDF(verts, chord=chord * k),
+            layout=layout,
+            airfoil=AirfoilSDF.from_surface_graphs(x, upper, lower, chord * k),
             skin_thickness=t_skin * k,
             spar_cap_thickness=t_cap * k,
             shear_web_thickness=t_web * k,
@@ -166,8 +314,8 @@ class BladeGeometry:
             outputs=("midlines", "cell_wall_loops"),
         )
         if self.web_offsets is not None:
-            kwargs["web_x_positions_m"] = tuple(v * k for v in self.web_offsets)
-        runner = SectionGeometryRunner(**kwargs).execute()
+            kwargs["web_offsets"] = tuple(v * k for v in self.web_offsets)
+        runner = SectionGeometry(**kwargs).execute()
         result = runner.get_results()
         resolution = runner.get_layout_resolution()
 
@@ -197,14 +345,62 @@ class BladeGeometry:
                 )
             walls.append(SectionWall(s.label, s.kind, pts, float(s.thickness_m) / k, side, bonds))
         cells = tuple(
-            CellLoop(int(c.id), place(c.polyline_twisted_pitch_axis_blade_frame), float(c.area_m2) / k**2,
+            CellPolygon(int(c.id), place(c.polyline_twisted_pitch_axis_blade_frame), float(c.area_m2) / k**2,
                      tuple(c.wall_labels))
             for c in (result.cell_wall_loops or ())
         )
         dropped = tuple(f"web at {d.x_m / k:.6g} m from the LE: {d.reason}" for d in resolution.dropped)
         key = getattr(resolution.layout, "catalogue_key", None) or self.layout
-        return SectionCut(z, chord, twist, pitch, (float(offset[0]), float(offset[1])), str(key), tuple(walls), cells,
-                          dropped)
+        cut = SectionCut(z, chord, twist, pitch, (float(offset[0]), float(offset[1])), str(key), tuple(walls), cells,
+                         dropped)
+        self._section_cache[z] = cut
+        while len(self._section_cache) > self._section_cache_size:
+            self._section_cache.popitem(last=False)
+        return cut
+
+    def oml_sdf(self, meta: int = 0):
+        """Exact 2-D polygon SDF of ``oml_polyline(z)`` at each point's own ``z``."""
+        from implicit_geometry_kernel.sdf.lofted import LoftedPolygonSDF
+
+        return LoftedPolygonSDF(lambda z: self.oml_polyline(float(z))[:, :2], meta=meta)
+
+    def cavity_sdf(self, meta: int = 0):
+        """Inner mould line: ``oml + T``. ``T`` is a step (skin, plus cap inside footprints); no taper."""
+        from implicit_geometry_kernel.blade.fields import StackThickness
+        from implicit_geometry_kernel.sdf.nodes import FieldOffsetNode
+
+        return FieldOffsetNode(self.oml_sdf(meta), StackThickness(self), scale=1.0)
+
+    def wall_mid_sdf(self, meta: int = 0):
+        """Stacked wall mid-surface: ``(oml + cavity) / 2``.
+
+        Snap oracle (Wave 0). Run interiors match ``shell_graph`` midpoints;
+        partition vertices are not a Newton spec (``|phi|`` up to ``t_cap/2``).
+        """
+        from implicit_geometry_kernel.sdf.nodes import MidSurfaceNode
+
+        return MidSurfaceNode(self.oml_sdf(meta), self.cavity_sdf(meta))
+
+    def wall_meta(self, table=None):
+        """Tagged wall-strip DAG: ``evaluate((x,y,z)).meta`` is the region at that ``z``."""
+        from implicit_geometry_kernel.blade.fields import CutWallMetaSDF
+        from implicit_geometry_kernel.sdf.field import FeatureTable
+
+        return CutWallMetaSDF(self, table if table is not None else FeatureTable())
+
+    def snap_oml(self, points, solver=None):
+        """Project points onto the OML in each point's own ``z``-plane."""
+        from implicit_geometry_kernel.sdf.solve import GeometrySolver
+
+        solver = solver or GeometrySolver(tolerance=1e-8, max_step=0.05)
+        return solver.project(self.oml_sdf(), np.asarray(points, float), plane=True)
+
+    def snap_wall_mid(self, points, solver=None):
+        """Project onto ``wall_mid_sdf`` in each point's ``z``-plane (not a spec at ``T``-step joints)."""
+        from implicit_geometry_kernel.sdf.solve import GeometrySolver
+
+        solver = solver or GeometrySolver(tolerance=1e-8, max_step=0.05)
+        return solver.project(self.wall_mid_sdf(), np.asarray(points, float), plane=True)
 
     def __repr__(self) -> str:
         return f"BladeGeometry({self.layout!r}, z = {self.stations[0].z:g} to {self.stations[-1].z:g})"
@@ -223,6 +419,14 @@ def _match(polyline: np.ndarray, points: np.ndarray, tol: float = 1e-9) -> np.nd
     return np.array(out, dtype=int)
 
 
+def _is_frac_sequence(value) -> bool:
+    try:
+        vals = [float(v) for v in value]
+    except (TypeError, ValueError):
+        return False
+    return bool(vals) and all(0.0 < v < 1.0 for v in vals)
+
+
 def _with_web_fractions(spec, fractions):
     import dataclasses
 
@@ -234,4 +438,4 @@ def section_at(stations: Sequence[Station], z: float, layout, skin_thickness: Th
     return BladeGeometry(stations, layout, skin_thickness, **options).section_at(z)
 
 
-__all__ = ["BladeGeometry", "Thickness", "section_at"]
+__all__ = ["BladeGeometry", "SpanTable", "Thickness", "section_at"]

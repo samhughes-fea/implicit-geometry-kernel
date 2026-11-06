@@ -37,6 +37,19 @@ class CapPlacementRule:
         return CapPlacementRule(kind="continuous_box")
 
     @staticmethod
+    def from_chord_windows(windows) -> CapPlacementRule:
+        """Family-B band from published chord windows ``((lo, hi), ...)``."""
+        pairs = [(float(a), float(b)) for a, b in (windows or ())]
+        if not pairs:
+            return CapPlacementRule.none()
+        lo = min(min(p) for p in pairs)
+        hi = max(max(p) for p in pairs)
+        half = 0.5 * (hi - lo)
+        if half <= 0.0:
+            return CapPlacementRule.none()
+        return CapPlacementRule.fixed_band(anchor="pitching", half_width=half)
+
+    @staticmethod
     def from_structural_family(
         family: str,
         *,

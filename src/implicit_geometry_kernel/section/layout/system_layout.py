@@ -26,7 +26,7 @@ class SystemLayoutSpec:
     airfoil leading edge in section *x* (same convention as :class:`AirfoilSDF`).
 
     When ``n_webs == 0`` (catalogue keys ``0A`` / ``0B``), the sized worker still
-    builds a :class:`~implicit_geometry_kernel.section.sections.multicell.MultiCellSection`
+    builds a :class:`~implicit_geometry_kernel.section.assembly.multicell.MultiCellSection`
     with empty web positions (family A or B). ``geometry_mode="zero_web_catalogue"``
     remains catalogue metadata for those keys; it no longer selects a separate host class.
     """

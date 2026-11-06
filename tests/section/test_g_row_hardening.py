@@ -89,29 +89,17 @@ def test_no_laminate_identifiers_in_production() -> None:
 
 _G_ROW_PUBLIC_ALL = frozenset(
     {
+        "SectionGeometry",
         "SectionGeometryResult",
         "SectionGeometryRunner",
         "SectionPropertiesMeta",
         "StationLayoutResolution",
         "SectionLayout",
-        "SectionMidlineHost",
-        "build_section_geometry",
-        "build_section_with_thicknesses",
-        "section_geometry_prep_key",
-        "AirfoilSDF",
         "MultiCellSection",
         "resolve_station_layout",
         "resolve_system_type",
         "SYSTEM_TYPE_KEYS",
         "SystemLayoutSpec",
-        "layout_without_spar_caps",
-        "is_core_label",
-        "MIN_REALISTIC_SKIN_WALL_THICKNESS_M",
-        "MIN_REALISTIC_SPAR_WALL_THICKNESS_M",
-        "MIN_REALISTIC_WEB_WALL_THICKNESS_M",
-        "clamp_skin_thickness_m",
-        "clamp_spar_thickness_m",
-        "clamp_web_thickness_m",
     }
 )
 
@@ -149,6 +137,24 @@ def test_g_row_public_barrel_allowlist() -> None:
     )
 
 
+def test_build_helpers_are_not_silent_section_attributes() -> None:
+    import implicit_geometry_kernel.section as section
+
+    for name in (
+        "build_section_geometry",
+        "build_section_with_thicknesses",
+        "build_section_view",
+        "section_geometry_prep_key",
+        "layout_without_spar_caps",
+        "is_core_label",
+        "SectionMidlineHost",
+        "MIN_REALISTIC_SKIN_WALL_THICKNESS_M",
+        "MIN_REALISTIC_SPAR_WALL_THICKNESS_M",
+    ):
+        assert name not in section.__all__
+        assert not hasattr(section, name), f"{name} leaked onto section package"
+
+
 def test_props_debug_not_in_public_all() -> None:
     actual = _package_all()
     hits = sorted(actual & _PROPS_DEBUG_BARREL_BAN)
@@ -163,23 +169,23 @@ def test_no_cap_recipes_from_assembled_symbol() -> None:
     assert not hits, "_cap_recipes_from_assembled still present in:\n" + "\n".join(hits)
 
 
-def test_sections_barrel_does_not_eager_import_multicell() -> None:
-    init = ROOT / "sections" / "__init__.py"
+def test_assembly_barrel_does_not_eager_import_multicell() -> None:
+    init = ROOT / "assembly" / "__init__.py"
     tree = ast.parse(init.read_text(encoding="utf-8"), filename=str(init))
     for node in tree.body:
         if isinstance(node, (ast.ImportFrom,)):
             if node.level == 1 and node.module == "multicell":
                 raise AssertionError(
-                    "sections/__init__.py eagerly imports multicell "
+                    "assembly/__init__.py eagerly imports multicell "
                     "(use lazy __getattr__ to keep the assemble DAG acyclic)"
                 )
 
 
-def test_sections_relative_import_dag_acyclic() -> None:
-    """Relative imports among sections/*.py must form a DAG."""
+def test_assembly_relative_import_dag_acyclic() -> None:
+    """Relative imports among assembly/*.py must form a DAG."""
     from collections import defaultdict, deque
 
-    sec = ROOT / "sections"
+    sec = ROOT / "assembly"
     graph: dict[str, set[str]] = defaultdict(set)
     modules = {p.stem for p in sec.glob("*.py") if p.name != "__init__.py"}
     for path in sec.glob("*.py"):
@@ -216,6 +222,6 @@ def test_sections_relative_import_dag_acyclic() -> None:
             if indeg[v] == 0:
                 q.append(v)
     assert seen == len(indeg), (
-        "cyclic relative imports in sections/: "
+        "cyclic relative imports in assembly/: "
         + ", ".join(sorted(m for m, n in indeg.items() if n > 0))
     )

@@ -13,9 +13,10 @@ python examples/04_section_properties/section_properties.py
 ## The two routes
 
 ```python
-from implicit_geometry_kernel.section import AirfoilSDF, SectionGeometryRunner, resolve_system_type
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.section import SectionGeometry, resolve_system_type
 
-result = SectionGeometryRunner(layout=resolve_system_type("2D-F"), airfoil=AirfoilSDF(vertices, chord=2.0),
+result = SectionGeometry(layout=resolve_system_type("2D-F"), airfoil=AirfoilSDF(vertices, chord=2.0),
                                skin_thickness=0.004, spar_cap_thickness=0.012, shear_web_thickness=0.006,
                                outputs=("properties",)).execute().get_results()
 result.properties_map["spar_cap_suction_surface"]   # area, cx, cy, Ixx, Iyy, Ixy (about its own centroid)

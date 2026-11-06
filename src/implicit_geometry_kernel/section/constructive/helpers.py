@@ -1,9 +1,8 @@
 """Shapely helpers for constructive wall-solid polygons.
 
-Offset APIs (``offset_polygon_inward``, ``airfoil_offset_ring``,
-``airfoil_polygon``) are **private implementation** of
-:mod:`offset_locus`. Production code must import those names from
-``offset_locus``, not from this module (enforced by
+Offset APIs live in ``section.midlines.offset_math``. This module re-exports
+them for local constructive helpers. Production code must import those names
+from ``offset_locus``, not from this module (enforced by
 ``tests/test_offset_import_boundary.py``).
 """
 
@@ -14,100 +13,19 @@ from shapely import make_valid
 from shapely.geometry import LineString, MultiPolygon, Polygon
 from shapely.ops import unary_union
 
-from implicit_geometry_kernel.contract.errors import (
-    InfeasibleSectionGeometry,
-)
 from implicit_geometry_kernel.integration.shoelace import (
     validate_and_orient_polygon,
+)
+from implicit_geometry_kernel.section.midlines.offset_math import (
+    airfoil_offset_ring,
+    airfoil_polygon,
+    offset_polygon_inward,
 )
 
 # Drop rings / parts below this absolute area (m^2). Thickened tip stations can
 # produce Boolean slivers whose Shapely area is tiny but non-zero while shoelace
 # reports A≈0 and previously crashed on Cx = Sx/(6A).
 _MIN_PART_AREA = 1e-16
-
-# The inward-offset join contract. Every offset locus in the package — skin
-# mid-surface, inner cavity, cap slab, cap mid-surface — must come from these
-# exact settings, because the package's junction exactness rests on loci at
-# different depths being *parallel by construction*. A mitre join is the exact
-# equidistant point for a locally-convex ring, so linear interpolation along an
-# offset polyline stays on the locus; a different join style would not be
-# equidistant, and two loci built with different settings would silently stop
-# being parallel. Kept private: go through :func:`offset_polygon_inward`.
-_OFFSET_QUAD_SEGS = 16
-_OFFSET_JOIN_STYLE = 2  # mitre
-_OFFSET_MITRE_LIMIT = 5.0
-
-
-def offset_polygon_inward(poly, depth: float, *, quad_segs: int | None = None):
-    """Inward normal offset of ``poly`` by ``depth``, the one offset operator.
-
-    This is the single site that decides what "the offset locus at depth d"
-    means. Prefer it over calling ``poly.buffer(-d, ...)``: the join settings
-    are the package's parallelism contract (see ``docs/bug_log.md`` SG-001 and
-    SG-003, where two loci that were not where each other expected produced
-    10 mm displacements).
-
-    Returns Shapely's result unchanged, **including an empty geometry** when
-    the section is thinner than twice ``depth``. Callers decide whether empty
-    is infeasible or simply means "no cavity here", and several rely on that.
-    """
-    d = float(depth)
-    if not np.isfinite(d) or d < 0.0:
-        raise ValueError(f"offset_polygon_inward requires a finite depth >= 0; got {depth!r}.")
-    return poly.buffer(
-        -d,
-        quad_segs=_OFFSET_QUAD_SEGS if quad_segs is None else int(quad_segs),
-        join_style=_OFFSET_JOIN_STYLE,
-        mitre_limit=_OFFSET_MITRE_LIMIT,
-    )
-
-
-def airfoil_polygon(airfoil_sdf) -> Polygon:
-    verts = getattr(airfoil_sdf, "vertices", None)
-    if verts is None:
-        raise ValueError("AirfoilSDF-compatible object with vertices is required.")
-    arr = np.asarray(verts, dtype=float)
-    if arr.ndim != 2 or arr.shape[1] != 2 or arr.shape[0] < 3:
-        raise ValueError(f"Invalid airfoil vertices shape {arr.shape}.")
-    poly = Polygon(arr)
-    return validate_and_orient_polygon(poly, allow_empty=False)
-
-
-def airfoil_offset_ring(airfoil_sdf, depth: float, *, quad_segs: int = 16) -> np.ndarray:
-    """Vertices of the inward **normal**-offset locus ``phi_airfoil = -depth``.
-
-    Goes through :func:`offset_polygon_inward`, so this is the same offset
-    family as :func:`emit_outer_skin_polygon` and :func:`emit_spar_cap_polygon`
-    and a mid-surface built from this ring sits exactly inside the
-    corresponding solid.
-
-    Returns an ``(M, 2)`` ring **without** the repeated closing vertex.
-    """
-    d = float(depth)
-    if not np.isfinite(d) or d <= 0.0:
-        raise ValueError(f"airfoil_offset_ring requires depth > 0; got {depth!r}.")
-    geom = offset_polygon_inward(airfoil_polygon(airfoil_sdf), d, quad_segs=quad_segs)
-    if geom.is_empty:
-        raise InfeasibleSectionGeometry(
-            f"Inward offset at depth={d:g} is empty; the section is thinner than "
-            "twice that depth."
-        )
-    if isinstance(geom, MultiPolygon):
-        geom = max(geom.geoms, key=lambda g: g.area)
-    if not isinstance(geom, Polygon) or geom.exterior is None:
-        raise InfeasibleSectionGeometry(
-            f"Inward offset at depth={d:g} did not yield a Polygon "
-            f"(got {type(geom).__name__})."
-        )
-    ring = np.asarray(geom.exterior.coords, dtype=float)
-    if ring.shape[0] >= 2 and float(np.hypot(*(ring[0] - ring[-1]))) <= 1e-15:
-        ring = ring[:-1]
-    if ring.shape[0] < 3:
-        raise InfeasibleSectionGeometry(
-            f"Inward offset at depth={d:g} produced too few vertices."
-        )
-    return ring
 
 
 def _positive_area(geom) -> bool:
@@ -315,3 +233,16 @@ def flapwise_bay_clip(
     clip = Polygon(xy)
     # Keep finite intersection with world (numerical safety)
     return ensure_polygon(clip.intersection(shapely_box(minx, miny, maxx, maxy)), allow_empty=True)
+
+
+__all__ = [
+    "airfoil_offset_ring",
+    "airfoil_polygon",
+    "chordwise_box",
+    "ensure_polygon",
+    "flapwise_bay_clip",
+    "half_plane_clip",
+    "offset_polygon_inward",
+    "rotate_geom",
+    "stadium_polygon",
+]

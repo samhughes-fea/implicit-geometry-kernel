@@ -37,7 +37,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
@@ -46,11 +46,21 @@ from implicit_geometry_kernel.plotting.figure_io import (
 import numpy as np
 import matplotlib.pyplot as plt
 
-from implicit_geometry_kernel.section import AirfoilSDF, MultiCellSection, SDFGrid, SectionPropertiesReport, build_section_geometry, export_section_json, resolve_system_type
-from implicit_geometry_kernel.plotting import plot_section
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.section.props.export import export_section_json
+from implicit_geometry_kernel.section.props.export import SectionPropertiesReport
+from implicit_geometry_kernel.section import MultiCellSection, resolve_system_type
+from implicit_geometry_kernel.section.api import build_section_geometry
+from plotting import plot_section
 from implicit_geometry_kernel.frames import naca_to_twisted_pitch_axis_blade_frame
-from implicit_geometry_kernel.plotting.frames import section_plot_axes
-from implicit_geometry_kernel.plotting.plot_section import (
+from plotting.frames import section_plot_axes
+from plotting.palette import (
+    distance_field_norm,
+    draw_distance_field,
+    tighten_to_section,
+)
+from plotting.plot_section import (
     apply_structural_section_axes,
     blade_plot_sampling_grid,
 )
@@ -287,29 +297,20 @@ Y_plot, X_plot, QX, QY = blade_plot_sampling_grid(
     nx=int(grid_tors.X.shape[1]),
     ny=int(grid_tors.X.shape[0]),
 )
-for ax, lbl in zip(axes.ravel(), labels_to_plot):
-    phi = np.asarray(torsion[lbl](QX, QY), dtype=float)
-    im = ax.pcolormesh(
-        Y_plot,
-        X_plot,
-        phi,
-        cmap="RdBu_r",
-        vmin=-0.05,
-        vmax=0.05,
-        shading="auto",
-    )
-    ax.contour(Y_plot, X_plot, phi, levels=[0.0], colors="k", linewidths=1.0)
+phis = [np.asarray(torsion[lbl](QX, QY), dtype=float) for lbl in labels_to_plot]
+norm = distance_field_norm(np.concatenate([phi.ravel() for phi in phis]))
+mesh = None
+for ax, lbl, phi in zip(axes.ravel(), labels_to_plot, phis):
+    mesh = draw_distance_field(ax, Y_plot, X_plot, phi, norm=norm)
     ax.set_title(lbl, fontsize=9)
-    # Keep data limits (airfoil B bbox); equal-aspect with datalim would pad
-    # huge empty flapwise margins and look like a clipped thin band.
+    tighten_to_section(ax, Y_plot, X_plot)
     apply_structural_section_axes(ax)
     ax.set_aspect("equal", adjustable="box")
-    fig.colorbar(im, ax=ax, label="φ")
+fig.colorbar(mesh, ax=axes.ravel().tolist(), label="φ (m)", shrink=0.72)
 fig.suptitle(
     "Per-component SDF fields — NACA 2412 torsion box @ 15° twist (all chord-normal)",
     fontsize=11,
 )
-fig.tight_layout()
 save_figure(fig, OUTPUT / "component_sdfs_torsion.png", presentation=_PRESENTATION)
 plt.close(fig)
 print(f"  Saved: {OUTPUT / 'component_sdfs_torsion.png'}")

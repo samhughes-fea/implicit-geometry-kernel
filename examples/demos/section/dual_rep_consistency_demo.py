@@ -36,25 +36,25 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
 
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.grid import SDFGrid
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     MultiCellSection,
-    SDFGrid,
 )
 from implicit_geometry_kernel.section.constructive import (
     emit_wall_solid_polygons,
     is_residual_label,
 )
-from implicit_geometry_kernel.section.props_emit.props_backend import (
+from implicit_geometry_kernel.section.props.backend import (
     quadtree_spec_for_airfoil,
 )
-from implicit_geometry_kernel.section.props_emit.props_compute import (
+from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
 
@@ -164,14 +164,14 @@ def _draw_gap_map(section, polys, grid, out_path: Path, *, presentation: bool) -
     from matplotlib.collections import LineCollection
     from matplotlib.colors import LinearSegmentedColormap, LogNorm
 
-    from implicit_geometry_kernel.plotting.palette import (
+    from plotting.palette import (
         INK,
         MUTED,
         RED,
         region_color,
         strip_axes_chrome,
     )
-    from implicit_geometry_kernel.plotting.plot_section import (
+    from plotting.plot_section import (
         apply_structural_section_axes,
     )
 
@@ -347,7 +347,7 @@ def main(argv: list[str] | None = None) -> Path:
         )
         ax.legend(fontsize=7, loc="best")
         ax.grid(True, alpha=0.3)
-        from implicit_geometry_kernel.plotting.plot_section import (
+        from plotting.plot_section import (
             apply_structural_section_axes,
         )
 

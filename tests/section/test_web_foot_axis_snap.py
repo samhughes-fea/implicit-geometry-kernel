@@ -29,11 +29,11 @@ from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.midlines.shell_midline_export import (
+from implicit_geometry_kernel.section.midlines.export import (
     build_shell_midline_strips,
 )
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.section.junction_preparation.shell_midline_junction_preparation import (
+from implicit_geometry_kernel.section.junctions.prepare import (
     prepare_shell_midline_junctions,
 )
 
@@ -131,7 +131,7 @@ def test_tip_absolute_2a_f_loops_build_under_twist():
     from implicit_geometry_kernel.section.api.worker import (
         build_section_geometry,
     )
-    from implicit_geometry_kernel.section.cell_wall_loops.cell_wall_loop_builders import (
+    from implicit_geometry_kernel.section.cells.builders import (
         build_cell_wall_loops,
     )
 
@@ -233,3 +233,34 @@ def test_stale_frozen_web_y_under_twist_raises_infeasible_not_sg002_gap():
             web_y_coords=list(res.web_y_coords),
             outputs=("midlines", "cell_wall_loops"),
         )
+
+
+def test_frozen_runner_resolution_does_not_retry_reanchor():
+    """Sizing freeze: ``resolution=`` must raise, not live-y retry / drop (SG-002)."""
+    from implicit_geometry_kernel.contract.errors import (
+        InfeasibleSectionGeometry,
+    )
+    from implicit_geometry_kernel.section.api.runner import SectionGeometryRunner
+    from implicit_geometry_kernel.section.api.worker import resolve_station_layout
+
+    chord = 0.08775168
+    twist_rad = float(np.deg2rad(0.407709))
+    af = AirfoilSDF.from_naca("2412", n_points=200, chord=chord)
+    frozen = resolve_station_layout(
+        resolve_system_type("1A-F"),
+        af,
+        skin_thickness=0.003536,
+        web_x_positions_m=[0.036130035],
+    )
+    kwargs = dict(
+        layout=resolve_system_type("1A-F"),
+        airfoil=af,
+        skin_thickness=0.007072,
+        shear_web_thickness=0.00442,
+        spar_cap_thickness=0.0,
+        twist_rad=twist_rad,
+        web_x_positions_m=list(frozen.web_x_positions_m),
+        outputs=("midlines", "cell_wall_loops"),
+    )
+    with pytest.raises(InfeasibleSectionGeometry, match="re-anchor|frozen web_y"):
+        SectionGeometryRunner(**kwargs, resolution=frozen).execute()

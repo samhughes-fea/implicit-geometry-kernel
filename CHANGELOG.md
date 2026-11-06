@@ -2,23 +2,41 @@
 
 ## Unreleased
 
+## 0.4.0
+
+- README names the public contract: two input tracks (parametric vs windIO) into
+  one assembler; `BladeGeometry` interpolates along span then calls
+  `SectionGeometry` for one station; three products (`properties_map`,
+  `ShellMidlineStrip` mesh hand-off, `CellWallLoop`).
+- `SectionGeometryRunner` is an alias of `SectionGeometry`.
+  `BladeGeometry.interpolate` is the scalar/foil interpolator (`station_at`
+  remains an alias). Loft cell interiors are `CellPolygon` (`CellLoop` alias).
+  Station metres-from-LE webs accept `web_offsets` (same quantity as
+  `StationLayoutResolution.web_x_positions_m`).
+- `Airfoil.naca4` and `AirfoilSDF.from_naca` share `naca_four_digit_vertices`.
+  Prefer `Airfoil.to_sdf()`. `sdf` still does not import `blade`.
+- `extract/` is documented (`docs/extract/`); off the kernel barrel. Node zoo
+  imports from `sdf.nodes`. G-row documents `placement/` vs `CapPlacementRule`.
+- Matplotlib helpers moved out of the kernel to the sibling package `plotting/`
+  (`import plotting`, extra `[plots]`).
 - Docs and the import-boundary test follow the split of composite-laminate-model into
   laminate-constitutive-model and shell-fem; the kernel imports neither.
-- Seven new worked examples (02 to 08) with figures and READMEs: the layout catalogue,
-  signed distances and CSG, section properties, the mid-surface and cells, web
-  placement, airfoils and root transitions, and coordinate frames. Each checks the
-  kernel against an independent reference. `examples/README.md` indexes them.
+- Worked examples 02–09 with figures and READMEs. `examples/README.md` indexes them.
 - Fixed: `frames.transform_second_moments_S_to_B` (and `_B_to_S`) gave the wrong sign to
-  the Ixy term of `Ixx_B`, so Ixx + Iyy was not invariant under twist. It now matches
-  integrating the rotated outline.
-- Demo figures are written to `examples/demos/figures/`, committed and embedded in the
-  demo READMEs, instead of a git-ignored `output/` folder or a folder inside the
-  installed package. `save_figure` defaults to 150 dpi.
+  the Ixy term of `Ixx_B`, so Ixx + Iyy was not invariant under twist.
 
-## 0.2.0 (unreleased)
+## 0.3.0
+
+Removed the deprecated import paths listed in 0.2.x (`blade_geometry`,
+`section_geometry`, `frames.section_frames`, and the section shims
+`sections` / `junction_preparation` / `cell_wall_loops` / `props_emit` /
+`recipes.sdf_ir`). Offset math lives under `section.midlines`; G-POLY may
+import that leaf. Public docs prefer `Airfoil.to_sdf()` and `SpanWeb`.
+
+## 0.2.0
 
 The kernel is now the geometry of blade and wing cross-sections only, regrouped into
-`blade`, `section`, `sdf`, `frames`, `integration`, `contract` and `plotting`. See
+`blade`, `section`, `sdf`, `frames`, `integration` and `contract`. See
 [docs/FORK.md](docs/FORK.md) for the full map from the old names.
 
 - `SYSTEM_TYPE_KEYS`, `resolve_system_type` and `MidSurface` are exported from the top
@@ -35,7 +53,7 @@ The kernel is now the geometry of blade and wing cross-sections only, regrouped 
   barrels, the `topology` aliases, and code with no caller.
 - Tests, examples, demos and docs moved out of the installed package; the wheel goes
   from 331 files to about 120.
-- Matplotlib is only needed for `plotting`; every other module imports without it.
+- Matplotlib is only needed for the sibling `plotting` package; the kernel imports without it.
 
 ## 0.1.0 (29 October 2026)
 

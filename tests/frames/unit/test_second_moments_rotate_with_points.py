@@ -6,7 +6,7 @@ from shapely.geometry import Polygon
 
 from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.frames import naca_to_S, rotate_S_to_B
-from implicit_geometry_kernel.frames.section_frames.tensors import (
+from implicit_geometry_kernel.frames.tensors import (
     transform_second_moments_B_to_S,
     transform_second_moments_S_to_B,
 )

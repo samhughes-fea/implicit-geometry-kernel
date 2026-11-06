@@ -10,18 +10,18 @@ import pytest
 from implicit_geometry_kernel.contract.errors import (
     InfeasibleSectionGeometry,
 )
+from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.grid import SDFGrid
 from implicit_geometry_kernel.section import (
-    AirfoilSDF,
     MultiCellSection,
-    SDFGrid,
 )
-from implicit_geometry_kernel.section.recipes.sdf_ir import SparCap
+from implicit_geometry_kernel.section.recipes.spar_cap import SparCap
 from implicit_geometry_kernel.sdf import offset
 from implicit_geometry_kernel.section.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M,
     MIN_REALISTIC_SPAR_WALL_THICKNESS_M,
 )
-from implicit_geometry_kernel.plotting.plot import _DEFAULT_COLOR, _component_color
+from plotting.plot import _DEFAULT_COLOR, _component_color
 
 
 # ---------------------------------------------------------------------------

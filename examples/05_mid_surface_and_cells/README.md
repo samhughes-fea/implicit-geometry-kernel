@@ -15,15 +15,16 @@ python examples/05_mid_surface_and_cells/mid_surface_and_cells.py
 cut = BladeGeometry(stations, "2D-F", 0.008, spar_cap_thickness=0.03,
                     shear_web_thickness=0.015).section_at(0.5)
 cut.walls          # SectionWall: label, kind, side, midline points, thickness, cap-skin bonds
-cut.cells          # CellLoop: closed polygon on the midlines, area, labels of its walls
+cut.cells          # CellPolygon: closed polygon on the midlines, area, labels of its walls
 ms = cut.mid_surface()   # MidSurface: points and oriented segments, caps merged into their skins
+g = cut.shell_graph()    # loftable loop partitions + webs (same merge as the figure)
 ```
 
 | View | What it holds |
 |---|---|
-| `walls` | One midline per wall. Skins are split into bays at the webs (`skin_suction_surface:bay_0`); each cap lists the skin vertices it is bonded to. |
+| `walls` | One midline per wall. Skins are split into bays at the webs (`skin_suction_surface:bay_0`); each cap lists the skin vertices it is bonded to. Caps stay on this list. |
 | `cells` | The closed cells, each with its area and the walls around it. Thin-walled torsion (Bredt-Batho) needs exactly this. |
-| `mid_surface()` | One graph of straight segments with shared nodes at the junctions. A cap and the skin under it become one stacked wall, `layers = (cap, skin)` inside first, on the stack's mid-surface. Shell meshers and `ThinWalledSection.from_geometry` both start here. |
+| `mid_surface()` / `shell_graph()` | One wall: a cap is a partition (`layers = (cap, skin)`, `T = t_cap + t_skin`) with a feature line at the cap edge. `kind` on segments is only `skin` or `web`. **Loft** this graph; **snap** with `wall_mid_sdf` (Wave 0). Joint vertices are not a Newton spec (`|φ|` up to `t_cap/2`). |
 
 ## Checks
 

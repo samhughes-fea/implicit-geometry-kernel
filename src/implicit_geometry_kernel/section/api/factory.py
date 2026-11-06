@@ -15,13 +15,13 @@ from implicit_geometry_kernel.section.layout.system_layout import (
     SystemLayoutSpec,
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.midlines.section_midline_host import (
+from implicit_geometry_kernel.section.midlines.host import (
     SectionMidlineHost,
 )
 from implicit_geometry_kernel.sdf.airfoil import (
     AirfoilSDF,
 )
-from implicit_geometry_kernel.section.sections.from_layout import (
+from implicit_geometry_kernel.section.assembly.from_layout import (
     multicell_from_layout,
 )
 

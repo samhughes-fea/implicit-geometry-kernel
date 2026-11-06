@@ -70,18 +70,10 @@ class Airfoil:
         if len(code) != 4 or not code.isdigit():
             raise ValueError("a NACA 4-digit code has four digits, e.g. '0018'")
         m, p, t = int(code[0]) / 100.0, int(code[1]) / 10.0, int(code[2:]) / 100.0
-        x = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, n)))
-        a4 = -0.1036 if closed_te else -0.1015
-        yt = 5 * t * (0.2969 * np.sqrt(x) - 0.1260 * x - 0.3516 * x**2 + 0.2843 * x**3 + a4 * x**4)
-        if m > 0 and p > 0:
-            yc = np.where(x < p, m / p**2 * (2 * p * x - x**2), m / (1 - p) ** 2 * (1 - 2 * p + 2 * p * x - x**2))
-            dyc = np.where(x < p, 2 * m / p**2 * (p - x), 2 * m / (1 - p) ** 2 * (p - x))
-        else:
-            yc, dyc = np.zeros_like(x), np.zeros_like(x)
-        th = np.arctan(dyc)
-        upper = np.column_stack([x - yt * np.sin(th), yc + yt * np.cos(th)])
-        lower = np.column_stack([x + yt * np.sin(th), yc - yt * np.cos(th)])
-        return cls(np.vstack([upper[::-1], lower[1:]]), f"NACA {code}")
+        from implicit_geometry_kernel.sdf.naca import naca_four_digit_vertices
+
+        verts = naca_four_digit_vertices(m, p, t, int(n), 1.0, closed_te=closed_te)
+        return cls(verts, f"NACA {code}")
 
     @classmethod
     def ellipse(cls, thickness_ratio: float = 1.0, n: int = 81) -> "Airfoil":
@@ -99,6 +91,19 @@ class Airfoil:
 
     def thickness(self, x_c) -> np.ndarray:
         return self.surface("upper", x_c) - self.surface("lower", x_c)
+
+    def contour_points(self, n: int = 161) -> np.ndarray:
+        """Closed-contour vertices in Selig order, chord-normalised, shape ``(N, 2)``."""
+        x = np.linspace(0.0, 1.0, int(n))
+        upper = np.column_stack([x[::-1], self.surface("upper", x[::-1])])
+        lower = np.column_stack([x[1:], self.surface("lower", x[1:])])
+        return np.vstack([upper, lower])
+
+    def to_sdf(self, *, chord: float = 1.0, n: int = 161):
+        """Implicit polygon adapter at ``chord`` metres."""
+        from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+
+        return AirfoilSDF.from_airfoil(self, chord=chord, n=n)
 
     @property
     def max_thickness(self) -> float:

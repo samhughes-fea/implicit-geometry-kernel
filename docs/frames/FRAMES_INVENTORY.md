@@ -10,7 +10,7 @@
 **Programme:** Coordinate-Frame Safety (WP0 baseline)  
 **Date:** 2026-09-23  
 **Authority:** this file is the programme status source. Semantics and transforms
-remain in [`README.md`](README.md) / [`section_frames/`](../../src/implicit_geometry_kernel/frames/section_frames/) /
+remain in [`README.md`](README.md) / [`section_frames/`](../../src/implicit_geometry_kernel/frames/) /
 [`shell_frames/`](../../src/implicit_geometry_kernel/frames/shell_frames/). Cross-cutting MUST rules:
 `docs/conventions/api/API_STANDARDS.md`
 and `ARCH-MUST-016` in

@@ -61,7 +61,7 @@ that. The file lists above use the names from before this change.
 | `section_geometry/sdf/` | `sdf/` |
 | `section_geometry/sdf/cache.py` | `section/eval_cache.py` |
 | `section_geometry/profiling.py` | `profiling.py` |
-| `section_geometry/visualisation/`, `coordinate_frames/section_frames/plot.py` | `plotting/` |
+| `section_geometry/visualisation/`, `coordinate_frames/plot.py` | `plotting/` (sibling of the kernel, not under `src/`) |
 | `coordinate_frames/` | `frames/` |
 | `section_contract/` | `contract/` |
 | `area_2d/`, `shoelace_integration/` | `integration/` (shoelace in `integration/shoelace.py`) |
@@ -75,6 +75,9 @@ composite-laminate-model), the shell-solver load channels (`shell_frames/load_ch
 the beam stiffness transform (`section_frames/stiffness.py`) and `BeamResultantVector`
 with its load-order constants.
 
-`implicit_geometry_kernel.blade_geometry` and
-`implicit_geometry_kernel.section_geometry.layout.system_layout` still import, with a
-`DeprecationWarning`, until 0.3.0.
+## 0.3.0
+
+0.3.0 removed the deprecated import paths (`implicit_geometry_kernel.blade_geometry`,
+`implicit_geometry_kernel.section_geometry`, and the section shim packages). Import
+`blade`, `section`, `sdf`, `frames`, `integration`, and `contract` from
+`implicit_geometry_kernel` directly.

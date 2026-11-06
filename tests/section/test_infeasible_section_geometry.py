@@ -66,7 +66,7 @@ def test_bad_depth_argument_is_not_infeasibility() -> None:
 
 def test_web_anchors_and_skin_intercepts_are_infeasibility() -> None:
     """The two cases the old message allowlist covered, now matched by type."""
-    from implicit_geometry_kernel.section.sections.web_layout import (
+    from implicit_geometry_kernel.section.assembly.web_layout import (
         inner_y_at_x,
     )
     from implicit_geometry_kernel.sdf.airfoil import (

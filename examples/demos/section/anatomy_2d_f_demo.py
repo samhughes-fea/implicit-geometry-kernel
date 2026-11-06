@@ -33,32 +33,33 @@ _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
 from implicit_geometry_kernel.section import (
-    SectionGeometryRunner,
+    SectionGeometry,
 )
 from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.plotting.figure_io import (
+from plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from implicit_geometry_kernel.plotting.palette import (
+from plotting.palette import (
+    region_color,
     strip_axes_chrome,
 )
-from implicit_geometry_kernel.plotting.plot import (
+from plotting.plot import (
     plot_section_hybrid,
 )
 from implicit_geometry_kernel.section.constructive import (
     emit_wall_solid_polygons,
 )
-from implicit_geometry_kernel.plotting.plot_section import (
+from plotting.plot_section import (
     apply_structural_section_axes,
 )
 from implicit_geometry_kernel.frames import naca_to_twisted_pitch_axis_blade_frame
-from implicit_geometry_kernel.plotting.frames import section_plot_axes
+from plotting.frames import section_plot_axes
 
 _FIGSIZE = (12.0, 5.0)
 _FIGSIZE_ANNOTATED = (13.5, 6.6)
@@ -82,18 +83,6 @@ _WALL_SIDE = {
 # the sandwich_core_* regions overlap rather than partitioning the cavity, so the
 # cells are located from the resolved web stations instead.
 _CELL_NAMES = ("Leading-edge cell", "Box cell (between webs)", "Trailing-edge cell")
-
-_REGION_COLOUR = {
-    "skin_suction_surface": "#1565C0",
-    "skin_pressure_surface": "#64B5F6",
-    "spar_cap_suction_surface": "#E53935",
-    "spar_cap_pressure_surface": "#FB8C00",
-    "shear_web_0": "#2E7D32",
-    "shear_web_1": "#26A69A",
-    "sandwich_core_0": "#CE93D8",
-    "sandwich_core_1": "#8E24AA",
-    "sandwich_core_2": "#BA68C8",
-}
 
 
 def _to_plot(points, chord: float, twist_rad: float = 0.0) -> np.ndarray:
@@ -160,7 +149,7 @@ def _draw_annotated(section, airfoil, web_x_m, *, twist_rad: float, out_dir: Pat
         if label not in _WALL_SIDE:
             continue
         name, side = _WALL_SIDE[label]
-        colour = _REGION_COLOUR.get(label, "#90A4AE")
+        colour = region_color(label)
         parts = _polygon_parts(geom)
         for part in parts:
             ring = _to_plot(np.asarray(part.exterior.coords, dtype=float), chord, twist_rad)
@@ -297,7 +286,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Wrote {out_png}")
 
     resolution = (
-        SectionGeometryRunner(
+        SectionGeometry(
             layout=layout,
             airfoil=airfoil,
             skin_thickness=_SKIN_THICKNESS_M,

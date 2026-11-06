@@ -51,9 +51,9 @@ Display form: `SystemType{X}{Y}-{Z}`. `resolve_system_type("2D-F")` → frozen
 - **F** (flapwise): vertical in the **twisted** blade frame.
 
 Compare
-`../visualisation/output/structural_family_grids/2D-CN.png`
+`../../../examples/demos/figures/structural_family_grids/2D-CN.png`
 vs
-`../visualisation/output/structural_family_grids/2D-F.png`.
+`../../../examples/demos/figures/structural_family_grids/2D-F.png`.
 
 ### Implementation note (S / B frames)
 

@@ -14,12 +14,12 @@ from implicit_geometry_kernel.frames import (
     PIVOT_FRACTION_DEFAULT,
     naca_to_twisted_pitch_axis_blade_frame,
 )
-from implicit_geometry_kernel.section.sections.multicell import (
+from implicit_geometry_kernel.section.assembly.multicell import (
     MultiCellSection,
 )
 from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.grid import SDFGrid
-from implicit_geometry_kernel.plotting.plot_section import (
+from plotting.plot_section import (
     plot_section,
     rotated_naca_grid_to_section_plot_axes,
 )
@@ -66,16 +66,16 @@ def test_rotated_naca_grid_matches_naca_to_blade(af):
 
 
 def test_plot_section_and_sdf_and_mesh_xlim_straddle_pitch(af):
-    from implicit_geometry_kernel.plotting.plot_sdf import (
+    from plotting.plot_sdf import (
         plot_sdf_field,
     )
-    from implicit_geometry_kernel.plotting.plot_section import (
+    from plotting.plot_section import (
         plot_section_from_mesh,
     )
-    from implicit_geometry_kernel.section.props_emit.export import (
+    from implicit_geometry_kernel.section.props.export import (
         SectionPropertiesReport,
     )
-    from implicit_geometry_kernel.section.props_emit.props_backend import (
+    from implicit_geometry_kernel.section.props.backend import (
         quadtree_spec_for_airfoil,
     )
 
@@ -163,7 +163,7 @@ def test_plot_section_twisted_skin_bbox_matches_blade_verts(af):
 
 
 def test_blade_plot_sampling_grid_rectilinear_and_query_roundtrip(af):
-    from implicit_geometry_kernel.plotting.plot_section import (
+    from plotting.plot_section import (
         blade_plot_sampling_grid,
         section_query_from_blade,
     )

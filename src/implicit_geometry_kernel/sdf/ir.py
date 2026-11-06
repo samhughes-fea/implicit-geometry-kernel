@@ -10,7 +10,6 @@ import numpy as np
 
 BBox = Tuple[float, float, float, float]
 
-from implicit_geometry_kernel.sdf.primitives import sdf_box, sdf_capsule, sdf_circle, sdf_half_plane, sdf_oriented_box, sdf_polygon, sdf_rounded_box
 
 
 @dataclass(frozen=True)
@@ -295,18 +294,6 @@ def expr_bbox(expr: Expr) -> Optional[BBox]:
     return None
 
 
-def _rotate_coords(x, y, angle: float, cx: float = 0.0, cy: float = 0.0):
-    cos_a = np.cos(-float(angle))
-    sin_a = np.sin(-float(angle))
-    xa = np.asarray(x, dtype=float)
-    ya = np.asarray(y, dtype=float)
-    xr = xa - float(cx)
-    yr = ya - float(cy)
-    xp = cos_a * xr - sin_a * yr + float(cx)
-    yp = sin_a * xr + cos_a * yr + float(cy)
-    return xp, yp
-
-
 def eval_expr(expr: Expr, x, y):
     """Evaluate an expression on arbitrary coordinate arrays (no memoization)."""
     return eval_expr_batch(expr, x, y, memo=None)
@@ -318,109 +305,19 @@ def eval_expr_batch(
     y,
     memo: Dict[Expr, np.ndarray] | None = None,
 ) -> np.ndarray:
-    """Evaluate an expression with optional subtree memoization keyed by ``Expr``."""
-    local = memo is None
-    store: Dict[Expr, np.ndarray] = {} if memo is None else memo
-    hit = store.get(expr)
-    if hit is not None:
-        return hit
+    """Evaluate an expression via ``compile_expr_to_node`` (see ``sdf.compile``)."""
+    from implicit_geometry_kernel.sdf.compile import eval_via_nodes
 
-    if isinstance(expr, Circle):
-        out = sdf_circle(x, y, cx=expr.cx, cy=expr.cy, r=expr.r)
-    elif isinstance(expr, Box):
-        out = sdf_box(x, y, cx=expr.cx, cy=expr.cy, half_w=expr.half_w, half_h=expr.half_h)
-    elif isinstance(expr, RoundedBox):
-        out = sdf_rounded_box(
-            x, y, cx=expr.cx, cy=expr.cy, half_w=expr.half_w, half_h=expr.half_h, r=expr.r
-        )
-    elif isinstance(expr, OrientedBox):
-        out = sdf_oriented_box(
-            x,
-            y,
-            cx=expr.cx,
-            cy=expr.cy,
-            half_w=expr.half_w,
-            half_h=expr.half_h,
-            angle=expr.angle,
-        )
-    elif isinstance(expr, Capsule):
-        out = sdf_capsule(x, y, ax=expr.ax, ay=expr.ay, bx=expr.bx, by=expr.by, r=expr.r)
-    elif isinstance(expr, HalfPlane):
-        out = sdf_half_plane(x, y, nx=expr.nx, ny=expr.ny, d=expr.d)
-    elif isinstance(expr, Polygon):
-        verts = np.asarray(expr.vertices, dtype=float)
-        out = sdf_polygon(x, y, verts)
-    elif isinstance(expr, CallableField):
-        out = np.asarray(expr.fn(x, y), dtype=float)
-    elif isinstance(expr, Union):
-        out = np.minimum(
-            eval_expr_batch(expr.left, x, y, store),
-            eval_expr_batch(expr.right, x, y, store),
-        )
-    elif isinstance(expr, Intersect):
-        out = np.maximum(
-            eval_expr_batch(expr.left, x, y, store),
-            eval_expr_batch(expr.right, x, y, store),
-        )
-    elif isinstance(expr, Subtract):
-        out = np.maximum(
-            eval_expr_batch(expr.base, x, y, store),
-            -eval_expr_batch(expr.cutter, x, y, store),
-        )
-    elif isinstance(expr, Offset):
-        out = eval_expr_batch(expr.base, x, y, store) - float(expr.amount)
-    elif isinstance(expr, Rotate):
-        xp, yp = _rotate_coords(x, y, expr.angle, expr.cx, expr.cy)
-        out = eval_expr_batch(expr.base, xp, yp, store)
-    elif isinstance(expr, Shell):
-        base = eval_expr_batch(expr.base, x, y, store)
-        out = np.abs(base) - float(expr.thickness) / 2.0
-    elif isinstance(expr, Slab):
-        base = eval_expr_batch(expr.base, x, y, store)
-        depth = float(expr.depth)
-        out = np.maximum(base, -base - depth)
-    else:
-        raise TypeError(f"Unsupported Expr node: {type(expr).__name__}")
-
-    out = np.asarray(out, dtype=float)
-    store[expr] = out
-    if local:
-        return out
-    return out
+    return eval_via_nodes(expr, x, y, memo=memo)
 
 
 def compile_expr(expr: Expr, grid, cache: Dict[Expr, np.ndarray] | None = None) -> np.ndarray:
     """Compile/evaluate expression on a grid with subtree memoization."""
-    memo = {} if cache is None else cache
-    hit = memo.get(expr)
-    if hit is not None:
-        return hit
+    from implicit_geometry_kernel.sdf.compile import eval_via_nodes
 
-    if isinstance(expr, Union):
-        out = np.minimum(
-            compile_expr(expr.left, grid, memo), compile_expr(expr.right, grid, memo)
-        )
-    elif isinstance(expr, Intersect):
-        out = np.maximum(
-            compile_expr(expr.left, grid, memo), compile_expr(expr.right, grid, memo)
-        )
-    elif isinstance(expr, Subtract):
-        out = np.maximum(
-            compile_expr(expr.base, grid, memo), -compile_expr(expr.cutter, grid, memo)
-        )
-    elif isinstance(expr, Offset):
-        out = compile_expr(expr.base, grid, memo) - float(expr.amount)
-    elif isinstance(expr, Shell):
-        base = compile_expr(expr.base, grid, memo)
-        out = np.abs(base) - float(expr.thickness) / 2.0
-    elif isinstance(expr, Slab):
-        base = compile_expr(expr.base, grid, memo)
-        depth = float(expr.depth)
-        out = np.maximum(base, -base - depth)
-    else:
-        out = np.asarray(eval_expr_batch(expr, grid.X, grid.Y, memo), dtype=float)
-    memo[expr] = out
-    return out
+    memo = {} if cache is None else cache
+    return eval_via_nodes(expr, grid.X, grid.Y, memo=memo)
+
 
 
 __all__ = [

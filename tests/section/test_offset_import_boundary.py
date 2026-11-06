@@ -10,7 +10,7 @@ _SECTION_GEOMETRY = Path(importlib.import_module("implicit_geometry_kernel.secti
 _FORBIDDEN = frozenset(
     {"offset_polygon_inward", "airfoil_offset_ring", "airfoil_polygon"}
 )
-_SKIP_FILES = frozenset({"helpers.py", "offset_locus.py"})
+_SKIP_FILES = frozenset({"helpers.py", "offset_locus.py", "offset_math.py"})
 
 
 def _iter_production_py() -> list[Path]:

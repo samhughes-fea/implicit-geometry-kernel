@@ -1,15 +1,15 @@
 # Structural systems gallery
 
 All 40 `SYSTEM_TYPE_KEYS`. Pass any key to `resolve_system_type(...)` /
-`SectionGeometryRunner(layout=...)`. Grouped by web count **X** (≠ spar-cap
+`SectionGeometry(layout=...)`. Grouped by web count **X** (≠ spar-cap
 family **Y**). Decode: [`system_type_xyz_taxonomy.md`](system_type_xyz_taxonomy.md).
 
 ↑ [`section_geometry`](../README.md) · [`../guides/quickstart.md`](../guides/quickstart.md)
 
 Figures: NACA 2412 + demo thicknesses from `structural_family_grids_demo.py`
-(`../visualisation/output/structural_family_grids/`;
-gitignored — regenerate to preview; see
-`../visualisation/demos/ARTIFACTS.md`).
+(`../../../examples/demos/figures/structural_family_grids/`;
+committed — regenerate to refresh; see
+[`../../examples/demos/section/ARTIFACTS.md`](../../../examples/demos/section/ARTIFACTS.md)).
 Production builds set `skin_thickness` /
 `spar_cap_thickness` / `shear_web_thickness` (optional `web_x_positions_m`).
 
@@ -262,4 +262,4 @@ Maximum registered web count in the layout catalogue
 - [`system_type_xyz_taxonomy.md`](system_type_xyz_taxonomy.md) — id decode, cascade
 - [`../guides/caller_patterns.md`](../guides/caller_patterns.md) — sizing loop and spanwise webs
 - [`../layout/README.md`](../layout/README.md) — layout resolve and web drop
-- Demo script: `visualisation/demos/structural_family_grids_demo.py`
+- Demo script: `examples/demos/section/structural_family_grids_demo.py`

@@ -14,10 +14,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from shapely.geometry import LineString  # noqa: E402
 
+from plotting.palette import NAVY, RED, TEAL  # noqa: E402
+
 TEXT_SECONDARY = "#52514e"
 REFERENCE = "#0b0b0b"  # closed-form references are drawn in ink, dashed
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#6250d6"]
-WALL_COLOURS = {"skin": "#2a6fdb", "cap": "#d1495b", "web": "#2e9e6a"}
+WALL_COLOURS = {"skin": NAVY, "cap": RED, "web": TEAL}
 
 plt.rcParams.update({"font.size": 9, "axes.titlesize": 9, "axes.labelsize": 9, "legend.fontsize": 8,
                      "xtick.labelsize": 8, "ytick.labelsize": 8, "axes.grid": False})
@@ -45,7 +47,7 @@ def save(fig, script: str, name: str) -> Path:
     out = Path(script).resolve().parent / "figures"
     out.mkdir(exist_ok=True)
     path = out / f"{name}.png"
-    fig.savefig(path, dpi=150)
+    fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"wrote {path.relative_to(Path(script).resolve().parents[2])}")
     return path

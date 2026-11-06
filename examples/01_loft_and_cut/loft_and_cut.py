@@ -6,28 +6,13 @@ figures/span_cuts.png (a 2D-F wing cut at five span positions, in the blade fram
     python examples/01_loft_and_cut/loft_and_cut.py
 """
 
+import sys
 from pathlib import Path
 
-import matplotlib
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-from shapely.geometry import LineString  # noqa: E402
-
+from _shared.plotting import draw_cut, plt, save  # noqa: E402
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station  # noqa: E402
-
-FIGURES = Path(__file__).resolve().parent / "figures"
-COLOURS = {"skin": "#2a6fdb", "cap": "#d1495b", "web": "#2e9e6a"}
-
-
-def draw(ax, cut):
-    """Each wall as its midline and a band of its thickness."""
-    for wall in cut.walls:
-        band = LineString(wall.xy).buffer(0.5 * wall.thickness, cap_style=2, join_style=2)
-        for poly in getattr(band, "geoms", [band]):
-            ax.fill(*poly.exterior.xy, color=COLOURS[wall.kind], alpha=0.35, lw=0)
-        ax.plot(wall.xy[:, 0], wall.xy[:, 1], color=COLOURS[wall.kind], lw=1.0)
-    ax.set_aspect("equal")
 
 
 def layouts():
@@ -37,13 +22,12 @@ def layouts():
     fig, axes = plt.subplots(4, 2, figsize=(9, 6.4))
     for ax, key in zip(axes.ravel(), keys):
         cut = BladeGeometry(stations, key, 0.008, spar_cap_thickness=0.03, shear_web_thickness=0.015).section_at(0.5)
-        draw(ax, cut)
+        draw_cut(ax, cut)
         ax.set_title(f"{key}: {len(cut.walls_of('web'))} webs, {len(cut.cells)} cells", fontsize=9)
         ax.axis("off")
     fig.suptitle("Eight of the 40 layouts on a NACA 2418, 2 m chord (skin blue, caps red, webs green)", fontsize=10)
     fig.tight_layout()
-    fig.savefig(FIGURES / "layouts.png", dpi=150)
-    plt.close(fig)
+    save(fig, __file__, "layouts")
 
 
 def span_cuts():
@@ -54,7 +38,7 @@ def span_cuts():
     fig, axes = plt.subplots(1, 5, figsize=(13, 2.5), sharey=True)
     for ax, z in zip(axes, (0.0, 5.0, 10.0, 15.0, 20.0)):
         cut = wing.section_at(z)
-        draw(ax, cut)
+        draw_cut(ax, cut)
         ax.plot(0.0, 0.0, "k+")
         ax.set_title(f"z = {z:g} m, chord {cut.chord:.2f} m, twist {cut.twist:.1f}°", fontsize=8.5)
         ax.set_xlim(-1.0, 2.2)
@@ -62,13 +46,11 @@ def span_cuts():
         ax.tick_params(labelsize=7)
     fig.suptitle("2D-F wing cut along the span: flapwise webs stay vertical as the section twists", fontsize=10)
     fig.tight_layout()
-    fig.savefig(FIGURES / "span_cuts.png", dpi=150)
-    plt.close(fig)
+    save(fig, __file__, "span_cuts")
     return wing
 
 
 if __name__ == "__main__":
-    FIGURES.mkdir(exist_ok=True)
     layouts()
     wing = span_cuts()
     for z in (0.0, 10.0, 20.0):

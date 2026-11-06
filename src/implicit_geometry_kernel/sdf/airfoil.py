@@ -15,7 +15,11 @@ from implicit_geometry_kernel.sdf.primitives import sdf_polygon
 
 
 class AirfoilSDF:
-    """Implicit SDF representation of an airfoil cross-section.
+    """Implicit SDF adapter for an airfoil contour.
+
+        Prefer ``Airfoil.naca4(...).to_sdf(chord=...)`` (or ``from_airfoil``).
+    ``from_naca`` uses the same ``naca_four_digit_vertices`` generator as
+    ``Airfoil.naca4`` (this module must not import ``blade``).
 
     Parameters
     ----------
@@ -76,6 +80,31 @@ class AirfoilSDF:
         return cls(xy, chord=chord)
 
     @classmethod
+    def from_airfoil(cls, airfoil, chord=None, n=161):
+        """Build from a chord-normalised :class:`~implicit_geometry_kernel.blade.airfoil.Airfoil`."""
+        c = 1.0 if chord is None else float(chord)
+        verts = np.asarray(airfoil.contour_points(int(n)), dtype=float) * c
+        if np.allclose(verts[0], verts[-1]):
+            verts = verts[:-1]
+        return cls(verts, chord=c)
+
+    @classmethod
+    def from_surface_graphs(cls, x, upper, lower, chord):
+        """Build from interpolated upper/lower graphs at chordwise ``x`` in [0, 1]."""
+        xc = np.asarray(x, dtype=float)
+        yu = np.asarray(upper, dtype=float)
+        yl = np.asarray(lower, dtype=float)
+        verts = np.vstack(
+            [
+                np.column_stack([xc[::-1], yu[::-1]]),
+                np.column_stack([xc[1:], yl[1:]]),
+            ]
+        ) * float(chord)
+        if np.allclose(verts[0], verts[-1]):
+            verts = verts[:-1]
+        return cls(verts, chord=float(chord))
+
+    @classmethod
     def from_naca(cls, naca_code, n_points=200, chord=1.0, closed_te=True):
         """Generate a NACA 4-digit airfoil.
 
@@ -85,14 +114,17 @@ class AirfoilSDF:
         NACA 2412 at 1 m chord — discretisation of the generator, not an error
         to close in the junction path.
         """
+        from implicit_geometry_kernel.sdf.naca import naca_four_digit_vertices
+
         code = str(naca_code).strip().zfill(4)
-        if len(code) != 4:
+        if len(code) != 4 or not code.isdigit():
             raise ValueError(f"Expected 4-digit NACA code, got '{naca_code}'.")
         m = int(code[0]) / 100.0
         p = int(code[1]) / 10.0
         tt = int(code[2:]) / 100.0
-        from implicit_geometry_kernel.sdf.naca import naca_four_digit_vertices
-        verts = naca_four_digit_vertices(m, p, tt, int(n_points), float(chord), closed_te=closed_te)
+        verts = naca_four_digit_vertices(
+            m, p, tt, int(n_points), float(chord), closed_te=closed_te
+        )
         return cls(verts, chord=chord)
 
     @classmethod

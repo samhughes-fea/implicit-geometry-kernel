@@ -9,7 +9,7 @@ from numpy.typing import NDArray
 
 from implicit_geometry_kernel.contract.cell_wall_loop import CellWallLoop
 from implicit_geometry_kernel.contract.shell_midline_strip import ShellMidlineStrip
-from implicit_geometry_kernel.section.cell_wall_loops.cell_wall_loop_builders import (
+from implicit_geometry_kernel.section.cells.builders import (
     build_cell_wall_loops,
 )
 

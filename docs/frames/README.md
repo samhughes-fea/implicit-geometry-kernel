@@ -13,7 +13,7 @@ Single source of truth for structural frames **R / B / S / S′**, the shell
 
 Homes follow **Mathematics**, **Key equations → functions**, **Exact I/O**,
 and **Provenance / what happens today** — same idea as
-[`section_geometry`](../section/README.md) /
+[`section`](../section/README.md) /
 `section_mesh`.
 
 Always use these explicit names — avoid bare “local/global” and “strip local”.
@@ -148,7 +148,7 @@ from implicit_geometry_kernel.frames import (
 
 | Claim | Evidence |
 |-------|----------|
-| Shared B/S/S′ plot contract (LE on RHS, \(+Y\)→TE) | `visualisation/demos/plot_structural_frames.py` → `visualisation/output/structural_frames_B_S_Sprime.png` |
+| Shared B/S/S′ plot contract (LE on RHS, \(+Y\)→TE) | `examples/demos/frames/plot_structural_frames.py` → `examples/demos/figures/structural_frames_B_S_Sprime.png` |
 | `naca_to_twisted_pitch_axis_blade_frame` / `section_plot_axes` | Unit coverage + geometry/mesh demos |
 | E↔M stress vs strain matrices | `tests/test_ply_frame_transforms.py` |
 | Product load channels | `blade_resultants_to_shell_channels` call sites in BSP / BSF |

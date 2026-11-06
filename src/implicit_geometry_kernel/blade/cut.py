@@ -24,6 +24,8 @@ from typing import Dict, Optional, Tuple
 
 import numpy as np
 
+from implicit_geometry_kernel.blade.stations import TransverseMember
+
 
 @dataclass(frozen=True)
 class SectionWall:
@@ -85,6 +87,7 @@ class SectionCut:
     walls: Tuple[SectionWall, ...]
     cells: Tuple[CellPolygon, ...]
     dropped_webs: Tuple[str, ...] = ()
+    transverse: Tuple[TransverseMember, ...] = ()
 
     def wall(self, label: str) -> SectionWall:
         for w in self.walls:

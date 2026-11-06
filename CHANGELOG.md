@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `TransverseMember` on `BladeGeometry` places ribs, bulkheads and frames at a
+  span station. `section_at` at that `z` attaches closed rib faces on
+  `ShellGraph.faces` (cell-wall loops, or the skin loop when there are no
+  cells). `forced_stations()` lists those `z` values; `topology_diff` records a
+  rib event when the face is present on only one station. Goldens unchanged.
+
 - Quadtree refinement is the array-based path only (`soa.py`). Object-model
   `refine.py` / `refine_multi.py` are gone; `build_area_mesh_2d` uses
   `build_shared_quadtree`.

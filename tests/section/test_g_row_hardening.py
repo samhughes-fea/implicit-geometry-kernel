@@ -89,6 +89,9 @@ def test_no_laminate_identifiers_in_production() -> None:
 
 _G_ROW_PUBLIC_ALL = frozenset(
     {
+        "Gauges",
+        "SectionOptions",
+        "SectionSpec",
         "SectionGeometry",
         "SectionGeometryResult",
         "SectionGeometryRunner",

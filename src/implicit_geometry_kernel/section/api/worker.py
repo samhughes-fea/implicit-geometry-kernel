@@ -6,6 +6,7 @@ output gates (compute-cost knobs) and interpret results in orchestration.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Collection, Mapping
 from typing import Any, Iterable, Sequence
 
@@ -249,8 +250,8 @@ def build_section_with_thicknesses(
 
 
 def build_section_geometry(
-    layout: LayoutInput,
-    airfoil: AirfoilSDF,
+    layout: LayoutInput | Any,
+    airfoil: AirfoilSDF | None = None,
     *,
     skin_thickness: float | None = None,
     spar_cap_thickness: float | None = None,
@@ -270,60 +271,74 @@ def build_section_geometry(
     web_y_coords: Sequence[tuple[float, float]] | None = None,
     spar_cap_ply_pitch_m: float | None = None,
     zone_gauges_m: Mapping[str, float] | None = None,
+    options: Any | None = None,
 ) -> SectionGeometryResult:
     """Geometry worker entry: assemble section and emit gated carriers.
 
-    ``layout`` may be a catalogue :class:`SystemLayoutSpec` or a parametric
-    :class:`SectionLayout` (catalogue key optional).
+    Prefer ``build_section_geometry(SectionSpec, options=SectionOptions())``.
+    The keyword form builds a spec, warns, and is removed in 0.6.0.
 
-    Parameters
-    ----------
-    outputs
-        Compute-cost gates (not use-case modes): ``properties``, ``midlines``,
-        ``cell_wall_loops``. ``cell_wall_loops`` implies midline extraction.
-    web_y_coords
-        Optional ``(y_top, y_bot)`` pairs aligned with ``web_x_positions_m``.
-        When set (e.g. from :func:`resolve_station_layout`), skips a second
-        :func:`resolve_web_anchors` inside ``MultiCellSection``.
+    ``layout`` may be a :class:`SectionSpec`, a catalogue
+    :class:`SystemLayoutSpec` or a parametric :class:`SectionLayout`.
     """
-    from implicit_geometry_kernel.section.api.kwarg_aliases import (
-        resolve_shear_web_thickness,
-        resolve_skin_gauges,
-        resolve_spar_cap_thickness,
-        resolve_twist_rad,
-    )
+    from implicit_geometry_kernel.section.spec import SectionOptions, SectionSpec
 
-    if zone_gauges_m:
-        if any(
-            v is not None
-            for v in (skin_thickness, spar_cap_thickness, shear_web_thickness)
-        ):
-            raise ValueError(
-                "geometry received both zone_gauges_m and component thickness kwargs"
-            )
-        derived = _compat_kwargs_from_zone_gauges(zone_gauges_m)
-        skin_thickness = derived["skin_thickness"]
-        spar_cap_thickness = derived["spar_cap_thickness"]
-        shear_web_thickness = derived["shear_web_thickness"]
-
-    skin = resolve_skin_gauges(
-        skin_thickness=skin_thickness, required=True
+    if isinstance(layout, SectionSpec):
+        return _emit_section(layout, options or SectionOptions())
+    if airfoil is None:
+        raise TypeError("airfoil is required unless a SectionSpec is passed")
+    warnings.warn(
+        "build_section_geometry(layout, airfoil, **kwargs) is deprecated; "
+        "pass a SectionSpec and SectionOptions",
+        DeprecationWarning,
+        stacklevel=2,
     )
-    spar = resolve_spar_cap_thickness(
-        spar_cap_thickness=spar_cap_thickness, required=True
-    )
-    web = resolve_shear_web_thickness(
-        shear_web_thickness=shear_web_thickness, required=True
-    )
-    twist_rad = resolve_twist_rad(
+    spec = SectionSpec.from_kwargs(
+        layout,
+        airfoil,
+        skin_thickness=skin_thickness,
+        spar_cap_thickness=spar_cap_thickness,
+        shear_web_thickness=shear_web_thickness,
         twist_rad=twist_rad,
         twist_angle_rad=twist_angle_rad,
         twist_angle=twist_angle,
+        web_x_positions_m=web_x_positions_m,
+        web_offsets=web_offsets,
+        web_y_coords=web_y_coords,
+        spar_cap_ply_pitch_m=spar_cap_ply_pitch_m,
+        zone_gauges_m=zone_gauges_m,
     )
-    if web_offsets is not None and web_x_positions_m is not None:
-        raise ValueError("pass web_offsets or web_x_positions_m, not both")
-    if web_offsets is not None:
-        web_x_positions_m = web_offsets
+    opts = options or SectionOptions.from_kwargs(
+        outputs=outputs,
+        props_backend=props_backend,
+        n_web_samples=n_web_samples,
+        n_cap_samples=n_cap_samples,
+        retain_mesh=retain_mesh,
+        quadtree_spec=quadtree_spec,
+        airfoil_for_spec=airfoil_for_spec,
+    )
+    return _emit_section(spec, opts)
+
+
+def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
+    """Assemble and emit gated carriers from a validated spec."""
+    layout = spec.layout
+    airfoil = spec.airfoil
+    skin = (spec.gauges.skin_ss, spec.gauges.skin_ps)
+    spar = spec.gauges.cap
+    web = spec.gauges.web_arg
+    twist_rad = spec.twist_rad
+    web_x_positions_m = spec.webs
+    web_y_coords = spec.web_y_anchors
+    spar_cap_ply_pitch_m = spec.spar_cap_ply_pitch_m
+    zone_gauges_m = dict(spec.zone_gauges_m) if spec.zone_gauges_m else None
+    outputs = options.outputs
+    props_backend = options.props_backend
+    n_web_samples = options.n_web_samples
+    n_cap_samples = options.n_cap_samples
+    retain_mesh = options.retain_mesh
+    quadtree_spec = options.quadtree_spec
+    airfoil_for_spec = options.airfoil_for_spec
 
     out_set = set(normalize_output_gates(outputs))
 

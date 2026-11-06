@@ -14,10 +14,13 @@ airfoils. Quadtree / hybrid props backends are G-PROPS debug — import from
 from __future__ import annotations
 
 from implicit_geometry_kernel.section.api import (
+    Gauges,
     SectionGeometry,
     SectionGeometryResult,
     SectionGeometryRunner,
+    SectionOptions,
     SectionPropertiesMeta,
+    SectionSpec,
     StationLayoutResolution,
     resolve_station_layout,
     resolve_system_type,
@@ -30,6 +33,9 @@ __version__ = "0.4.0"
 __author__ = "Sam Hughes"
 
 __all__ = [
+    "Gauges",
+    "SectionOptions",
+    "SectionSpec",
     "SectionGeometry",
     "SectionGeometryResult",
     "SectionGeometryRunner",

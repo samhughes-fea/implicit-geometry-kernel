@@ -35,7 +35,7 @@ the same work; they are not extra steps.
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Not started. Mid-surface row is blocked on open decision 2 |
 | 9 | Separate blade-model package (only if the maintainer chooses it) | Not decided (open decision 4) |
 
-Step 5 breakdown (next slice is **Phase 2**):
+Step 5 breakdown (next slice is the `api/` → `spec/` move):
 
 | Slice | What | State |
 |-------|------|-------|
@@ -46,7 +46,7 @@ Step 5 breakdown (next slice is **Phase 2**):
 | 5b | `constructive` into `boundary` and `properties` (`export.py` → `boundary/walls.py` and `cores.py`; `labels` and `emitters` → `boundary/`; `properties.py` → `properties/polygons.py`) | Done (PR #14) |
 | 5c | `placement` into `layout` | Done (PR #15) |
 | 5d | `blade/` split `cut.py` (`shell_graph.py`) | Done (PR #16) |
-| Phase 2 | `SectionSpec`, `SectionOptions`, `api` → `spec`; then tag 0.5.0 | After 5c and 5d |
+| Phase 2 | `SectionSpec`, `SectionOptions`, `api` → `spec`; then tag 0.5.0 | **In progress**: spec types and worker entry done (PR #17). `api/` → `spec/` is a follow-up move. Then tag 0.5.0 |
 
 Decisions already made by the maintainer:
 

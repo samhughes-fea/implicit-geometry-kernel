@@ -32,7 +32,8 @@ CSG IR:
 
 Feature field (2.5-D):
     FieldSample, FeatureTable, FeatureSpec, NO_FEATURE, SDFNode,
-    TagNode, PriorityUnionNode, LoftedPolygonSDF, GeometrySolver
+    TagNode, PriorityUnionNode, ComplementNode, MaxNode, LawOffsetNode,
+    SpanIntervalNode, LoftedPolygonSDF, GeometrySolver
 
 Protocol:
     SDFCallable
@@ -58,6 +59,7 @@ from implicit_geometry_kernel.sdf.compile import compile_expr_to_node
 from implicit_geometry_kernel.sdf.field import FeatureKind, FeatureSpec, FeatureTable, FieldSample, NO_FEATURE, SDFNode
 from implicit_geometry_kernel.sdf.nodes import PriorityUnionNode, TagNode
 from implicit_geometry_kernel.sdf.lofted import LoftedPolygonSDF
+from implicit_geometry_kernel.sdf.span_nodes import ComplementNode, LawOffsetNode, MaxNode, SpanIntervalNode
 from implicit_geometry_kernel.sdf.solve import GeometrySolver, SolveResult
 
 __all__ = [
@@ -86,5 +88,6 @@ __all__ = [
     # feature field
     "FieldSample", "FeatureTable", "FeatureSpec", "FeatureKind", "NO_FEATURE", "SDFNode",
     "TagNode", "PriorityUnionNode",
+    "ComplementNode", "MaxNode", "LawOffsetNode", "SpanIntervalNode",
     "LoftedPolygonSDF", "GeometrySolver", "SolveResult",
 ]

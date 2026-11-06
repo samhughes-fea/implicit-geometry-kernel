@@ -7,7 +7,8 @@ The golden numbers cover every layout in the catalogue at three twists, plus a
 lofted blade cut at five stations. Refactors must leave them unchanged; a PR that
 changes geometry on purpose updates them and says why in the changelog.
 
-The API snapshot lists every public name (top-level ``__all__`` and ``contract``)
+The API snapshot lists every public name (top-level ``__all__``, ``contract`` and
+``structure``)
 with its call signature. Adding a name is fine; removing or changing one needs a
 deprecation first (see CHANGELOG.md).
 """
@@ -129,12 +130,13 @@ def _signature(obj) -> str:
 def compute_api() -> dict:
     import implicit_geometry_kernel as k
     import implicit_geometry_kernel.contract as contract
+    import implicit_geometry_kernel.structure as structure
 
     out = {}
     contract_names = getattr(contract, "__all__", None) or [
         n for n in dir(contract) if not n.startswith("_") and inspect.isclass(getattr(contract, n))
     ]
-    for module, names in ((k, k.__all__), (contract, contract_names)):
+    for module, names in ((k, k.__all__), (contract, contract_names), (structure, structure.__all__)):
         for name in sorted(names):
             obj = getattr(module, name)
             entry = {"kind": type(obj).__name__, "signature": _signature(obj) if callable(obj) else ""}

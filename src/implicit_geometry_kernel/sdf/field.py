@@ -18,14 +18,31 @@ NO_FEATURE = -1
 
 
 class FeatureKind(str, Enum):
-    """Wall kind stamped into ``FeatureSpec`` (same vocabulary as section labels)."""
+    """Member kind stamped into ``FeatureSpec`` (same vocabulary as section labels).
+
+    ``core`` fills a bay, ``stringer`` is a branch with a free end, ``transverse`` is a
+    member lying in a section plane (rib, bulkhead, frame) and ``bond`` is an adhesive
+    region. Where members overlap, the higher ``KIND_PRIORITY`` owns the point.
+    """
 
     CAP = "cap"
     WEB = "web"
     SKIN = "skin"
+    CORE = "core"
+    STRINGER = "stringer"
+    TRANSVERSE = "transverse"
+    BOND = "bond"
 
 
-KIND_PRIORITY = {FeatureKind.CAP.value: 3, FeatureKind.WEB.value: 2, FeatureKind.SKIN.value: 1}
+KIND_PRIORITY = {
+    FeatureKind.CORE.value: 0,
+    FeatureKind.SKIN.value: 1,
+    FeatureKind.WEB.value: 2,
+    FeatureKind.STRINGER.value: 2,
+    FeatureKind.CAP.value: 3,
+    FeatureKind.TRANSVERSE.value: 4,
+    FeatureKind.BOND.value: 5,
+}
 
 
 @dataclass(frozen=True)

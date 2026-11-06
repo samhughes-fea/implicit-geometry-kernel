@@ -8,6 +8,14 @@
   fails if any of them move. Regenerate with `python scripts/snapshots.py --update` only for
   an intended change, and say why here.
 - `scripts/check_consumer.py PATH` runs a downstream package's tests against this checkout.
+- New `structure` package (geometry only): wall, branch, region and transverse
+  contributions, a `MemberBuilder` extension point, `StructureAssembler`, and span laws
+  (`ConstantLaw`, `TableLaw` with monotone PCHIP, and combinators). It assembles the wall
+  thickness field, wall reference surface, cavity and a priority-owned material field,
+  and reports the stations where members start or end. See `docs/structure/README.md`.
+  `section` does not use it yet.
+- New SDF nodes `ComplementNode`, `MaxNode`, `LawOffsetNode` and `SpanIntervalNode`;
+  `FeatureKind` gains `core`, `stringer`, `transverse` and `bond`.
 - Fixed: an opaque `CallableField` leaf now compares by its token and its callable. Comparing
   the token alone let the compile cache hand one section's clip function to a later section
   whose token matched (tokens built from `id()` repeat after garbage collection), so results

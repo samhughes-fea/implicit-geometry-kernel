@@ -290,12 +290,16 @@ def build_cell_wall_loops(
         end off the skin, two webs on one junction, crossing webs, a skin that
         does not chain, or cell areas that do not tile the ring.
     """
-    skins = [s for s in strips if s.kind == "skin"]
-    webs = [s for s in strips if s.kind == "web"]
+    from implicit_geometry_kernel.section.assembly.members import wall_cell_face
+
+    skins = [s for s in strips if wall_cell_face(s.label) == "skin"]
+    webs = [s for s in strips if wall_cell_face(s.label) == "web"]
     if webs and not _is_hierarchical(skins):
-        prepared = split_skin_at_junctions(tuple(s for s in strips if s.kind in ("skin", "web")))
-        skins = [s for s in prepared if s.kind == "skin"]
-        webs = [s for s in prepared if s.kind == "web"]
+        prepared = split_skin_at_junctions(
+            tuple(s for s in strips if wall_cell_face(s.label) in ("skin", "web"))
+        )
+        skins = [s for s in prepared if wall_cell_face(s.label) == "skin"]
+        webs = [s for s in prepared if wall_cell_face(s.label) == "web"]
 
     arcs = _chain_ring(skins)
     nodes = np.asarray([arc.points[0] for arc in arcs], dtype=np.float64)

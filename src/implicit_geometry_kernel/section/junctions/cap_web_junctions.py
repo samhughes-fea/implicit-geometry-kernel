@@ -101,11 +101,13 @@ def insert_cap_web_interior_junctions(
     trap, but insertions are still held and applied afterwards so both sides get
     the same solved point. See ``docs/bug_log.md`` SG-005 / SG-009.
     """
+    from implicit_geometry_kernel.section.assembly.members import wall_cell_face
+
     web_pts: list[NDArray[np.float64]] = []
     web_feet: list[NDArray[np.float64]] = []
     web_strip_index: list[int] = []
     for idx, st in enumerate(strips):
-        if st.kind != "web":
+        if wall_cell_face(st.label) != "web":
             continue
         w = np.asarray(st.midline_twisted_pitch_axis_blade_frame, dtype=float)
         if w.shape[0] >= 2:
@@ -126,7 +128,7 @@ def insert_cap_web_interior_junctions(
 
     out: list[ShellMidlineStrip] = []
     for st in strips:
-        if st.kind != "cap":
+        if wall_cell_face(st.label) != "cap":
             out.append(st)
             continue
         pts = np.asarray(st.midline_twisted_pitch_axis_blade_frame, dtype=float)

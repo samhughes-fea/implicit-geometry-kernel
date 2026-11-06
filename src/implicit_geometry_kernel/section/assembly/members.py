@@ -17,6 +17,7 @@ How each member maps onto ``structure``:
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any, ClassVar, Protocol, runtime_checkable
 
 import numpy as np
 
@@ -53,8 +54,99 @@ def members_of(contributions: Sequence[Contribution], kind: str) -> list[Section
     return [c.source for c in contributions if c.spec.kind == kind and isinstance(c.source, SectionMember)]
 
 
-class SkinBuilder(MemberBuilder):
+@runtime_checkable
+class WallType(Protocol):
+    """One registered wall kind: labels, solids, midlines, and stage hooks."""
+
+    kind: str
+    has_midline: bool
+    has_polygon: bool
+    is_wall_solid: bool
+    is_core: bool
+    is_insert: bool
+    cell_face_kind: str | None
+    label_prefixes: ClassVar[tuple[str, ...]]
+    exact_labels: ClassVar[tuple[str, ...]]
+
+    def place(self, spec: Any) -> list[Any]: ...
+    def field(self, inst: Any) -> Any: ...
+    def polygon(self, inst: Any, boundary: Any) -> Any: ...
+    def midline(self, inst: Any, boundary: Any) -> Any | None: ...
+    def junctions(self, inst: Any, others: Any) -> list[Any]: ...
+
+
+class WallTypeMixin:
+    """Shared label matching and stage flags for :class:`SECTION_BUILDERS`."""
+
+    kind: str = ""
+    has_midline: bool = False
+    has_polygon: bool = True
+    is_wall_solid: bool = True
+    is_core: bool = False
+    is_insert: bool = False
+    cell_face_kind: str | None = None
+    label_prefixes: ClassVar[tuple[str, ...]] = ()
+    exact_labels: ClassVar[tuple[str, ...]] = ()
+
+    @classmethod
+    def matches_label(cls, label: Any) -> bool:
+        key = str(getattr(label, "value", label))
+        if key in cls.exact_labels:
+            return True
+        return any(key.startswith(prefix) for prefix in cls.label_prefixes)
+
+    @classmethod
+    def format_label(cls, index: int) -> str:
+        if cls.label_prefixes:
+            prefix = cls.label_prefixes[0]
+            return f"{prefix}{index}" if prefix.endswith("_") else f"{prefix}_{index}"
+        return f"{cls.kind}_{index}"
+
+    def place(self, spec: Any) -> list[Any]:
+        return self.build(spec, ())  # type: ignore[attr-defined]
+
+    def field(self, inst: Any) -> Any:
+        return getattr(inst, "expr", None)
+
+    def polygon(self, inst: Any, boundary: Any) -> Any:
+        if not self.has_polygon:
+            return None
+        if hasattr(inst, "to_boundary_polygon"):
+            return inst.to_boundary_polygon(boundary)
+        return None
+
+    def midline(self, inst: Any, boundary: Any) -> Any | None:
+        if not self.has_midline:
+            return None
+        if hasattr(inst, "to_midline"):
+            return inst.to_midline(boundary)
+        return None
+
+    def junctions(self, inst: Any, others: Any) -> list[Any]:
+        return []
+
+
+def wall_type_for_label(label: Any) -> type[WallTypeMixin] | None:
+    """The registered builder whose labels match ``label``, or ``None``."""
+    for builder in SECTION_BUILDERS:
+        if builder.matches_label(label):
+            return builder
+    return None
+
+
+def wall_cell_face(label: Any) -> str | None:
+    wt = wall_type_for_label(label)
+    return None if wt is None else wt.cell_face_kind
+
+
+class SkinBuilder(WallTypeMixin, MemberBuilder):
     """Suction and pressure skins (camber-upper and camber-lower half annuli)."""
+
+    kind = "skin"
+    has_midline = True
+    cell_face_kind = "skin"
+    exact_labels = ("outer_skin",)
+    label_prefixes = ("skin_suction_surface", "skin_pressure_surface")
 
     def build(self, ctx: SectionPlan, prior):
         out: list[Contribution] = []
@@ -75,8 +167,13 @@ class SkinBuilder(MemberBuilder):
         return out
 
 
-class WebBuilder(MemberBuilder):
+class WebBuilder(WallTypeMixin, MemberBuilder):
     """One shear web per anchored station."""
+
+    kind = "web"
+    has_midline = True
+    cell_face_kind = "web"
+    label_prefixes = ("shear_web_", "web_")
 
     def build(self, ctx: SectionPlan, prior):
         out: list[Contribution] = []
@@ -99,7 +196,7 @@ class WebBuilder(MemberBuilder):
                     twist_angle=ctx.twist,
                 )
                 comp = wall.to_sdf_component(ctx.airfoil_sdf, airfoil_expr_node=ctx.airfoil_expr)
-                label = f"shear_web_{i}"
+                label = self.format_label(i)
                 out.append(BranchContribution(
                     ctx.table.add(label, "web"),
                     mid=ExprSDF(_axis_line(xt, yt, xb, yb)),
@@ -119,8 +216,13 @@ def _axis_line(xt, yt, xb, yb) -> HalfPlane:
     return HalfPlane(nx=nx, ny=ny, d=-(nx * float(xb) + ny * float(yb)))
 
 
-class CapBuilder(MemberBuilder):
+class CapBuilder(WallTypeMixin, MemberBuilder):
     """Suction and pressure spar caps under the skin, placed by the cap rule."""
+
+    kind = "cap"
+    has_midline = True
+    cell_face_kind = "cap"
+    label_prefixes = ("spar_cap",)
 
     def build(self, ctx: SectionPlan, prior):
         if ctx.cap_rule.kind == "none":
@@ -164,8 +266,16 @@ class CapBuilder(MemberBuilder):
         return out
 
 
-class CoreBuilder(MemberBuilder):
+class CoreBuilder(WallTypeMixin, MemberBuilder):
     """One sandwich core per bay between webs, excluding the webs and caps."""
+
+    kind = "core"
+    has_midline = False
+    is_wall_solid = False
+    is_core = True
+    cell_face_kind = None
+    exact_labels = ("sandwich_core",)
+    label_prefixes = ("sandwich_core_",)
 
     def build(self, ctx: SectionPlan, prior):
         n = ctx.n_webs
@@ -193,7 +303,7 @@ class CoreBuilder(MemberBuilder):
                     )
                     comp = wall.to_sdf_component(ctx.airfoil_sdf, airfoil_expr_node=ctx.airfoil_expr,
                                                  exclusion_exprs=exclusion)
-                label = f"sandwich_core_{k}"
+                label = self.format_label(k)
                 out.append(RegionContribution(ctx.table.add(label, "core"), ExprSDF(comp.expr),
                                               source=SectionMember(label, comp, {label: wall})))
         return out
@@ -215,8 +325,14 @@ def _flapwise_core(ctx, nx, ny, c_station, fore, aft):
     return wall, sclip
 
 
-class InsertBuilder(MemberBuilder):
+class InsertBuilder(WallTypeMixin, MemberBuilder):
     """Trailing-edge and leading-edge inserts, when requested."""
+
+    kind = "insert"
+    has_midline = False
+    is_insert = True
+    cell_face_kind = None
+    exact_labels = ("leading_edge_insert", "trailing_edge_insert")
 
     def build(self, ctx: SectionPlan, prior):
         out: list[Contribution] = []
@@ -246,6 +362,15 @@ SECTION_BUILDERS = (SkinBuilder, WebBuilder, CapBuilder, CoreBuilder, InsertBuil
 """Default build order for a section."""
 
 __all__ = [
-    "CapBuilder", "CoreBuilder", "InsertBuilder", "SECTION_BUILDERS", "SkinBuilder", "WebBuilder",
+    "CapBuilder",
+    "CoreBuilder",
+    "InsertBuilder",
+    "SECTION_BUILDERS",
+    "SkinBuilder",
+    "WallType",
+    "WallTypeMixin",
+    "WebBuilder",
     "members_of",
+    "wall_cell_face",
+    "wall_type_for_label",
 ]

@@ -29,13 +29,13 @@ the same work; they are not extra steps.
 | 2 | Safety net: golden numbers, API snapshot, downstream check script | Done (PR #6) |
 | 3 | Member model in `structure/` (contributions, builders, assembler, span laws, span field nodes) | Done (PR #6) |
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
-| 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **In progress** — breakdown below. Tag 0.5.0 after Phase 2 |
+| 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **Done** — maintainer tags 0.5.0 |
 | 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started. Coupling location is open decision 4 |
 | 7 | Completeness (Phase 5 list below) | Not started |
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Not started. Mid-surface row is blocked on open decision 2 |
 | 9 | Separate blade-model package (only if the maintainer chooses it) | Not decided (open decision 4) |
 
-Step 5 breakdown (next slice is Phase 2d):
+Step 5 breakdown (Phase 2 complete; maintainer tags 0.5.0):
 
 | Slice | What | State |
 |-------|------|-------|
@@ -46,7 +46,7 @@ Step 5 breakdown (next slice is Phase 2d):
 | 5b | `constructive` into `boundary` and `properties` (`export.py` → `boundary/walls.py` and `cores.py`; `labels` and `emitters` → `boundary/`; `properties.py` → `properties/polygons.py`) | Done (PR #14) |
 | 5c | `placement` into `layout` | Done (PR #15) |
 | 5d | `blade/` split `cut.py` (`shell_graph.py`) | Done (PR #16) |
-| Phase 2 | `SectionSpec`, `SectionOptions`, `api` → `spec`; then tag 0.5.0 | **In progress**: spec types (PR #17) and `api/` → `spec/` folder move done. Phase 2d (wall-type registry) still open, then tag 0.5.0 |
+| Phase 2 | `SectionSpec`, `SectionOptions`, `api` → `spec`; then tag 0.5.0 | **Done** (folder move + keyword aliases + wall-type registry). Maintainer tags 0.5.0 |
 
 Decisions already made by the maintainer:
 

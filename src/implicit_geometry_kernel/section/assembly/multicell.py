@@ -17,7 +17,7 @@ import numpy as np
 
 from implicit_geometry_kernel.sdf.nodes import Offset, Rotate, union_expr
 from implicit_geometry_kernel.sdf.kernels.transforms import rotate_field
-from implicit_geometry_kernel.section.assembly.members import SECTION_BUILDERS
+from implicit_geometry_kernel.section.assembly import members as section_members
 from implicit_geometry_kernel.section.assembly.plan import SectionMember, plan_section
 from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
 from implicit_geometry_kernel.section.assembly.labels import ComponentLabel
@@ -28,7 +28,7 @@ from implicit_geometry_kernel.structure import BuilderRegistry, Structure, assem
 def section_registry() -> BuilderRegistry:
     """A registry of the default section builders (skin, webs, caps, cores, inserts)."""
     registry = BuilderRegistry()
-    for builder in SECTION_BUILDERS:
+    for builder in section_members.SECTION_BUILDERS:
         registry.register(builder())
     return registry
 

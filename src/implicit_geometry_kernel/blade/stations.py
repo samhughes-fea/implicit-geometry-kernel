@@ -41,6 +41,28 @@ class Station:
 
 
 @dataclass(frozen=True)
+class TransverseMember:
+    """A rib, bulkhead or frame lying in the section plane at one span station.
+
+    ``region`` is the cavity the face fills (cell interiors of the cut, or the
+    skin loop when there are no cells). Not a wall type and not a catalogue letter.
+    """
+
+    name: str
+    z: float
+    thickness: float
+    region: str = "cavity"
+
+    def __post_init__(self):
+        if not str(self.name).strip():
+            raise ValueError("name is required")
+        if self.thickness <= 0.0:
+            raise ValueError("thickness must be positive")
+        if not str(self.region).strip():
+            raise ValueError("region is required")
+
+
+@dataclass(frozen=True)
 class SkinRegion:
     """Skin between chord fractions ``start`` and ``end`` on both surfaces, with ``n`` elements."""
 

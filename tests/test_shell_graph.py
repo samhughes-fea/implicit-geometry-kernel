@@ -7,6 +7,7 @@ from implicit_geometry_kernel import (
     Airfoil,
     BladeGeometry,
     Station,
+    TransverseMember,
     partition_edge_curve,
     shared_loft_names,
     station_network,
@@ -195,3 +196,36 @@ def test_shell_strips_from_graph_no_extra_cap_surface():
     assert cap.thickness_m == run.thickness
     assert cap.midline_twisted_pitch_axis_blade_frame.shape[1] == 2
     assert any(w.kind == "cap" for w in cut.walls)
+
+
+def test_rib_face_at_member_z_only():
+    rib = TransverseMember("rib_mid", 5.0, 0.012)
+    stations = [
+        Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
+        Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(stations, "2D-F", 0.003, spar_cap_thickness=0.008,
+                        shear_web_thickness=0.002, web_positions=(0.18, 0.48),
+                        transverse=(rib,))
+    assert geo.forced_stations() == (5.0,)
+    at_rib = geo.section_at(5.0)
+    assert at_rib.transverse == (rib,)
+    faces = at_rib.shell_graph().faces
+    assert faces
+    assert all(f.surface == "rib" and f.kind == "rib_mid" for f in faces)
+    assert all(np.allclose(f.points[0], f.points[-1]) for f in faces)
+    assert all(f.points.shape[1] == 3 and np.allclose(f.points[:, 2], 5.0) for f in faces)
+    oml = geo.oml_sdf()
+    for face in faces:
+        phi = oml.evaluate(face.points).phi
+        assert np.all(phi < 1e-6)
+    other = geo.section_at(2.0).shell_graph()
+    assert other.faces == ()
+    assert all(r.surface != "rib" for r in other.runs())
+    assert all(r.surface != "rib" for r in at_rib.shell_graph().runs())
+    diff = topology_diff(at_rib.shell_graph(), other)
+    assert any(e.kind == "lost_rib" and e.side == "lost" and e.name.startswith("rib_mid")
+               for e in diff.events)
+    gained = topology_diff(other, at_rib.shell_graph())
+    assert any(e.kind == "gained_rib" and e.side == "gained" for e in gained.events)
+    assert all(not n.startswith("rib_mid") for n in diff.shared)

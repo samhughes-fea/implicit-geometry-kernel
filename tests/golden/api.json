@@ -16,6 +16,7 @@
   "kind": "class",
   "members": {
    "cavity_sdf": "(self, meta: 'int' = 0)",
+   "forced_stations": "(self) -> 'tuple[float, ...]'",
    "interpolate": "(self, z: 'float')",
    "oml_polyline": "(self, z: 'float') -> 'np.ndarray'",
    "oml_sdf": "(self, meta: 'int' = 0)",
@@ -26,7 +27,7 @@
    "wall_meta": "(self, table=None)",
    "wall_mid_sdf": "(self, meta: 'int' = 0)"
   },
-  "signature": "(stations: 'Sequence[Station]', layout, skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None)"
+  "signature": "(stations: 'Sequence[Station]', layout, skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = ())"
  },
  "implicit_geometry_kernel.CellLoop": {
   "kind": "class",
@@ -104,7 +105,7 @@
    "wall": "(self, label: 'str') -> 'SectionWall'",
    "walls_of": "(self, kind: 'str') -> 'Tuple[SectionWall, ...]'"
   },
-  "signature": "(z: 'float', chord: 'float', twist: 'float', pitch_axis: 'float', offset: 'Tuple[float, float]', layout: 'str', walls: 'Tuple[SectionWall, ...]', cells: 'Tuple[CellPolygon, ...]', dropped_webs: 'Tuple[str, ...]' = ()) -> None"
+  "signature": "(z: 'float', chord: 'float', twist: 'float', pitch_axis: 'float', offset: 'Tuple[float, float]', layout: 'str', walls: 'Tuple[SectionWall, ...]', cells: 'Tuple[CellPolygon, ...]', dropped_webs: 'Tuple[str, ...]' = (), transverse: 'Tuple[TransverseMember, ...]' = ()) -> None"
  },
  "implicit_geometry_kernel.SectionWall": {
   "kind": "class",
@@ -129,7 +130,7 @@
    "runs": "(self) -> 'Tuple[ShellRun, ...]'",
    "with_web_feet_on_loop": "(self) -> \"'ShellGraph'\""
   },
-  "signature": "(z: 'float', loop: 'Tuple[ShellRun, ...]', webs: 'Tuple[ShellRun, ...]') -> None"
+  "signature": "(z: 'float', loop: 'Tuple[ShellRun, ...]', webs: 'Tuple[ShellRun, ...]', faces: 'Tuple[ShellRun, ...]' = ()) -> None"
  },
  "implicit_geometry_kernel.ShellRun": {
   "kind": "class",
@@ -175,6 +176,11 @@
   "kind": "class",
   "members": {},
   "signature": "(kind: 'str', name: 'str', side: 'str') -> None"
+ },
+ "implicit_geometry_kernel.TransverseMember": {
+  "kind": "class",
+  "members": {},
+  "signature": "(name: 'str', z: 'float', thickness: 'float', region: 'str' = 'cavity') -> None"
  },
  "implicit_geometry_kernel.contract.CellWallLoop": {
   "kind": "class",

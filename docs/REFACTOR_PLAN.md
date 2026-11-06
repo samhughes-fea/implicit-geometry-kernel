@@ -31,7 +31,7 @@ the same work; they are not extra steps.
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
 | 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **Done** — tagged `v0.5.0` |
 | 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started. Coupling location is open decision 4 |
-| 7 | Completeness (Phase 5 list below) | Not started |
+| 7 | Completeness (Phase 5 list below) | **7.1 done** (transverse members / rib faces). 7.2–7.10 remain |
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Not started. Mid-surface row is blocked on open decision 2 |
 | 9 | Separate blade-model package (only if the maintainer chooses it) | Not decided (open decision 4) |
 
@@ -284,7 +284,8 @@ when off.
 
 Each gap is closed with a worked example and a test. Order of need:
 
-1. Transverse members (ribs, bulkheads, frames) with rib faces in the shell graph.
+1. **Done.** Transverse members (ribs, bulkheads, frames) with rib faces in the
+   shell graph (`TransverseMember`, `BladeGeometry.transverse`, `ShellGraph.faces`).
 2. Branches with free ends and partial span (stringers).
 3. CST airfoils, thickness-ratio families about the camber line, flatback/blunt TE with
    a set TE thickness, Selig and Lednicer readers, interpolation by t/c.

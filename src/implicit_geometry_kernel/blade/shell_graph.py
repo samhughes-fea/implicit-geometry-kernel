@@ -44,8 +44,9 @@ class MidSurface:
 class ShellRun:
     """One loftable run of the shell graph (a partition on the wall, or a web).
 
-    ``surface`` is ``skin`` or ``web`` (geometry). ``kind`` is the colour / feature
-    class: ``cap`` on a stacked skin partition, otherwise ``surface``.
+    ``surface`` is ``skin``, ``web`` or ``rib``. ``kind`` is the colour / feature
+    class: ``cap`` on a stacked skin partition, the member name on a rib face,
+    otherwise ``surface``.
     """
 
     name: str
@@ -72,11 +73,16 @@ class PartitionEdge:
 
 @dataclass(frozen=True)
 class ShellGraph:
-    """Loftable shell: one skin loop of partitions, plus web branches. No extra cap loop."""
+    """Loftable shell: one skin loop of partitions, web branches, and rib faces.
+
+    Rib faces sit in ``faces`` at the member's ``z`` only. They are not lofted
+    with the skin loop.
+    """
 
     z: float
     loop: Tuple[ShellRun, ...]
     webs: Tuple[ShellRun, ...]
+    faces: Tuple[ShellRun, ...] = ()
 
     def runs(self) -> Tuple[ShellRun, ...]:
         return self.loop + self.webs
@@ -132,7 +138,7 @@ class ShellGraph:
                 j = int(np.argmin(np.linalg.norm(loop_xy[:, :2] - pts[i, :2], axis=1)))
                 pts[i] = loop_xy[j]
             webs.append(replace(web, points=pts))
-        return ShellGraph(self.z, self.loop, tuple(webs))
+        return replace(self, webs=tuple(webs))
 
 
 @dataclass(frozen=True)
@@ -159,6 +165,8 @@ def shared_loft_names(names_a, names_b) -> Tuple[str, ...]:
 
 
 def _event_kind(run: ShellRun, side: str) -> str:
+    if run.surface == "rib":
+        return "lost_rib" if side == "lost" else "gained_rib"
     if run.surface == "web" or run.kind == "web":
         return "dropped_web" if side == "lost" else "added_web"
     if run.kind == "cap":
@@ -167,7 +175,11 @@ def _event_kind(run: ShellRun, side: str) -> str:
 
 
 def topology_diff(a: ShellGraph, b: ShellGraph) -> TopologyDiff:
-    """Compare two shell graphs. Loft ``shared``; do not invent missing strips."""
+    """Compare two shell graphs. Loft ``shared``; do not invent missing strips.
+
+    Rib faces are topology events when present on only one station; they are
+    not lofted (``shared`` is the intersection of skin and web run names).
+    """
     by_a = {r.name: r for r in a.runs()}
     by_b = {r.name: r for r in b.runs()}
     shared = shared_loft_names(by_a, by_b)
@@ -177,6 +189,14 @@ def topology_diff(a: ShellGraph, b: ShellGraph) -> TopologyDiff:
             events.append(TopologyEvent(_event_kind(run, "lost"), name, "lost"))
     for name, run in by_b.items():
         if name not in by_a:
+            events.append(TopologyEvent(_event_kind(run, "gained"), name, "gained"))
+    faces_a = {r.name: r for r in a.faces}
+    faces_b = {r.name: r for r in b.faces}
+    for name, run in faces_a.items():
+        if name not in faces_b:
+            events.append(TopologyEvent(_event_kind(run, "lost"), name, "lost"))
+    for name, run in faces_b.items():
+        if name not in faces_a:
             events.append(TopologyEvent(_event_kind(run, "gained"), name, "gained"))
     return TopologyDiff(shared, tuple(events))
 
@@ -369,13 +389,58 @@ def _runs_of(ms: MidSurface, segs, cut: SectionCut, surface: str) -> Tuple[Shell
     return tuple(runs)
 
 
+def _closed_polyline(points: np.ndarray) -> np.ndarray:
+    pts = np.asarray(points, float)
+    if len(pts) == 0:
+        return pts.reshape(0, pts.shape[1] if pts.ndim == 2 else 3)
+    if not np.allclose(pts[0], pts[-1]):
+        pts = np.vstack([pts, pts[0]])
+    return pts
+
+
+def _skin_loop_polyline(graph: ShellGraph) -> np.ndarray:
+    if not graph.loop:
+        return np.zeros((0, 3))
+    chunks = [np.asarray(graph.loop[0].points, float)]
+    for run in graph.loop[1:]:
+        pts = np.asarray(run.points, float)
+        if np.allclose(chunks[-1][-1], pts[0]):
+            chunks.append(pts[1:])
+        else:
+            chunks.append(pts)
+    return _closed_polyline(np.vstack(chunks))
+
+
+def _rib_faces(cut: SectionCut, graph: ShellGraph) -> Tuple[ShellRun, ...]:
+    members = tuple(getattr(cut, "transverse", ()) or ())
+    if not members:
+        return ()
+    loops: list[tuple[str | None, np.ndarray]] = []
+    if cut.cells:
+        for cell in cut.cells:
+            loops.append((str(cell.id), _closed_polyline(cell.points)))
+    else:
+        pts = _skin_loop_polyline(graph)
+        if len(pts):
+            loops.append((None, pts))
+    faces = []
+    for member in members:
+        for cell_id, pts in loops:
+            name = member.name if len(loops) == 1 else f"{member.name}:cell_{cell_id}"
+            faces.append(ShellRun(name, "rib", member.name, (name,), pts, float(member.thickness)))
+    return tuple(faces)
+
+
 def shell_graph(cut: SectionCut) -> ShellGraph:
-    """Loftable shell graph: skin partitions (caps merged) and web branches."""
+    """Loftable shell graph: skin partitions (caps merged), web branches and rib faces."""
+    from dataclasses import replace
+
     ms = cut.mid_surface()
     skins = tuple(s for s in ms.segments if s.kind == "skin")
     webs = tuple(s for s in ms.segments if s.kind == "web")
-    return ShellGraph(float(cut.z), _runs_of(ms, skins, cut, "skin"),
-                      _runs_of(ms, webs, cut, "web")).with_web_feet_on_loop()
+    graph = ShellGraph(float(cut.z), _runs_of(ms, skins, cut, "skin"),
+                       _runs_of(ms, webs, cut, "web")).with_web_feet_on_loop()
+    return replace(graph, faces=_rib_faces(cut, graph))
 
 
 def partition_edge_curve(geo, name_a: str, name_b: str, zs) -> np.ndarray:

@@ -16,6 +16,7 @@ integration.
 | 07 | [Airfoils and root transition](07_airfoils_and_root_transition/) | NACA, ellipse and flatback profiles; a circular root lofted into an airfoil | `Airfoil`, `Station` |
 | 08 | [Frames and twist](08_frames_and_twist/) | NACA, S and B frames; second moments rotated with the outline; the sign of twist | `frames` |
 | 09 | [Reference blades](09_reference_blades/) | Five windIO 2.0 blades: 2-D cuts, planform, elevation/plan/iso, landmark close-ups; optional Gmsh probe | `BladeGeometry`, `Airfoil` |
+| 10 | [Transverse rib](10_transverse_rib/) | A midspan rib as closed faces on the shell graph at that z only | `TransverseMember`, `ShellGraph.faces` |
 
 ## Running
 

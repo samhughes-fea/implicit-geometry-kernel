@@ -9,7 +9,7 @@ One recipe description, three projections (G-RECIPE SoT):
 | SDF | `to_sdf_expr` / `to_sdf_component` → private IR classes next to `walls.py` |
 
 Recipes hold parameters only. Assemble authors frozen recipes first; SDF IR
-classes (`OuterSkin`, `SparCap`, `ShearWeb`, `SandwichCore`, `LEInsert`,
+classes (`OuterSkin`, `SparCap`, `ShearWebComponent`, `SandwichCore`, `LEInsert`,
 `TEInsert`) are private projection internals (not a second authoring
 surface). Import them from `recipes.outer_skin` and siblings, not the recipes
 barrel. The barrel `__all__` is wall recipes only.
@@ -19,7 +19,7 @@ Emit / hybrid props consume recipes stored on the host.
 | Recipe | Boundary | Midline | SDF IR |
 |---|---|---|---|
 | `SkinWall` | constructive | yes | `OuterSkin` |
-| `WebWall` | constructive | yes | `ShearWeb` |
+| `WebWall` | constructive | yes | `ShearWebComponent` |
 | `CapWall` | constructive | yes | `SparCap` |
 | `CoreWall` | constructive | n/a (bay fill) | `SandwichCore` |
 | `InsertWall` | constructive (default) | n/a | `LEInsert` / `TEInsert` |

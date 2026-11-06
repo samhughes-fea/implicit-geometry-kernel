@@ -16,7 +16,7 @@ from implicit_geometry_kernel.section.assembly.labels import (
 from implicit_geometry_kernel.section.recipes.base import SectionComponent
 
 
-class ShearWeb(SectionComponent):
+class ShearWebComponent(SectionComponent):
     """Constant-thickness shear web as a shell around a capsule axis."""
 
     label = ComponentLabel.SHEAR_WEB
@@ -50,7 +50,7 @@ class ShearWeb(SectionComponent):
 
         poly = airfoil_expr_node if airfoil_expr_node is not None else airfoil_expr(airfoil_sdf)
         if poly is None:
-            raise ValueError("ShearWeb requires an AirfoilSDF with vertices for IR evaluation.")
+            raise ValueError("ShearWebComponent requires an AirfoilSDF with vertices for IR evaluation.")
 
         r = thickness / 2.0
         # Extend the capsule axis beyond the inner-skin anchors so the round
@@ -179,7 +179,7 @@ class ShearWeb(SectionComponent):
             return bracket[1]
 
         raise InfeasibleSectionGeometry(
-            "ShearWeb foot cannot reach the skin mid-surface along its axis "
+            "ShearWebComponent foot cannot reach the skin mid-surface along its axis "
             f"(anchor={origin.tolist()}, skin_thickness={float(self.skin_thickness):.6g}). "
             "Frozen web_y anchors are usually stale relative to the current skin, "
             "or the local cavity is thinner than the skin gauge (SG-002)."
@@ -198,7 +198,7 @@ class ShearWeb(SectionComponent):
 
     def __repr__(self):
         return (
-            f"ShearWeb(x=[{self.x_top:.3g},{self.x_bot:.3g}], "
+            f"ShearWebComponent(x=[{self.x_top:.3g},{self.x_bot:.3g}], "
             f"alignment={self.alignment!r}, "
             f"twist={np.degrees(self.twist_angle):.2f}°, "
             f"thickness={self.thickness:.3g})"

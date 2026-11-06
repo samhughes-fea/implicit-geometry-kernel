@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 
-from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
 
 ROOT = Path(__file__).resolve().parents[1]
 

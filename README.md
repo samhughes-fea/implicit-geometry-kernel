@@ -47,7 +47,7 @@ Loft extras (oracles, not a fourth product): `oml_polyline` / `oml_sdf` / `wall_
 
 Names that look similar but are different layers (do not merge them):
 
-- `SpanWeb` — blade station DTO (chord fraction). `WebWall` — section recipe. `ShearWeb` — SDF IR (`recipes.shear_web`).
+- `ShearWeb` — blade station DTO (chord fraction). `WebWall` — section recipe. `ShearWebComponent` — SDF IR (`recipes.shear_web`).
 - `CellPolygon` — loft cut interiors. `CellWallLoop` — station FE DTO.
 - `CapPlacementRule` — plan-form cap policy (`section.layout`). `AnchoredWallGeometry` — through-thickness face offsets (`section.placement`).
 
@@ -119,7 +119,7 @@ airfoils, and Matplotlib (`[plots]`) for the sibling `plotting` package.
 
 ```
 src/implicit_geometry_kernel/
-├── blade/          Airfoil, Station, SkinRegion, SpanWeb; BladeGeometry (loft); SectionCut
+├── blade/          Airfoil, Station, SkinRegion, ShearWeb; BladeGeometry (loft); SectionCut
 ├── section/        one 2-D station: 40 layouts, placement, midlines, junctions,
 │                   cell-wall loops, area and second moments
 ├── sdf/            2-D signed-distance modelling: primitives, CSG, offsets, Numba kernels

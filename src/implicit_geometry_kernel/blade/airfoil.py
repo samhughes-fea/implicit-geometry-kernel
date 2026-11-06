@@ -72,7 +72,8 @@ class Airfoil:
         m, p, t = int(code[0]) / 100.0, int(code[1]) / 10.0, int(code[2:]) / 100.0
         from implicit_geometry_kernel.sdf.naca import naca_four_digit_vertices
 
-        verts = naca_four_digit_vertices(m, p, t, int(n), 1.0, closed_te=closed_te)
+        # ``n`` is points per surface; the shared helper takes the total around the contour
+        verts = naca_four_digit_vertices(m, p, t, 2 * int(n) - 1, 1.0, closed_te=closed_te)
         return cls(verts, f"NACA {code}")
 
     @classmethod

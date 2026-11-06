@@ -183,7 +183,7 @@ def test_stale_frozen_web_y_under_twist_raises_infeasible_not_sg002_gap():
     """Frozen thin-skin web_y + thicker skin + twist must not emit a blind foot.
 
     Pre-fix: flapwise_web_sframe_inputs rotated stale IML anchors and
-    ShearWeb._extend_to_skin_mid_surface returned origin+t/2, leaving the foot
+    ShearWebComponent._extend_to_skin_mid_surface returned origin+t/2, leaving the foot
     ~3.5 mm off the skin mid (SG-002). Now the assemble path raises
     InfeasibleSectionGeometry so mono can keep prior gauges.
     """

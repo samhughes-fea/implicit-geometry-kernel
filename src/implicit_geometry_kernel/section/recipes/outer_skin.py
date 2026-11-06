@@ -228,6 +228,8 @@ class OuterSkin(SectionComponent):
             expr = Intersect(slab, side_expr)
 
         super().__init__(expr)
+        # Where on the wall this skin applies (None: the whole wall).
+        self.footprint_expr = None if side is None else side_expr
         self._poly = poly
         self.inner_sdf = expr_callable(Offset(poly, amount=-self.thickness))
         self.outer_sdf = expr_callable(Offset(poly, amount=0.0))

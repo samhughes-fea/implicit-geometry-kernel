@@ -7,8 +7,9 @@ combines them. Every field is an :class:`~implicit_geometry_kernel.sdf.SDFNode`
 evaluated at points ``(x, y, z)``; every length is in metres.
 
 * :class:`WallContribution`: part of the wall. The base wall (no ``footprint``) covers
-  the whole OML; a partition (spar cap, local reinforcement) sets its own thickness
-  inside a footprint.
+  the whole OML. A partition sets the wall's full thickness inside a footprint (one
+  laminate, one mid-surface); a stacked layer instead lies beneath what is above it
+  (a spar cap kept as its own layer under the skin).
 * :class:`BranchContribution`: an internal member with its own mid-surface that meets
   the wall: shear webs, and stringers that stand off the wall with a free end. It may
   run over part of the span only.
@@ -16,12 +17,15 @@ evaluated at points ``(x, y, z)``; every length is in metres.
 * :class:`TransverseContribution`: a member lying in the section plane at one station
   (rib, bulkhead, frame).
 
-A new kind of member that fits one of these needs only a new builder.
+A new kind of member that fits one of these needs only a new builder. Every
+contribution may carry a ``source`` (whatever object made it, such as a section
+component); the assembler never reads it.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 
 from implicit_geometry_kernel.sdf.field import FeatureSpec, SDFNode
 from implicit_geometry_kernel.structure.laws import SpanLaw
@@ -31,14 +35,22 @@ from implicit_geometry_kernel.structure.laws import SpanLaw
 class WallContribution:
     """Part of the wall.
 
-    ``thickness`` is the full wall thickness where this contribution applies (for a
-    partition, the base wall included). ``footprint`` is negative where a partition
-    applies; ``None`` marks the base wall.
+    ``footprint`` is negative where the contribution applies; ``None`` marks the base
+    wall. For the base wall and a partition, ``thickness`` is the full wall thickness
+    where it applies; where partitions overlap, the higher priority sets it. For a
+    ``stacked`` layer, ``thickness`` is the layer's own thickness, added beneath the
+    wall above it (layers stack in contribution order).
     """
 
     spec: FeatureSpec
     thickness: SpanLaw
     footprint: SDFNode | None = None
+    stacked: bool = False
+    source: Any = field(default=None, compare=False, repr=False)
+
+    def __post_init__(self) -> None:
+        if self.stacked and self.footprint is None:
+            raise ValueError(f"{self.spec.name}: a stacked layer needs a footprint")
 
     @property
     def is_base(self) -> bool:
@@ -64,6 +76,7 @@ class BranchContribution:
     depth: SpanLaw | None = None
     free_end: bool = False
     extent: tuple[float, float] | None = None
+    source: Any = field(default=None, compare=False, repr=False)
 
     def __post_init__(self) -> None:
         if self.extent is not None and not self.extent[1] >= self.extent[0]:
@@ -84,6 +97,7 @@ class RegionContribution:
     spec: FeatureSpec
     region: SDFNode
     tag_region: SDFNode | None = None
+    source: Any = field(default=None, compare=False, repr=False)
 
     @property
     def tag_field(self) -> SDFNode:
@@ -102,6 +116,7 @@ class TransverseContribution:
     z: float
     region: SDFNode
     thickness: float
+    source: Any = field(default=None, compare=False, repr=False)
 
     def __post_init__(self) -> None:
         if not self.thickness > 0.0:

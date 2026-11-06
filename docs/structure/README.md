@@ -11,15 +11,15 @@ It sits between `sdf` and `section` and imports only `sdf` (enforced by
 
 | Kind | What it is | Examples |
 |---|---|---|
-| `WallContribution` | Part of the wall. One base wall covers the whole OML; a partition sets its own full thickness inside a `footprint`. | skin, spar caps, local doublers |
+| `WallContribution` | Part of the wall. One base wall covers the whole OML. A partition sets the full wall thickness inside a `footprint` (one laminate); a `stacked` layer lies beneath the wall above it. | skins, spar caps, local doublers |
 | `BranchContribution` | An internal member with its own mid-surface that meets the wall. Optional `clip`, standing-off `depth` with a `free_end`, and a span `extent`. | shear webs, stringers |
 | `RegionContribution` | A volume with no mid-surface. | sandwich cores, bonds |
 | `TransverseContribution` | A member in the section plane at one station `z`, with a spanwise thickness. | ribs, bulkheads, frames |
 
 ## Fields of an assembled `Structure`
 
-With `T(x, y, z)` the wall thickness (base law, raised to a partition's law inside its
-footprint):
+With `T(x, y, z)` the wall thickness (the base law, replaced by the highest-priority
+partition inside its footprint, plus any stacked layers):
 
 - `wall_mid = phi_OML + T / 2`: zero on the wall reference surface;
 - `cavity = phi_OML + T`: negative in the hollow inside the wall;
@@ -42,3 +42,24 @@ beam from all four kinds and adds a new kind this way.
 
 `ConstantLaw`, `TableLaw` (monotone cubic PCHIP or linear, held constant past the end
 knots), `ScaledLaw`, `SumLaw`, `ProductLaw`. They are picklable objects, not lambdas.
+
+## How sections use it
+
+`MultiCellSection` is assembled through this package (chord frame, before twist):
+
+| Section member | Contribution |
+|---|---|
+| suction-side skin | base wall |
+| pressure-side skin | wall partition on its side of the camber line |
+| spar caps | stacked wall layers beneath the skin |
+| shear webs | branches whose mid-surface is the web axis |
+| sandwich cores, edge inserts | regions |
+
+The builders live in `section/assembly/members.py`; `plan.py` resolves the inputs
+first. Each contribution carries the section component it made as its `source`, and the
+section's labelled components are those, in build order. `MultiCellSection.structure`
+returns the assembled structure; pass `registry=` to add builders.
+
+Caps are a separate layer under the skin, so the geometry matches the section's
+existing walls. A merged cap-and-skin laminate (one mid-surface) is planned as an
+opt-in section option.

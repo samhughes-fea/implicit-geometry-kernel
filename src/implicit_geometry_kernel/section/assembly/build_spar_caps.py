@@ -136,6 +136,7 @@ def _register_cap_side(
     )
     if web_union is not None:
         cap = _wrap_expr_cap(cap, Subtract(cap.expr, web_union))
+        cap.footprint_expr = Subtract(cap.footprint_expr, web_union)
     unrotated[label] = cap
     return cap
 
@@ -475,14 +476,20 @@ def build_spar_caps(
                     break
         if caps_u:
             cap_upper_expr = union_expr([c.expr for c in caps_u])
+            footprint = union_expr([c.footprint_expr for c in caps_u])
             if web_union is not None:
                 cap_upper_expr = Subtract(cap_upper_expr, web_union)
+                footprint = Subtract(footprint, web_union)
             cap_upper = _wrap_expr_cap(caps_u[0], cap_upper_expr)
+            cap_upper.footprint_expr = footprint
         if caps_l:
             cap_lower_expr = union_expr([c.expr for c in caps_l])
+            footprint = union_expr([c.footprint_expr for c in caps_l])
             if web_union is not None:
                 cap_lower_expr = Subtract(cap_lower_expr, web_union)
+                footprint = Subtract(footprint, web_union)
             cap_lower = _wrap_expr_cap(caps_l[0], cap_lower_expr)
+            cap_lower.footprint_expr = footprint
 
     return cap_upper, cap_lower, unrotated, recipes
 

@@ -116,12 +116,16 @@ class SparCap(SectionComponent):
         else:
             clip_expr = to_ir(ChordBand(x_start=float(x_start), x_end=float(x_end)))
         expr_raw = Intersect(Intersect(cap_lam, side_expr), clip_expr)
+        # Where on the wall the cap sits: its side of the camber line within its band.
+        footprint = Intersect(side_expr, clip_expr)
         if abs(twist_angle) > 1e-10:
             cx = 0.5 * (self.x_start + self.x_end)
             expr = Rotate(expr_raw, angle=float(twist_angle), cx=float(cx), cy=0.0)
+            footprint = Rotate(footprint, angle=float(twist_angle), cx=float(cx), cy=0.0)
         else:
             expr = expr_raw
         super().__init__(expr)
+        self.footprint_expr = footprint
 
     def _flapwise_strip_ready(self) -> bool:
         mode = str(self.flapwise_clip_mode or "strip")

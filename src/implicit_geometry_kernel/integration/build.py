@@ -4,7 +4,17 @@ from __future__ import annotations
 
 from typing import Mapping
 
-from implicit_geometry_kernel.integration.quadtree import build_root_quadtree, contour_from_quadtree_marching_squares, refine_quadtree, summarize_quadtree
+from implicit_geometry_kernel.integration.quadtree.tree import build_root_quadtree
+
+from implicit_geometry_kernel.integration.quadtree.marching import (
+
+    contour_from_quadtree_marching_squares,
+
+    summarize_quadtree,
+
+)
+
+from implicit_geometry_kernel.integration.quadtree.refine import refine_quadtree
 from implicit_geometry_kernel.integration.spec import QuadtreeSpec
 from implicit_geometry_kernel.integration.types import AreaMesh2D, FieldMesh2D, PhiSampler
 

@@ -11,7 +11,7 @@ from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_air
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section.props.export import SectionPropertiesReport
-from implicit_geometry_kernel.integration.quadtree import summarize_quadtree
+from implicit_geometry_kernel.integration.quadtree.marching import summarize_quadtree
 from implicit_geometry_kernel.section.props.eval_cache import SectionEvalCache
 
 

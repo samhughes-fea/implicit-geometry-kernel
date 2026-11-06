@@ -27,7 +27,7 @@ from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_air
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.props.export import SectionPropertiesReport
 from plotting.plot import plot_section_from_mesh
-from implicit_geometry_kernel.integration.quadrature import (
+from implicit_geometry_kernel.integration.quadtree.quadrature import (
     label_boundary_segments,
     label_fill_polygons,
 )

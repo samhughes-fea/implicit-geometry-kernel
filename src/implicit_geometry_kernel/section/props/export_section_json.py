@@ -95,7 +95,7 @@ def _segments_to_nested(segs: np.ndarray) -> list:
 
 def _mesh_label_boundary(mesh, label: str) -> list:
     """φ=0 boundary polylines for ``label`` from shared quadtree corner φ."""
-    from implicit_geometry_kernel.integration.quadrature import label_boundary_segments
+    from implicit_geometry_kernel.integration.quadtree.quadrature import label_boundary_segments
 
     def _as_key(lbl) -> str:
         return str(getattr(lbl, "value", lbl))

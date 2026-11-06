@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- `integration/` moved to its target tree (moves only, geometry unchanged). The
+  1,258-line `quadtree.py` and 566-line `quadrature.py` are now the package
+  `integration/quadtree/`: `tree` (cells, meshes, roots), `refine` and `refine_multi`
+  (object-model refinement), `soa` (array refinement, `build_shared_quadtree`),
+  `marching` (zero contours, summaries), `moments` (exact cell moments) and `quadrature`
+  (section properties). `integration.quadtree` still exposes every former name;
+  `integration.quadrature` is an alias until 0.6.0.
+
 - `sdf/` moved to its target tree (moves only, geometry unchanged): `sdf/nodes/`
   (`base`, `primitives`, `csg`, `bbox`, `tagged`, `span`, `lofted`), `sdf/kernels/`
   (`primitives`, `polygon_numba`, `grid`, `csg`, `transforms`) and `sdf/shapes/`

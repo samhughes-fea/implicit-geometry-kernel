@@ -41,7 +41,7 @@ from implicit_geometry_kernel.section.props.compute import (
 from implicit_geometry_kernel.sdf.shapes.airfoil import (
     AirfoilSDF,
 )
-from implicit_geometry_kernel.integration.quadtree import QuadTreeMesh
+from implicit_geometry_kernel.integration.quadtree.tree import QuadTreeMesh
 from implicit_geometry_kernel.integration.spec import QuadtreeSpec
 
 

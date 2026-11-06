@@ -78,12 +78,28 @@ class Polygon(Expr):
         return self._hash
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class CallableField(Expr):
-    """Opaque callable leaf keyed by a stable token."""
+    """Opaque callable leaf: a token plus the callable itself.
+
+    Two leaves are equal only when they share the token *and* the same callable
+    object. Comparing the token alone let a cached compile of one section's
+    callable be returned for another section whose token happened to match
+    (tokens built from ``id()`` repeat once the first object is collected).
+    Holding ``fn`` in the leaf keeps its id from being reused while the leaf,
+    or any cache keyed on it, is alive.
+    """
 
     key: str
-    fn: Any = field(compare=False, hash=False, repr=False)
+    fn: Any = field(repr=False)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, CallableField):
+            return NotImplemented
+        return self.key == other.key and self.fn is other.fn
+
+    def __hash__(self) -> int:
+        return hash((self.key, id(self.fn)))
 
 
 @dataclass(frozen=True)

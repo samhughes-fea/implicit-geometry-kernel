@@ -67,3 +67,16 @@ def test_sdf_stands_alone():
 ])
 def test_deprecated_top_level_aliases_removed(rel):
     assert not (PACKAGE / rel).exists(), f"0.3.0 removed path still present: {rel}"
+
+
+def test_structure_sits_between_sdf_and_section():
+    """``structure`` builds on ``sdf`` only; ``sdf`` never imports ``structure``."""
+    for path, rel in _library_files():
+        for module in _imports(path):
+            if not module.startswith("implicit_geometry_kernel."):
+                continue
+            top = module.split(".")[1]
+            if rel.parts[0] == "structure":
+                assert top in {"sdf", "structure"}, (rel, module)
+            if rel.parts[0] == "sdf":
+                assert top != "structure", (rel, module)

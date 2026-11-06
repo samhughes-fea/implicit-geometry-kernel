@@ -7,6 +7,7 @@ from collections.abc import Callable, Sequence
 import numpy as np
 
 from implicit_geometry_kernel.sdf.field import EvalCache, FieldSample, LeafNode, NO_FEATURE, SDFNode
+from implicit_geometry_kernel.sdf.ir import Intersect, Offset, Rotate, Shell, Slab, Subtract, Union
 from implicit_geometry_kernel.sdf.primitives import sdf_circle, sdf_polygon, sdf_segment
 
 
@@ -80,49 +81,23 @@ class TagNode(SDFNode):
         return FieldSample(s.phi, np.full(s.phi.shape, self.meta_id, dtype=np.int32))
 
 
-class ExprSDF(LeafNode):
-    """Evaluate a CSG ``Expr`` as an ``SDFNode`` (z ignored)."""
+class ExprSDF(SDFNode):
+    """A CSG shape stamped with a feature id (``meta``); ``phi`` unchanged.
+
+    Every shape in :mod:`implicit_geometry_kernel.sdf.ir` is already an ``SDFNode``;
+    this wrapper only adds the id (without one it behaves as the shape itself).
+    """
 
     def __init__(self, expr, meta: int = NO_FEATURE) -> None:
-        super().__init__(meta)
         self.expr = expr
-
-    def _phi(self, points: np.ndarray) -> np.ndarray:
-        from implicit_geometry_kernel.sdf.compile import compile_expr_to_node
-
-        node = compile_expr_to_node(self.expr)
-        return np.asarray(node.evaluate_plane(points[:, :2], 0.0).phi, dtype=np.float64)
-
-
-class OffsetNode(SDFNode):
-    """``phi - d`` (``d > 0`` grows the interior)."""
-
-    def __init__(self, node: SDFNode, distance: float) -> None:
-        self.node = node
-        self.distance = float(distance)
+        self.meta_id = int(meta)
 
     def children(self) -> tuple[SDFNode, ...]:
-        return (self.node,)
+        return (self.expr,)
 
     def _evaluate(self, points: np.ndarray, cache: EvalCache) -> FieldSample:
-        s = self.node.evaluate(points, cache)
-        return FieldSample(s.phi - self.distance, s.meta)
-
-
-class UnionNode(SDFNode):
-    """``min`` union; meta of the child with smaller ``phi``."""
-
-    def __init__(self, a: SDFNode, b: SDFNode) -> None:
-        self.a, self.b = a, b
-
-    def children(self) -> tuple[SDFNode, ...]:
-        return (self.a, self.b)
-
-    def _evaluate(self, points: np.ndarray, cache: EvalCache) -> FieldSample:
-        sa = self.a.evaluate(points, cache)
-        sb = self.b.evaluate(points, cache)
-        pick_a = sa.phi <= sb.phi
-        return FieldSample(np.minimum(sa.phi, sb.phi), np.where(pick_a, sa.meta, sb.meta).astype(np.int32))
+        s = self.expr.evaluate(points, cache)
+        return FieldSample(s.phi, np.full(s.phi.shape, self.meta_id, dtype=np.int32))
 
 
 class PriorityUnionNode(SDFNode):
@@ -151,90 +126,6 @@ class PriorityUnionNode(SDFNode):
         nearest = np.argmin(phi, axis=0)
         k = np.where(inside.any(axis=0), best, nearest)
         return FieldSample(phi.min(axis=0), meta[k, cols].astype(np.int32))
-
-
-class IntersectNode(SDFNode):
-    """``max`` intersection; meta of the child with larger ``phi``."""
-
-    def __init__(self, a: SDFNode, b: SDFNode) -> None:
-        self.a, self.b = a, b
-
-    def children(self) -> tuple[SDFNode, ...]:
-        return (self.a, self.b)
-
-    def _evaluate(self, points: np.ndarray, cache: EvalCache) -> FieldSample:
-        sa = self.a.evaluate(points, cache)
-        sb = self.b.evaluate(points, cache)
-        pick_a = sa.phi >= sb.phi
-        return FieldSample(np.maximum(sa.phi, sb.phi), np.where(pick_a, sa.meta, sb.meta).astype(np.int32))
-
-
-class SubtractNode(SDFNode):
-    """``max(base, -cutter)``; meta from the base."""
-
-    def __init__(self, base: SDFNode, cutter: SDFNode) -> None:
-        self.base, self.cutter = base, cutter
-
-    def children(self) -> tuple[SDFNode, ...]:
-        return (self.base, self.cutter)
-
-    def _evaluate(self, points: np.ndarray, cache: EvalCache) -> FieldSample:
-        b = self.base.evaluate(points, cache)
-        c = self.cutter.evaluate(points, cache)
-        return FieldSample(np.maximum(b.phi, -c.phi), b.meta)
-
-
-class RotateNode(SDFNode):
-    """Evaluate ``node`` in coordinates rotated by ``angle`` about ``(cx, cy)``."""
-
-    def __init__(self, node: SDFNode, angle: float, cx: float = 0.0, cy: float = 0.0) -> None:
-        self.node = node
-        self.angle = float(angle)
-        self.cx = float(cx)
-        self.cy = float(cy)
-
-    def children(self) -> tuple[SDFNode, ...]:
-        return (self.node,)
-
-    def _evaluate(self, points: np.ndarray, cache: EvalCache) -> FieldSample:
-        c = np.cos(-self.angle)
-        s = np.sin(-self.angle)
-        x = points[:, 0] - self.cx
-        y = points[:, 1] - self.cy
-        q = np.column_stack(
-            [c * x - s * y + self.cx, s * x + c * y + self.cy, points[:, 2]]
-        )
-        return self.node.evaluate(q, EvalCache(q))
-
-
-class ShellNode(SDFNode):
-    """``|phi| - thickness/2``; meta from the child."""
-
-    def __init__(self, node: SDFNode, thickness: float) -> None:
-        self.node = node
-        self.thickness = float(thickness)
-
-    def children(self) -> tuple[SDFNode, ...]:
-        return (self.node,)
-
-    def _evaluate(self, points: np.ndarray, cache: EvalCache) -> FieldSample:
-        s = self.node.evaluate(points, cache)
-        return FieldSample(np.abs(s.phi) - self.thickness / 2.0, s.meta)
-
-
-class SlabNode(SDFNode):
-    """Inward slab ``max(phi, -phi - depth)``; meta from the child."""
-
-    def __init__(self, node: SDFNode, depth: float) -> None:
-        self.node = node
-        self.depth = float(depth)
-
-    def children(self) -> tuple[SDFNode, ...]:
-        return (self.node,)
-
-    def _evaluate(self, points: np.ndarray, cache: EvalCache) -> FieldSample:
-        s = self.node.evaluate(points, cache)
-        return FieldSample(np.maximum(s.phi, -s.phi - self.depth), s.meta)
 
 
 class TrimNode(SDFNode):
@@ -290,3 +181,13 @@ class MidSurfaceNode(SDFNode):
     def thickness(self, points: np.ndarray) -> np.ndarray:
         cache = EvalCache(np.asarray(points, dtype=np.float64))
         return self.cavity.evaluate(cache.points, cache).phi - self.outer.evaluate(cache.points, cache).phi
+
+
+# The CSG combinators are the shapes in ``sdf.ir``; these names remain for old imports.
+UnionNode = Union
+IntersectNode = Intersect
+SubtractNode = Subtract
+OffsetNode = Offset
+RotateNode = Rotate
+ShellNode = Shell
+SlabNode = Slab

@@ -139,33 +139,25 @@ def build_shell_midline_strips(
     if airfoil is None:
         raise ValueError("section must expose airfoil for recipe midline projection.")
 
-    def _is_web_key(key: str) -> bool:
-        return key.startswith("shear_web_") or key.startswith("web_")
-
-    def _is_skin_key(key: str) -> bool:
-        return (
-            key == "outer_skin"
-            or key.startswith("skin_suction_surface")
-            or key.startswith("skin_pressure_surface")
-            or key in {"skin_suction_surface", "skin_pressure_surface"}
-        )
+    from implicit_geometry_kernel.section.assembly.members import wall_type_for_label
 
     # Prefer recipe map; fall back to component iteration only for thickness
     # when a host lacks wall_recipes (should not happen for MultiCellSection).
     skin_web_items: list[tuple[str, Any, str]] = []
     for key, wall in recipes.items():
-        if _is_web_key(key):
-            skin_web_items.append((key, wall, "web"))
-        elif _is_skin_key(key):
-            skin_web_items.append((key, wall, "skin"))
+        wt = wall_type_for_label(key)
+        if wt is None or not wt.has_midline or wt.kind == "cap":
+            continue
+        role = wt.cell_face_kind or wt.kind
+        skin_web_items.append((key, wall, role))
 
     if not skin_web_items:
-        for label, comp in components_S.items():
+        for label, _comp in components_S.items():
             key = _label_key(label)
-            if isinstance(comp, WebShellComponentLike):
-                skin_web_items.append((key, None, "web"))
-            elif isinstance(comp, SkinShellComponentLike):
-                skin_web_items.append((key, None, "skin"))
+            wt = wall_type_for_label(key)
+            if wt is None or not wt.has_midline or wt.kind == "cap":
+                continue
+            skin_web_items.append((key, None, wt.cell_face_kind or wt.kind))
 
     # Web before skin (legacy strip order; webs also look skin-like by attrs).
     skin_web_items.sort(key=lambda item: 0 if item[2] == "web" else 1)
@@ -176,19 +168,7 @@ def build_shell_midline_strips(
                 f"No {kind} wall recipe for {key!r}; "
                 "MultiCellSection must author recipes at assemble."
             )
-        if kind == "web":
-            mid_S = wall.to_midline(airfoil, n=n_web_samples)
-            strips.append(
-                ShellMidlineStrip(
-                    label=key,
-                    kind="web",
-                    midline_twisted_pitch_axis_blade_frame=_to_twisted_pitch_axis_blade_frame(mid_S),
-                    thickness_m=float(wall.thickness),
-                    closed=False,
-                    alignment=str(wall.alignment),
-                )
-            )
-        else:
+        if kind == "skin":
             mid_S = wall.to_midline(airfoil)
             side = _skin_side_from_label(key)
             strips.append(
@@ -199,6 +179,18 @@ def build_shell_midline_strips(
                     thickness_m=float(wall.thickness),
                     closed=side is None,
                     skin_side=side,
+                )
+            )
+        else:
+            mid_S = wall.to_midline(airfoil, n=n_web_samples)
+            strips.append(
+                ShellMidlineStrip(
+                    label=key,
+                    kind=kind,
+                    midline_twisted_pitch_axis_blade_frame=_to_twisted_pitch_axis_blade_frame(mid_S),
+                    thickness_m=float(wall.thickness),
+                    closed=False,
+                    alignment=str(getattr(wall, "alignment", "chord_normal")),
                 )
             )
 
@@ -256,8 +248,10 @@ def _insert_web_cap_junction_nodes(
     ``insert_cap_web_interior_junctions``, once its polyline is final.
     Inserting into the web is exact because a web midline is straight.
     """
-    web_indices = [i for i, s in enumerate(strips) if s.kind == "web"]
-    cap_indices = [i for i, s in enumerate(strips) if s.kind == "cap"]
+    from implicit_geometry_kernel.section.assembly.members import wall_cell_face
+
+    web_indices = [i for i, s in enumerate(strips) if wall_cell_face(s.label) == "web"]
+    cap_indices = [i for i, s in enumerate(strips) if wall_cell_face(s.label) == "cap"]
     if not web_indices or not cap_indices:
         return strips
 

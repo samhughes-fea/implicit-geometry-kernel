@@ -10,23 +10,26 @@ def _label_key(label: Any) -> str:
     return str(val)
 
 
-def is_core_label(label: Any) -> bool:
-    """True for sandwich-core bay labels (constructive polygon path)."""
-    key = _label_key(label)
-    return key.startswith("sandwich_core_") or key in {"sandwich_core"}
+def _wall_type(label: Any):
+    from implicit_geometry_kernel.section.assembly.members import wall_type_for_label
+
+    return wall_type_for_label(label)
 
 
 # LE/TE inserts use constructive polygons by default (parity locked).
 INSERTS_CONSTRUCTIVE_BY_DEFAULT = True
 
 
+def is_core_label(label: Any) -> bool:
+    """True for sandwich-core bay labels (constructive polygon path)."""
+    wt = _wall_type(label)
+    return wt is not None and wt.is_core
+
+
 def is_insert_label(label: Any) -> bool:
     """True for LE/TE insert labels."""
-    key = _label_key(label)
-    return key in {
-        "leading_edge_insert",
-        "trailing_edge_insert",
-    }
+    wt = _wall_type(label)
+    return wt is not None and wt.is_insert
 
 
 def is_residual_label(label: Any) -> bool:
@@ -38,30 +41,20 @@ def is_residual_label(label: Any) -> bool:
 
 def is_skin_label(label: Any) -> bool:
     """True for outer-skin wall labels (full or suction/pressure)."""
-    key = _label_key(label)
-    return (
-        key == "outer_skin"
-        or key.startswith("skin_suction_surface")
-        or key.startswith("skin_pressure_surface")
-    )
+    wt = _wall_type(label)
+    return wt is not None and wt.kind == "skin"
 
 
 def is_wall_solid_label(label: Any) -> bool:
     """True for skin / web / spar-cap / constructive-insert wall solids."""
-    key = _label_key(label)
-    if is_insert_label(key) and INSERTS_CONSTRUCTIVE_BY_DEFAULT:
-        return True
-    if is_residual_label(key) or is_core_label(key):
+    wt = _wall_type(label)
+    if wt is None:
         return False
-    if is_skin_label(label):
-        return True
-    if key.startswith("shear_web_"):
-        return True
-    if key.startswith("spar_cap"):
-        return True
-    return False
-
-
+    if wt.is_insert:
+        return INSERTS_CONSTRUCTIVE_BY_DEFAULT
+    if is_residual_label(label) or wt.is_core:
+        return False
+    return wt.is_wall_solid
 
 
 def is_constructive_label(label: Any) -> bool:

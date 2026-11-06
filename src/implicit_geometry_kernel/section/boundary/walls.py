@@ -16,6 +16,7 @@ from implicit_geometry_kernel.section.boundary.emitters import (
     emit_outer_skin_polygon,
 )
 from implicit_geometry_kernel.section.boundary import airfoil_polygon, ensure_polygon, offset_polygon_inward, rotate_geom
+from implicit_geometry_kernel.section.assembly.members import wall_type_for_label
 from implicit_geometry_kernel.section.boundary.labels import (
     is_insert_label,
     is_wall_solid_label,
@@ -269,16 +270,13 @@ def _insert_poly_via_recipe(
 
 
 def _is_skin_key(key: str) -> bool:
-    return (
-        key == "outer_skin"
-        or key.startswith("skin_suction_surface")
-        or key.startswith("skin_pressure_surface")
-        or key in {"skin_suction_surface", "skin_pressure_surface"}
-    )
+    wt = wall_type_for_label(key)
+    return wt is not None and wt.kind == "skin"
 
 
 def _is_web_key(key: str) -> bool:
-    return key.startswith("shear_web_")
+    wt = wall_type_for_label(key)
+    return wt is not None and wt.cell_face_kind == "web"
 
 
 def emit_wall_solid_polygons(section: Any) -> dict[str, Polygon | MultiPolygon]:
@@ -336,6 +334,14 @@ def emit_wall_solid_polygons(section: Any) -> dict[str, Polygon | MultiPolygon]:
             out[key] = _insert_poly_via_recipe(
                 section, key, comp, airfoil_poly=af_poly, inner_cavity=cavity
             )
+        else:
+            wt = wall_type_for_label(key)
+            if wt is None or wt.kind == "cap":
+                continue
+            recipes = dict(getattr(section, "wall_recipes", None) or {})
+            wall = recipes.get(key)
+            if wall is not None and hasattr(wall, "to_boundary_polygon"):
+                out[key] = wall.to_boundary_polygon(af_ref, cavity=cavity)
 
     webs_u = _web_union(web_polys)
     deeper_by_surface = _shared_deeper_by_surface(

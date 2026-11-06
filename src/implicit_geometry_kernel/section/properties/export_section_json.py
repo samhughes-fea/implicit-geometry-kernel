@@ -264,8 +264,11 @@ def export_section_json(
             skin_block["outer_boundary"] = None
             skin_block["inner_boundary"] = None
         skin_axes = []
-        for key in ("skin_suction_surface", "skin_pressure_surface", "outer_skin"):
-            skin_axes.extend(midlines_out.get(key, []))
+        from implicit_geometry_kernel.section.boundary.labels import is_skin_label
+
+        for key, axes in midlines_out.items():
+            if is_skin_label(key):
+                skin_axes.extend(axes)
         skin_block["medial_axes"] = skin_axes
         geometry["skin"] = skin_block
 

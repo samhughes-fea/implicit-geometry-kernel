@@ -234,14 +234,16 @@ def bond_caps_to_skin(strips: tuple[ShellMidlineStrip, ...]) -> tuple[ShellMidli
         A surface's skin arcs do not chain, or a cap does not run monotonically
         along its skin.
     """
+    from implicit_geometry_kernel.section.assembly.members import wall_cell_face
+
     out = list(strips)
     for cap_index, cap in enumerate(strips):
-        if cap.kind != "cap":
+        if wall_cell_face(cap.label) != "cap":
             continue
         side = _surface_side(cap.surface)
         if side is None:
             continue
-        hosts = [(i, s) for i, s in enumerate(out) if s.kind == "skin" and _surface_side(s.skin_side) == side]
+        hosts = [(i, s) for i, s in enumerate(out) if wall_cell_face(s.label) == "skin" and _surface_side(s.skin_side) == side]
         if not hosts:
             continue
         chain = _chain(hosts)

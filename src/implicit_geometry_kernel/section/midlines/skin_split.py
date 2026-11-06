@@ -236,7 +236,9 @@ def split_skin_at_junctions(
 
     Hierarchical labels: ``skin_{suction|pressure}_surface:{leading_edge|bay_i|trailing_edge}``.
     """
-    skin_list = [s for s in strips if s.kind == "skin"]
+    from implicit_geometry_kernel.section.assembly.members import wall_cell_face
+
+    skin_list = [s for s in strips if wall_cell_face(s.label) == "skin"]
     if not skin_list:
         return strips
 
@@ -247,7 +249,7 @@ def split_skin_at_junctions(
         if side is not None:
             by_side[side] = s
     if _SUCTION not in by_side or _PRESSURE not in by_side:
-        others = [s for s in strips if s.kind != "skin"]
+        others = [s for s in strips if wall_cell_face(s.label) != "skin"]
         return tuple(side_skins + others)
 
     out_non_skin: list[ShellMidlineStrip] = []
@@ -255,9 +257,9 @@ def split_skin_at_junctions(
     web_polys: list[NDArray[np.float64]] = []
 
     for st in strips:
-        if st.kind == "skin":
+        if wall_cell_face(st.label) == "skin":
             continue
-        if st.kind == "web":
+        if wall_cell_face(st.label) == "web":
             arr = np.asarray(st.midline_twisted_pitch_axis_blade_frame, dtype=float).copy()
             if arr.shape[0] < 2:
                 out_non_skin.append(st)

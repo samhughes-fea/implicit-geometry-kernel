@@ -284,15 +284,17 @@ def _collect_cap_web_junction_seeds(
         open_polyline_prefix_lengths,
     )
 
+    from implicit_geometry_kernel.section.assembly.members import wall_cell_face
+
     webs = [
         np.asarray(st.midline_twisted_pitch_axis_blade_frame, dtype=float)
         for st in strips
-        if st.kind == "web"
+        if wall_cell_face(st.label) == "web"
         and np.asarray(st.midline_twisted_pitch_axis_blade_frame).shape[0] >= 2
     ]
     seeds: dict[int, list[NDArray[np.float64]]] = {}
     for idx, st in enumerate(strips):
-        if st.kind != "cap":
+        if wall_cell_face(st.label) != "cap":
             continue
         pts = np.asarray(st.midline_twisted_pitch_axis_blade_frame, dtype=float)
         if pts.shape[0] < 2:

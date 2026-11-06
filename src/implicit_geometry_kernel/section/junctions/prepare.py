@@ -49,8 +49,10 @@ def prepare_shell_midline_junctions(
     junctions prefer axis × offset locus before falling back to the final cap
     polyline.
     """
+    from implicit_geometry_kernel.section.assembly.members import wall_cell_face
+
     cfg = spec if spec is not None else ShellMidlineJunctionPreparationOptions()
-    has_webs = any(s.kind == "web" for s in strips)
+    has_webs = any(wall_cell_face(s.label) == "web" for s in strips)
 
     # N = 0 (skin ± caps): do not invent web feet / LE–bay–TE panelisation.
     # Cap ray resample still applies for family-B caps; cap–web inserts no-op.
@@ -76,7 +78,7 @@ def prepare_shell_midline_junctions(
 
     # Last: every later pass must leave cap and skin vertices alone, because the
     # bonds name them (thin_wall_section TW-001).
-    if any(s.kind == "cap" for s in out):
+    if any(wall_cell_face(s.label) == "cap" for s in out):
         with timed_stage("junction_preparation_cap_bond", stage_sink):
             out = bond_caps_to_skin(tuple(out))
     return out

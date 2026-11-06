@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Wall types register on `SECTION_BUILDERS` (`WallType` protocol). Label
+  classification, midlines, junctions, cells and properties look up the
+  registry instead of string prefixes. A dummy stiffener type registered only
+  in tests flows through those stages. Goldens unchanged.
+
 - Keyword aliases (`cap_height`, `web_thickness`, `twist_angle`) resolve on
   `SectionSpec.from_kwargs`; `kwarg_aliases.py` re-exports those helpers until
   0.6.0. Numbers unchanged.

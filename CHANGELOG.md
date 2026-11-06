@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Keyword aliases (`cap_height`, `web_thickness`, `twist_angle`) resolve on
+  `SectionSpec.from_kwargs`; `kwarg_aliases.py` re-exports those helpers until
+  0.6.0. Numbers unchanged.
+
 - `section/api` folded into `section/spec` (moves only, geometry unchanged):
   runner, factory, layout resolution, results, kwarg aliases, and the worker
   live next to `SectionSpec`. `worker.py` is split into `build.py` (emit) and

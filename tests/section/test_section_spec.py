@@ -59,6 +59,30 @@ def test_build_from_spec_matches_runner():
         assert props["area"] == pytest.approx(via_spec.properties_map[label]["area"], rel=1e-9)
 
 
+def test_from_kwargs_rejects_conflicting_aliases():
+    layout = resolve_system_type("2D-F")
+    airfoil = _airfoil()
+    with pytest.raises(ValueError, match="Conflicting"):
+        SectionSpec.from_kwargs(
+            layout,
+            airfoil,
+            skin_thickness=0.004,
+            spar_cap_thickness=0.012,
+            cap_height=0.02,
+            shear_web_thickness=0.005,
+        )
+    with pytest.raises(ValueError, match="Conflicting"):
+        SectionSpec.from_kwargs(
+            layout,
+            airfoil,
+            skin_thickness=0.004,
+            spar_cap_thickness=0.012,
+            shear_web_thickness=0.005,
+            twist_rad=0.1,
+            twist_angle=0.2,
+        )
+
+
 def test_keyword_form_warns():
     with pytest.warns(DeprecationWarning, match="SectionSpec"):
         build_section_geometry(

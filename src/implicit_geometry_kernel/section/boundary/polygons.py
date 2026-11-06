@@ -270,16 +270,16 @@ def flapwise_bay_clip(
     )
     n_proj = corners @ n
     t_proj = corners @ t
-    t0, t1 = float(t_proj.min()) - 1.0, float(t_proj.max()) + 1.0
+    t0, t1 = float(np.min(t_proj)) - 1.0, float(np.max(t_proj)) + 1.0
 
     if clip_mode == "half_lt":
         if c_lo is None:
             raise ValueError("half_lt requires flapwise_c_lo")
-        n0, n1 = float(n_proj.min()) - 1.0, float(c_lo)
+        n0, n1 = float(np.min(n_proj)) - 1.0, float(c_lo)
     elif clip_mode == "half_gt":
         if c_lo is None:
             raise ValueError("half_gt requires flapwise_c_lo (bound)")
-        n0, n1 = float(c_lo), float(n_proj.max()) + 1.0
+        n0, n1 = float(c_lo), float(np.max(n_proj)) + 1.0
     elif clip_mode == "strip":
         if c_lo is None or c_hi is None:
             raise ValueError("strip requires flapwise_c_lo and flapwise_c_hi")

@@ -44,7 +44,7 @@ def _insert_points_on_segments(
     for i in range(n - 1):
         rows.append(pts[i].copy())
         for _t, p in sorted(by_edge.get(i, []), key=lambda z: z[0]):
-            if float(np.linalg.norm(pts - p, axis=1).min()) <= vertex_coincide_tol_m:
+            if float(np.min(np.linalg.norm(pts - p, axis=1))) <= vertex_coincide_tol_m:
                 continue
             if float(np.linalg.norm(p - rows[-1])) < min_seg:
                 continue
@@ -225,7 +225,7 @@ def insert_cap_web_interior_junctions(
             qualifies — the cap has the node either way.
             """
             for w_idx, j_edge, t_edge, p in pending_web:
-                gap = float(np.linalg.norm(final_cap_pts - p, axis=1).min())
+                gap = float(np.min(np.linalg.norm(final_cap_pts - p, axis=1)))
                 if gap > vertex_coincide_tol_m:
                     continue
                 web_insertions.setdefault(w_idx, []).append((j_edge, t_edge, p))
@@ -240,7 +240,7 @@ def insert_cap_web_interior_junctions(
         for s_h, p_h in hits:
             if merged and abs(s_h - merged[-1][0]) <= merge_arc:
                 continue
-            if float(np.linalg.norm(pts - p_h, axis=1).min()) <= vertex_coincide_tol_m:
+            if float(np.min(np.linalg.norm(pts - p_h, axis=1))) <= vertex_coincide_tol_m:
                 continue
             merged.append((s_h, p_h))
 

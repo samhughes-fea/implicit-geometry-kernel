@@ -327,7 +327,7 @@ def intersect_web_axis_open_polyline_2d(
 def open_polyline_min_segment_length(pts: NDArray[np.float64]) -> float:
     if pts.shape[0] < 2:
         return float("inf")
-    return float(np.linalg.norm(np.diff(pts, axis=0), axis=1).min())
+    return float(np.min(np.linalg.norm(np.diff(pts, axis=0), axis=1)))
 
 
 def point_to_open_polyline_nearest(

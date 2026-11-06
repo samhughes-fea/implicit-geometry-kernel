@@ -117,9 +117,9 @@ def summarize_quadtree(mesh: QuadTreeMesh) -> dict[str, object]:
         return {
             "leaf_count": int(bounds.shape[0]),
             "level_counts": dict(sorted(level_counts.items())),
-            "max_level": int(levels_arr.max()) if levels_arr.size else 0,
-            "min_cell_width": float(widths.min()) if widths.size else 0.0,
-            "max_cell_width": float(widths.max()) if widths.size else 0.0,
+            "max_level": int(np.max(levels_arr)) if levels_arr.size else 0,
+            "min_cell_width": float(np.min(widths)) if widths.size else 0.0,
+            "max_cell_width": float(np.max(widths)) if widths.size else 0.0,
             "refine_stats": dict(mesh.refine_stats),
         }
     leaves = mesh.leaf_cells()

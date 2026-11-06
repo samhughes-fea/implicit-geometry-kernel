@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.props.handoff import (
     fiber_extents_from_airfoil,
     fiber_extents_from_outline,

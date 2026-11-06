@@ -39,7 +39,7 @@ from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,

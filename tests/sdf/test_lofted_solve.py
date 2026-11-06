@@ -3,7 +3,7 @@
 import numpy as np
 
 from implicit_geometry_kernel.sdf import GeometrySolver, LoftedPolygonSDF
-from implicit_geometry_kernel.sdf.nodes import CircleSDF, PolygonSDF
+from implicit_geometry_kernel.sdf.nodes.tagged import CircleSDF, PolygonSDF
 
 
 def _square(z):

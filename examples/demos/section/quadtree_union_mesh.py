@@ -68,8 +68,8 @@ from implicit_geometry_kernel.section.api.factory import (
     resolve_system_type,
 )
 from implicit_geometry_kernel.section.props.area_mesh import build_shared_section_quadtree
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_airfoil
 from plotting.plot import (
     _component_color,

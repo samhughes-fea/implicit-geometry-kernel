@@ -38,7 +38,7 @@ from implicit_geometry_kernel.section.midlines.ring_geometry import (
 from implicit_geometry_kernel.section.midlines.export import (
     build_shell_midline_strips,
 )
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.junctions.prepare import (
     prepare_shell_midline_junctions,
 )

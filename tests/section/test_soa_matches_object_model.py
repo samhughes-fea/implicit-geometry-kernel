@@ -23,7 +23,7 @@ from implicit_geometry_kernel.section.props import area_mesh as am
 from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.integration import quadtree as qt
 from implicit_geometry_kernel.integration.quadrature import section_properties_from_quadtree
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
 
 def _object_model_mesh(spec, samplers, supports, multi_sampler):

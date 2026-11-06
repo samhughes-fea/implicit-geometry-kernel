@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.api.results import DroppedWeb, LayoutInput
 from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
 from implicit_geometry_kernel.section.layout.system_layout import SystemLayoutSpec

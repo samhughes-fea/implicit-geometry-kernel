@@ -13,7 +13,7 @@ import math
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.sdf.ir import (
+from implicit_geometry_kernel.sdf.nodes import (
     Box,
     Capsule,
     Circle,

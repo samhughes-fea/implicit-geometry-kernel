@@ -52,10 +52,10 @@ layout_tree = _tree_mod.layout_tree
 node_caption = _tree_mod.node_caption
 scalar_parameters = _tree_mod.scalar_parameters
 
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import resolve_system_type
 from implicit_geometry_kernel.section.api import build_section_view
-from implicit_geometry_kernel.sdf.ir import Expr
+from implicit_geometry_kernel.sdf.nodes import Expr
 from plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,

@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 
 
 def _legacy_properties(grid: SDFGrid, phi):

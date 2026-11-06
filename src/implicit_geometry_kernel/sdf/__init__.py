@@ -49,17 +49,17 @@ class SDFCallable(Protocol):
 
     def __call__(self, x: Any, y: Any) -> Any: ...
 
-from implicit_geometry_kernel.sdf.primitives import sdf_box, sdf_capsule, sdf_circle, sdf_ellipse, sdf_half_plane, sdf_oriented_box, sdf_polygon, sdf_rounded_box, sdf_segment
-from implicit_geometry_kernel.sdf.csg import blend, intersect, intersect_all, offset, shell, smooth_intersect, smooth_subtract, smooth_union, subtract, union, union_all
-from implicit_geometry_kernel.sdf.transforms import SDFFrame, flapwise_aligned_web_angle, mirror_field_x, mirror_field_y, rotate_field, rotate_points, scale_field, translate_field
-from implicit_geometry_kernel.sdf.grid import SDFGrid  # noqa: E402
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF  # noqa: E402
-from implicit_geometry_kernel.sdf.ir import CallableField, Capsule, Circle, Box, Expr, HalfPlane, Intersect, Offset, OrientedBox, Polygon, RoundedBox, Rotate, Shell, Slab, Subtract, Union, compile_expr, eval_expr, eval_expr_batch, intersect_expr, subtract_expr, union_expr
+from implicit_geometry_kernel.sdf.kernels.primitives import sdf_box, sdf_capsule, sdf_circle, sdf_ellipse, sdf_half_plane, sdf_oriented_box, sdf_polygon, sdf_rounded_box, sdf_segment
+from implicit_geometry_kernel.sdf.kernels.csg import blend, intersect, intersect_all, offset, shell, smooth_intersect, smooth_subtract, smooth_union, subtract, union, union_all
+from implicit_geometry_kernel.sdf.kernels.transforms import SDFFrame, flapwise_aligned_web_angle, mirror_field_x, mirror_field_y, rotate_field, rotate_points, scale_field, translate_field
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid  # noqa: E402
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF  # noqa: E402
+from implicit_geometry_kernel.sdf.nodes import CallableField, Capsule, Circle, Box, Expr, HalfPlane, Intersect, Offset, OrientedBox, Polygon, RoundedBox, Rotate, Shell, Slab, Subtract, Union, compile_expr, eval_expr, eval_expr_batch, intersect_expr, subtract_expr, union_expr
 from implicit_geometry_kernel.sdf.compile import compile_expr_to_node
-from implicit_geometry_kernel.sdf.field import FeatureKind, FeatureSpec, FeatureTable, FieldSample, NO_FEATURE, SDFNode
-from implicit_geometry_kernel.sdf.nodes import PriorityUnionNode, TagNode
-from implicit_geometry_kernel.sdf.lofted import LoftedPolygonSDF
-from implicit_geometry_kernel.sdf.span_nodes import ComplementNode, LawOffsetNode, MaxNode, SpanIntervalNode
+from implicit_geometry_kernel.sdf.nodes.base import FeatureKind, FeatureSpec, FeatureTable, FieldSample, NO_FEATURE, SDFNode
+from implicit_geometry_kernel.sdf.nodes.tagged import PriorityUnionNode, TagNode
+from implicit_geometry_kernel.sdf.nodes.lofted import LoftedPolygonSDF
+from implicit_geometry_kernel.sdf.nodes.span import ComplementNode, LawOffsetNode, MaxNode, SpanIntervalNode
 from implicit_geometry_kernel.sdf.solve import GeometrySolver, SolveResult
 
 __all__ = [

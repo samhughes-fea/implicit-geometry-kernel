@@ -22,9 +22,9 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.field import EvalCache, FeatureSpec, FeatureTable, SDFNode
-from implicit_geometry_kernel.sdf.nodes import FieldOffsetNode, PriorityUnionNode, TagNode, TrimNode
-from implicit_geometry_kernel.sdf.span_nodes import ComplementNode, LawOffsetNode, MaxNode, SpanIntervalNode
+from implicit_geometry_kernel.sdf.nodes.base import EvalCache, FeatureSpec, FeatureTable, SDFNode
+from implicit_geometry_kernel.sdf.nodes.tagged import FieldOffsetNode, PriorityUnionNode, TagNode, TrimNode
+from implicit_geometry_kernel.sdf.nodes.span import ComplementNode, LawOffsetNode, MaxNode, SpanIntervalNode
 from implicit_geometry_kernel.structure.builders import BuildContext, BuilderRegistry
 from implicit_geometry_kernel.structure.contributions import (
     BranchContribution,

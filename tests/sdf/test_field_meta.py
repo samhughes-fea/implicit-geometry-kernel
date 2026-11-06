@@ -3,7 +3,7 @@
 import numpy as np
 
 from implicit_geometry_kernel.sdf import FeatureTable, NO_FEATURE, PriorityUnionNode, TagNode
-from implicit_geometry_kernel.sdf.nodes import CircleSDF
+from implicit_geometry_kernel.sdf.nodes.tagged import CircleSDF
 
 
 def _xy(xs, ys, z=0.0):

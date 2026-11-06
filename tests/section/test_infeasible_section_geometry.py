@@ -31,7 +31,7 @@ def test_offset_ring_deeper_than_the_section_is_infeasible() -> None:
     from implicit_geometry_kernel.section.constructive.offset_locus import (
         airfoil_offset_ring,
     )
-    from implicit_geometry_kernel.sdf.airfoil import (
+    from implicit_geometry_kernel.sdf.shapes.airfoil import (
         AirfoilSDF,
     )
 
@@ -54,7 +54,7 @@ def test_bad_depth_argument_is_not_infeasibility() -> None:
     from implicit_geometry_kernel.section.constructive.offset_locus import (
         airfoil_offset_ring,
     )
-    from implicit_geometry_kernel.sdf.airfoil import (
+    from implicit_geometry_kernel.sdf.shapes.airfoil import (
         AirfoilSDF,
     )
 
@@ -69,7 +69,7 @@ def test_web_anchors_and_skin_intercepts_are_infeasibility() -> None:
     from implicit_geometry_kernel.section.assembly.web_layout import (
         inner_y_at_x,
     )
-    from implicit_geometry_kernel.sdf.airfoil import (
+    from implicit_geometry_kernel.sdf.shapes.airfoil import (
         AirfoilSDF,
     )
 

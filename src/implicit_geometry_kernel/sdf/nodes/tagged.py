@@ -6,9 +6,9 @@ from collections.abc import Callable, Sequence
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.field import EvalCache, FieldSample, LeafNode, NO_FEATURE, SDFNode
-from implicit_geometry_kernel.sdf.ir import Intersect, Offset, Rotate, Shell, Slab, Subtract, Union
-from implicit_geometry_kernel.sdf.primitives import sdf_circle, sdf_polygon, sdf_segment
+from implicit_geometry_kernel.sdf.nodes.base import EvalCache, FieldSample, LeafNode, NO_FEATURE, SDFNode
+from implicit_geometry_kernel.sdf.nodes.csg import Intersect, Offset, Rotate, Shell, Slab, Subtract, Union
+from implicit_geometry_kernel.sdf.kernels.primitives import sdf_circle, sdf_polygon, sdf_segment
 
 
 class CircleSDF(LeafNode):
@@ -84,7 +84,7 @@ class TagNode(SDFNode):
 class ExprSDF(SDFNode):
     """A CSG shape stamped with a feature id (``meta``); ``phi`` unchanged.
 
-    Every shape in :mod:`implicit_geometry_kernel.sdf.ir` is already an ``SDFNode``;
+    Every shape in :mod:`implicit_geometry_kernel.sdf.nodes` is already an ``SDFNode``;
     this wrapper only adds the id (without one it behaves as the shape itself).
     """
 
@@ -191,3 +191,9 @@ OffsetNode = Offset
 RotateNode = Rotate
 ShellNode = Shell
 SlabNode = Slab
+
+__all__ = [
+    "CallableSDF", "CircleSDF", "ExprSDF", "FieldOffsetNode", "IntersectNode", "MidSurfaceNode",
+    "OffsetNode", "PolygonSDF", "PolylineBandSDF", "PriorityUnionNode", "RotateNode", "ShellNode",
+    "SlabNode", "SubtractNode", "TagNode", "TrimNode", "UnionNode", "as_node",
+]

@@ -11,7 +11,7 @@ from matplotlib.patches import Polygon, Rectangle
 
 from implicit_geometry_kernel.section.api.factory import build_section_view, resolve_system_type
 from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_airfoil
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.props.export import SectionPropertiesReport
 from plotting.plot import plot_section_with_quadtree
 

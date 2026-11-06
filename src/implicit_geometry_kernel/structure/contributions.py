@@ -27,7 +27,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from implicit_geometry_kernel.sdf.field import FeatureSpec, SDFNode
+from implicit_geometry_kernel.sdf.nodes.base import FeatureSpec, SDFNode
 from implicit_geometry_kernel.structure.laws import SpanLaw
 
 

@@ -3,7 +3,7 @@
 import numpy as np
 
 from implicit_geometry_kernel.section.assembly.clips import _airfoil_offset_branch, _strictly_x_ascending
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
 
 def test_collapse_duplicate_x():

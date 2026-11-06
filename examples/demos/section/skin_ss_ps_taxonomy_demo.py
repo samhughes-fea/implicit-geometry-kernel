@@ -37,7 +37,7 @@ from plotting.figure_io import (
 )
 
 from plotting.frames import section_plot_axes
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )

@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from implicit_geometry_kernel.frames import naca_to_zero_twist_pitch_axis_station_frame
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
 
 def test_naca_to_station_leading_edge_negative_y():

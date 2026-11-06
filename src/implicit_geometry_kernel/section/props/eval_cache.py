@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.ir import compile_expr
+from implicit_geometry_kernel.sdf.nodes import compile_expr
 
 
 def _eikonal_redistance_2d(phi, dx, dy, *, n_iter=12, dt=0.15):

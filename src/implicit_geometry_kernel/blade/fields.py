@@ -7,7 +7,7 @@ from collections import OrderedDict
 import numpy as np
 
 from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
-from implicit_geometry_kernel.sdf.field import EvalCache, FeatureTable, FieldSample, SDFNode
+from implicit_geometry_kernel.sdf.nodes.base import EvalCache, FeatureTable, FieldSample, SDFNode
 
 
 def _polyline_distance(xy: np.ndarray, poly: np.ndarray) -> np.ndarray:
@@ -117,7 +117,7 @@ class CutWallMetaSDF(SDFNode):
         try:
             node, _ = wall_meta_from_cut(self.geo.section_at(key), self.table)
         except InfeasibleSectionGeometry:
-            from implicit_geometry_kernel.sdf.nodes import PolylineBandSDF, TagNode
+            from implicit_geometry_kernel.sdf.nodes.tagged import PolylineBandSDF, TagNode
 
             ring = self.geo.oml_polyline(key)[:, :2]
             if np.allclose(ring[0], ring[-1]):

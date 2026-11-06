@@ -11,7 +11,7 @@ from implicit_geometry_kernel.section.api.factory import (
 from implicit_geometry_kernel.section.midlines.junction_primitives import (
     solve_web_foot_on_skin_mid,
 )
-from implicit_geometry_kernel.sdf.airfoil import (
+from implicit_geometry_kernel.sdf.shapes.airfoil import (
     AirfoilSDF,
 )
 

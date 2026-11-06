@@ -10,7 +10,7 @@ from implicit_geometry_kernel import (
 )
 from implicit_geometry_kernel.extract import classify_trailing_edge, extract_zero_loops, feature_curve
 from implicit_geometry_kernel.sdf import GeometrySolver
-from implicit_geometry_kernel.sdf.nodes import CircleSDF
+from implicit_geometry_kernel.sdf.nodes.tagged import CircleSDF
 
 
 def _geo():

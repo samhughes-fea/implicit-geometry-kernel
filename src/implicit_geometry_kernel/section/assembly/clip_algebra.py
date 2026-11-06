@@ -16,7 +16,7 @@ from typing import Any, Callable, Literal, Union
 import numpy as np
 from implicit_geometry_kernel.section.boundary import Polygon
 
-from implicit_geometry_kernel.sdf.ir import (
+from implicit_geometry_kernel.sdf.nodes import (
     HalfPlane,
     Intersect,
 )

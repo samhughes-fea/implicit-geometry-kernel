@@ -286,7 +286,7 @@ class BladeGeometry:
         ``StackThickness`` use the same key; this is the G7 cost fix, not a BVH.
         """
         from implicit_geometry_kernel.frames import PIVOT_FRACTION_DEFAULT, twisted_pitch_axis_blade_frame_to_naca
-        from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+        from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
         from implicit_geometry_kernel.section import SectionGeometry
 
         z = round(float(z), 9)
@@ -360,14 +360,14 @@ class BladeGeometry:
 
     def oml_sdf(self, meta: int = 0):
         """Exact 2-D polygon SDF of ``oml_polyline(z)`` at each point's own ``z``."""
-        from implicit_geometry_kernel.sdf.lofted import LoftedPolygonSDF
+        from implicit_geometry_kernel.sdf.nodes.lofted import LoftedPolygonSDF
 
         return LoftedPolygonSDF(lambda z: self.oml_polyline(float(z))[:, :2], meta=meta)
 
     def cavity_sdf(self, meta: int = 0):
         """Inner mould line: ``oml + T``. ``T`` is a step (skin, plus cap inside footprints); no taper."""
         from implicit_geometry_kernel.blade.fields import StackThickness
-        from implicit_geometry_kernel.sdf.nodes import FieldOffsetNode
+        from implicit_geometry_kernel.sdf.nodes.tagged import FieldOffsetNode
 
         return FieldOffsetNode(self.oml_sdf(meta), StackThickness(self), scale=1.0)
 
@@ -377,14 +377,14 @@ class BladeGeometry:
         Snap oracle (Wave 0). Run interiors match ``shell_graph`` midpoints;
         partition vertices are not a Newton spec (``|phi|`` up to ``t_cap/2``).
         """
-        from implicit_geometry_kernel.sdf.nodes import MidSurfaceNode
+        from implicit_geometry_kernel.sdf.nodes.tagged import MidSurfaceNode
 
         return MidSurfaceNode(self.oml_sdf(meta), self.cavity_sdf(meta))
 
     def wall_meta(self, table=None):
         """Tagged wall-strip DAG: ``evaluate((x,y,z)).meta`` is the region at that ``z``."""
         from implicit_geometry_kernel.blade.fields import CutWallMetaSDF
-        from implicit_geometry_kernel.sdf.field import FeatureTable
+        from implicit_geometry_kernel.sdf.nodes.base import FeatureTable
 
         return CutWallMetaSDF(self, table if table is not None else FeatureTable())
 

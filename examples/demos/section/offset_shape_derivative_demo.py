@@ -53,8 +53,8 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import resolve_system_type
 from implicit_geometry_kernel.section.api import build_section_view
 from implicit_geometry_kernel.section.layout.thickness_limits import (

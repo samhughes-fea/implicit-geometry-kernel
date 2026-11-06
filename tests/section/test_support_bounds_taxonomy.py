@@ -27,9 +27,9 @@ from implicit_geometry_kernel.section.api.factory import (
 # invisible through it.
 from implicit_geometry_kernel.section.props import area_mesh as am
 from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_airfoil
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.props.compute import compute_section_properties
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 
 # Representative subset: every family (A/B/C/D), both orientations (CN/F),
 # a range of web counts, plus the two skin-only layouts.

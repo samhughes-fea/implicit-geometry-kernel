@@ -70,7 +70,7 @@ class Airfoil:
         if len(code) != 4 or not code.isdigit():
             raise ValueError("a NACA 4-digit code has four digits, e.g. '0018'")
         m, p, t = int(code[0]) / 100.0, int(code[1]) / 10.0, int(code[2:]) / 100.0
-        from implicit_geometry_kernel.sdf.naca import naca_four_digit_vertices
+        from implicit_geometry_kernel.sdf.shapes.naca import naca_four_digit_vertices
 
         # ``n`` is points per surface; the shared helper takes the total around the contour
         verts = naca_four_digit_vertices(m, p, t, 2 * int(n) - 1, 1.0, closed_te=closed_te)
@@ -102,7 +102,7 @@ class Airfoil:
 
     def to_sdf(self, *, chord: float = 1.0, n: int = 161):
         """Implicit polygon adapter at ``chord`` metres."""
-        from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+        from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
         return AirfoilSDF.from_airfoil(self, chord=chord, n=n)
 

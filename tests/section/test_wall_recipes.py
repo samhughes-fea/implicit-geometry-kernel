@@ -20,7 +20,7 @@ from implicit_geometry_kernel.section.recipes import (
 from implicit_geometry_kernel.section.recipes.walls import (
     InsertWall,
 )
-from implicit_geometry_kernel.sdf.airfoil import (
+from implicit_geometry_kernel.sdf.shapes.airfoil import (
     AirfoilSDF,
 )
 

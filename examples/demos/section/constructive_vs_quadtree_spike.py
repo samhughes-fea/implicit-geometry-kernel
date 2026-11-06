@@ -39,7 +39,7 @@ from implicit_geometry_kernel.section.props.backend import (
 from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
 
 def main() -> None:

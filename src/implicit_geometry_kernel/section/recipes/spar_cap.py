@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.ir import CallableField, Intersect, Offset, Rotate, Slab
+from implicit_geometry_kernel.sdf.nodes import CallableField, Intersect, Offset, Rotate, Slab
 
 from implicit_geometry_kernel.section.assembly.clip_algebra import (
     ChordBand,

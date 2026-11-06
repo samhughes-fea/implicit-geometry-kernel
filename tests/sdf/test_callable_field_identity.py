@@ -3,7 +3,7 @@
 import numpy as np
 
 from implicit_geometry_kernel.sdf.compile import compile_expr_to_node
-from implicit_geometry_kernel.sdf.ir import CallableField, eval_expr_batch
+from implicit_geometry_kernel.sdf.nodes import CallableField, eval_expr_batch
 
 
 def test_same_token_different_callable_is_a_different_leaf():

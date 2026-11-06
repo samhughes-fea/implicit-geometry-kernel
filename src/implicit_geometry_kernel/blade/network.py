@@ -1,7 +1,7 @@
 """Station wall network: labelled midlines with integer feature ids.
 
 This is the geometric graph a mesher lofts. It is extracted from a ``SectionCut``,
-not from Gmsh. Feature ids come from :class:`~implicit_geometry_kernel.sdf.field.FeatureTable`.
+not from Gmsh. Feature ids come from :class:`~implicit_geometry_kernel.sdf.nodes.base.FeatureTable`.
 """
 
 from __future__ import annotations
@@ -11,8 +11,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from implicit_geometry_kernel.blade.cut import SectionCut, SectionWall
-from implicit_geometry_kernel.sdf.field import NO_FEATURE, FeatureSpec, FeatureTable, SDFNode
-from implicit_geometry_kernel.sdf.nodes import PolylineBandSDF, PriorityUnionNode, TagNode
+from implicit_geometry_kernel.sdf.nodes.base import NO_FEATURE, FeatureSpec, FeatureTable, SDFNode
+from implicit_geometry_kernel.sdf.nodes.tagged import PolylineBandSDF, PriorityUnionNode, TagNode
 
 
 @dataclass(frozen=True)

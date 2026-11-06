@@ -121,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
     facts = inventory(result)
 
     from implicit_geometry_kernel import Airfoil
-    from implicit_geometry_kernel.sdf.grid import SDFGrid
+    from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
     from plotting import plot_section
 
     # Stacked, not side by side: this sits in a half-width slide panel of about

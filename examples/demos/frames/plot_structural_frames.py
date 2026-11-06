@@ -21,7 +21,7 @@ from implicit_geometry_kernel.frames import PIVOT_FRACTION_DEFAULT, naca_to_zero
 from plotting.figure_io import apply_doc_style, save_figure
 from plotting.frames import fit_square_section_axes, setup_section_axes
 from plotting.palette import RED, TEAL
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
 # This demo deliberately imports the *production* transforms rather than
 # defining its own. A demo that reimplements the maths can agree with the docs

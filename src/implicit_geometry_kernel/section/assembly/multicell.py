@@ -15,8 +15,8 @@ from typing import Any
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.ir import Offset, Rotate, union_expr
-from implicit_geometry_kernel.sdf.transforms import rotate_field
+from implicit_geometry_kernel.sdf.nodes import Offset, Rotate, union_expr
+from implicit_geometry_kernel.sdf.kernels.transforms import rotate_field
 from implicit_geometry_kernel.section.assembly.members import SECTION_BUILDERS
 from implicit_geometry_kernel.section.assembly.plan import SectionMember, plan_section
 from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
@@ -215,7 +215,7 @@ class MultiCellSection:
         return self._components[label](x, y, memo=memo)
 
     def eval_union(self, x, y):
-        from implicit_geometry_kernel.sdf.ir import eval_expr_batch
+        from implicit_geometry_kernel.sdf.nodes import eval_expr_batch
 
         return eval_expr_batch(self._eval_union_expr, x, y, {})
 

@@ -46,8 +46,8 @@ from plotting.figure_io import (
 )
 
 from implicit_geometry_kernel.section.props.area_mesh import section_properties_via_quadtree
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )

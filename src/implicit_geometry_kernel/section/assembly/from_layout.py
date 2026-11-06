@@ -29,7 +29,7 @@ from implicit_geometry_kernel.section.layout.system_layout import (
 from implicit_geometry_kernel.section.midlines.host import (
     SectionMidlineHost,
 )
-from implicit_geometry_kernel.sdf.airfoil import (
+from implicit_geometry_kernel.sdf.shapes.airfoil import (
     AirfoilSDF,
 )
 

@@ -59,7 +59,7 @@ def test_build_area_meshes_2d_multiple_fields():
 
 @pytest.mark.parametrize("code", ["0012"])
 def test_airfoil_component_quadtree_contour(code: str):
-    from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+    from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
     from implicit_geometry_kernel.section.api.factory import (
         build_section_view,
     )

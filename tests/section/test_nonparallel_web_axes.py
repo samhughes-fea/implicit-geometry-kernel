@@ -8,7 +8,7 @@ from implicit_geometry_kernel.section.layout.cap_placement import (
 from implicit_geometry_kernel.section.layout.section_layout import (
     SectionLayout,
 )
-from implicit_geometry_kernel.sdf.airfoil import (
+from implicit_geometry_kernel.sdf.shapes.airfoil import (
     AirfoilSDF,
 )
 from implicit_geometry_kernel.section.assembly.from_layout import (

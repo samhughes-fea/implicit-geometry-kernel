@@ -15,7 +15,7 @@ same PR that finishes a step.
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
 | Phase 1a/1b | One shape model: CSG shapes are `SDFNode` subclasses, compile step removed | Done (PR #8) |
 | Phase 1c | One Shapely gateway: `section/boundary/polygons.py` | Done (PR #9) |
-| 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **In progress**: `sdf/` (PR #10), `integration/` (PR #11) and `frames/` (PR #12) done. `section/` goes in several PRs: (a) `props` to `properties` and `recipes` to `walls` is the open PR; (b) `constructive` into `boundary` (split `export.py` into `boundary/walls.py` and `cores.py`, move `labels`, `emitters`, `properties`); (c) `placement` into `layout`; `api` becomes `spec` in Phase 2. Then `blade/` (split `cut.py`), then Phase 2. Tag 0.5.0 after |
+| 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **In progress**: `sdf/` (PR #10), `integration/` (PR #11) and `frames/` (PR #12) done. `section/` goes in several PRs: (a) `props` to `properties` and `recipes` to `walls` done (PR #13); (b) `constructive` into `boundary` (`export.py` split into `boundary/walls.py` and `cores.py`; `labels`, `emitters` to `boundary/`; `properties.py` to `properties/polygons.py`) is the open PR; (c) `placement` into `layout`; `api` becomes `spec` in Phase 2. Then `blade/` (split `cut.py`), then Phase 2. Tag 0.5.0 after |
 | 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started |
 | 7 | Completeness (Phase 5 list below) | Not started |
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Not started |
@@ -153,7 +153,7 @@ Large modules and where they go:
 | `integration/quadtree.py` | Done: `quadtree/tree.py`, `refine.py`, `refine_multi.py`, `soa.py`, `marching.py`. Still to do (a logic PR, not a move): keep the array-based path (`soa.py`) only and drop the object-model duplicates (`refine.py`, `refine_multi.py`) once nothing uses them |
 | `section/assembly/multicell.py` | webs, caps, skin and a short `section.py` (partly done by `plan.py` and `members.py`) |
 | `frames/tensors.py` | Done: `tensors/inertia.py`, `moments.py`, `forces.py`, `thickness.py` |
-| `section/constructive/export.py` | `boundary/walls.py`, `boundary/cores.py` |
+| `section/constructive/export.py` | Done: `boundary/walls.py`, `boundary/cores.py` |
 | `integration/quadrature.py` | Done: `quadtree/moments.py`, `quadtree/quadrature.py` |
 | `section/api/worker.py` | `spec/` (validation) and a short build module, after Phase 2 |
 | `blade/cut.py` | `cut.py` (SectionCut, walls, cells) and `shell_graph.py` (graph, partitions, topology diff) |

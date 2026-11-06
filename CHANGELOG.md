@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- `section/constructive` folded into its target homes (moves only, geometry unchanged):
+  `export.py` is split into `section/boundary/walls.py` (skin, web and cap solids) and
+  `section/boundary/cores.py` (cores, inserts, the combined set); `emitters.py` and
+  `labels.py` move to `section/boundary/`; `properties.py` becomes
+  `section/properties/polygons.py`. `section.constructive` and its modules remain as
+  aliases until 0.6.0.
+
 - `section/` subpackages renamed to their target names (moves only, geometry
   unchanged): `section.props` is now `section.properties` and `section.recipes` is now
   `section.walls`. The old package and module paths remain as aliases until 0.6.0.

@@ -52,9 +52,7 @@ from plotting.palette import (
 from plotting.plot import (
     plot_section_hybrid,
 )
-from implicit_geometry_kernel.section.constructive import (
-    emit_wall_solid_polygons,
-)
+from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
 from plotting.plot_section import (
     apply_structural_section_axes,
 )

@@ -27,3 +27,24 @@ def test_old_package_reexports(old, new):
     names = getattr(n, "__all__", [k for k in vars(n) if not k.startswith("_")])
     for name in names:
         assert getattr(o, name) is getattr(n, name), name
+
+
+CONSTRUCTIVE = {
+    "emitters": "boundary.emitters",
+    "labels": "boundary.labels",
+    "properties": "properties.polygons",
+}
+
+
+@pytest.mark.parametrize("old,new", sorted(CONSTRUCTIVE.items()))
+def test_constructive_modules_alias(old, new):
+    assert importlib.import_module(f"{PKG}constructive.{old}") is importlib.import_module(PKG + new)
+
+
+def test_constructive_export_reexports_walls_and_cores():
+    export = importlib.import_module(PKG + "constructive.export")
+    walls = importlib.import_module(PKG + "boundary.walls")
+    cores = importlib.import_module(PKG + "boundary.cores")
+    assert export.emit_wall_solid_polygons is walls.emit_wall_solid_polygons
+    assert export.emit_core_polygons is cores.emit_core_polygons
+    assert export.emit_constructive_polygons is cores.emit_constructive_polygons

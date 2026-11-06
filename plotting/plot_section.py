@@ -10,9 +10,7 @@ from implicit_geometry_kernel.integration.quadtree.quadrature import (
     label_boundary_segments,
     label_fill_polygons,
 )
-from implicit_geometry_kernel.section.constructive.labels import (
-    is_core_label,
-)
+from implicit_geometry_kernel.section.boundary.labels import is_core_label
 from .palette import REGION_FALLBACK, region_color
 
 _DEFAULT_COLOR = REGION_FALLBACK
@@ -582,10 +580,9 @@ def plot_section_hybrid(
     from matplotlib.patches import Patch, PathPatch
     from matplotlib.path import Path
 
-    from implicit_geometry_kernel.section.constructive import (
-        emit_constructive_polygons,
-        is_residual_label,
-    )
+    from implicit_geometry_kernel.section.boundary.cores import emit_constructive_polygons
+
+    from implicit_geometry_kernel.section.boundary.labels import is_residual_label
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 5))

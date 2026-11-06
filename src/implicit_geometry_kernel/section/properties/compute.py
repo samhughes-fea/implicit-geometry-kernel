@@ -10,11 +10,9 @@ import numpy as np
 from implicit_geometry_kernel.section.properties.area_mesh import (
     section_properties_via_quadtree,
 )
-from implicit_geometry_kernel.section.constructive import (
-    classify_property_labels,
-    emit_constructive_polygons,
-    section_properties_from_polygons,
-)
+from implicit_geometry_kernel.section.boundary.labels import classify_property_labels
+from implicit_geometry_kernel.section.boundary.cores import emit_constructive_polygons
+from implicit_geometry_kernel.section.properties.polygons import section_properties_from_polygons
 from implicit_geometry_kernel.section.properties.backend import (
     PropsBackend,
     props_backend_from_env,

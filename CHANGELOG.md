@@ -4,8 +4,10 @@
 
 - Fixed: `Airfoil.naca4(code, n)` again samples `n` points per surface (0.4.0 passed `n`
   as the total, halving the density and opening a small gap at the leading edge).
-- `ShearWeb` is back as an alias of `SpanWeb` (top level and `blade`), so shell-fem and
-  anisotropic-section-model still import. Remove in 0.5.0.
+- `ShearWeb` is the public name of the blade-station web again (top level and `blade`), so
+  shell-fem and anisotropic-section-model import unchanged. `SpanWeb` (the 0.4.0 name) is an
+  alias, removed in 0.5.0. The section-level SDF class in `section.recipes.shear_web` that
+  shared the name is now `ShearWebComponent`.
 - Lint: two unused imports in tests (CI was red on 0.4.0).
 
 ## 0.4.0

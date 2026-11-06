@@ -2,7 +2,7 @@
 
 These types describe the shape and the structural layout of a blade or wing, and
 nothing about materials: ``Station`` (span position, chord, twist, pitch axis and
-offset), ``SkinRegion`` (a chordwise band of skin on both surfaces) and ``SpanWeb``
+offset), ``SkinRegion`` (a chordwise band of skin on both surfaces) and ``ShearWeb``
 (a web at a chord fraction). ``shell_fem.BladeBuilder`` meshes them
 as shells.
 
@@ -58,13 +58,13 @@ class SkinRegion:
 
 
 @dataclass(frozen=True)
-class SpanWeb:
-    """Spanwise web placement: chord fraction ``position`` with ``n`` shell elements."""
+class ShearWeb:
+    """A shear web joining the surfaces at chord fraction ``position``, meshed with ``n`` shell elements."""
 
     name: str
     position: float
     n: int = 4
 
 
-# Old name, kept so code written against 0.2.x still imports. Remove in 0.5.0.
-ShearWeb = SpanWeb
+# Name used in 0.4.0 only. Remove in 0.5.0.
+SpanWeb = ShearWeb

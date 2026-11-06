@@ -6,9 +6,12 @@ import implicit_geometry_kernel as k
 from implicit_geometry_kernel import Airfoil
 
 
-def test_shear_web_alias():
-    assert k.ShearWeb is k.SpanWeb
-    assert k.ShearWeb("web", 0.3, 3) == k.SpanWeb("web", 0.3, 3)
+def test_shear_web_names():
+    from implicit_geometry_kernel.blade import SpanWeb
+    from implicit_geometry_kernel.section.recipes.shear_web import ShearWebComponent
+
+    assert SpanWeb is k.ShearWeb
+    assert k.ShearWeb is not ShearWebComponent
 
 
 @pytest.mark.parametrize("code", ["0015", "0021"])

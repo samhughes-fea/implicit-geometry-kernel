@@ -48,7 +48,7 @@ flowchart TD
 
 | Step | Function | Role |
 |------|----------|------|
-| Web foot | `ShearWeb.midline_polyline` → `_extend_to_skin_mid_surface` | Axis × skin mid-surface at emit (SG-002) |
+| Web foot | `ShearWebComponent.midline_polyline` → `_extend_to_skin_mid_surface` | Axis × skin mid-surface at emit (SG-002) |
 | Cap **end** | `shell_midline_export._insert_web_cap_junction_nodes` | Axis × cap; web vertices at cap ends only (SG-004) |
 | Skin index | `split_skin_at_junctions` | Indexes web feet; caps untouched |
 | Cap interior | `resample_cap_interiors_from_skin_rays` | Rebuilds cap interiors — **destroys** any earlier cap vertices |

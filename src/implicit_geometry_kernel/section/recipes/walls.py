@@ -20,7 +20,7 @@ from implicit_geometry_kernel.section.recipes.sandwich_core import (
     SandwichCore,
 )
 from implicit_geometry_kernel.section.recipes.shear_web import (
-    ShearWeb,
+    ShearWebComponent,
 )
 from implicit_geometry_kernel.section.recipes.spar_cap import (
     SparCap,
@@ -86,8 +86,8 @@ class WebWall:
     twist_angle: float = 0.0
     emission_maturity: EmissionMaturity = "constructive"
 
-    def _component(self, airfoil, *, airfoil_expr_node=None) -> ShearWeb:
-        return ShearWeb(
+    def _component(self, airfoil, *, airfoil_expr_node=None) -> ShearWebComponent:
+        return ShearWebComponent(
             airfoil,
             float(self.skin_thickness),
             float(self.x_top),

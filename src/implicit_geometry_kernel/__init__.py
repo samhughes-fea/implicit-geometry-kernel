@@ -8,7 +8,7 @@ Public API
 ----------
 Airfoils   Airfoil (from coordinates, ``Airfoil.naca4``, ``Airfoil.ellipse``)
 Layout     Station (span position, chord, twist, pitch axis, offset),
-           SkinRegion (chordwise skin bands), SpanWeb (webs at chord fractions),
+           SkinRegion (chordwise skin bands), ShearWeb (webs at chord fractions),
            SYSTEM_TYPE_KEYS and resolve_system_type (the 40 structural layouts)
 Loft       BladeGeometry (a layout lofted between stations; optional span tables for
            chord, twist, pitch axis, offset), BladeGeometry.interpolate(z) (the

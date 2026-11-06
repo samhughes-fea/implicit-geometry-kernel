@@ -129,7 +129,7 @@ def _node_of(point: NDArray[np.float64], nodes: NDArray[np.float64], *, web: str
         raise ValueError(
             f"web {web!r} ends {float(distances[index]):.3e} m from the nearest skin junction; "
             "a web must end on the skin mid-surface where the skin was split (SG-002). "
-            "Emit feet via ShearWeb._extend_to_skin_mid_surface / solve_web_foot_on_skin_mid; "
+            "Emit feet via ShearWebComponent._extend_to_skin_mid_surface / solve_web_foot_on_skin_mid; "
             "prepare strips with prepare_shell_midline_junctions (index-only — do not relocate feet); "
             "and do not pass frozen web_y that is stale relative to the current skin under twist."
         )

@@ -262,7 +262,7 @@ def split_skin_at_junctions(
             if arr.shape[0] < 2:
                 out_non_skin.append(st)
                 continue
-            # The foot is already the junction: ShearWeb.midline_polyline emits
+            # The foot is already the junction: ShearWebComponent.midline_polyline emits
             # the web mid-surface out to the skin mid-surface, so there is
             # nothing here to relocate. This pass only *indexes* — it finds the
             # arc length at which the skin must be split. Moving the foot is

@@ -60,7 +60,7 @@ def test_assembly_does_not_export_sdf_ir_components() -> None:
     banned = {
         "OuterSkin",
         "SparCap",
-        "ShearWeb",
+        "ShearWebComponent",
         "SandwichCore",
         "LEInsert",
         "TEInsert",

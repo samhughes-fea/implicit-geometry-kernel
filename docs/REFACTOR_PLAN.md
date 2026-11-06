@@ -193,8 +193,9 @@ After 5c and 5d. This is still part of step 5, not a new status row.
 - **2a.** `SectionSpec`, a frozen dataclass with one name per quantity: `layout`,
   `airfoil`, `twist_rad`, `gauges` (a `Gauges` object for skin SS/PS, cap and web,
   replacing both the thickness arguments and `zone_gauges_m`) and `webs` (x positions in
-  metres, optional y anchors). It validates once in `__post_init__`; the rules in
-  `kwarg_aliases.py` move there.
+  metres, optional y anchors). It validates once in `__post_init__`; keyword alias
+  rules live on `from_kwargs` / the helpers in `section_spec.py`. `kwarg_aliases.py`
+  re-exports them until 0.6.0.
 - **2b.** `SectionOptions` for computational choices: outputs, props backend, quadtree
   settings (depth, max cells, band scale), sample counts, retain_mesh. The
   `SECTION_GEOMETRY_*` environment variables become defaults on this class (profiling

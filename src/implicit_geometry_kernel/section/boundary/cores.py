@@ -10,11 +10,8 @@ from implicit_geometry_kernel.section.boundary import unary_union
 from implicit_geometry_kernel.profiling import timed_stage
 
 from implicit_geometry_kernel.section.boundary.emitters import (
-
     emit_inner_cavity_polygon,
-
     emit_outer_skin_polygon,
-
 )
 from implicit_geometry_kernel.section.boundary import airfoil_polygon, ensure_polygon, rotate_geom
 from implicit_geometry_kernel.section.boundary.labels import (

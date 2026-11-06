@@ -2,6 +2,11 @@
 
 ↑ [`section_geometry`](../README.md)
 
+Moved (aliases until 0.6.0). Wall and core polygons live in
+`section/boundary/` (`walls.py`, `cores.py`, `emitters.py`, `labels.py`);
+shoelace from polygons is `section/properties/polygons.py`. The
+`section.constructive` import path still works.
+
 For mature labels (skin, webs, caps, cores, LE/TE inserts), builds explicit
 boundary polygons from the same recipes and integrates area / second moments
 by shoelace. Residual φ remains available as a debug backend when an insert

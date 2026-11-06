@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from implicit_geometry_kernel.section.api.kwarg_aliases import (
+from implicit_geometry_kernel.section.spec.kwarg_aliases import (
     resolve_shear_web_thickness,
     resolve_skin_gauges,
     resolve_spar_cap_thickness,

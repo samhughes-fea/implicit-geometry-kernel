@@ -53,6 +53,29 @@ def test_placement_modules_alias(old, new):
     assert importlib.import_module(f"{PKG}placement.{old}") is importlib.import_module(PKG + new)
 
 
+API = {
+    "factory": "spec.factory",
+    "kwarg_aliases": "spec.kwarg_aliases",
+    "layout_resolution": "spec.layout_resolution",
+    "results": "spec.results",
+    "runner": "spec.runner",
+    "worker": "spec.worker",
+}
+
+
+@pytest.mark.parametrize("old,new", sorted(API.items()))
+def test_api_modules_alias(old, new):
+    assert importlib.import_module(f"{PKG}api.{old}") is importlib.import_module(PKG + new)
+
+
+def test_api_package_reexports_spec():
+    api = importlib.import_module(PKG + "api")
+    spec = importlib.import_module(PKG + "spec")
+    names = getattr(spec, "__all__", [k for k in vars(spec) if not k.startswith("_")])
+    for name in names:
+        assert getattr(api, name) is getattr(spec, name), name
+
+
 def test_placement_package_reexports_layout_modules():
     placement = importlib.import_module(PKG + "placement")
     anchoring = importlib.import_module(PKG + "layout.anchoring")

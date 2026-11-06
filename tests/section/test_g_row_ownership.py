@@ -65,6 +65,7 @@ def test_banned_software_layer_homes_absent() -> None:
 
 
 def test_api_and_recipe_homes_exist() -> None:
+    assert (ROOT / "spec").is_dir()
     assert (ROOT / "api").is_dir()
     assert (ROOT / "walls").is_dir()
     assert (ROOT / "assembly").is_dir()

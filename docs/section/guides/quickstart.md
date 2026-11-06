@@ -49,7 +49,8 @@ plot_section(result.section)
 ```
 
 `SectionGeometry` is the public call path (`SectionGeometryRunner` is an alias).
-`build_section_geometry` is a deep import (`section.api`) for tests. Gate
+`build_section_geometry` is a deep import (`section.spec`; `section.api` until
+0.6.0) for tests. Gate
 `"cell_wall_loops"` also fills midlines.
 
 ---

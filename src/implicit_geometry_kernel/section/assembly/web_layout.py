@@ -190,7 +190,7 @@ def resolve_web_anchors(
     ``dropped`` is a list of :class:`DroppedWeb` — callers that step the
     layout down need to know *which* webs went, not just how many.
     """
-    from implicit_geometry_kernel.section.api.worker import (
+    from implicit_geometry_kernel.section.spec.results import (
         DroppedWeb,
     )
 

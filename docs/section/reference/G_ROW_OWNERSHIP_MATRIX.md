@@ -87,7 +87,7 @@ flowchart TB
 
 | Row | Home | Owns | May call | Forbidden imports | Primary output |
 |-----|------|------|----------|-------------------|----------------|
-| `G-API` | [`api/`](../api/README.md) | `SectionGeometry` lifecycle, validation, gated packaging | `G-LAYOUT`, `G-ASSEMBLE`, emit homes | SDF algebra, mesh, bind, FE | `SectionGeometryResult` |
+| `G-API` | [`spec/`](../spec/README.md) (`api/` alias until 0.6.0) | `SectionGeometry` lifecycle, validation, gated packaging | `G-LAYOUT`, `G-ASSEMBLE`, emit homes | SDF algebra, mesh, bind, FE | `SectionGeometryResult` |
 | `G-LAYOUT` | [`layout/`](../layout/README.md) | `SectionLayout` SoT, catalogue presets, drop cascade, `CapPlacementRule` (chordwise / plan-form policy) | `AirfoilSDF` cavity queries | recipes, constructive, junctions | effective `SectionLayout` / `StationLayoutResolution` |
 | `G-PLACE` | [`layout/anchoring.py`](../layout/README.md) (and `collision.py`, `handoff.py`; `placement/` is an alias until 0.6.0) | Through-thickness anchoring: face offsets, midsurface depth, `AnchoredWallGeometry`. Construction tokens stay strings; no laminate imports | layout policy, airfoil cavity | recipes as authors, junctions, props, mesh, laminates | anchored wall geometry |
 | `G-RECIPE` | [`recipes/`](../recipes/README.md) | Frozen wall parameters; the three projection methods | `G-SDF` kernel, `G-POLY` emitters, `G-MID` helpers | layout cascade, junctions, props, api | `SkinWall` / `WebWall` / `CapWall` / `CoreWall` / `InsertWall` |
@@ -136,7 +136,7 @@ implicit_geometry_kernel/
   sdf/                 # G-SDF kernel
   profiling.py         # cross-cutting timers (not under sdf/)
   section/
-    api/               # runner, resolve, result packaging
+    spec/              # SectionSpec, runner, resolve, result packaging (`api/` alias until 0.6.0)
     layout/            # SectionLayout SoT, presets, drop, CapPlacementRule, anchoring
     recipes/           # wall params + projection dispatch (IR classes next to walls.py)
     assembly/          # assemble + host only (no public component types)

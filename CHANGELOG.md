@@ -2,11 +2,17 @@
 
 ## Unreleased
 
+- `section/api` folded into `section/spec` (moves only, geometry unchanged):
+  runner, factory, layout resolution, results, kwarg aliases, and the worker
+  live next to `SectionSpec`. `worker.py` is split into `build.py` (emit) and
+  `prep.py` (cache key and sized assemble). `section.api` and its modules remain
+  as aliases until 0.6.0.
+
 - `SectionSpec`, `Gauges` and `SectionOptions` are the station geometry input
   (`section.spec`). `build_section_geometry(spec, options=...)` is the worker
   entry; the keyword form builds a spec and warns (removed in 0.6.0).
   `SectionGeometry` and `BladeGeometry.section_at` build a spec internally.
-  Geometry unchanged. The `api/` → `spec/` package move is still to do.
+  Geometry unchanged.
 
 - `blade/cut.py` split (moves only, geometry unchanged): wall/cell types stay in
   `cut.py`; the mid-surface graph, shell graph, partitions and topology diff live

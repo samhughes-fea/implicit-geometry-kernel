@@ -8,12 +8,12 @@ Prefer ``Airfoil.to_sdf()`` (or ``sdf.airfoil.AirfoilSDF``) for implicit
 airfoils. Quadtree / hybrid props backends are G-PROPS debug — import from
 ``section.properties``, not this barrel. Thickness clamps live in
 ``section.layout.thickness_limits``. ``build_section_geometry`` is
-``section.api``.
+``section.spec`` (``section.api`` remains an alias until 0.6.0).
 """
 
 from __future__ import annotations
 
-from implicit_geometry_kernel.section.api import (
+from implicit_geometry_kernel.section.spec import (
     Gauges,
     SectionGeometry,
     SectionGeometryResult,

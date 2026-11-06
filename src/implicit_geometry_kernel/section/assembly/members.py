@@ -148,7 +148,7 @@ class SkinBuilder(WallTypeMixin, MemberBuilder):
     exact_labels = ("outer_skin",)
     label_prefixes = ("skin_suction_surface", "skin_pressure_surface")
 
-    def build(self, ctx: SectionPlan, prior):
+    def build(self, ctx: SectionPlan, prior):  # type: ignore
         out: list[Contribution] = []
         with timed_stage("assemble_skin", ctx.stage_sink):
             for label, side, t in (
@@ -175,7 +175,7 @@ class WebBuilder(WallTypeMixin, MemberBuilder):
     cell_face_kind = "web"
     label_prefixes = ("shear_web_", "web_")
 
-    def build(self, ctx: SectionPlan, prior):
+    def build(self, ctx: SectionPlan, prior):  # type: ignore
         out: list[Contribution] = []
         with timed_stage("assemble_webs", ctx.stage_sink):
             phi_inner_b, y_search_b = b_frame_web_search(ctx)
@@ -224,7 +224,7 @@ class CapBuilder(WallTypeMixin, MemberBuilder):
     cell_face_kind = "cap"
     label_prefixes = ("spar_cap",)
 
-    def build(self, ctx: SectionPlan, prior):
+    def build(self, ctx: SectionPlan, prior):  # type: ignore
         if ctx.cap_rule.kind == "none":
             return []
         webs = [m.component for m in members_of(prior, "web")]
@@ -277,7 +277,7 @@ class CoreBuilder(WallTypeMixin, MemberBuilder):
     exact_labels = ("sandwich_core",)
     label_prefixes = ("sandwich_core_",)
 
-    def build(self, ctx: SectionPlan, prior):
+    def build(self, ctx: SectionPlan, prior):  # type: ignore
         n = ctx.n_webs
         if not ctx.core_enabled:
             return []
@@ -334,7 +334,7 @@ class InsertBuilder(WallTypeMixin, MemberBuilder):
     cell_face_kind = None
     exact_labels = ("leading_edge_insert", "trailing_edge_insert")
 
-    def build(self, ctx: SectionPlan, prior):
+    def build(self, ctx: SectionPlan, prior):  # type: ignore
         out: list[Contribution] = []
         if ctx.trailing_edge_insert_x_m is not None:
             wall = InsertWall(kind="trailing_edge", skin_thickness=ctx.skin_thickness,

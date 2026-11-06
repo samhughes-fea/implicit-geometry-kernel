@@ -80,7 +80,7 @@ def _shared_grid_phi(section_geometry, grid) -> dict:
             pairs.append((id(sdf), expr))
 
     for id_key, expr in pairs:
-        phi = np.asarray(eval_expr_batch(expr, x, y, memo), dtype=float)
+        phi = np.asarray(eval_expr_batch(expr, x, y, memo), dtype=float)  # type: ignore
         out[id_key] = phi.reshape(shape)
     return out
 

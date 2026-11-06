@@ -95,10 +95,10 @@ def _component_supports(
             ys_idx, xs_idx = np.where(inside)
             supports[lbl] = _clamp_support(
                 (
-                    float(xs[xs_idx].min()),
-                    float(xs[xs_idx].max()),
-                    float(ys[ys_idx].min()),
-                    float(ys[ys_idx].max()),
+                    float(np.min(xs[xs_idx])),
+                    float(np.max(xs[xs_idx])),
+                    float(np.min(ys[ys_idx])),
+                    float(np.max(ys[ys_idx])),
                 ),
                 margin_f,
                 spec,

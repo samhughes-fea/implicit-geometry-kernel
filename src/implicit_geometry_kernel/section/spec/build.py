@@ -137,7 +137,7 @@ def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
     prep_key = section_geometry_prep_key(
         layout,
         airfoil,
-        skin_thickness=skin,
+        skin_thickness=skin,  # type: ignore
         spar_cap_thickness=spar,
         shear_web_thickness=web,
         twist_rad=twist_rad,
@@ -155,7 +155,7 @@ def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
             airfoil,
             layout,
             twist_rad=float(twist_rad),
-            skin_thickness=skin,
+            skin_thickness=skin,  # type: ignore
             spar_cap_thickness=float(spar),
             shear_web_thickness=web,
             web_x_positions_m=web_x_positions_m,
@@ -188,7 +188,7 @@ def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
                 with_mesh=bool(retain_mesh),
             )
         if retain_mesh:
-            properties_map, meta_raw, quadtree_mesh = props_out
+            properties_map, meta_raw, quadtree_mesh = props_out  # type: ignore
         else:
             properties_map, meta_raw = props_out
             quadtree_mesh = None
@@ -276,13 +276,13 @@ def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
 
         le_S = np.asarray(airfoil.leading_edge, dtype=float).reshape(1, 2)
         te_S = np.asarray(airfoil.trailing_edge, dtype=float).reshape(1, 2)
-        leading_edge_twisted_pitch_axis_blade_frame = tuple(
+        leading_edge_twisted_pitch_axis_blade_frame = tuple(  # type: ignore
             float(v)
             for v in naca_to_twisted_pitch_axis_blade_frame(
                 le_S, float(twist_rad), chord_m
             )[0]
         )
-        trailing_edge_twisted_pitch_axis_blade_frame = tuple(
+        trailing_edge_twisted_pitch_axis_blade_frame = tuple(  # type: ignore
             float(v)
             for v in naca_to_twisted_pitch_axis_blade_frame(
                 te_S, float(twist_rad), chord_m

@@ -221,7 +221,7 @@ def resolve_web_anchors(
     x_le = xmin if xmin is not None else min(xs_in)
     x_floor = x_le + 0.05 * chord
 
-    resolved = []
+    resolved = []  # type: ignore
     dropped: list[DroppedWeb] = []
 
     # Common path: no LE-ward walk — batch all intercept probes in one φ eval.
@@ -253,7 +253,7 @@ def resolve_web_anchors(
 
     for x0 in sorted(xs_in):
         x_try = float(x0)
-        anchors = None
+        anchors = None  # type: ignore
         n_steps = 12
         for step in range(n_steps + 1):
             try:

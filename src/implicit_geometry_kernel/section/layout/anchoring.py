@@ -5,8 +5,8 @@ fixed reference face into the wall stack. Positive values always point into the
 material (or outward from a midsurface origin for webs).
 
 This module deliberately speaks in *string* reference/build tokens so
-``section_geometry`` does not import ``material_utilities`` (G-row boundary).
-The layup kernel's ``PlyPlacementPolicy`` values match these tokens 1:1.
+this package does not import layup or material workers. Token values match
+a downstream ply-placement policy 1:1.
 """
 
 from __future__ import annotations

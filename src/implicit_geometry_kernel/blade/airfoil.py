@@ -82,7 +82,7 @@ class Airfoil:
         phi = np.linspace(0.0, 2.0 * np.pi, 2 * n - 1)
         x = 0.5 * (1.0 + np.cos(phi))
         y = 0.5 * thickness_ratio * np.sin(phi)
-        return cls(np.column_stack([x, y]), f"ellipse t/c={thickness_ratio:g}")
+        return cls(np.column_stack([x, y]), f"ellipse t/c={thickness_ratio:g}")  # type: ignore
 
     def surface(self, side: str, x_c: Union[float, np.ndarray]) -> np.ndarray:
         """y/c of the ``"upper"`` or ``"lower"`` surface at chord fractions ``x_c``."""

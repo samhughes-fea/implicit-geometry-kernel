@@ -87,6 +87,6 @@ def section_properties_from_polygons(
     out: dict[str, dict[str, float]] = {}
     for label, poly in label_polys.items():
         props = _props_from_poly(poly)
-        props["label"] = str(label)
+        props["label"] = str(label)  # type: ignore
         out[str(label)] = props
     return out

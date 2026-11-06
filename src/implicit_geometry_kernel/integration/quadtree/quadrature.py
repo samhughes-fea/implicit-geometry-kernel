@@ -11,7 +11,7 @@ from implicit_geometry_kernel.integration.quadtree.tree import QuadCell, QuadTre
 
 def _label_corner_phi(mesh: QuadTreeMesh, label: Any) -> np.ndarray:
     key = str(getattr(label, "value", label))
-    return np.asarray(mesh.phi_by_label[key], dtype=float)[:, :4]
+    return np.asarray(mesh.phi_by_label[key], dtype=float)[:, :4]  # type: ignore
 
 
 def label_fill_polygons(mesh: QuadTreeMesh, label: Any) -> list[np.ndarray]:
@@ -129,7 +129,7 @@ def _accumulate_moments_vectorized(
             acc[j] += float(acc_b[j])
 
     if np.any(hollow) and sampler is not None:
-        for i in np.flatnonzero(hollow):
+        for i in np.flatnonzero(hollow):  # type: ignore
             b = bounds[i]
             cell = QuadCell(float(b[0]), float(b[1]), float(b[2]), float(b[3]))
             _accumulate_cell(

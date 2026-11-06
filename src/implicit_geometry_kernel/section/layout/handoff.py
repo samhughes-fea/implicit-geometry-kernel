@@ -1,7 +1,7 @@
 """Stamp placement identity onto ``ShellMidlineStrip`` (WP3 D3.4).
 
 Uses string construction defaults from :mod:`.anchoring` so this module stays
-inside the ``section_geometry`` import boundary. Callers that already hold a
+inside the section import boundary. Callers that already hold a
 layup ``PlyPlacementPolicy`` may pass ``policy_id`` / ``digest`` / ``reference_face``
 explicitly via :func:`stamp_strip_placement_fields`.
 """
@@ -64,7 +64,7 @@ def stamp_strip_placement_fields(
     }
     require_placement_stamp(**payload)
     if is_dataclass(strip) and hasattr(strip, "placement_policy_id"):
-        return replace(strip, **{k: v for k, v in payload.items() if hasattr(strip, k)})
+        return replace(strip, **{k: v for k, v in payload.items() if hasattr(strip, k)})  # type: ignore
     return strip
 
 

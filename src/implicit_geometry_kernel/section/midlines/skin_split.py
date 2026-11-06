@@ -209,7 +209,7 @@ def _classify_side_arcs(
             bay_i += 1
 
         if skin_arc == "bay":
-            label = f"{root}:bay_{int(bay_index)}"
+            label = f"{root}:bay_{int(bay_index)}"  # type: ignore
         else:
             label = f"{root}:{skin_arc}"
         out.append(

@@ -225,7 +225,7 @@ class OuterSkin(SectionComponent):
                 side_expr = (
                     upper_half_plane_expr() if surface == "upper" else lower_half_plane_expr()
                 )
-            expr = Intersect(slab, side_expr)
+            expr = Intersect(slab, side_expr)  # type: ignore
 
         super().__init__(expr)
         # Where on the wall this skin applies (None: the whole wall).

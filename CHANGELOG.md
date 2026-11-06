@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- CI: mypy on `src/implicit_geometry_kernel`, a consumer-name grep on `src/` and
+  `tests/`, and `py.typed`. Branch protection on `main` requires the test jobs.
+
 ## 0.5.0
 
 - Package version is `0.5.0`. `SpanWeb` remains an alias of `ShearWeb` until 0.6.0.

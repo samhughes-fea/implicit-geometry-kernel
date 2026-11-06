@@ -255,7 +255,7 @@ def b_frame_web_search(plan: SectionPlan):
         arr = np.asarray(verts, dtype=float)
         c, s = float(np.cos(plan.twist)), float(np.sin(plan.twist))
         yb = s * arr[:, 0] + c * arr[:, 1]
-        y_search_b = (float(yb.min()) - 0.1, float(yb.max()) + 0.1)
+        y_search_b = (float(np.min(yb)) - 0.1, float(np.max(yb)) + 0.1)
     elif y_search_b is None:
         y_search_b = (-1.5, 1.5)
     return phi_inner_b, y_search_b

@@ -139,7 +139,7 @@ def refine_quadtree_multi(
 
                 if len(active_rows):
                     gather: list[int] = []
-                    for i in active_rows:
+                    for i in active_rows:  # type: ignore
                         gather.extend(range(int(i) * n_probes, (int(i) + 1) * n_probes))
                     phi_int = np.asarray(sampler(all_interior[gather]), dtype=float).reshape(
                         len(active_rows), n_probes
@@ -164,7 +164,7 @@ def refine_quadtree_multi(
 
         # Early-stop leaves: stash probe[0] (cell centre) for _attach_center_phi reuse.
         notneed_idx = np.flatnonzero(~needs)
-        for i in notneed_idx:
+        for i in notneed_idx:  # type: ignore
             cell = eligible[int(i)]
             cell._center_phi = {  # type: ignore[attr-defined]
                 lbl: float(interior_by_label[lbl][int(i), 0]) for lbl in labels
@@ -193,7 +193,7 @@ def refine_quadtree_multi(
     leaves = mesh.leaf_cells()
     center_phi: dict[str, np.ndarray] = {}
     for lbl in labels:
-        vals = np.empty(len(leaves), dtype=float)
+        vals = np.empty(len(leaves), dtype=float)  # type: ignore
         for i, cell in enumerate(leaves):
             cp = getattr(cell, "_center_phi", None)
             vals[i] = float(cp[lbl]) if cp is not None and lbl in cp else np.nan

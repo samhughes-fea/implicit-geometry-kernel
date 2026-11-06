@@ -25,7 +25,7 @@ the same work; they are not extra steps.
 
 | Step | What | State |
 |------|------|-------|
-| 1 | Stabilise: lint fix, naming fix, data clean-up | Done (PR #4, #5). Tag `v0.4.1`, branch protection on `main`, consumer-name CI grep, and mypy on `src/` are still to be done by the maintainer |
+| 1 | Stabilise: lint fix, naming fix, data clean-up | Done (PR #4, #5). Branch protection, consumer-name grep and mypy on `src/` added. `v0.4.1` was skipped; tagged `v0.5.0` |
 | 2 | Safety net: golden numbers, API snapshot, downstream check script | Done (PR #6) |
 | 3 | Member model in `structure/` (contributions, builders, assembler, span laws, span field nodes) | Done (PR #6) |
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
@@ -127,13 +127,13 @@ contract  <-  sdf, integration, frames  <-  structure  <-  section  <-  blade  <
 
 | Area | Rule | Enforced by |
 |------|------|-------------|
-| Agnostic | No consumer names, paths or special cases in `src/`, tests or docs. Generic extension points only | A CI grep for known consumer names (to add) |
+| Agnostic | No consumer names, paths or special cases in `src/`, tests or docs. Generic extension points only | `tests/test_consumer_names.py` (src and tests) |
 | Public API | Only names in the top-level `__all__` and `contract/` are public | API snapshot test |
 | Versioning | Semantic versions; removals only in a minor release (pre-1.0) after one release of deprecation warnings; tags never move | Changelog; tags by the maintainer |
-| Main branch | Every change through a PR with green CI (lint, tests on Python 3.11 to 3.13, examples, wheel build) | Branch protection (to turn on) |
+| Main branch | Every change through a PR with green CI (lint, tests on Python 3.11 to 3.13, examples, wheel build) | Branch protection on `main` |
 | Numbers | Results reproducible between releases unless the changelog says otherwise | Golden-number test |
 | Dependencies | Runtime: numpy, shapely, numba. Extras: scipy, matplotlib, pyyaml, gmsh | Core-install CI job |
-| Typing | Ships `py.typed`; public API annotated | mypy on `src/` in CI (to add) |
+| Typing | Ships `py.typed`; public API annotated | mypy on `src/` in CI |
 | Data | No private reference-blade inputs in the repo; examples that need them skip without a local clone | Example 09 pattern |
 | Submodule use | `pip install -e path/to/kernel`, no build step or generated files | Wheel-build job |
 

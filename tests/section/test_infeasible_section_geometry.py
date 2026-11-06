@@ -8,8 +8,7 @@ off, not raised through the station worker.
 This used to be decided by substring-matching the exception message in a BSP
 optimize module, which meant any newly-worded or newly-added infeasibility became
 a crash. These tests pin the type instead. BSP sizing absorption is covered in
-``blade_structure_precompute.module.section_selection`` (station sizing workflow);
-this package only owns the geometry oracles.
+a downstream sizing loop; this package only owns the geometry oracles.
 """
 
 from __future__ import annotations

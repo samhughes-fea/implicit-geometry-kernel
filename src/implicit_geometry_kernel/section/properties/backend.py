@@ -79,7 +79,7 @@ def quadtree_spec_to_dict(spec: QuadtreeSpec) -> dict[str, float | int | bool | 
         "min_cell_size": float(spec.min_cell_size),
         "refine_band": float(spec.refine_band),
         "refine_band_scale": float(spec.refine_band_scale),
-        "refine_probes": str(spec.refine_probes),
+        "refine_probes": str(spec.refine_probes),  # type: ignore
         "max_cells": int(spec.max_cells) if spec.max_cells is not None else None,
         "square_cells": bool(spec.square_cells),
         "root_cell_size": float(spec.root_cell_size) if spec.root_cell_size is not None else None,

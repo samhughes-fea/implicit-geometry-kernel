@@ -3,8 +3,7 @@
 These types describe the shape and the structural layout of a blade or wing, and
 nothing about materials: ``Station`` (span position, chord, twist, pitch axis and
 offset), ``SkinRegion`` (a chordwise band of skin on both surfaces) and ``ShearWeb``
-(a web at a chord fraction). ``shell_fem.BladeBuilder`` meshes them
-as shells.
+(a web at a chord fraction). A downstream shell mesher turns them into shells.
 
 Axes: z runs along the span, x along the chord (leading edge to trailing edge) and
 y through the thickness (suction side positive). The pitch axis sits at x = 0.

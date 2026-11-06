@@ -5,8 +5,8 @@ Export ``section_geometry`` subcomponent midlines as FE-agnostic
 :class:`ShellMidlineStrip` records in the blade (B) frame.
 
 **Dependency rule:** this module may import from ``implicit_geometry_kernel.contract``
-and from ``implicit_geometry_kernel.section``, but must **never** import from
-``blade_structure_utilities.fem_utilities.section_shell_fea``.
+and from ``implicit_geometry_kernel.section``, but must **never** import a mesh
+or FE package.
 
 **Strip order:** ``build_shell_midline_strips`` yields skins and webs in
 ``components_unrotated`` dict-insertion order, then spar caps in

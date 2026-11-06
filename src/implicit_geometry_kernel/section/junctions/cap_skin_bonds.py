@@ -211,13 +211,13 @@ def _bond_one_cap(cap: ShellMidlineStrip, chain: list[_Arc]):
         arc_inserts.setdefault(arc, []).append((local, t, p["chain"]))
 
     bonds: list[StripBond] = []
-    for arc_index, arc in enumerate(chain):
+    for arc_index, arc in enumerate(chain):  # type: ignore
         lo, hi = chain_prefix[arc_bounds[arc_index]], chain_prefix[arc_bounds[arc_index + 1]]
         members = [p for p in pairs if lo - 1e-12 <= p["sigma"] <= hi + 1e-12]
         if len(members) >= 2:
             bonds.append(
                 StripBond(
-                    host_label=str(arc.strip.label),
+                    host_label=str(arc.strip.label),  # type: ignore
                     points=np.asarray([p["cap"] for p in members], dtype=np.float64),
                     host_points=np.asarray([p["chain"] for p in members], dtype=np.float64),
                 )

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `SectionSpec`, `Gauges` and `SectionOptions` are the station geometry input
+  (`section.spec`). `build_section_geometry(spec, options=...)` is the worker
+  entry; the keyword form builds a spec and warns (removed in 0.6.0).
+  `SectionGeometry` and `BladeGeometry.section_at` build a spec internally.
+  Geometry unchanged. The `api/` → `spec/` package move is still to do.
+
 - `blade/cut.py` split (moves only, geometry unchanged): wall/cell types stay in
   `cut.py`; the mid-surface graph, shell graph, partitions and topology diff live
   in `blade/shell_graph.py`. `blade.cut` still exports the graph names until 0.6.0.

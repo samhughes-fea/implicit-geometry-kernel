@@ -179,20 +179,28 @@ class SectionGeometry:
         return self
 
     def _assemble(self, resolution: StationLayoutResolution, *, live_y: bool = False):
+        from implicit_geometry_kernel.section.spec import SectionOptions, SectionSpec
+
         y = None if live_y else getattr(resolution, "web_y_coords", None)
-        return build_section_geometry(
+        thickness = (
+            {"zone_gauges_m": self._zone_gauges_m}
+            if self._zone_gauges_m is not None
+            else {
+                "skin_thickness": self._t_skin_gauges,
+                "spar_cap_thickness": self._t_spar,
+                "shear_web_thickness": self._t_web,
+            }
+        )
+        spec = SectionSpec.from_kwargs(
             resolution.layout,
             self._airfoil,
-            **(
-                {"zone_gauges_m": self._zone_gauges_m}
-                if self._zone_gauges_m is not None
-                else {
-                    "skin_thickness": self._t_skin_gauges,
-                    "spar_cap_thickness": self._t_spar,
-                    "shear_web_thickness": self._t_web,
-                }
-            ),
+            **thickness,
             twist_rad=self._twist_rad,
+            web_x_positions_m=resolution.web_x_positions_m,
+            web_y_coords=y,
+            spar_cap_ply_pitch_m=self._spar_cap_ply_pitch_m,
+        )
+        opts = SectionOptions.from_kwargs(
             outputs=self._outputs,
             props_backend=self._props_backend,
             n_web_samples=self._n_web_samples,
@@ -200,10 +208,8 @@ class SectionGeometry:
             retain_mesh=self._retain_mesh,
             quadtree_spec=self._quadtree_spec,
             airfoil_for_spec=self._airfoil_for_spec,
-            web_x_positions_m=resolution.web_x_positions_m,
-            web_y_coords=y,
-            spar_cap_ply_pitch_m=self._spar_cap_ply_pitch_m,
         )
+        return build_section_geometry(spec, options=opts)
 
     def _assemble_dropping_webs(self, resolution: StationLayoutResolution, last_exc):
         """Wave 4: step down webs when flapwise re-anchor fails (not a frozen sizing freeze)."""

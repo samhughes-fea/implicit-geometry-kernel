@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `Stringer` on `BladeGeometry` is a free-end or through branch, optionally
+  limited by `extent`. Inside that interval it appears on `ShellGraph.branches`;
+  the ends are topology events and `forced_stations()`.
+
 - `TransverseMember` on `BladeGeometry` places ribs, bulkheads and frames at a
   span station. `section_at` at that `z` attaches closed rib faces on
   `ShellGraph.faces` (cell-wall loops, or the skin loop when there are no

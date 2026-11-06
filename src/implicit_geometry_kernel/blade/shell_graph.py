@@ -83,6 +83,7 @@ class ShellGraph:
     loop: Tuple[ShellRun, ...]
     webs: Tuple[ShellRun, ...]
     faces: Tuple[ShellRun, ...] = ()
+    branches: Tuple[ShellRun, ...] = ()
 
     def runs(self) -> Tuple[ShellRun, ...]:
         return self.loop + self.webs
@@ -167,6 +168,8 @@ def shared_loft_names(names_a, names_b) -> Tuple[str, ...]:
 def _event_kind(run: ShellRun, side: str) -> str:
     if run.surface == "rib":
         return "lost_rib" if side == "lost" else "gained_rib"
+    if run.surface == "stringer":
+        return "lost_stringer" if side == "lost" else "gained_stringer"
     if run.surface == "web" or run.kind == "web":
         return "dropped_web" if side == "lost" else "added_web"
     if run.kind == "cap":
@@ -174,15 +177,9 @@ def _event_kind(run: ShellRun, side: str) -> str:
     return "bay_merge" if side == "lost" else "bay_split"
 
 
-def topology_diff(a: ShellGraph, b: ShellGraph) -> TopologyDiff:
-    """Compare two shell graphs. Loft ``shared``; do not invent missing strips.
-
-    Rib faces are topology events when present on only one station; they are
-    not lofted (``shared`` is the intersection of skin and web run names).
-    """
-    by_a = {r.name: r for r in a.runs()}
-    by_b = {r.name: r for r in b.runs()}
-    shared = shared_loft_names(by_a, by_b)
+def _events_for(a_runs, b_runs) -> list:
+    by_a = {r.name: r for r in a_runs}
+    by_b = {r.name: r for r in b_runs}
     events = []
     for name, run in by_a.items():
         if name not in by_b:
@@ -190,14 +187,19 @@ def topology_diff(a: ShellGraph, b: ShellGraph) -> TopologyDiff:
     for name, run in by_b.items():
         if name not in by_a:
             events.append(TopologyEvent(_event_kind(run, "gained"), name, "gained"))
-    faces_a = {r.name: r for r in a.faces}
-    faces_b = {r.name: r for r in b.faces}
-    for name, run in faces_a.items():
-        if name not in faces_b:
-            events.append(TopologyEvent(_event_kind(run, "lost"), name, "lost"))
-    for name, run in faces_b.items():
-        if name not in faces_a:
-            events.append(TopologyEvent(_event_kind(run, "gained"), name, "gained"))
+    return events
+
+
+def topology_diff(a: ShellGraph, b: ShellGraph) -> TopologyDiff:
+    """Compare two shell graphs. Loft ``shared``; do not invent missing strips.
+
+    Rib faces and partial-span stringers are topology events when present on
+    only one station; they are not lofted (``shared`` is skin and web names).
+    """
+    shared = shared_loft_names([r.name for r in a.runs()], [r.name for r in b.runs()])
+    events = _events_for(a.runs(), b.runs())
+    events.extend(_events_for(a.faces, b.faces))
+    events.extend(_events_for(a.branches, b.branches))
     return TopologyDiff(shared, tuple(events))
 
 
@@ -431,8 +433,56 @@ def _rib_faces(cut: SectionCut, graph: ShellGraph) -> Tuple[ShellRun, ...]:
     return tuple(faces)
 
 
+def _chord_fractions(cut: SectionCut, xy: np.ndarray) -> np.ndarray:
+    t = np.radians(float(cut.twist))
+    c, s = np.cos(t), np.sin(t)
+    x = xy[:, 0] - float(cut.offset[0])
+    y = xy[:, 1] - float(cut.offset[1])
+    local_x = c * x - s * y
+    return (local_x + float(cut.pitch_axis) * float(cut.chord)) / float(cut.chord)
+
+
+def _stringer_branches(cut: SectionCut) -> Tuple[ShellRun, ...]:
+    members = tuple(getattr(cut, "stringers", ()) or ())
+    if not members:
+        return ()
+    out = []
+    for member in members:
+        walls = [w for w in cut.walls if w.kind == "skin" and (w.side == member.side or w.side is None)]
+        if not walls:
+            continue
+        pts = np.vstack([w.points for w in walls])
+        frac = _chord_fractions(cut, pts[:, :2])
+        i = int(np.argmin(np.abs(frac - member.position)))
+        foot = np.asarray(pts[i], float)
+        if member.free_end:
+            j0, j1 = max(0, i - 1), min(len(pts) - 1, i + 1)
+            tangent = pts[j1, :2] - pts[j0, :2]
+            nrm = float(np.linalg.norm(tangent))
+            if nrm < 1e-15:
+                continue
+            tangent = tangent / nrm
+            normal = np.array([-tangent[1], tangent[0]])
+            if cut.cells:
+                centroid = np.mean(np.vstack([c.points[:, :2] for c in cut.cells]), axis=0)
+                if float(np.dot(centroid - foot[:2], normal)) < 0.0:
+                    normal = -normal
+            tip_xy = foot[:2] + normal * float(member.depth)
+            tip = np.array([tip_xy[0], tip_xy[1], foot[2]])
+        else:
+            opp = [w for w in cut.walls if w.kind == "skin" and w.side and w.side != member.side]
+            if not opp:
+                continue
+            opts = np.vstack([w.points for w in opp])
+            k = int(np.argmin(np.abs(_chord_fractions(cut, opts[:, :2]) - member.position)))
+            tip = np.asarray(opts[k], float)
+        out.append(ShellRun(member.name, "stringer", member.name, (member.name,),
+                            np.vstack([foot, tip]), float(member.thickness)))
+    return tuple(out)
+
+
 def shell_graph(cut: SectionCut) -> ShellGraph:
-    """Loftable shell graph: skin partitions (caps merged), web branches and rib faces."""
+    """Loftable shell graph: skin partitions, web branches, rib faces and stringers."""
     from dataclasses import replace
 
     ms = cut.mid_surface()
@@ -440,7 +490,7 @@ def shell_graph(cut: SectionCut) -> ShellGraph:
     webs = tuple(s for s in ms.segments if s.kind == "web")
     graph = ShellGraph(float(cut.z), _runs_of(ms, skins, cut, "skin"),
                        _runs_of(ms, webs, cut, "web")).with_web_feet_on_loop()
-    return replace(graph, faces=_rib_faces(cut, graph))
+    return replace(graph, faces=_rib_faces(cut, graph), branches=_stringer_branches(cut))
 
 
 def partition_edge_curve(geo, name_a: str, name_b: str, zs) -> np.ndarray:

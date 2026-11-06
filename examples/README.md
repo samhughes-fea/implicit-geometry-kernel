@@ -17,6 +17,7 @@ integration.
 | 08 | [Frames and twist](08_frames_and_twist/) | NACA, S and B frames; second moments rotated with the outline; the sign of twist | `frames` |
 | 09 | [Reference blades](09_reference_blades/) | Five windIO 2.0 blades: 2-D cuts, planform, elevation/plan/iso, landmark close-ups; optional Gmsh probe | `BladeGeometry`, `Airfoil` |
 | 10 | [Transverse rib](10_transverse_rib/) | A midspan rib as closed faces on the shell graph at that z only | `TransverseMember`, `ShellGraph.faces` |
+| 11 | [Partial-span stringer](11_partial_span_stringer/) | A free-end stringer on the graph between two span stations | `Stringer`, `ShellGraph.branches` |
 
 ## Running
 

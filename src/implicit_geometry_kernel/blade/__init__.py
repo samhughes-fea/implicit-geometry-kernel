@@ -15,13 +15,13 @@ from implicit_geometry_kernel.blade.windio import (
 from implicit_geometry_kernel.blade.network import (
     StationNetwork, WallBranch, station_network, station_network_from_meta, wall_meta_from_cut,
 )
-from implicit_geometry_kernel.blade.stations import ShearWeb, SkinRegion, Station, TransverseMember
+from implicit_geometry_kernel.blade.stations import ShearWeb, SkinRegion, Station, Stringer, TransverseMember
 
 __all__ = ["Airfoil", "BladeGeometry", "CellLoop", "CellPolygon", "MidSegment", "MidSurface", "PartitionEdge",
            "SectionCut", "SectionWall",
            "ShellGraph", "ShellRun",
-           "ShearWeb", "SkinRegion", "SpanTable", "SpanWeb", "Station", "StationNetwork", "Thickness",
-           "TransverseMember", "WallBranch",
+           "ShearWeb", "SkinRegion", "SpanTable", "SpanWeb", "Station", "StationNetwork", "Stringer",
+           "Thickness", "TransverseMember", "WallBranch",
            "TopologyDiff", "TopologyEvent", "partition_edge_curve", "section_at", "shared_loft_names",
            "shell_graph", "shell_strips_from_graph", "station_network", "station_network_from_meta",
            "topology_diff",

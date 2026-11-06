@@ -35,7 +35,7 @@ the same work; they are not extra steps.
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Not started. Mid-surface row is blocked on open decision 2 |
 | 9 | Separate blade-model package (only if the maintainer chooses it) | Not decided (open decision 4) |
 
-Step 5 breakdown (next slice is **5d**):
+Step 5 breakdown (next slice is **Phase 2**):
 
 | Slice | What | State |
 |-------|------|-------|
@@ -44,8 +44,8 @@ Step 5 breakdown (next slice is **5d**):
 | `sdf/`, `integration/`, `frames/` | Move to the target tree | Done (PR #10, #11, #12) |
 | 5a | `props` → `properties`, `recipes` → `walls` | Done (PR #13) |
 | 5b | `constructive` into `boundary` and `properties` (`export.py` → `boundary/walls.py` and `cores.py`; `labels` and `emitters` → `boundary/`; `properties.py` → `properties/polygons.py`) | Done (PR #14) |
-| 5c | `placement` into `layout` | Done (this PR) |
-| 5d | `blade/` split `cut.py` (`shell_graph.py`) | Not started |
+| 5c | `placement` into `layout` | Done (PR #15) |
+| 5d | `blade/` split `cut.py` (`shell_graph.py`) | Done (PR #16) |
 | Phase 2 | `SectionSpec`, `SectionOptions`, `api` → `spec`; then tag 0.5.0 | After 5c and 5d |
 
 Decisions already made by the maintainer:
@@ -184,7 +184,7 @@ Large modules and where they go:
 | `section/constructive/export.py` | Done: `boundary/walls.py`, `boundary/cores.py` |
 | `integration/quadrature.py` | Done: `quadtree/moments.py`, `quadtree/quadrature.py` |
 | `section/api/worker.py` | `spec/` (validation) and a short build module, after Phase 2 (~533 lines) |
-| `blade/cut.py` | `cut.py` (SectionCut, walls, cells) and `shell_graph.py` (graph, partitions, topology diff) (~510 lines; step 5d) |
+| `blade/cut.py` | Done: `cut.py` (SectionCut, walls, cells) and `shell_graph.py` (graph, partitions, topology diff) |
 
 ## Step 5 (continued): Phase 2 — one section input, no hidden settings
 

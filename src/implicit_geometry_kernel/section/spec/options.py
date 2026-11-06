@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
-from implicit_geometry_kernel.section.api.results import normalize_output_gates
+from implicit_geometry_kernel.section.spec.results import normalize_output_gates
 
 
 def _env_int(name: str, default: int) -> int:

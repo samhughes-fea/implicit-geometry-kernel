@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from implicit_geometry_kernel.section.api.kwarg_aliases import (
+from implicit_geometry_kernel.section.spec.kwarg_aliases import (
     resolve_shear_web_thickness,
     resolve_skin_gauges,
     resolve_spar_cap_thickness,
@@ -103,7 +103,7 @@ class SectionSpec:
         """Build a spec from the historical keyword form. Validation is in ``__post_init__``."""
         zone_items = None
         if zone_gauges_m:
-            from implicit_geometry_kernel.section.api.worker import (
+            from implicit_geometry_kernel.section.spec.prep import (
                 _compat_kwargs_from_zone_gauges,
             )
 

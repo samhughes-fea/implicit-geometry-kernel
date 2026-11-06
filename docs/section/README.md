@@ -74,7 +74,8 @@ result = SectionGeometry(
 ```
 
 `SectionGeometry` is the public call path (`SectionGeometryRunner` is an
-alias). `build_section_geometry` is a deep import (`section.api`) for tests.
+alias). `build_section_geometry` is a deep import (`section.spec`; `section.api`
+is an alias until 0.6.0) for tests.
 Returns `SectionGeometryResult` or raises (e.g. `InfeasibleSectionGeometry`).
 
 Guided paths: [`docs/guides/quickstart.md`](guides/quickstart.md).
@@ -187,7 +188,7 @@ Internal ownership matrix:
 
 ```mermaid
 flowchart TB
-  Api[api] --> Layout[layout]
+  Api[spec] --> Layout[layout]
   Api --> Assembly[assembly]
   Layout --> Assembly
   Recipes[recipes] --> Assembly
@@ -228,7 +229,8 @@ flowchart TB
 | Shape primitives | [`sdf/`](sdf/README.md) (recipe-agnostic) |
 
 Preferred call: `SectionGeometry`. Assemble-only and `build_section_geometry`
-are `section.api` (tests). Demo view: `build_section_view`.
+are `section.spec` (tests; `section.api` is an alias until 0.6.0). Demo view:
+`build_section_view`.
 
 ## Concepts
 
@@ -301,7 +303,7 @@ midlines. Detail: [`coordinate_frames`](../frames/README.md) ·
 
 ```text
 section/
-├── api/            # runner and build entrypoints
+├── spec/           # SectionSpec, runner, and build entrypoints (`api/` alias until 0.6.0)
 ├── layout/         # layout id → SystemLayoutSpec / SectionLayout; through-thickness anchoring
 ├── assembly/       # MultiCellSection host
 ├── recipes/        # dual-emission wall recipes (SDF / polygon / midline)
@@ -314,7 +316,7 @@ section/
 
 | Module | Role |
 |--------|------|
-| [`api/`](api/README.md) | Public lifecycle: resolve, build, return `SectionGeometryResult` |
+| [`spec/`](spec/README.md) | Public lifecycle: `SectionSpec`, resolve, build, return `SectionGeometryResult` |
 | `types/` | Stable aliases for result types |
 | [`layout/`](layout/README.md) | Catalogue ids, parametric `SectionLayout`, web-drop rules |
 | `implicit_geometry_kernel.sdf` | Domain-agnostic shape kernel (not under `section/`) |
@@ -351,8 +353,8 @@ Also exported from the barrel (secondary):
 | `SystemLayoutSpec` | Frozen catalogue layout |
 | `SectionPropertiesMeta` | Backend metadata on a properties result |
 
-Deep imports (not on the barrel): `section.api.build_section_geometry`,
-`section.api.build_section_view`, clamps in `section.layout.thickness_limits`,
+Deep imports (not on the barrel): `section.spec.build_section_geometry`,
+`section.spec.build_section_view` (`section.api` until 0.6.0), clamps in `section.layout.thickness_limits`,
 plots from sibling `plotting`.
 
 ## Results
@@ -454,7 +456,7 @@ This is per-region 2-D geometry, not beam `EA` / `EI` / `GJ`
 - [`docs/guides/anatomy_on_a_figure.md`](guides/anatomy_on_a_figure.md) — labels / midlines / cells on a figure
 - [`docs/guides/feasibility_and_drops.md`](guides/feasibility_and_drops.md) — drops vs `InfeasibleSectionGeometry`
 - [`docs/guides/geometry_to_mesh.md`](guides/geometry_to_mesh.md) — midlines → `ShellMeshInputs`
-- [`api/`](api/README.md) — caller parameters and feasibility
+- [`spec/`](spec/README.md) — caller parameters and feasibility
 - [`docs/guides/caller_patterns.md`](guides/caller_patterns.md) — sizing loop and spanwise webs
 - `sections/components/` — skin / web / cap recipes
 - [`docs/`](docs_index.md) — docs index (taxonomy, patterns, gallery)

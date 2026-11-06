@@ -1,5 +1,10 @@
 """
-Parametric NACA section generators (4-, 5-, and 6-series) for AirfoilSDF construction.
+Parametric NACA section generators (4-, 5-, and 6-series).
+
+``Airfoil.naca4`` and ``AirfoilSDF.from_naca`` both call these helpers; keep the
+coefficients and vertex construction here so the two types stay in lock-step.
+``Airfoil`` is the chord-normalised shape; ``AirfoilSDF`` is its implicit field
+(``Airfoil.to_sdf()``). This module must not import ``blade``.
 
 Five-digit camber/thickness conventions follow Abbott & von Doenhoff / NASA summaries.
 Six-series profiles for families 63 and 64 use embedded UIUC Airfoil Data Site

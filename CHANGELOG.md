@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `Airfoil` is the shape; `AirfoilSDF` is the implicit field via `Airfoil.to_sdf()`.
+  NACA 4/5/6 vertex maths lives only in `sdf.shapes.naca`.
+
 - Comments in `src/` and `tests/` use plain sentences instead of tracking codes
   (SG-/BL-/G-POLY/"Wave 0"); `docs/section/bug_log.md` still holds the history.
 

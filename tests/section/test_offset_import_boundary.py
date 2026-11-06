@@ -1,51 +1,55 @@
-"""Production code must import offset APIs from offset_locus, not helpers."""
+"""Shapely has one gateway: ``section/boundary/polygons.py``.
+
+Inside the kernel only that module and ``integration/shoelace.py`` (exact polygon
+sums, a lower layer) import Shapely. Production code imports polygon and offset
+helpers from ``boundary``, never from the old alias modules.
+"""
 
 from __future__ import annotations
-import importlib
 
-import re
+import ast
+import importlib
 from pathlib import Path
 
-_SECTION_GEOMETRY = Path(importlib.import_module("implicit_geometry_kernel.section").__file__).resolve().parent
-_FORBIDDEN = frozenset(
-    {"offset_polygon_inward", "airfoil_offset_ring", "airfoil_polygon"}
-)
-_SKIP_FILES = frozenset({"helpers.py", "offset_locus.py", "offset_math.py"})
+PACKAGE = Path(importlib.import_module("implicit_geometry_kernel").__file__).resolve().parent
+SHAPELY_HOMES = {"section/boundary/polygons.py", "integration/shoelace.py"}
+ALIASES = {
+    "implicit_geometry_kernel.section.constructive.helpers",
+    "implicit_geometry_kernel.section.constructive.offset_locus",
+    "implicit_geometry_kernel.section.midlines.offset_math",
+}
+ALIAS_FILES = {"section/constructive/helpers.py", "section/constructive/offset_locus.py",
+               "section/midlines/offset_math.py"}
 
 
-def _iter_production_py() -> list[Path]:
-    out: list[Path] = []
-    for path in _SECTION_GEOMETRY.rglob("*.py"):
-        rel = path.relative_to(_SECTION_GEOMETRY)
-        if "tests" in rel.parts:
-            continue
-        if path.name in _SKIP_FILES:
-            continue
-        out.append(path)
-    return out
+def _imports(path: Path):
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            yield node.module
+        elif isinstance(node, ast.Import):
+            yield from (a.name for a in node.names)
 
 
-def test_no_production_offset_imports_from_helpers():
-    failures: list[str] = []
-    pattern = re.compile(
-        r"from\s+([\w.]*)constructive\.helpers\s+import\s+([^\n]+)"
-        r"|from\s+\.helpers\s+import\s+([^\n]+)"
-    )
-    for path in _iter_production_py():
-        text = path.read_text(encoding="utf-8")
-        if "helpers" not in text:
-            continue
-        if not any(name in text for name in _FORBIDDEN):
-            continue
-        for m in pattern.finditer(text):
-            imported = m.group(2) or m.group(3) or ""
-            names = {
-                part.strip().split(" as ")[0].strip() for part in imported.split(",")
-            }
-            bad = sorted(names & _FORBIDDEN)
-            if bad:
-                rel = path.relative_to(_SECTION_GEOMETRY)
-                failures.append(f"{rel}: imports {bad} from helpers")
-    assert not failures, (
-        "Offset APIs must come from offset_locus, not helpers:\n" + "\n".join(failures)
-    )
+def _files():
+    for path in sorted(PACKAGE.rglob("*.py")):
+        yield path, path.relative_to(PACKAGE).as_posix()
+
+
+def test_only_the_gateway_imports_shapely():
+    bad = [(rel, m) for path, rel in _files() if rel not in SHAPELY_HOMES
+           for m in _imports(path) if m.split(".")[0] == "shapely"]
+    assert not bad, f"import Shapely through section.boundary: {bad}"
+
+
+def test_production_code_does_not_use_the_alias_modules():
+    bad = [(rel, m) for path, rel in _files() if rel not in ALIAS_FILES
+           for m in _imports(path) if m in ALIASES]
+    assert not bad, f"import from section.boundary instead: {bad}"
+
+
+def test_aliases_point_at_the_gateway():
+    boundary = importlib.import_module("implicit_geometry_kernel.section.boundary")
+    for name in ALIASES:
+        mod = importlib.import_module(name)
+        for attr in mod.__all__:
+            assert getattr(mod, attr) is getattr(boundary, attr), (name, attr)

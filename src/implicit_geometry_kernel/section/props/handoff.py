@@ -52,7 +52,7 @@ def outer_polygon_from_airfoil(airfoil: Any):
     Returns ``None`` when shapely is unavailable or the outline is invalid.
     """
     try:
-        from shapely.geometry import Polygon
+        from implicit_geometry_kernel.section.boundary import Polygon
     except ImportError:
         return None
     verts = np.asarray(getattr(airfoil, "vertices", None), dtype=float)

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from shapely.geometry import MultiPolygon, Polygon
-from shapely.ops import unary_union
+from implicit_geometry_kernel.section.boundary import MultiPolygon, Polygon
+from implicit_geometry_kernel.section.boundary import unary_union
 
 from implicit_geometry_kernel.section.midlines.host import (
     resolve_section_host,
@@ -13,7 +13,7 @@ from implicit_geometry_kernel.section.midlines.host import (
 from implicit_geometry_kernel.profiling import timed_stage
 
 from implicit_geometry_kernel.section.constructive.emitters import emit_inner_cavity_polygon, emit_outer_skin_polygon
-from implicit_geometry_kernel.section.constructive.offset_locus import airfoil_polygon, ensure_polygon, offset_polygon_inward, rotate_geom
+from implicit_geometry_kernel.section.boundary import airfoil_polygon, ensure_polygon, offset_polygon_inward, rotate_geom
 from implicit_geometry_kernel.section.constructive.labels import is_core_label, is_insert_label, is_skin_label, is_wall_solid_label
 
 

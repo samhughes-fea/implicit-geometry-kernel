@@ -53,9 +53,9 @@ def _normalise_skin_side(skin_side: str | None) -> str | None:
 
 def _closed_mid_ring(airfoil_sdf, thickness: float, *, mid_depth: float | None = None) -> np.ndarray:
     """Closed mid-surface ring from ``buffer(-mid_depth)`` (may omit aero tip)."""
-    from shapely.geometry import MultiPolygon, Polygon
+    from implicit_geometry_kernel.section.boundary import MultiPolygon, Polygon
 
-    from implicit_geometry_kernel.section.constructive.offset_locus import (
+    from implicit_geometry_kernel.section.boundary import (
         airfoil_polygon,
         offset_polygon_inward,
     )

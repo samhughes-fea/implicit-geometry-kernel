@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 import numpy as np
-from shapely.geometry import MultiPolygon, Polygon
+from implicit_geometry_kernel.section.boundary import MultiPolygon, Polygon
 
 from implicit_geometry_kernel.integration.shoelace import (
     section_properties_S,

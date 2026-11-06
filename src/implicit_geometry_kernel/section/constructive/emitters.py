@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
-from shapely.geometry import MultiPolygon, Polygon
+from implicit_geometry_kernel.section.boundary import MultiPolygon, Polygon
 
-from implicit_geometry_kernel.section.constructive.helpers import ensure_polygon, rotate_geom, stadium_polygon
-from implicit_geometry_kernel.section.constructive.offset_locus import airfoil_polygon, offset_polygon_inward
+from implicit_geometry_kernel.section.boundary import ensure_polygon, rotate_geom, stadium_polygon
+from implicit_geometry_kernel.section.boundary import airfoil_polygon, offset_polygon_inward
 
 
 def _clip_algebra():
@@ -320,7 +320,7 @@ def emit_leading_edge_insert_polygon(
     inner_cavity: Polygon | MultiPolygon | None = None,
 ) -> Polygon | MultiPolygon:
     """LE insert: Offset(airfoil, -skin) ∩ {x <= x_end} ∩ Circle(le, r)."""
-    from shapely.geometry import Point
+    from implicit_geometry_kernel.section.boundary import Point
 
     af = _af_from_component(comp)
     skin_t = float(comp.skin_thickness)

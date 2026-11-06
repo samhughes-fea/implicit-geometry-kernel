@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- One Shapely gateway: `section.boundary` (module `section/boundary/polygons.py`) holds
+  every polygon offset, Boolean clean-up, rotation and clip, and re-exports the Shapely
+  types the section uses. No other section module imports Shapely (a test enforces it;
+  `integration/shoelace.py` is the only other user). `section.constructive.helpers`,
+  `section.constructive.offset_locus` and `section.midlines.offset_math` remain as
+  aliases until 0.6.0. Geometry unchanged.
 - One shape model: the CSG shapes in `sdf.ir` (`Circle`, `Polygon`, `Union`, `Offset`,
   `Rotate`, `Slab`, ...) are now `SDFNode` subclasses that evaluate themselves, carry
   feature ids through combinators and have a `bbox()` method. The compile step is gone:

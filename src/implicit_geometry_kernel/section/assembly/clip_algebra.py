@@ -14,14 +14,14 @@ from dataclasses import dataclass
 from typing import Any, Callable, Literal, Union
 
 import numpy as np
-from shapely.geometry import Polygon
+from implicit_geometry_kernel.section.boundary import Polygon
 
 from implicit_geometry_kernel.sdf.ir import (
     HalfPlane,
     Intersect,
 )
 
-from implicit_geometry_kernel.section.constructive.helpers import chordwise_box, ensure_polygon, flapwise_bay_clip, half_plane_clip
+from implicit_geometry_kernel.section.boundary import chordwise_box, ensure_polygon, flapwise_bay_clip, half_plane_clip
 from implicit_geometry_kernel.section.assembly.clips import _airfoil_offset_arc, _parallel_web_half_gt, _parallel_web_half_lt, _parallel_web_strip_clip, airfoil_expr, chordwise_clip_expr, flapwise_web_normal, lower_half_plane_expr, strip_clip_expr, upper_half_plane_expr, web_station_projection
 
 

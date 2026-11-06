@@ -112,7 +112,7 @@ def _airfoil_offset_branch(airfoil_sdf, *, depth, surface):
     analogue of ``AirfoilSDF.upper_surface()`` / ``lower_surface()``, which split
     the vertex ring at the LE with the TE as the array seam.
     """
-    from implicit_geometry_kernel.section.constructive.offset_locus import airfoil_offset_ring
+    from implicit_geometry_kernel.section.boundary import airfoil_offset_ring
 
     ring = airfoil_offset_ring(airfoil_sdf, depth)
     # Seam at the TE apex so the LE split yields two clean branches.

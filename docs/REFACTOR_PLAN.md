@@ -148,8 +148,7 @@ implicit_geometry_kernel/
     nodes/           base, primitives, csg, bbox, tagged, span, lofted   (done)
     kernels/         numba kernels: primitives, polygon, grid, csg, transforms   (done)
     shapes/          airfoil and NACA fields   (done)
-  integration/     shoelace sums; quadtree/ (tree, refine, refine_multi, soa, marching,
-                   moments, quadrature)   (done)
+  integration/     shoelace sums; quadtree/ (tree, soa, marching, moments, quadrature)   (done)
   frames/          section frames; tensors/ (inertia, moments, forces, thickness)   (done)
   structure/       contributions, builders, assembler, span laws   (done)
   section/         in pipeline order:
@@ -178,7 +177,7 @@ Large modules and where they go:
 
 | Module today | Split into |
 |--------------|-----------|
-| `integration/quadtree.py` | Done: `quadtree/tree.py`, `refine.py`, `refine_multi.py`, `soa.py`, `marching.py`. Still to do (a logic PR, not a move; keep it out of step 5): keep the array-based path (`soa.py`) only and drop the object-model duplicates (`refine.py`, `refine_multi.py`) once nothing uses them |
+| `integration/quadtree.py` | Done: `quadtree/tree.py`, `soa.py`, `marching.py`. Object-model `refine.py` / `refine_multi.py` dropped |
 | `section/assembly/multicell.py` | webs, caps, skin and a short `section.py` (partly done by `plan.py` and `members.py`; ~261 lines) |
 | `frames/tensors.py` | Done: `tensors/inertia.py`, `moments.py`, `forces.py`, `thickness.py` |
 | `section/constructive/export.py` | Done: `boundary/walls.py`, `boundary/cores.py` |

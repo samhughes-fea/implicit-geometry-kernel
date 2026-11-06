@@ -1,12 +1,4 @@
-"""Struct-of-arrays quadtree vs the object-model reference.
-
-``build_shared_quadtree`` builds the shared section quadtree with the SoA
-refinement (`_refine_soa`). This must produce the *same leaf set* (identical
-cell bounds, identical count) as the retained object-model path
-(`build_square_root_forest` + `refine_quadtree_multi`). Per-label properties may
-differ only by float summation round-off, because SoA emits leaves in
-refinement order rather than DFS order (see PERFORMANCE_WORK_SUMMARY Phase 9).
-"""
+"""SoA shared quadtree is the production path: two builds match, properties are finite."""
 
 from __future__ import annotations
 
@@ -17,26 +9,11 @@ from implicit_geometry_kernel.section.api.factory import (
     build_section_view,
     resolve_system_type,
 )
-# Real home, not the deprecated ``engine`` shim: that shim star-imports, and
-# star-import never re-exports underscore names.
 from implicit_geometry_kernel.section.properties import area_mesh as am
 from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.integration import quadtree as qt
 from implicit_geometry_kernel.integration.quadtree.quadrature import section_properties_from_quadtree
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
-
-
-def _object_model_mesh(spec, samplers, supports, multi_sampler):
-    """Pre-SoA object-model build (square-cells branch)."""
-    mesh = qt.build_square_root_forest(spec, samplers)
-    mesh = qt.refine_quadtree_multi(
-        mesh, samplers, supports=supports, multi_sampler=multi_sampler
-    )
-    qt._refresh_leaf_cache(mesh)
-    mesh.phi_by_label = qt._phi_by_label_from_leaves(mesh.leaf_cells(), samplers)
-    if supports is not None:
-        mesh.component_supports = supports
-    return mesh
 
 
 def _sorted_bounds(arr):
@@ -46,7 +23,7 @@ def _sorted_bounds(arr):
 
 
 @pytest.mark.parametrize("twist_deg", [0.0, 12.0])
-def test_soa_leaf_set_and_properties_match_object_model(twist_deg):
+def test_soa_leaf_set_is_deterministic(twist_deg):
     airfoil = AirfoilSDF.from_naca("2412", n_points=80, chord=1.0)
     section = build_section_view(
         airfoil, resolve_system_type("2D-CN"), twist_angle_rad=np.deg2rad(twist_deg)
@@ -59,22 +36,19 @@ def test_soa_leaf_set_and_properties_match_object_model(twist_deg):
     supports = am._component_supports(samplers, spec, exprs=ev.exprs_for(labels))
     multi = ev.make_multi_sampler(labels)
 
-    soa = qt.build_shared_quadtree(spec, samplers, supports=supports, multi_sampler=multi)
-    obj = _object_model_mesh(spec, samplers, supports, multi)
+    a = qt.build_shared_quadtree(spec, samplers, supports=supports, multi_sampler=multi)
+    b = qt.build_shared_quadtree(spec, samplers, supports=supports, multi_sampler=multi)
 
-    lb_soa = qt.leaf_bounds(soa)
-    lb_obj = qt.leaf_bounds(obj)
+    lb_a = qt.leaf_bounds(a)
+    lb_b = qt.leaf_bounds(b)
+    assert lb_a.shape[0] > 1
+    assert np.array_equal(_sorted_bounds(lb_a), _sorted_bounds(lb_b))
 
-    # Identical leaf set (count + exact bounds, order aside).
-    assert lb_soa.shape[0] == lb_obj.shape[0]
-    assert np.array_equal(_sorted_bounds(lb_soa), _sorted_bounds(lb_obj))
-
-    # Properties match to summation round-off.
     for lbl in labels:
-        ps = section_properties_from_quadtree(soa, soa.phi_by_label, lbl, sampler=samplers[lbl])
-        po = section_properties_from_quadtree(obj, obj.phi_by_label, lbl, sampler=samplers[lbl])
+        pa = section_properties_from_quadtree(a, a.phi_by_label, lbl, sampler=samplers[lbl])
+        pb = section_properties_from_quadtree(b, b.phi_by_label, lbl, sampler=samplers[lbl])
         for key in ("area", "cx", "cy", "Ixx", "Iyy", "Ixy"):
+            assert np.isfinite(pa[key])
             np.testing.assert_allclose(
-                float(ps[key]), float(po[key]), rtol=1e-7, atol=1e-12,
-                err_msg=f"{lbl}.{key}",
+                float(pa[key]), float(pb[key]), rtol=1e-12, atol=0.0, err_msg=f"{lbl}.{key}"
             )

@@ -1,9 +1,7 @@
-"""Adaptive quadtree: cells and meshes (tree), refinement (refine, refine_multi, soa),
+"""Adaptive quadtree: cells and meshes (tree), array-based refinement (soa),
 zero contours (marching), exact cell moments (moments) and section property quadrature
 (quadrature).
-
-The package namespace keeps every name the former ``integration/quadtree.py`` module
-had, so that import path still works."""
+"""
 
 from implicit_geometry_kernel.integration.quadtree.tree import (
     QuadCell,
@@ -27,23 +25,12 @@ from implicit_geometry_kernel.integration.quadtree.tree import (
     build_square_root_forest,
     leaf_bounds,
 )
-from implicit_geometry_kernel.integration.quadtree.refine import (
-    _CHILD_CORNER_RECIPE,
-    _active_support_mask,
-    _cell_cached_corners,
-    _cell_needs_refine,
-    _cells_need_refine_batch,
-    _subdivide_cell_multi,
-    _subdivide_refined_reuse,
-    refine_quadtree,
-)
-from implicit_geometry_kernel.integration.quadtree.refine_multi import (
-    _phi_by_label_from_leaves,
-    refine_quadtree_multi,
-)
 from implicit_geometry_kernel.integration.quadtree.soa import (
     BatchEval,
+    _CHILD_CORNER_RECIPE,
     _active_support_mask_bounds,
+    _cell_needs_refine,
+    _cells_need_refine_batch,
     _expand_children_soa,
     _refine_points_for_bounds,
     _refine_soa,
@@ -80,18 +67,11 @@ __all__ = [
     "build_root_quadtree",
     "build_square_root_forest",
     "leaf_bounds",
+    "BatchEval",
     "_CHILD_CORNER_RECIPE",
-    "_active_support_mask",
-    "_cell_cached_corners",
+    "_active_support_mask_bounds",
     "_cell_needs_refine",
     "_cells_need_refine_batch",
-    "_subdivide_cell_multi",
-    "_subdivide_refined_reuse",
-    "refine_quadtree",
-    "_phi_by_label_from_leaves",
-    "refine_quadtree_multi",
-    "BatchEval",
-    "_active_support_mask_bounds",
     "_expand_children_soa",
     "_refine_points_for_bounds",
     "_refine_soa",

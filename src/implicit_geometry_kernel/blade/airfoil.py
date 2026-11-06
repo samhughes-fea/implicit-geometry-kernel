@@ -25,11 +25,13 @@ class Airfoil:
     trailing edge can be sharp or blunt (a flatback).
     """
 
-    def __init__(self, points: Sequence[Sequence[float]], name: str = "airfoil"):
+    def __init__(self, points: Sequence[Sequence[float]] | np.ndarray, name: str = "airfoil"):
         p = np.asarray(points, dtype=float)
         if p.ndim != 2 or p.shape[1] != 2 or len(p) < 5:
             raise ValueError("an airfoil needs at least 5 (x, y) points")
         self.name = name
+        self._analytic_t: float | None = None
+        self._closed_te: bool = True
         te = 0.5 * (p[0] + p[-1])
         le = int(np.argmax(np.linalg.norm(p - te, axis=1)))
         first, second = p[: le + 1][::-1], p[le:]

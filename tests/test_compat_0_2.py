@@ -1,0 +1,20 @@
+"""Names and geometry that downstream code written against 0.2.x relies on."""
+
+import pytest
+
+import implicit_geometry_kernel as k
+from implicit_geometry_kernel import Airfoil
+
+
+def test_shear_web_alias():
+    assert k.ShearWeb is k.SpanWeb
+    assert k.ShearWeb("web", 0.3, 3) == k.SpanWeb("web", 0.3, 3)
+
+
+@pytest.mark.parametrize("code", ["0015", "0021"])
+def test_naca4_n_is_points_per_surface(code):
+    # ``n`` is points per surface, as in 0.2.0. At half that density the spline through
+    # the points overshoots the nose and the leading edge opens by about 0.05% chord.
+    a = Airfoil.naca4(code)
+    gap = a.surface("upper", 0.0) - a.surface("lower", 0.0)
+    assert abs(gap) < 2.5e-4

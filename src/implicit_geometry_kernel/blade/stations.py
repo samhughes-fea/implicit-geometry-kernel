@@ -64,3 +64,7 @@ class SpanWeb:
     name: str
     position: float
     n: int = 4
+
+
+# Old name, kept so code written against 0.2.x still imports. Remove in 0.5.0.
+ShearWeb = SpanWeb

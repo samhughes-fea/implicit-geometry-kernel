@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Fixed: `Airfoil.naca4(code, n)` again samples `n` points per surface (0.4.0 passed `n`
+  as the total, halving the density and opening a small gap at the leading edge).
+- `ShearWeb` is back as an alias of `SpanWeb` (top level and `blade`), so shell-fem and
+  anisotropic-section-model still import. Remove in 0.5.0.
+- Lint: two unused imports in tests (CI was red on 0.4.0).
+
 ## 0.4.0
 
 - README names the public contract: two input tracks (parametric vs windIO) into

@@ -28,7 +28,7 @@ import pytest
 from implicit_geometry_kernel.frames import (
     structural_product_moment,
 )
-from implicit_geometry_kernel.frames.tensors import (
+from implicit_geometry_kernel.frames.tensors.inertia import (
     transform_second_moments_B_to_S,
 )
 

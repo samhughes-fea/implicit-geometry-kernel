@@ -15,7 +15,7 @@ same PR that finishes a step.
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
 | Phase 1a/1b | One shape model: CSG shapes are `SDFNode` subclasses, compile step removed | Done (PR #8) |
 | Phase 1c | One Shapely gateway: `section/boundary/polygons.py` | Done (PR #9) |
-| 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **In progress**: `sdf/` done (PR #10). `integration/` is the open PR. Next: `frames/`, `section/`, `blade/`, then Phase 2. Tag 0.5.0 after |
+| 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **In progress**: `sdf/` done (PR #10), `integration/` done (PR #11). `frames/` is the open PR. Next: `section/`, `blade/`, then Phase 2. Tag 0.5.0 after |
 | 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started |
 | 7 | Completeness (Phase 5 list below) | Not started |
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Not started |
@@ -123,7 +123,7 @@ implicit_geometry_kernel/
     shapes/          airfoil and NACA fields   (done)
   integration/     shoelace sums; quadtree/ (tree, refine, refine_multi, soa, marching,
                    moments, quadrature)   (done)
-  frames/          section frames; tensors/ (moments, forces, thickness)
+  frames/          section frames; tensors/ (inertia, moments, forces, thickness)   (done)
   structure/       contributions, builders, assembler, span laws   (done)
   section/         in pipeline order:
     spec/            SectionSpec, SectionOptions, validation (from api/worker, kwarg_aliases)
@@ -153,7 +153,7 @@ Large modules and where they go:
 |--------------|-----------|
 | `integration/quadtree.py` | Done: `quadtree/tree.py`, `refine.py`, `refine_multi.py`, `soa.py`, `marching.py`. Still to do (a logic PR, not a move): keep the array-based path (`soa.py`) only and drop the object-model duplicates (`refine.py`, `refine_multi.py`) once nothing uses them |
 | `section/assembly/multicell.py` | webs, caps, skin and a short `section.py` (partly done by `plan.py` and `members.py`) |
-| `frames/tensors.py` | `tensors/moments.py`, `forces.py`, `thickness.py` |
+| `frames/tensors.py` | Done: `tensors/inertia.py`, `moments.py`, `forces.py`, `thickness.py` |
 | `section/constructive/export.py` | `boundary/walls.py`, `boundary/cores.py` |
 | `integration/quadrature.py` | Done: `quadtree/moments.py`, `quadtree/quadrature.py` |
 | `section/api/worker.py` | `spec/` (validation) and a short build module, after Phase 2 |

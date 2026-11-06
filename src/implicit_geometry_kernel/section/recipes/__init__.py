@@ -1,16 +1,4 @@
-"""Dual-emission wall recipes.
+"""Former path of ``implicit_geometry_kernel.section.walls``; kept as an alias until 0.6.0."""
 
-Authoring surface is ``SkinWall`` / ``WebWall`` / ``CapWall`` / ``CoreWall`` /
-``InsertWall``. SDF IR classes (``OuterSkin``, ``SparCap``, …) live beside
-``walls.py`` and are imported from those modules, not this barrel.
-"""
-
-from implicit_geometry_kernel.section.recipes.walls import CapWall, CoreWall, InsertWall, SkinWall, WebWall
-
-__all__ = [
-    "CapWall",
-    "CoreWall",
-    "InsertWall",
-    "SkinWall",
-    "WebWall",
-]
+from implicit_geometry_kernel.section.walls import *  # noqa: F401,F403
+from implicit_geometry_kernel.section.walls import __all__  # noqa: F401

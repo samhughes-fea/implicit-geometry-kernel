@@ -21,7 +21,7 @@ from implicit_geometry_kernel.section.junctions.prepare import (
 from implicit_geometry_kernel.section.cells.loops import (
     build_cell_wall_loops,
 )
-from implicit_geometry_kernel.section.recipes.outer_skin import (
+from implicit_geometry_kernel.section.walls.outer_skin import (
     OuterSkin,
 )
 

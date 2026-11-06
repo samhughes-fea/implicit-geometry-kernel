@@ -14,7 +14,7 @@ import numpy as np
 from implicit_geometry_kernel.contract.errors import (
     InfeasibleSectionGeometry,
 )
-from implicit_geometry_kernel.section.recipes.walls import (
+from implicit_geometry_kernel.section.walls.walls import (
     CapWall,
 )
 from implicit_geometry_kernel.sdf.nodes import (
@@ -28,7 +28,7 @@ from implicit_geometry_kernel.section.layout.section_axes import max_thickness_c
 from implicit_geometry_kernel.section.assembly.cap_feasibility import cap_feasibility_clamp
 from implicit_geometry_kernel.section.assembly.cap_ply_snap import snap_cap_heights
 from implicit_geometry_kernel.section.assembly.clip_algebra import _parallel_web_strip_clip, web_station_projection
-from implicit_geometry_kernel.section.recipes.spar_cap import (
+from implicit_geometry_kernel.section.walls.spar_cap import (
     SparCap,
 )
 from implicit_geometry_kernel.section.assembly.labels import ComponentLabel

@@ -45,13 +45,13 @@ from plotting.figure_io import (
     save_figure,
 )
 
-from implicit_geometry_kernel.section.props.area_mesh import section_properties_via_quadtree
+from implicit_geometry_kernel.section.properties.area_mesh import section_properties_via_quadtree
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )
-from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_airfoil
+from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.profiling import get_stats, reset_stats
 
 PROP_KEYS = ("area", "cx", "cy", "Ixx", "Iyy")

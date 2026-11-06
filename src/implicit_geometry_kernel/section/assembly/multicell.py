@@ -21,7 +21,7 @@ from implicit_geometry_kernel.section.assembly.members import SECTION_BUILDERS
 from implicit_geometry_kernel.section.assembly.plan import SectionMember, plan_section
 from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
 from implicit_geometry_kernel.section.assembly.labels import ComponentLabel
-from implicit_geometry_kernel.section.recipes.base import twist_component
+from implicit_geometry_kernel.section.walls.base import twist_component
 from implicit_geometry_kernel.structure import BuilderRegistry, Structure, assemble
 
 

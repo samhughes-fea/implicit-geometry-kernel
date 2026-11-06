@@ -1,18 +1,7 @@
-"""
-interface.export
-================
-Data export utilities for section geometry.
+"""Former path of ``implicit_geometry_kernel.section.properties.export``; kept as an alias until 0.6.0."""
 
-Thin re-export surface over :mod:`properties_report` and :mod:`export_section_json`.
-Standalone medial-axis CSV export was removed from the public API (G3).
-"""
+import sys
 
-from implicit_geometry_kernel.section.props.properties_report import SectionPropertiesReport
-from implicit_geometry_kernel.section.props.export_section_json import _multicell_host, _shared_grid_phi, export_section_json
+import implicit_geometry_kernel.section.properties.export as _moved
 
-__all__ = [
-    "SectionPropertiesReport",
-    "export_section_json",
-    "_shared_grid_phi",
-    "_multicell_host",
-]
+sys.modules[__name__] = _moved

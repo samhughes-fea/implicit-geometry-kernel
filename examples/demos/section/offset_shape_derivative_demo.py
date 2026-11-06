@@ -60,10 +60,10 @@ from implicit_geometry_kernel.section.api import build_section_view
 from implicit_geometry_kernel.section.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M,
 )
-from implicit_geometry_kernel.section.props.backend import (
+from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
 )
-from implicit_geometry_kernel.section.props.compute import (
+from implicit_geometry_kernel.section.properties.compute import (
     compute_section_properties,
 )
 from plotting.figure_io import (

@@ -15,7 +15,7 @@ BANNED_TOP_LEVEL = ("engine", "interface", "core")
 # Skip-layer edges forbidden by G_ROW_OWNERSHIP_MATRIX.
 FORBIDDEN_IMPORT_PREFIXES: dict[str, tuple[str, ...]] = {
     "layout": (
-        "implicit_geometry_kernel.section.recipes",
+        "implicit_geometry_kernel.section.walls",
         "implicit_geometry_kernel.section.constructive",
         "implicit_geometry_kernel.section.junctions",
         "implicit_geometry_kernel.section.assembly.components",
@@ -23,18 +23,18 @@ FORBIDDEN_IMPORT_PREFIXES: dict[str, tuple[str, ...]] = {
     "junctions": (
         "implicit_geometry_kernel.sdf",
         "implicit_geometry_kernel.section.constructive",
-        "implicit_geometry_kernel.section.recipes",
+        "implicit_geometry_kernel.section.walls",
         "implicit_geometry_kernel.section.layout",
     ),
     "cells": (
         "implicit_geometry_kernel.sdf",
         "implicit_geometry_kernel.section.constructive",
-        "implicit_geometry_kernel.section.recipes",
+        "implicit_geometry_kernel.section.walls",
     ),
     "midlines": (
         "implicit_geometry_kernel.section.constructive",
         "implicit_geometry_kernel.sdf",
-        "implicit_geometry_kernel.section.props",
+        "implicit_geometry_kernel.section.properties",
     ),
 }
 
@@ -46,11 +46,11 @@ def test_banned_software_layer_homes_absent() -> None:
 
 def test_api_and_recipe_homes_exist() -> None:
     assert (ROOT / "api").is_dir()
-    assert (ROOT / "recipes").is_dir()
+    assert (ROOT / "walls").is_dir()
     assert (ROOT / "assembly").is_dir()
     assert (ROOT / "junctions").is_dir()
     assert (ROOT / "cells").is_dir()
-    assert (ROOT / "props").is_dir()
+    assert (ROOT / "properties").is_dir()
     assert (Path(__file__).resolve().parents[2] / "docs" / "section" / "reference" / "G_ROW_OWNERSHIP_MATRIX.md").is_file()
 
 

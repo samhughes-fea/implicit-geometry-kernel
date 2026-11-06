@@ -51,10 +51,10 @@ from implicit_geometry_kernel.section.constructive import (
     emit_wall_solid_polygons,
     is_residual_label,
 )
-from implicit_geometry_kernel.section.props.backend import (
+from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
 )
-from implicit_geometry_kernel.section.props.compute import (
+from implicit_geometry_kernel.section.properties.compute import (
     compute_section_properties,
 )
 

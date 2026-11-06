@@ -231,7 +231,7 @@ def main(argv: list[str] | None = None) -> Path:
 
     # --- 2. Skin mid-surface vs aero tip ---
     # Full closed mid-ring for TE-gap demo (union of SS/PS open half-rings).
-    from implicit_geometry_kernel.section.recipes.outer_skin import (
+    from implicit_geometry_kernel.section.walls.outer_skin import (
         OuterSkin,
     )
 

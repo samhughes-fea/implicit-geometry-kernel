@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from implicit_geometry_kernel.contract.shell_midline_strip import (
     ShellMidlineStrip,
 )
-from implicit_geometry_kernel.section.recipes.outer_skin import (
+from implicit_geometry_kernel.section.walls.outer_skin import (
     split_closed_ring_ss_ps,
 )
 

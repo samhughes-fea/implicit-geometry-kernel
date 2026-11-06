@@ -1,0 +1,29 @@
+"""Former section subpackage paths stay importable as aliases until 0.6.0."""
+
+import importlib
+import pkgutil
+
+import pytest
+
+PKG = "implicit_geometry_kernel.section."
+MOVED = {"props": "properties", "recipes": "walls"}
+
+
+def _cases():
+    for old, new in MOVED.items():
+        pkg = importlib.import_module(PKG + new)
+        for info in pkgutil.iter_modules(pkg.__path__):
+            yield old, new, info.name
+
+
+@pytest.mark.parametrize("old,new,mod", list(_cases()))
+def test_old_submodule_is_new_module(old, new, mod):
+    assert importlib.import_module(f"{PKG}{old}.{mod}") is importlib.import_module(f"{PKG}{new}.{mod}")
+
+
+@pytest.mark.parametrize("old,new", sorted(MOVED.items()))
+def test_old_package_reexports(old, new):
+    o, n = importlib.import_module(PKG + old), importlib.import_module(PKG + new)
+    names = getattr(n, "__all__", [k for k in vars(n) if not k.startswith("_")])
+    for name in names:
+        assert getattr(o, name) is getattr(n, name), name

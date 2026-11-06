@@ -23,10 +23,10 @@ from implicit_geometry_kernel.section.constructive import (
 from implicit_geometry_kernel.section.constructive.emitters import (
     emit_outer_skin_polygon,
 )
-from implicit_geometry_kernel.section.props.backend import (
+from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
 )
-from implicit_geometry_kernel.section.props.compute import (
+from implicit_geometry_kernel.section.properties.compute import (
     compute_section_properties,
 )
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF

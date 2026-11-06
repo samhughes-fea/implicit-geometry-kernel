@@ -5,8 +5,8 @@ import numpy as np
 from implicit_geometry_kernel.sdf import sdf_circle
 from implicit_geometry_kernel.sdf.nodes.tagged import CircleSDF, FieldOffsetNode, MidSurfaceNode, as_node
 from implicit_geometry_kernel.sdf.nodes import Circle, Offset
-from implicit_geometry_kernel.section.recipes.base import SectionComponent
-from implicit_geometry_kernel.section.recipes.tagged import tagged_component
+from implicit_geometry_kernel.section.walls.base import SectionComponent
+from implicit_geometry_kernel.section.walls.tagged import tagged_component
 
 
 def test_as_xy_matches_primitive():

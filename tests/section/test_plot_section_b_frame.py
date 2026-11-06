@@ -72,10 +72,10 @@ def test_plot_section_and_sdf_and_mesh_xlim_straddle_pitch(af):
     from plotting.plot_section import (
         plot_section_from_mesh,
     )
-    from implicit_geometry_kernel.section.props.export import (
+    from implicit_geometry_kernel.section.properties.export import (
         SectionPropertiesReport,
     )
-    from implicit_geometry_kernel.section.props.backend import (
+    from implicit_geometry_kernel.section.properties.backend import (
         quadtree_spec_for_airfoil,
     )
 

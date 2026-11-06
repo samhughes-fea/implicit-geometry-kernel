@@ -14,10 +14,10 @@ from implicit_geometry_kernel.section.constructive.emitters import (
 from implicit_geometry_kernel.section.constructive.export import (
     emit_constructive_polygons,
 )
-from implicit_geometry_kernel.section.recipes import (
+from implicit_geometry_kernel.section.walls import (
     SkinWall,
 )
-from implicit_geometry_kernel.section.recipes.walls import (
+from implicit_geometry_kernel.section.walls.walls import (
     InsertWall,
 )
 from implicit_geometry_kernel.sdf.shapes.airfoil import (

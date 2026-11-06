@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `section/` subpackages renamed to their target names (moves only, geometry
+  unchanged): `section.props` is now `section.properties` and `section.recipes` is now
+  `section.walls`. The old package and module paths remain as aliases until 0.6.0.
+
 - `frames/` moved to its target tree (moves only, numbers unchanged): the 638-line
   `tensors.py` is now the package `frames/tensors/` with `inertia` (second moments and
   `structural_product_moment`), `moments`, `forces` and `thickness`.

@@ -15,7 +15,7 @@ same PR that finishes a step.
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
 | Phase 1a/1b | One shape model: CSG shapes are `SDFNode` subclasses, compile step removed | Done (PR #8) |
 | Phase 1c | One Shapely gateway: `section/boundary/polygons.py` | Done (PR #9) |
-| 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **In progress**: `sdf/` done (PR #10), `integration/` done (PR #11). `frames/` is the open PR. Next: `section/`, `blade/`, then Phase 2. Tag 0.5.0 after |
+| 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **In progress**: `sdf/` (PR #10), `integration/` (PR #11) and `frames/` (PR #12) done. `section/` goes in several PRs: (a) `props` to `properties` and `recipes` to `walls` is the open PR; (b) `constructive` into `boundary` (split `export.py` into `boundary/walls.py` and `cores.py`, move `labels`, `emitters`, `properties`); (c) `placement` into `layout`; `api` becomes `spec` in Phase 2. Then `blade/` (split `cut.py`), then Phase 2. Tag 0.5.0 after |
 | 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started |
 | 7 | Completeness (Phase 5 list below) | Not started |
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Not started |
@@ -34,19 +34,18 @@ Decisions already made by the maintainer:
 - The public name for webs is `ShearWeb` (blade-anatomy term). `SpanWeb` is an alias
   until 0.5.0.
 - `sdf/` stays self-contained: nothing in it imports `section/` or `blade/`.
+- `section/` stays one package, with subpackages in pipeline order (decided 6 Nov).
 - Release tags are made by the maintainer only.
 
 Open decisions (ask the maintainer; do not assume):
 
-1. Keep `section/` as one package in pipeline order, or split it into two top-level
-   packages (build: spec to boundary; outputs: midlines to properties)?
-2. Plots package: rename it to `implicit_geometry_kernel_plots`, or move it back inside
+1. Plots package: rename it to `implicit_geometry_kernel_plots`, or move it back inside
    the kernel behind the `[plots]` extra?
-3. Phase 4 mid-surface: rebuild it from the polygons, or keep the field and add a drift
+2. Phase 4 mid-surface: rebuild it from the polygons, or keep the field and add a drift
    check?
-4. Should any of the 41 older demos in `examples/demos/section` be retired rather than
+3. Should any of the 41 older demos in `examples/demos/section` be retired rather than
    moved?
-5. Where the coupling with materials and Gmsh lives (recommended: a separate blade-model
+4. Where the coupling with materials and Gmsh lives (recommended: a separate blade-model
    package that imports the kernel; the kernel stays free of Gmsh).
 
 ## How to work on a step

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `frames/` moved to its target tree (moves only, numbers unchanged): the 638-line
+  `tensors.py` is now the package `frames/tensors/` with `inertia` (second moments and
+  `structural_product_moment`), `moments`, `forces` and `thickness`.
+  `frames.tensors` still exposes every former name.
+
 - `integration/` moved to its target tree (moves only, geometry unchanged). The
   1,258-line `quadtree.py` and 566-line `quadrature.py` are now the package
   `integration/quadtree/`: `tree` (cells, meshes, roots), `refine` and `refine_multi`

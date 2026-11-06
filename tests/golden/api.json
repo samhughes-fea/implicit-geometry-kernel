@@ -20,7 +20,7 @@
    "with_te_thickness": "(self, te: 'float', n: 'int' = 161) -> \"'Airfoil'\"",
    "with_thickness": "(self, t_c: 'float', n: 'int' = 161) -> \"'Airfoil'\""
   },
-  "signature": "(points: 'Sequence[Sequence[float]]', name: 'str' = 'airfoil')"
+  "signature": "(points: 'Sequence[Sequence[float]] | np.ndarray', name: 'str' = 'airfoil')"
  },
  "implicit_geometry_kernel.BladeGeometry": {
   "kind": "class",

@@ -317,8 +317,8 @@ class BladeGeometry:
             return float(np.interp(z, zs, np.asarray(values, float)))
         from implicit_geometry_kernel.structure.laws import TableLaw
 
-        zs = [s.z for s in self.stations]
-        return float(TableLaw(zs, values, kind="pchip")(z))
+        knots = [float(s.z) for s in self.stations]
+        return float(TableLaw(knots, [float(v) for v in values], kind="pchip")(z))
 
     def station_at(self, z: float):
         """Deprecated alias of :meth:`interpolate`. Removed in 0.6.0."""

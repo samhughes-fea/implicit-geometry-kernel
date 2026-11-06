@@ -1,13 +1,15 @@
 """Combine contributions into one structure.
 
 The wall is described by the OML and a thickness field ``T(x, y, z)``: the base wall
-thickness, raised to a partition's thickness inside its footprint. From these:
+thickness, replaced by a partition's thickness inside its footprint, plus any stacked
+layers beneath. From these:
 
 * the wall reference (mid) surface is ``phi_OML + T / 2``, a distance-like field whose
   zero set lies half the local wall thickness inside the OML;
 * the cavity is ``phi_OML + T`` (negative in the hollow inside the wall);
-* each wall contribution's material is the band between OML and cavity, inside its
-  footprint for a partition.
+* the base wall and partitions own the band from the OML down to the partitions'
+  thickness (inside its footprint for a partition); each stacked layer owns its own
+  band beneath that.
 
 Branches are valid inside the wall reference surface, within ``depth`` of it when they
 have one, and inside their ``clip``. Every material region joins a priority union
@@ -38,26 +40,53 @@ class StructureError(ValueError):
 
 
 class WallThickness:
-    """``T(points)``: base thickness, raised inside each partition's footprint."""
+    """``T(points)``: the wall thickness at each point.
+
+    Start from the base wall; inside each partition's footprint the partition's
+    thickness replaces it (partitions applied in rising priority, so the highest
+    wins); then each stacked layer adds its own thickness inside its footprint.
+    """
 
     def __init__(self, walls: tuple[WallContribution, ...]) -> None:
         bases = [w for w in walls if w.is_base]
         if len(bases) != 1:
             raise StructureError(f"the wall needs exactly one base contribution, got {len(bases)}")
         self.base = bases[0]
-        self.partitions = tuple(w for w in walls if not w.is_base)
+        self.partitions = tuple(sorted((w for w in walls if not w.is_base and not w.stacked),
+                                       key=lambda w: w.spec.priority))
+        self.layers = tuple(w for w in walls if w.stacked)
 
     def __call__(self, points: np.ndarray) -> np.ndarray:
+        return self.up_to(len(self.layers))(points)
+
+    def up_to(self, n_layers: int) -> _PartialThickness:
+        """Thickness of the wall above stacked layer ``n_layers`` (0: partitions only)."""
+        return _PartialThickness(self, n_layers)
+
+    def _evaluate(self, points: np.ndarray, n_layers: int) -> np.ndarray:
         pts = np.asarray(points, dtype=np.float64)
         z = pts[:, 2]
         t = np.asarray(self.base.thickness(z), dtype=np.float64).copy()
-        if self.partitions:
-            cache = EvalCache(pts)
-            for p in self.partitions:
-                inside = p.footprint.evaluate(pts, cache).phi < 0.0
-                if np.any(inside):
-                    t = np.where(inside, np.maximum(t, p.thickness(z)), t)
+        cache = EvalCache(pts)
+        for p in self.partitions:
+            inside = p.footprint.evaluate(pts, cache).phi < 0.0
+            if np.any(inside):
+                t = np.where(inside, p.thickness(z), t)
+        for layer in self.layers[:n_layers]:
+            inside = layer.footprint.evaluate(pts, cache).phi < 0.0
+            if np.any(inside):
+                t = t + np.where(inside, layer.thickness(z), 0.0)
         return t
+
+
+class _PartialThickness:
+    """Picklable ``points -> T`` counting only the first ``n_layers`` stacked layers."""
+
+    def __init__(self, wall: WallThickness, n_layers: int) -> None:
+        self.wall, self.n_layers = wall, int(n_layers)
+
+    def __call__(self, points: np.ndarray) -> np.ndarray:
+        return self.wall._evaluate(points, self.n_layers)
 
 
 @dataclass(frozen=True)
@@ -162,10 +191,22 @@ def assemble(ctx: BuildContext, contributions: list[Contribution]) -> Structure:
     thickness = WallThickness(walls)
     wall_mid = FieldOffsetNode(oml, thickness, 0.5)
     cavity = FieldOffsetNode(oml, thickness, 1.0)
-    envelope = ComplementNode(cavity)  # negative between the OML and the cavity
+    # Base wall and partitions fill from the OML down to the partitions-only depth;
+    # stacked layer k fills from depth T_k to T_(k+1) inside its footprint.
+    envelope = ComplementNode(FieldOffsetNode(oml, thickness.up_to(0), 1.0))
     wall_region: dict[int, SDFNode] = {}
     for w in walls:
-        r = envelope if w.is_base else MaxNode(envelope, w.footprint, meta_from=0)
+        if w.stacked:
+            k = thickness.layers.index(w)
+            above = FieldOffsetNode(oml, thickness.up_to(k), 1.0)
+            below = ComplementNode(FieldOffsetNode(oml, thickness.up_to(k + 1), 1.0))
+            r = MaxNode(above, below, w.footprint, meta_from=0)
+        elif w.is_base:
+            # A partition replaces the base wall inside its footprint.
+            outside = [ComplementNode(p.footprint) for p in thickness.partitions]
+            r = MaxNode(envelope, *outside, meta_from=0) if outside else envelope
+        else:
+            r = MaxNode(envelope, w.footprint, meta_from=0)
         wall_region[w.spec.id] = TagNode(TrimNode(r, oml), w.spec.id)
     wall_meta = PriorityUnionNode([wall_region[w.spec.id] for w in walls],
                                   [w.spec.priority for w in walls])

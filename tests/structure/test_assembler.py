@@ -174,3 +174,40 @@ def test_invalid_structures_are_rejected():
         BranchContribution(a.spec, ctx.oml, ctx.oml, ConstantLaw(0.01), free_end=True)
     with pytest.raises(ValueError):
         BuildContext(oml=ctx.oml, span=(1.0, 0.0))
+
+
+def test_stacked_layer_lies_beneath_the_wall():
+    """A cap kept as its own layer under the skin: skin keeps the outer band."""
+    ctx = BuildContext(oml=rect(-0.5, 0.5, -0.1, 0.1), span=(0.0, 1.0))
+    skin = WallContribution(ctx.table.add("skin", "skin"), ConstantLaw(SKIN))
+    cap = WallContribution(ctx.table.add("cap", "cap"), ConstantLaw(CAP),
+                           footprint=rect(-0.2, 0.2, 0.0, 1.0), stacked=True)
+    s = assemble(ctx, [skin, cap])
+    top = 0.1
+    assert s.thickness(np.array([[0.0, top, 0.0], [0.4, top, 0.0]])).tolist() == pytest.approx([SKIN + CAP, SKIN])
+    assert owner(s, 0.0, top - SKIN / 2, 0.5) == "skin"
+    assert owner(s, 0.0, top - SKIN - CAP / 2, 0.5) == "cap"
+    assert owner(s, 0.0, top - SKIN - CAP - 0.002, 0.5) is None
+    assert owner(s, 0.4, top - SKIN - 0.002, 0.5) is None
+    with pytest.raises(ValueError):
+        WallContribution(cap.spec, ConstantLaw(CAP), stacked=True)
+
+
+def test_highest_priority_partition_sets_the_thickness():
+    ctx = BuildContext(oml=rect(-0.5, 0.5, -0.1, 0.1), span=(0.0, 1.0))
+    skin = WallContribution(ctx.table.add("skin", "skin"), ConstantLaw(0.02))
+    thin = WallContribution(ctx.table.add("thin", "cap"), ConstantLaw(0.005), footprint=rect(-0.1, 0.1, 0.0, 1.0))
+    s = assemble(ctx, [skin, thin])
+    assert s.thickness(np.array([[0.0, 0.1, 0.0]]))[0] == pytest.approx(0.005)
+
+
+def test_partition_of_equal_priority_replaces_the_base_wall():
+    """Two skins of one kind (suction and pressure): each owns its own side."""
+    ctx = BuildContext(oml=rect(-0.5, 0.5, -0.1, 0.1), span=(0.0, 1.0))
+    upper = WallContribution(ctx.table.add("upper", "skin"), ConstantLaw(0.01))
+    lower = WallContribution(ctx.table.add("lower", "skin"), ConstantLaw(0.004),
+                             footprint=rect(-1.0, 1.0, -1.0, 0.0))
+    s = assemble(ctx, [upper, lower])
+    assert owner(s, 0.0, 0.1 - 0.005, 0.5) == "upper"
+    assert owner(s, 0.0, -0.1 + 0.002, 0.5) == "lower"
+    assert owner(s, 0.0, -0.1 + 0.006, 0.5) is None

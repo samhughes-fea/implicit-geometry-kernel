@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Sections are assembled through `structure`. `MultiCellSection` now plans its inputs
+  (`section/assembly/plan.py`), runs member builders (`section/assembly/members.py`:
+  skin, webs, caps, cores, inserts) and assembles the result; `MultiCellSection.structure`
+  returns it and `registry=` adds builders. Geometry is unchanged (golden numbers
+  identical). Caps are stacked wall layers under the skin.
+- `structure`: `WallContribution(stacked=True)` for a layer beneath the wall; a partition
+  now replaces the base wall inside its footprint (highest priority wins) instead of
+  taking the larger thickness; every contribution takes an optional `source`.
 - Safety net for the restructure: `tests/golden/` records section properties, midline
   strips and cell loops for every catalogue layout at 0, 15 and 35 degrees of twist, plus a
   lofted blade cut at five stations, and a snapshot of the public API. `tests/test_snapshots.py`

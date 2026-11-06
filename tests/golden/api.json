@@ -237,7 +237,7 @@
   "members": {
    "present": "(self, z: 'float', tol: 'float' = 1e-09) -> 'bool'"
   },
-  "signature": "(spec: 'FeatureSpec', mid: 'SDFNode', region: 'SDFNode', thickness: 'SpanLaw', clip: 'SDFNode | None' = None, depth: 'SpanLaw | None' = None, free_end: 'bool' = False, extent: 'tuple[float, float] | None' = None) -> None"
+  "signature": "(spec: 'FeatureSpec', mid: 'SDFNode', region: 'SDFNode', thickness: 'SpanLaw', clip: 'SDFNode | None' = None, depth: 'SpanLaw | None' = None, free_end: 'bool' = False, extent: 'tuple[float, float] | None' = None, source: 'Any' = None) -> None"
  },
  "implicit_geometry_kernel.structure.BranchField": {
   "kind": "class",
@@ -285,7 +285,7 @@
   "members": {
    "tag_field": ""
   },
-  "signature": "(spec: 'FeatureSpec', region: 'SDFNode', tag_region: 'SDFNode | None' = None) -> None"
+  "signature": "(spec: 'FeatureSpec', region: 'SDFNode', tag_region: 'SDFNode | None' = None, source: 'Any' = None) -> None"
  },
  "implicit_geometry_kernel.structure.ScaledLaw": {
   "kind": "class",
@@ -343,18 +343,20 @@
  "implicit_geometry_kernel.structure.TransverseContribution": {
   "kind": "class",
   "members": {},
-  "signature": "(spec: 'FeatureSpec', z: 'float', region: 'SDFNode', thickness: 'float') -> None"
+  "signature": "(spec: 'FeatureSpec', z: 'float', region: 'SDFNode', thickness: 'float', source: 'Any' = None) -> None"
  },
  "implicit_geometry_kernel.structure.WallContribution": {
   "kind": "class",
   "members": {
    "is_base": ""
   },
-  "signature": "(spec: 'FeatureSpec', thickness: 'SpanLaw', footprint: 'SDFNode | None' = None) -> None"
+  "signature": "(spec: 'FeatureSpec', thickness: 'SpanLaw', footprint: 'SDFNode | None' = None, stacked: 'bool' = False, source: 'Any' = None) -> None"
  },
  "implicit_geometry_kernel.structure.WallThickness": {
   "kind": "class",
-  "members": {},
+  "members": {
+   "up_to": "(self, n_layers: 'int') -> '_PartialThickness'"
+  },
   "signature": "(walls: 'tuple[WallContribution, ...]') -> 'None'"
  },
  "implicit_geometry_kernel.structure.as_law": {

@@ -41,6 +41,25 @@ def test_constructive_modules_alias(old, new):
     assert importlib.import_module(f"{PKG}constructive.{old}") is importlib.import_module(PKG + new)
 
 
+PLACEMENT = {
+    "anchoring": "layout.anchoring",
+    "collision": "layout.collision",
+    "handoff": "layout.handoff",
+}
+
+
+@pytest.mark.parametrize("old,new", sorted(PLACEMENT.items()))
+def test_placement_modules_alias(old, new):
+    assert importlib.import_module(f"{PKG}placement.{old}") is importlib.import_module(PKG + new)
+
+
+def test_placement_package_reexports_layout_modules():
+    placement = importlib.import_module(PKG + "placement")
+    anchoring = importlib.import_module(PKG + "layout.anchoring")
+    assert placement.AnchoredWallGeometry is anchoring.AnchoredWallGeometry
+    assert placement.anchored_wall_geometry is anchoring.anchored_wall_geometry
+
+
 def test_constructive_export_reexports_walls_and_cores():
     export = importlib.import_module(PKG + "constructive.export")
     walls = importlib.import_module(PKG + "boundary.walls")

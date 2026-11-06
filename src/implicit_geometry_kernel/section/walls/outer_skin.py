@@ -174,7 +174,7 @@ class OuterSkin(SectionComponent):
         reference_face: str = "outer_mould_line",
         reference_iml_depth_m: float | None = None,
     ):
-        from implicit_geometry_kernel.section.placement.anchoring import (
+        from implicit_geometry_kernel.section.layout.anchoring import (
             airfoil_inward_depth_for_midsurface,
         )
 

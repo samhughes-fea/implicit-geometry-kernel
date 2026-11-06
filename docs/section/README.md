@@ -302,7 +302,7 @@ midlines. Detail: [`coordinate_frames`](../frames/README.md) ·
 ```text
 section/
 ├── api/            # runner and build entrypoints
-├── layout/         # layout id → SystemLayoutSpec / SectionLayout
+├── layout/         # layout id → SystemLayoutSpec / SectionLayout; through-thickness anchoring
 ├── assembly/       # MultiCellSection host
 ├── recipes/        # dual-emission wall recipes (SDF / polygon / midline)
 ├── constructive/   # polygons for area / inertia

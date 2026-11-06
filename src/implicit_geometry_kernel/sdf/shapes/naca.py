@@ -60,6 +60,11 @@ _NACA5_REFLEX: NDArray[np.float64] = np.array(
 )
 
 
+def naca_four_digit_thickness(xc, t_frac, *, closed_te=True):
+    """Analytic NACA 4-digit thickness ``2 yt(x/c)`` (chord-normalised)."""
+    return 2.0 * _thickness_yt_4digit(np.asarray(xc, float), float(t_frac), closed_te=closed_te)
+
+
 def _thickness_yt_4digit(xc, t_frac, *, closed_te):
     # Classic Abbott coefficients: closed TE → yt(1)=0 uses a4=-0.1036;
     # open TE (finite trailing-edge thickness) uses a4=-0.1015.

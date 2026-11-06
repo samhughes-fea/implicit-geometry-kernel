@@ -124,6 +124,22 @@ class SectionCut:
 
         return _shell_graph(self)
 
+    def key_points(self) -> dict[str, np.ndarray]:
+        """LE, TE, cap-edge vertices and web feet at this station."""
+        oml = np.vstack([w.points for w in self.walls_of("skin")])
+        le = oml[int(np.argmin(oml[:, 0]))]
+        te = oml[int(np.argmax(oml[:, 0]))]
+        out: dict[str, np.ndarray] = {"LE": le, "TE": te}
+        graph = self.shell_graph()
+        for i, edge in enumerate(graph.partition_edges()):
+            if "spar_cap" in edge.name_a or "spar_cap" in edge.name_b:
+                out[f"cap_edge_{i}"] = np.asarray(edge.point, float)
+        for web in graph.webs:
+            pts = np.asarray(web.points, float)
+            out[f"{web.name}_foot_0"] = pts[0]
+            out[f"{web.name}_foot_1"] = pts[-1]
+        return out
+
 
 def _twist_offset(xy: np.ndarray, twist_deg: float, offset) -> np.ndarray:
     t = np.radians(twist_deg)

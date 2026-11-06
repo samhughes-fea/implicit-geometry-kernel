@@ -30,7 +30,8 @@ class Airfoil:
         if p.ndim != 2 or p.shape[1] != 2 or len(p) < 5:
             raise ValueError("an airfoil needs at least 5 (x, y) points")
         self.name = name
-        le = int(np.argmin(p[:, 0]))
+        te = 0.5 * (p[0] + p[-1])
+        le = int(np.argmax(np.linalg.norm(p - te, axis=1)))
         first, second = p[: le + 1][::-1], p[le:]
         if np.mean(first[:, 1]) < np.mean(second[:, 1]):
             first, second = second, first
@@ -75,7 +76,10 @@ class Airfoil:
 
         # ``n`` is points per surface; the shared helper takes the total around the contour
         verts = naca_four_digit_vertices(m, p, t, 2 * int(n) - 1, 1.0, closed_te=closed_te)
-        return cls(verts, f"NACA {code}")
+        foil = cls(verts, f"NACA {code}")
+        foil._analytic_t = t
+        foil._closed_te = closed_te
+        return foil
 
     @classmethod
     def naca5(cls, code: str, n: int = 81, closed_te: bool = True) -> "Airfoil":
@@ -133,6 +137,11 @@ class Airfoil:
         return np.interp(x, pts[:, 0], pts[:, 1])
 
     def thickness(self, x_c) -> np.ndarray:
+        t_frac = getattr(self, "_analytic_t", None)
+        if t_frac is not None:
+            from implicit_geometry_kernel.sdf.shapes.naca import naca_four_digit_thickness
+
+            return naca_four_digit_thickness(x_c, t_frac, closed_te=getattr(self, "_closed_te", True))
         return self.surface("upper", x_c) - self.surface("lower", x_c)
 
     def with_thickness(self, t_c: float, n: int = 161) -> "Airfoil":

@@ -161,6 +161,21 @@ class Airfoil:
                           f"{self.name} TE={te:g}")
 
     @classmethod
+    def blend(cls, a: "Airfoil", b: "Airfoil", s: float, n: int = 161, name: str | None = None) -> "Airfoil":
+        """Linear surface blend; ``s = 0`` is ``a`` and ``s = 1`` is ``b``."""
+        w = float(np.clip(s, 0.0, 1.0))
+        x = np.linspace(0.0, 1.0, int(n))
+        yu = (1.0 - w) * a.surface("upper", x) + w * b.surface("upper", x)
+        yl = (1.0 - w) * a.surface("lower", x) + w * b.surface("lower", x)
+        return cls(cls._selig_from_surfaces(x, yu, yl), name or f"{a.name}->{b.name} s={w:g}")
+
+    @classmethod
+    def cylinder_to_airfoil(cls, airfoil: "Airfoil", s: float, n: int = 161) -> "Airfoil":
+        """Named root law: ``s = 0`` is a circle matching t/c, ``s = 1`` is ``airfoil``."""
+        root = cls.ellipse(airfoil.max_thickness, n=n)
+        return cls.blend(root, airfoil, s, n=n, name=f"cylinder→{airfoil.name} s={s:g}")
+
+    @classmethod
     def interpolate_by_thickness(cls, a: "Airfoil", b: "Airfoil", t_c: float, n: int = 161) -> "Airfoil":
         """Blend two foils in t/c: surfaces lerp by thickness, then rescale to ``t_c``."""
         ta, tb = a.max_thickness, b.max_thickness

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Optional `BladeGeometry(span_kind="pchip")` interpolates chord, twist, pitch
+  axis and offset with a monotone cubic (airfoils stay linear).
+  `Airfoil.cylinder_to_airfoil` is the named root cylinder→airfoil law.
+
 - `Airfoil` grows CST, NACA 5/6, camber-line t/c families, flatback TE,
   Selig/Lednicer readers and interpolation by thickness. NACA vertex maths
   stays in `sdf.shapes.naca`.

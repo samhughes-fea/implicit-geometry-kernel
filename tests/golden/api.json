@@ -2,8 +2,10 @@
  "implicit_geometry_kernel.Airfoil": {
   "kind": "class",
   "members": {
+   "blend": "",
    "contour_points": "(self, n: 'int' = 161) -> 'np.ndarray'",
    "cst": "",
+   "cylinder_to_airfoil": "",
    "ellipse": "",
    "from_lednicer": "",
    "from_selig": "",
@@ -35,7 +37,7 @@
    "wall_meta": "(self, table=None)",
    "wall_mid_sdf": "(self, meta: 'int' = 0)"
   },
-  "signature": "(stations: 'Sequence[Station]', layout, skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = ())"
+  "signature": "(stations: 'Sequence[Station]', layout, skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), span_kind: 'str' = 'linear')"
  },
  "implicit_geometry_kernel.CellLoop": {
   "kind": "class",

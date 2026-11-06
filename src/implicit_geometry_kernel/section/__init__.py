@@ -29,7 +29,7 @@ from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
 from implicit_geometry_kernel.section.layout.system_layout import SYSTEM_TYPE_KEYS, SystemLayoutSpec
 from implicit_geometry_kernel.section.assembly import MultiCellSection
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 __author__ = "Sam Hughes"
 
 __all__ = [

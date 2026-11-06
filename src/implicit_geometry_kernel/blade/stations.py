@@ -66,5 +66,5 @@ class ShearWeb:
     n: int = 4
 
 
-# Name used in 0.4.0 only. Remove in 0.5.0.
+# Name used in 0.4.0. Remove in 0.6.0.
 SpanWeb = ShearWeb

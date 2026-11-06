@@ -25,10 +25,10 @@ from implicit_geometry_kernel.section.api.factory import (
 # ``from ..props_emit.area_mesh import *``, and star-import never re-exports
 # underscore names, so ``_section_evaluator`` / ``_section_label_keys`` are
 # invisible through it.
-from implicit_geometry_kernel.section.props import area_mesh as am
-from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_airfoil
+from implicit_geometry_kernel.section.properties import area_mesh as am
+from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
-from implicit_geometry_kernel.section.props.compute import compute_section_properties
+from implicit_geometry_kernel.section.properties.compute import compute_section_properties
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 
 # Representative subset: every family (A/B/C/D), both orientations (CN/F),

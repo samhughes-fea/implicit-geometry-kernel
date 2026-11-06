@@ -35,7 +35,7 @@ from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
 from implicit_geometry_kernel.section.midlines.host import (
     SectionMidlineHost,
 )
-from implicit_geometry_kernel.section.props.compute import (
+from implicit_geometry_kernel.section.properties.compute import (
     PropsBackendArg,
 )
 from implicit_geometry_kernel.sdf.shapes.airfoil import (
@@ -331,7 +331,7 @@ def build_section_geometry(
     need_midlines = "midlines" in out_set or "cell_wall_loops" in out_set
     need_void = "cell_wall_loops" in out_set
 
-    from implicit_geometry_kernel.section.props.backend import (
+    from implicit_geometry_kernel.section.properties.backend import (
         props_backend_from_env,
     )
     from implicit_geometry_kernel.profiling import (
@@ -377,7 +377,7 @@ def build_section_geometry(
     properties_meta: SectionPropertiesMeta | None = None
     quadtree_mesh: QuadTreeMesh | None = None
     if need_props:
-        from implicit_geometry_kernel.section.props.compute import (
+        from implicit_geometry_kernel.section.properties.compute import (
             compute_section_properties,
         )
 

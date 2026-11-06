@@ -24,7 +24,7 @@ from implicit_geometry_kernel.section.assembly.web_layout import resolve_web_anc
 from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
 from implicit_geometry_kernel.section.layout.structural import parse_fixed_cap_anchor, parse_structural_family
 from implicit_geometry_kernel.section.layout.thickness_limits import clamp_skin_thickness_m, clamp_spar_thickness_m, clamp_web_thickness_m
-from implicit_geometry_kernel.section.recipes.base import expr_callable
+from implicit_geometry_kernel.section.walls.base import expr_callable
 from implicit_geometry_kernel.structure import BuildContext
 
 

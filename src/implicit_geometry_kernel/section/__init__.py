@@ -6,7 +6,7 @@ G-row public products (see ``docs/section/reference/G_ROW_OWNERSHIP_MATRIX.md``)
 
 Prefer ``Airfoil.to_sdf()`` (or ``sdf.airfoil.AirfoilSDF``) for implicit
 airfoils. Quadtree / hybrid props backends are G-PROPS debug — import from
-``section.props``, not this barrel. Thickness clamps live in
+``section.properties``, not this barrel. Thickness clamps live in
 ``section.layout.thickness_limits``. ``build_section_geometry`` is
 ``section.api``.
 """

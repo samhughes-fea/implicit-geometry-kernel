@@ -33,7 +33,7 @@ from implicit_geometry_kernel.section.assembly.clip_algebra import (
 from implicit_geometry_kernel.section.assembly.labels import ComponentLabel
 from implicit_geometry_kernel.section.assembly.plan import SectionMember, SectionPlan, b_frame_web_search
 from implicit_geometry_kernel.section.assembly.web_layout import flapwise_web_sframe_inputs
-from implicit_geometry_kernel.section.recipes.walls import CoreWall, InsertWall, SkinWall, WebWall
+from implicit_geometry_kernel.section.walls.walls import CoreWall, InsertWall, SkinWall, WebWall
 from implicit_geometry_kernel.structure import (
     BranchContribution,
     ConstantLaw,

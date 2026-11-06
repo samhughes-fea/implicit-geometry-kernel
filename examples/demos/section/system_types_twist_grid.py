@@ -57,11 +57,11 @@ from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )
-from implicit_geometry_kernel.section.props.export import (
+from implicit_geometry_kernel.section.properties.export import (
     SectionPropertiesReport,
     export_section_json,
 )
-from implicit_geometry_kernel.section.props.compute import (
+from implicit_geometry_kernel.section.properties.compute import (
     compute_section_properties,
 )
 from plotting.plot import (

@@ -6,13 +6,13 @@ import numpy as np
 import pytest
 
 from implicit_geometry_kernel.section.api.factory import build_section_view, resolve_system_type
-from implicit_geometry_kernel.section.props.area_mesh import build_shared_section_quadtree
-from implicit_geometry_kernel.section.props.backend import quadtree_spec_for_airfoil
+from implicit_geometry_kernel.section.properties.area_mesh import build_shared_section_quadtree
+from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
-from implicit_geometry_kernel.section.props.export import SectionPropertiesReport
+from implicit_geometry_kernel.section.properties.export import SectionPropertiesReport
 from implicit_geometry_kernel.integration.quadtree.marching import summarize_quadtree
-from implicit_geometry_kernel.section.props.eval_cache import SectionEvalCache
+from implicit_geometry_kernel.section.properties.eval_cache import SectionEvalCache
 
 
 @pytest.mark.parametrize("layout_key", ["2D-CN", "2D-F"])

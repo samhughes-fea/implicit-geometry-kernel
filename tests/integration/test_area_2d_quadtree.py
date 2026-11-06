@@ -66,7 +66,7 @@ def test_airfoil_component_quadtree_contour(code: str):
     from implicit_geometry_kernel.section.layout.system_layout import (
         resolve_system_type,
     )
-    from implicit_geometry_kernel.section.props.area_mesh import (
+    from implicit_geometry_kernel.section.properties.area_mesh import (
         build_section_area_meshes,
     )
 

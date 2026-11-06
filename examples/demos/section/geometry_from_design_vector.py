@@ -123,12 +123,12 @@ def main(argv: list[str] | None = None) -> int:
     from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
     from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
     from implicit_geometry_kernel.section import MultiCellSection
-    from implicit_geometry_kernel.section.props.export import export_section_json
+    from implicit_geometry_kernel.section.properties.export import export_section_json
     from plotting import plot_section
-    from implicit_geometry_kernel.section.props.export import (
+    from implicit_geometry_kernel.section.properties.export import (
         SectionPropertiesReport,
     )
-    from implicit_geometry_kernel.section.props.compute import (
+    from implicit_geometry_kernel.section.properties.compute import (
         compute_section_properties,
     )
 

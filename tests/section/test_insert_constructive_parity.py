@@ -14,7 +14,7 @@ from implicit_geometry_kernel.section.constructive.labels import (
     is_constructive_label,
     is_residual_label,
 )
-from implicit_geometry_kernel.section.recipes.walls import (
+from implicit_geometry_kernel.section.walls.walls import (
     InsertWall,
 )
 from implicit_geometry_kernel.sdf.shapes.airfoil import (

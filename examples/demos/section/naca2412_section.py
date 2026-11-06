@@ -48,8 +48,8 @@ import matplotlib.pyplot as plt
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
-from implicit_geometry_kernel.section.props.export import export_section_json
-from implicit_geometry_kernel.section.props.export import SectionPropertiesReport
+from implicit_geometry_kernel.section.properties.export import export_section_json
+from implicit_geometry_kernel.section.properties.export import SectionPropertiesReport
 from implicit_geometry_kernel.section import MultiCellSection, resolve_system_type
 from implicit_geometry_kernel.section.api import build_section_geometry
 from plotting import plot_section

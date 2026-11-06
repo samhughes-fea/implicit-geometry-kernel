@@ -56,13 +56,13 @@ from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )
-from implicit_geometry_kernel.section.props.area_mesh import (
+from implicit_geometry_kernel.section.properties.area_mesh import (
     section_properties_via_quadtree,
 )
 from implicit_geometry_kernel.section.constructive import (
     emit_wall_solid_polygons,
 )
-from implicit_geometry_kernel.section.props.backend import (
+from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
 )
 from plotting.plot import (
@@ -72,7 +72,7 @@ from plotting.plot_section import (
     _naca_xy_to_plot_hv,
     apply_structural_section_axes,
 )
-from implicit_geometry_kernel.section.props.compute import (
+from implicit_geometry_kernel.section.properties.compute import (
     compute_section_properties,
 )
 from implicit_geometry_kernel.integration.quadtree.quadrature import label_boundary_segments

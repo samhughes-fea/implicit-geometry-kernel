@@ -15,7 +15,7 @@ from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )
-from implicit_geometry_kernel.section.recipes.spar_cap import SparCap
+from implicit_geometry_kernel.section.walls.spar_cap import SparCap
 from implicit_geometry_kernel.sdf import offset
 from implicit_geometry_kernel.section.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M,

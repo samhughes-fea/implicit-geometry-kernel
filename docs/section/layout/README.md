@@ -28,6 +28,9 @@ whose local cavity is too shallow are **dropped**, not slid.
 | `system_layout.py` | `SystemLayoutSpec`, registry, resolve, cascade |
 | `structural.py` | Cap-family and fixed-cap-anchor parsers |
 | `cap_placement.py` | `CapPlacementRule` — declarative cap policy |
+| `anchoring.py` | Through-thickness face offsets (`AnchoredWallGeometry`) |
+| `collision.py` | Placement feasibility / collisions |
+| `handoff.py` | Stamp placement identity onto midline strips |
 | `section_layout.py` | Parametric `SectionLayout` facade |
 | `section_axes.py` | Pitching-axis and max-thickness helpers |
 | `thickness_limits.py` | Minimum cavity-depth hints |

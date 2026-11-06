@@ -88,8 +88,8 @@ flowchart TB
 | Row | Home | Owns | May call | Forbidden imports | Primary output |
 |-----|------|------|----------|-------------------|----------------|
 | `G-API` | [`api/`](../api/README.md) | `SectionGeometry` lifecycle, validation, gated packaging | `G-LAYOUT`, `G-ASSEMBLE`, emit homes | SDF algebra, mesh, bind, FE | `SectionGeometryResult` |
-| `G-LAYOUT` | [`layout/`](../layout/README.md) | `SectionLayout` SoT, catalogue presets, drop cascade, `CapPlacementRule` (chordwise / plan-form policy) | `AirfoilSDF` cavity queries | recipes, constructive, junctions, placement | effective `SectionLayout` / `StationLayoutResolution` |
-| `G-PLACE` | [`placement/`](../placement/README.md) | Through-thickness anchoring: face offsets, midsurface depth, `AnchoredWallGeometry`. Construction tokens stay strings; no laminate imports | layout policy, airfoil cavity | recipes as authors, junctions, props, mesh, laminates | anchored wall geometry |
+| `G-LAYOUT` | [`layout/`](../layout/README.md) | `SectionLayout` SoT, catalogue presets, drop cascade, `CapPlacementRule` (chordwise / plan-form policy) | `AirfoilSDF` cavity queries | recipes, constructive, junctions | effective `SectionLayout` / `StationLayoutResolution` |
+| `G-PLACE` | [`layout/anchoring.py`](../layout/README.md) (and `collision.py`, `handoff.py`; `placement/` is an alias until 0.6.0) | Through-thickness anchoring: face offsets, midsurface depth, `AnchoredWallGeometry`. Construction tokens stay strings; no laminate imports | layout policy, airfoil cavity | recipes as authors, junctions, props, mesh, laminates | anchored wall geometry |
 | `G-RECIPE` | [`recipes/`](../recipes/README.md) | Frozen wall parameters; the three projection methods | `G-SDF` kernel, `G-POLY` emitters, `G-MID` helpers | layout cascade, junctions, props, api | `SkinWall` / `WebWall` / `CapWall` / `CoreWall` / `InsertWall` |
 | `G-ASSEMBLE` | [`assembly/`](../assembly/README.md) | Host: layout + DVs → labeled recipe map + SDF eval cache | layout, recipes, sdf | junctions, cells, props, mesh | `MultiCellSection` |
 | `G-SDF` | [`../../src/implicit_geometry_kernel/sdf/`](../../../src/implicit_geometry_kernel/sdf) (`implicit_geometry_kernel.sdf`) | CSG primitives, IR, `AirfoilSDF` | nothing blade-specific | recipes, assembly, layout | `φ`, `Expr` |
@@ -137,8 +137,7 @@ implicit_geometry_kernel/
   profiling.py         # cross-cutting timers (not under sdf/)
   section/
     api/               # runner, resolve, result packaging
-    layout/            # SectionLayout SoT, presets, drop, CapPlacementRule
-    placement/         # through-thickness anchoring (AnchoredWallGeometry)
+    layout/            # SectionLayout SoT, presets, drop, CapPlacementRule, anchoring
     recipes/           # wall params + projection dispatch (IR classes next to walls.py)
     assembly/          # assemble + host only (no public component types)
     constructive/      # polygon projection

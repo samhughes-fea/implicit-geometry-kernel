@@ -35,7 +35,7 @@ the same work; they are not extra steps.
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Not started. Mid-surface row is blocked on open decision 2 |
 | 9 | Separate blade-model package (only if the maintainer chooses it) | Not decided (open decision 4) |
 
-Step 5 breakdown (next slice is **5c**):
+Step 5 breakdown (next slice is **5d**):
 
 | Slice | What | State |
 |-------|------|-------|
@@ -44,7 +44,7 @@ Step 5 breakdown (next slice is **5c**):
 | `sdf/`, `integration/`, `frames/` | Move to the target tree | Done (PR #10, #11, #12) |
 | 5a | `props` → `properties`, `recipes` → `walls` | Done (PR #13) |
 | 5b | `constructive` into `boundary` and `properties` (`export.py` → `boundary/walls.py` and `cores.py`; `labels` and `emitters` → `boundary/`; `properties.py` → `properties/polygons.py`) | Done (PR #14) |
-| 5c | `placement` into `layout` | Not started |
+| 5c | `placement` into `layout` | Done (this PR) |
 | 5d | `blade/` split `cut.py` (`shell_graph.py`) | Not started |
 | Phase 2 | `SectionSpec`, `SectionOptions`, `api` → `spec`; then tag 0.5.0 | After 5c and 5d |
 
@@ -154,7 +154,7 @@ implicit_geometry_kernel/
   structure/       contributions, builders, assembler, span laws   (done)
   section/         in pipeline order:
     spec/            SectionSpec, SectionOptions, validation (from api/worker, kwarg_aliases)
-    layout/          catalogue and layout resolution (placement still separate until 5c)
+    layout/          catalogue, layout resolution, through-thickness anchoring   (done)
     walls/           one module per wall type, registered (skin, cap, web, core, insert)   (done)
     assembly/        plan, members, MultiCellSection
     boundary/        polygons, walls, cores, emitters, labels   (done)

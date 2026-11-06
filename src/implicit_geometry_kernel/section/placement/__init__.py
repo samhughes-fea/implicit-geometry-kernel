@@ -1,17 +1,6 @@
-"""Anchored wall geometry: placement → physical faces and midsurface (WP3).
+"""Former path of the through-thickness anchoring modules in ``section.layout``; kept as an alias until 0.6.0."""
 
-``section_layup`` owns *where* plies sit through the thickness
-(``PlyPlacementPolicy``). This package owns the *geometry* realisation:
-which physical face stays fixed, where the wall midsurface sits, and how far
-each free face is from the reference.
-
-Construction tokens are plain strings matching the layup enums so this package
-never imports ``material_utilities`` (section G-row boundary).
-"""
-
-from __future__ import annotations
-
-from implicit_geometry_kernel.section.placement.anchoring import (
+from implicit_geometry_kernel.section.layout.anchoring import (
     AnchoredWallGeometry,
     airfoil_inward_depth_for_midsurface,
     anchored_wall_geometry,
@@ -20,12 +9,12 @@ from implicit_geometry_kernel.section.placement.anchoring import (
     midsurface_offset_from_reference_m,
     physical_face_offsets_from_reference_m,
 )
-from implicit_geometry_kernel.section.placement.collision import (
+from implicit_geometry_kernel.section.layout.collision import (
     PlacementGeometryError,
     assert_anchored_wall_feasible,
     find_placement_collisions,
 )
-from implicit_geometry_kernel.section.placement.handoff import (
+from implicit_geometry_kernel.section.layout.handoff import (
     placement_stamp_for_kind,
     require_placement_stamp,
     stamp_strip_placement,

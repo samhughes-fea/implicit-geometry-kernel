@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `section/placement` folded into `section/layout` (moves only, geometry unchanged):
+  `anchoring.py`, `collision.py` and `handoff.py` now live beside the catalogue
+  modules. `section.placement` and its modules remain as aliases until 0.6.0.
+
 - `section/constructive` folded into its target homes (moves only, geometry unchanged):
   `export.py` is split into `section/boundary/walls.py` (skin, web and cap solids) and
   `section/boundary/cores.py` (cores, inserts, the combined set); `emitters.py` and

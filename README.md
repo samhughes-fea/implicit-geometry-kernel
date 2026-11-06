@@ -49,7 +49,7 @@ Names that look similar but are different layers (do not merge them):
 
 - `ShearWeb` — blade station DTO (chord fraction). `WebWall` — section recipe. `ShearWebComponent` — SDF IR (`recipes.shear_web`).
 - `CellPolygon` — loft cut interiors. `CellWallLoop` — station FE DTO.
-- `CapPlacementRule` — plan-form cap policy (`section.layout`). `AnchoredWallGeometry` — through-thickness face offsets (`section.placement`).
+- `CapPlacementRule` — plan-form cap policy (`section.layout`). `AnchoredWallGeometry` — through-thickness face offsets (`section.layout.anchoring`; `section.placement` is an alias until 0.6.0).
 
 ## Quick start
 

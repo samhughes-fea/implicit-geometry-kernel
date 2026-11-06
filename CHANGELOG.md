@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.5.0
+
+- Package version is `0.5.0`. `SpanWeb` remains an alias of `ShearWeb` until 0.6.0.
+
 - Wall types register on `SECTION_BUILDERS` (`WallType` protocol). Label
   classification, midlines, junctions, cells and properties look up the
   registry instead of string prefixes. A dummy stiffener type registered only

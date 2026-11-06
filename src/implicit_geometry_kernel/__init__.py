@@ -75,7 +75,7 @@ from implicit_geometry_kernel.sdf import (
 )
 from implicit_geometry_kernel.section.layout.system_layout import SYSTEM_TYPE_KEYS, resolve_system_type
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "Airfoil", "BladeGeometry", "CellLoop", "CellPolygon", "FeatureTable", "FieldSample", "GeometrySolver",

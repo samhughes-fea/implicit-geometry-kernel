@@ -6,7 +6,6 @@ from implicit_geometry_kernel.section.spec import (
     Gauges,
     SectionGeometry,
     SectionGeometryResult,
-    SectionGeometryRunner,
     SectionOptions,
     SectionPropertiesMeta,
     SectionSpec,
@@ -47,3 +46,16 @@ __all__ = [
     "quadtree_spec_for_airfoil",
     "quadtree_spec_to_dict",
 ]
+
+
+def __getattr__(name: str):
+    if name == "SectionGeometryRunner":
+        import warnings
+
+        warnings.warn(
+            "SectionGeometryRunner is deprecated; use SectionGeometry. Removed in 0.6.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return SectionGeometry
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -10,7 +10,8 @@
   exports that as one loftable skin loop plus web branches. Sandwich cores and
   trailing-edge inserts stay constructive solids (G9); they are not loop runs.
 
-``cells`` are the closed cell interiors (``CellPolygon``; ``CellLoop`` is an alias).
+``cells`` are the closed cell interiors (``CellPolygon``; ``CellLoop`` is a
+deprecated alias until 0.6.0).
 
 Graph types and builders live in :mod:`implicit_geometry_kernel.blade.shell_graph`
 and are re-exported here until 0.6.0.
@@ -69,9 +70,6 @@ class CellPolygon:
     points: np.ndarray  # (n, 3), first point repeated at the end
     area: float
     wall_labels: Tuple[str, ...]
-
-
-CellLoop = CellPolygon
 
 
 @dataclass(frozen=True)
@@ -145,8 +143,22 @@ from implicit_geometry_kernel.blade.shell_graph import (  # noqa: E402
     topology_diff,
 )
 
-__all__ = [
-    "CellLoop",
+def __getattr__(name: str):
+    if name == "CellLoop":
+        import warnings
+
+        warnings.warn(
+            "CellLoop is deprecated; use CellPolygon. Removed in 0.6.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return CellPolygon
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+__all__ = [  # CellLoop via __getattr__ until 0.6.0
+    "CellLoop",  # noqa: F822
+    "CellPolygon",
     "MidSegment",
     "MidSurface",
     "PartitionEdge",

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Dual names warn until 0.6.0: `CellLoop` → `CellPolygon`, `station_at` →
+  `interpolate`, `SectionGeometryRunner` → `SectionGeometry`,
+  `web_x_positions_m` → `web_offsets`, `SpanWeb` → `ShearWeb`.
+
 - `Airfoil` is the shape; `AirfoilSDF` is the implicit field via `Airfoil.to_sdf()`.
   NACA 4/5/6 vertex maths lives only in `sdf.shapes.naca`.
 

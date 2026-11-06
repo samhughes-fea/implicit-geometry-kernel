@@ -257,9 +257,10 @@ Not a status-table step. 3d is already tracked as step 5.
   history still lives in `docs/section/bug_log.md`.
 - **3b.** Done: `Airfoil` is the shape; `AirfoilSDF` is its field via
   `Airfoil.to_sdf()`. NACA maths lives in `sdf.shapes.naca`.
-- **3c.** One name per concept; deprecate the other: CellPolygon/CellLoop,
-  interpolate/station_at, SectionGeometry/SectionGeometryRunner,
-  web_offsets/web_x_positions_m, SpanWeb/ShearWeb. Remove in 0.6.0.
+- **3c.** Done: one name per concept; the other warns until 0.6.0
+  (`CellPolygon`/`CellLoop`, `interpolate`/`station_at`,
+  `SectionGeometry`/`SectionGeometryRunner`, `web_offsets`/`web_x_positions_m`,
+  `ShearWeb`/`SpanWeb`).
 - **3d.** The tree moves (step 5). Moves only, no logic.
 - **3e.** Plots package (open decision 1). Blocked until the maintainer chooses.
 - Also: remove leftover mentions of downstream package names from `docs/`.

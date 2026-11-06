@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from implicit_geometry_kernel.section.props.eval_cache import SectionEvalCache
-from implicit_geometry_kernel.integration.quadrature import (
+from implicit_geometry_kernel.integration.quadtree.quadrature import (
     label_boundary_segments,
     label_fill_polygons,
 )

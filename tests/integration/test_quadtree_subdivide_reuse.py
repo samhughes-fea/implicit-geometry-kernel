@@ -12,12 +12,22 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.integration.quadtree import (
+from implicit_geometry_kernel.integration.quadtree.tree import (
+
     QuadCell,
+
     _cell_interior_points,
+
     _n_interior_probes,
+
+)
+
+from implicit_geometry_kernel.integration.quadtree.refine import (
+
     _subdivide_cell_multi,
+
     _subdivide_refined_reuse,
+
 )
 from implicit_geometry_kernel.integration.spec import QuadtreeSpec
 

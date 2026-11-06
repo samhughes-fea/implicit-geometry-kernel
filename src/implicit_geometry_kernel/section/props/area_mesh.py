@@ -3,14 +3,14 @@ from __future__ import annotations
 from typing import Any
 import numpy as np
 from implicit_geometry_kernel.integration import AreaMesh2D, QuadtreeSpec, build_area_meshes_2d
-from implicit_geometry_kernel.integration.quadtree import (
+from implicit_geometry_kernel.integration.quadtree.tree import (
     QuadTreeMesh,
     SupportBox,
-    build_shared_quadtree,
     leaf_bounds,
-    summarize_quadtree,
 )
-from implicit_geometry_kernel.integration.quadrature import (
+from implicit_geometry_kernel.integration.quadtree.soa import build_shared_quadtree
+from implicit_geometry_kernel.integration.quadtree.marching import summarize_quadtree
+from implicit_geometry_kernel.integration.quadtree.quadrature import (
     _attach_center_phi,
     section_properties_all_labels,
 )

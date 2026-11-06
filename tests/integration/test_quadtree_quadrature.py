@@ -9,9 +9,7 @@ from implicit_geometry_kernel.section.props.area_mesh import (
 )
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.integration import QuadtreeSpec, build_shared_quadtree
-from implicit_geometry_kernel.integration.quadrature import (
-    section_properties_from_quadtree,
-)
+from implicit_geometry_kernel.integration.quadtree.quadrature import section_properties_from_quadtree
 
 
 def _circle_sampler(radius: float = 0.25):
@@ -83,7 +81,7 @@ def test_component_support_bbox_is_local():
 
 
 def test_effective_refine_band_scales_with_cell_size():
-    from implicit_geometry_kernel.integration.quadtree import _cell_needs_refine
+    from implicit_geometry_kernel.integration.quadtree.refine import _cell_needs_refine
 
     phi_near = np.array([0.01, 0.01, 0.01, 0.01, 0.01])
     assert _cell_needs_refine(phi_near, band_ceiling=0.02, band_scale=1.5, cell_diag=0.01)
@@ -92,12 +90,12 @@ def test_effective_refine_band_scales_with_cell_size():
 
 def test_boundary_moments_batch_matches_per_cell():
     """Vectorized boundary moments must reproduce the per-cell marching-squares path."""
-    from implicit_geometry_kernel.integration.quadrature import (
+    from implicit_geometry_kernel.integration.quadtree.moments import (
         _boundary_moments_batch,
         _inside_polygon_from_cell,
         _polygon_moments,
     )
-    from implicit_geometry_kernel.integration.quadtree import QuadCell
+    from implicit_geometry_kernel.integration.quadtree.tree import QuadCell
 
     rng = np.random.default_rng(0)
     # Cover all 16 corner sign patterns plus random magnitudes, with assorted cells.

@@ -75,7 +75,7 @@ from plotting.plot_section import (
 from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
-from implicit_geometry_kernel.integration.quadrature import label_boundary_segments
+from implicit_geometry_kernel.integration.quadtree.quadrature import label_boundary_segments
 
 _DPI = DEFAULT_DPI
 # Floor is MIN_REALISTIC_WEB_WALL_THICKNESS_M (4 mm); request that minimum.

@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from implicit_geometry_kernel.integration import QuadtreeSpec, build_shared_quadtree
-from implicit_geometry_kernel.integration.quadrature import (
+from implicit_geometry_kernel.integration.quadtree.quadrature import (
     _attach_center_phi,
     section_properties_from_quadtree,
 )

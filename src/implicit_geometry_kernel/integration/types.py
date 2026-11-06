@@ -7,7 +7,7 @@ from typing import Mapping, Protocol
 
 import numpy as np
 
-from implicit_geometry_kernel.integration.quadtree import QuadTreeMesh
+from implicit_geometry_kernel.integration.quadtree.tree import QuadTreeMesh
 
 
 class PhiSampler(Protocol):

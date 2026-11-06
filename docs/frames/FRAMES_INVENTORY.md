@@ -27,7 +27,7 @@ or tensors. Documented fixed-frame internal arrays may remain untagged.
 | NACA / SDF / chord authoring space | Pre-handoff geometry; label as authoring space, not `"geometry"` FrameTag |
 | C / isoparametric ξ,η | Element kinematics |
 | FE assembly index space | DOF numbering, not structural B/S |
-| External-tool adapters | Cotide / sectionproperties bridges |
+| External-tool adapters | Project-specific / sectionproperties bridges |
 | Display-only plot axis invert | Does not change stored `(X_*, Y_*)` |
 | WP4.5 aliases (`y`/`z`, `FRAME_SECTION_YZ`) | Dated compatibility; see `WP45_SECTION_FRAME_RENAME_MAP.md` |
 

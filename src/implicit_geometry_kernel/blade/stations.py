@@ -65,5 +65,14 @@ class ShearWeb:
     n: int = 4
 
 
-# Name used in 0.4.0. Remove in 0.6.0.
-SpanWeb = ShearWeb
+def __getattr__(name: str):
+    if name == "SpanWeb":
+        import warnings
+
+        warnings.warn(
+            "SpanWeb is deprecated; use ShearWeb. Removed in 0.6.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return ShearWeb
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

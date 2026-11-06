@@ -13,6 +13,7 @@ product; ``get_results()`` returns the built geometry.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
@@ -116,6 +117,12 @@ class SectionGeometry:
         self._outputs = tuple(outputs)
         if web_offsets is not None and web_x_positions_m is not None:
             raise ValueError("pass web_offsets or web_x_positions_m, not both")
+        if web_x_positions_m is not None:
+            warnings.warn(
+                "web_x_positions_m is deprecated; use web_offsets. Removed in 0.6.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._web_x_positions_m = (
             web_offsets if web_offsets is not None else web_x_positions_m
         )
@@ -196,7 +203,7 @@ class SectionGeometry:
             self._airfoil,
             **thickness,
             twist_rad=self._twist_rad,
-            web_x_positions_m=resolution.web_x_positions_m,
+            web_offsets=resolution.web_x_positions_m,
             web_y_coords=y,
             spar_cap_ply_pitch_m=self._spar_cap_ply_pitch_m,
         )
@@ -313,6 +320,15 @@ class SectionGeometry:
         )
 
 
-SectionGeometryRunner = SectionGeometry
+def __getattr__(name: str):
+    if name == "SectionGeometryRunner":
+        warnings.warn(
+            "SectionGeometryRunner is deprecated; use SectionGeometry. Removed in 0.6.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return SectionGeometry
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-__all__ = ["SectionGeometry", "SectionGeometryRunner"]
+
+__all__ = ["SectionGeometry", "SectionGeometryRunner"]  # noqa: F822

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, TypeAlias
@@ -291,6 +292,12 @@ class SectionSpec:
         )
         if web_offsets is not None and web_x_positions_m is not None:
             raise ValueError("pass web_offsets or web_x_positions_m, not both")
+        if web_x_positions_m is not None:
+            warnings.warn(
+                "web_x_positions_m is deprecated; use web_offsets. Removed in 0.6.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         xs = web_offsets if web_offsets is not None else web_x_positions_m
         web_t: float | tuple[float, ...]
         if isinstance(web, list):

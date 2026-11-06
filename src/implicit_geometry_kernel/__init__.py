@@ -39,7 +39,6 @@ the kernel. Nothing else in the suite.
 from implicit_geometry_kernel.blade import (
     Airfoil,
     BladeGeometry,
-    CellLoop,
     CellPolygon,
     MidSurface,
     SectionCut,
@@ -51,7 +50,6 @@ from implicit_geometry_kernel.blade import (
     TopologyDiff,
     TopologyEvent,
     SkinRegion,
-    SpanWeb,
     Station,
     StationNetwork,
     partition_edge_curve,
@@ -86,3 +84,25 @@ __all__ = [
     "shell_strips_from_graph",     "station_network", "station_network_from_meta", "topology_diff",
     "wall_meta_from_cut",
 ]
+
+
+def __getattr__(name: str):
+    if name == "CellLoop":
+        import warnings
+
+        warnings.warn(
+            "CellLoop is deprecated; use CellPolygon. Removed in 0.6.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return CellPolygon
+    if name == "SpanWeb":
+        import warnings
+
+        warnings.warn(
+            "SpanWeb is deprecated; use ShearWeb. Removed in 0.6.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return ShearWeb
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

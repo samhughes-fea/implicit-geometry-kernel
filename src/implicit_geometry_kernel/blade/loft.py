@@ -35,6 +35,7 @@ are dropped rather than slid, and ``SectionCut.dropped_webs`` lists them.
 
 from __future__ import annotations
 
+import warnings
 from collections import OrderedDict
 from typing import Callable, Optional, Sequence, Union
 
@@ -261,7 +262,14 @@ class BladeGeometry:
             offset = tuple(lerp(a.offset, b.offset))
         return (chord, twist, pitch, offset, (x, upper, lower))
 
-    station_at = interpolate  # alias through 0.4.x
+    def station_at(self, z: float):
+        """Deprecated alias of :meth:`interpolate`. Removed in 0.6.0."""
+        warnings.warn(
+            "BladeGeometry.station_at is deprecated; use interpolate. Removed in 0.6.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.interpolate(z)
 
     def oml_polyline(self, z: float) -> np.ndarray:
         """Closed outer mould line in the blade frame at ``z``, shape ``(N, 3)``.

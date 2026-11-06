@@ -5,8 +5,8 @@ Unit tests for CSG operations on known SDF pairs.
 """
 
 import numpy as np
-from implicit_geometry_kernel.sdf.csg import intersect, offset, shell, subtract, union
-from implicit_geometry_kernel.sdf.primitives import sdf_circle
+from implicit_geometry_kernel.sdf.kernels.csg import intersect, offset, shell, subtract, union
+from implicit_geometry_kernel.sdf.kernels.primitives import sdf_circle
 
 
 def c1(x, y): return sdf_circle(x, y, cx=0.0, cy=0.0, r=1.0)

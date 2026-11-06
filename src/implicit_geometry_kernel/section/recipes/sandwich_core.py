@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from implicit_geometry_kernel.sdf.ir import HalfPlane, Intersect, Offset, subtract_expr
+from implicit_geometry_kernel.sdf.nodes import HalfPlane, Intersect, Offset, subtract_expr
 
 from implicit_geometry_kernel.section.assembly.clip_algebra import (
     airfoil_expr,

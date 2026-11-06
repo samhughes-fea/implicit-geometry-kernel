@@ -17,8 +17,8 @@ from implicit_geometry_kernel.frames import (
 from implicit_geometry_kernel.section.assembly.multicell import (
     MultiCellSection,
 )
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from plotting.plot_section import (
     plot_section,
     rotated_naca_grid_to_section_plot_axes,

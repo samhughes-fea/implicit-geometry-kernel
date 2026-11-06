@@ -38,7 +38,7 @@ from implicit_geometry_kernel.section.midlines.host import (
 from implicit_geometry_kernel.section.props.compute import (
     PropsBackendArg,
 )
-from implicit_geometry_kernel.sdf.airfoil import (
+from implicit_geometry_kernel.sdf.shapes.airfoil import (
     AirfoilSDF,
 )
 from implicit_geometry_kernel.integration.quadtree import QuadTreeMesh

@@ -21,8 +21,8 @@ from implicit_geometry_kernel.section.props.export import (
     _multicell_host,
     _shared_grid_phi,
 )
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 
 
 @pytest.mark.parametrize("twist_deg", [0.0, 15.0])

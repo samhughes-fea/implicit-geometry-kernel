@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from implicit_geometry_kernel.sdf.field import FeatureTable, SDFNode
-from implicit_geometry_kernel.sdf.nodes import CallableSDF, ExprSDF, TagNode
+from implicit_geometry_kernel.sdf.nodes.base import FeatureTable, SDFNode
+from implicit_geometry_kernel.sdf.nodes.tagged import CallableSDF, ExprSDF, TagNode
 from implicit_geometry_kernel.section.recipes.base import SectionComponent
 
 _KIND = (

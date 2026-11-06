@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 
-from implicit_geometry_kernel.sdf.ir import Expr, eval_expr_batch
+from implicit_geometry_kernel.sdf.nodes import Expr, eval_expr_batch
 
 
 def expr_callable(expr: Expr):
@@ -40,7 +40,7 @@ class SectionComponent:
 
     def twisted(self, twist_rad: float):
         """Rotate ``expr`` into the B-frame; preserve the concrete subclass."""
-        from implicit_geometry_kernel.sdf.ir import Rotate
+        from implicit_geometry_kernel.sdf.nodes import Rotate
 
         if abs(float(twist_rad)) <= 1e-10:
             return self

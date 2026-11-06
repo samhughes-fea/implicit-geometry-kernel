@@ -174,3 +174,9 @@ class LeafNode(SDFNode):
     @abstractmethod
     def _phi(self, points: np.ndarray) -> np.ndarray:
         ...
+
+
+__all__ = [
+    "EvalCache", "FeatureKind", "FeatureSpec", "FeatureTable", "FieldSample", "KIND_PRIORITY",
+    "LeafNode", "NO_FEATURE", "SDFNode",
+]

@@ -46,8 +46,8 @@ from plotting.figure_io import (
 import numpy as np
 import matplotlib.pyplot as plt
 
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section.props.export import export_section_json
 from implicit_geometry_kernel.section.props.export import SectionPropertiesReport
 from implicit_geometry_kernel.section import MultiCellSection, resolve_system_type

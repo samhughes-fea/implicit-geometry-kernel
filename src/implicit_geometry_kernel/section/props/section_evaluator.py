@@ -9,7 +9,7 @@ import numpy as np
 from implicit_geometry_kernel.section.midlines.host import (
     resolve_section_host,
 )
-from implicit_geometry_kernel.sdf.ir import CallableField, Expr, eval_expr_batch, union_expr
+from implicit_geometry_kernel.sdf.nodes import CallableField, Expr, eval_expr_batch, union_expr
 
 MultiSampler = Callable[[np.ndarray], dict[str, np.ndarray]]
 

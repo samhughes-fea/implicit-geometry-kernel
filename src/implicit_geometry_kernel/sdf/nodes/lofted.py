@@ -7,8 +7,8 @@ from collections.abc import Callable
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.field import NO_FEATURE, LeafNode
-from implicit_geometry_kernel.sdf.primitives import sdf_polygon
+from implicit_geometry_kernel.sdf.nodes.base import NO_FEATURE, LeafNode
+from implicit_geometry_kernel.sdf.kernels.primitives import sdf_polygon
 
 SectionPolygon = Callable[[float], np.ndarray]
 
@@ -54,3 +54,6 @@ class LoftedPolygonSDF(LeafNode):
             xy = points[group]
             out[group] = sdf_polygon(xy[:, 0], xy[:, 1], poly)
         return out
+
+
+__all__ = ["LoftedPolygonSDF", "SectionPolygon"]

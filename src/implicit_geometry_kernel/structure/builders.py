@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from implicit_geometry_kernel.sdf.field import FeatureTable, SDFNode
+from implicit_geometry_kernel.sdf.nodes.base import FeatureTable, SDFNode
 from implicit_geometry_kernel.structure.contributions import Contribution
 
 

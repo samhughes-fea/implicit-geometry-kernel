@@ -44,15 +44,15 @@ from plotting.figure_io import (
     save_figure,
 )
 
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )
 from plotting.plot_sdf import (
     plot_sdf_field,
 )
-from implicit_geometry_kernel.sdf.csg import union_all
+from implicit_geometry_kernel.sdf.kernels.csg import union_all
 
 _DPI = DEFAULT_DPI
 _BAND_M = 0.02  # exclude a thin band around φ=0 from residual stats

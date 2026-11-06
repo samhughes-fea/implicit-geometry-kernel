@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.csg import offset
-from implicit_geometry_kernel.sdf.ir import Capsule, Intersect, Offset
+from implicit_geometry_kernel.sdf.kernels.csg import offset
+from implicit_geometry_kernel.sdf.nodes import Capsule, Intersect, Offset
 
 from implicit_geometry_kernel.section.assembly.clip_algebra import (
     airfoil_expr,

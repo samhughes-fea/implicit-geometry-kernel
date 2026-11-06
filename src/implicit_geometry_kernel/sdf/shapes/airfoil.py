@@ -11,7 +11,7 @@ Approach
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.primitives import sdf_polygon
+from implicit_geometry_kernel.sdf.kernels.primitives import sdf_polygon
 
 
 class AirfoilSDF:
@@ -114,7 +114,7 @@ class AirfoilSDF:
         NACA 2412 at 1 m chord — discretisation of the generator, not an error
         to close in the junction path.
         """
-        from implicit_geometry_kernel.sdf.naca import naca_four_digit_vertices
+        from implicit_geometry_kernel.sdf.shapes.naca import naca_four_digit_vertices
 
         code = str(naca_code).strip().zfill(4)
         if len(code) != 4 or not code.isdigit():
@@ -139,7 +139,7 @@ class AirfoilSDF:
         closed_te: bool = True,
     ):
         """Build from precompute spanwise convention (4-, 5-, or 6-series)."""
-        from implicit_geometry_kernel.sdf.naca import airfoil_vertices_from_spanwise
+        from implicit_geometry_kernel.sdf.shapes.naca import airfoil_vertices_from_spanwise
         verts = airfoil_vertices_from_spanwise(
             int(series), float(m), float(p), float(xx), int(n_points), float(chord), closed_te=closed_te
         )

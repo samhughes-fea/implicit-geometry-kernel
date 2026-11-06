@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.ir import (
+from implicit_geometry_kernel.sdf.nodes import (
     Box,
     Circle,
     Intersect,
@@ -18,10 +18,10 @@ from implicit_geometry_kernel.sdf.ir import (
     intersect_expr,
     union_expr,
 )
-from implicit_geometry_kernel.sdf.csg import offset, shell, subtract, union
-from implicit_geometry_kernel.sdf.grid import SDFGrid
-from implicit_geometry_kernel.sdf.primitives import sdf_box, sdf_circle
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.kernels.csg import offset, shell, subtract, union
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
+from implicit_geometry_kernel.sdf.kernels.primitives import sdf_box, sdf_circle
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.recipes.inserts import LEInsert, TEInsert
 from implicit_geometry_kernel.section.recipes.outer_skin import OuterSkin
 from implicit_geometry_kernel.section.recipes.sandwich_core import SandwichCore

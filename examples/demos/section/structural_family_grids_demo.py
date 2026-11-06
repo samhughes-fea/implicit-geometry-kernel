@@ -66,7 +66,7 @@ from plotting.palette import strip_axes_chrome
 from plotting.plot import (
     plot_section_hybrid,
 )
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
 _DPI = DEFAULT_DPI
 _FAMILIES = ("A", "B", "C", "D")

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- `sdf/` moved to its target tree (moves only, geometry unchanged): `sdf/nodes/`
+  (`base`, `primitives`, `csg`, `bbox`, `tagged`, `span`, `lofted`), `sdf/kernels/`
+  (`primitives`, `polygon_numba`, `grid`, `csg`, `transforms`) and `sdf/shapes/`
+  (`airfoil`, `naca`). `sdf.ir` is split across `sdf.nodes`. The old module paths
+  (`sdf.field`, `sdf.ir`, `sdf.span_nodes`, `sdf.lofted`, `sdf.primitives`, `sdf.grid`,
+  `sdf.csg`, `sdf.transforms`, `sdf.airfoil`, `sdf.naca`) remain as aliases until 0.6.0;
+  `sdf.nodes` is now the package and still exports the tagged nodes.
+- `docs/REFACTOR_PLAN.md`: the restructure and exactness plan with a status table, so
+  the work can be resumed from the repository alone.
+
 - One Shapely gateway: `section.boundary` (module `section/boundary/polygons.py`) holds
   every polygon offset, Boolean clean-up, rotation and clip, and re-exports the Shapely
   types the section uses. No other section module imports Shapely (a test enforces it;

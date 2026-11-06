@@ -44,7 +44,7 @@ _ensure_mod.ensure_repo_path()
 from implicit_geometry_kernel.contract import (
     InfeasibleSectionGeometry,
 )
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     SectionGeometry,
     resolve_system_type,

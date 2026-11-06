@@ -153,7 +153,7 @@ def sdf_polygon(x, y, vertices):
     """
     import time
 
-    from implicit_geometry_kernel.sdf._polygon_numba import (
+    from implicit_geometry_kernel.sdf.kernels.polygon_numba import (
         sdf_polygon_numba,
     )
 

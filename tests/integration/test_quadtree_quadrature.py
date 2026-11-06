@@ -7,7 +7,7 @@ import numpy as np
 from implicit_geometry_kernel.section.props.area_mesh import (
     _component_supports,
 )
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.integration import QuadtreeSpec, build_shared_quadtree
 from implicit_geometry_kernel.integration.quadrature import (
     section_properties_from_quadtree,

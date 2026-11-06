@@ -5,8 +5,8 @@ from collections.abc import Sequence
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.sdf.nodes import PolygonSDF
-from implicit_geometry_kernel.sdf.span_nodes import ComplementNode, MaxNode
+from implicit_geometry_kernel.sdf.nodes.tagged import PolygonSDF
+from implicit_geometry_kernel.sdf.nodes.span import ComplementNode, MaxNode
 from implicit_geometry_kernel.structure import (
     BranchContribution,
     BuildContext,

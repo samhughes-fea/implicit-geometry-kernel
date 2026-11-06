@@ -27,7 +27,7 @@ from implicit_geometry_kernel.section.api.runner import (
 
 @pytest.fixture(scope="module")
 def airfoil():
-    from implicit_geometry_kernel.sdf.airfoil import (
+    from implicit_geometry_kernel.sdf.shapes.airfoil import (
         AirfoilSDF,
     )
 

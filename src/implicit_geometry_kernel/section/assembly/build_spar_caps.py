@@ -17,7 +17,7 @@ from implicit_geometry_kernel.contract.errors import (
 from implicit_geometry_kernel.section.recipes.walls import (
     CapWall,
 )
-from implicit_geometry_kernel.sdf.ir import (
+from implicit_geometry_kernel.sdf.nodes import (
     Expr,
     Subtract,
     union_expr,

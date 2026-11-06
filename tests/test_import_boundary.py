@@ -44,7 +44,7 @@ def test_no_imports_of_the_models_built_on_it():
 def test_kernel_does_not_import_matplotlib_or_plotting():
     for path, rel in _library_files():
         for module in _imports(path):
-            if rel.as_posix() == "sdf/grid.py" and module.startswith("matplotlib"):
+            if rel.as_posix() == "sdf/kernels/grid.py" and module.startswith("matplotlib"):
                 continue  # contour fallback inside a function when contourpy is missing
             assert not module.startswith("matplotlib"), (rel, module)
             assert module.split(".")[0] != "plotting", (rel, module)

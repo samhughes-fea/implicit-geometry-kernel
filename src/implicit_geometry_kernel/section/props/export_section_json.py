@@ -7,7 +7,7 @@ import json
 import numpy as np
 
 from implicit_geometry_kernel.section.props.eval_cache import SectionEvalCache
-from implicit_geometry_kernel.sdf.ir import eval_expr_batch
+from implicit_geometry_kernel.sdf.nodes import eval_expr_batch
 
 from implicit_geometry_kernel.section.props.properties_report import SectionPropertiesReport
 

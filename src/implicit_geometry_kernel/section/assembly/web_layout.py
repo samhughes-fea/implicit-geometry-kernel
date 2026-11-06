@@ -8,7 +8,7 @@ from implicit_geometry_kernel.contract.errors import (
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.csg import offset
+from implicit_geometry_kernel.sdf.kernels.csg import offset
 
 
 def _default_y_search(airfoil_sdf, y_search=None):

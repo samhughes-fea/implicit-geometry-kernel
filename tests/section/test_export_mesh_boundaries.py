@@ -20,8 +20,8 @@ from implicit_geometry_kernel.section.props.export import (
 from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 
 
 def test_export_reuses_properties_report_and_mesh_boundaries(tmp_path: Path):

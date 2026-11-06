@@ -6,8 +6,8 @@ Unit tests for geometry.transforms.
 
 import numpy as np
 import pytest
-from implicit_geometry_kernel.sdf.primitives import sdf_box, sdf_circle
-from implicit_geometry_kernel.sdf.transforms import (
+from implicit_geometry_kernel.sdf.kernels.primitives import sdf_box, sdf_circle
+from implicit_geometry_kernel.sdf.kernels.transforms import (
     rotate_field, translate_field, scale_field,
     mirror_field_x, mirror_field_y,
     SDFFrame, rotate_points, flapwise_aligned_web_angle,

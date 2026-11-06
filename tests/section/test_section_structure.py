@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.sdf.ir import Circle
-from implicit_geometry_kernel.sdf.nodes import ExprSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.nodes import Circle
+from implicit_geometry_kernel.sdf.nodes.tagged import ExprSDF
 from implicit_geometry_kernel.section.api.factory import build_section_view, resolve_system_type
 from implicit_geometry_kernel.section.assembly.members import SECTION_BUILDERS
 from implicit_geometry_kernel.section.assembly.multicell import MultiCellSection, section_registry

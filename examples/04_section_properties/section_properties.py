@@ -29,7 +29,7 @@ import numpy as np  # noqa: E402
 
 from _shared.plotting import REFERENCE, SERIES, TEXT_SECONDARY, draw_cut, note, plt, save  # noqa: E402
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station  # noqa: E402
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     SectionGeometry,
     resolve_system_type,

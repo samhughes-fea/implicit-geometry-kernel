@@ -29,7 +29,7 @@ from implicit_geometry_kernel.section.assembly.cap_feasibility import (
 from implicit_geometry_kernel.section.assembly.web_layout import (
     resolve_web_anchors,
 )
-from implicit_geometry_kernel.sdf.airfoil import (
+from implicit_geometry_kernel.sdf.shapes.airfoil import (
     AirfoilSDF,
 )
 

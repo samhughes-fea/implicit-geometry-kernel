@@ -19,7 +19,7 @@ from implicit_geometry_kernel.section.junctions.prepare import (
     ShellMidlineJunctionPreparationOptions,
     prepare_shell_midline_junctions,
 )
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
 
 def test_hybrid_props_then_shell_midlines():

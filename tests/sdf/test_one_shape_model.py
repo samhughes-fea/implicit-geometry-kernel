@@ -5,11 +5,11 @@ import pytest
 
 from implicit_geometry_kernel.sdf import nodes
 from implicit_geometry_kernel.sdf.compile import compile_expr_to_node
-from implicit_geometry_kernel.sdf.field import SDFNode
-from implicit_geometry_kernel.sdf.ir import (
+from implicit_geometry_kernel.sdf.nodes.base import SDFNode
+from implicit_geometry_kernel.sdf.nodes import (
     Box, Circle, Intersect, Offset, Polygon, Rotate, Shell, Slab, Subtract, Union, eval_expr_batch,
 )
-from implicit_geometry_kernel.sdf.nodes import ExprSDF, TagNode
+from implicit_geometry_kernel.sdf.nodes.tagged import ExprSDF, TagNode
 
 SQUARE = Polygon(((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)))
 SHAPES = [

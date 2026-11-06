@@ -8,7 +8,7 @@ Run with:  python -m pytest tests/ -v
 
 import numpy as np
 import pytest
-from implicit_geometry_kernel.sdf.primitives import (
+from implicit_geometry_kernel.sdf.kernels.primitives import (
     sdf_circle, sdf_box, sdf_half_plane,
     sdf_segment, sdf_capsule, sdf_ellipse, sdf_polygon,
 )

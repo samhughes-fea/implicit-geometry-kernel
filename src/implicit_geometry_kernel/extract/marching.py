@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.field import SDFNode
+from implicit_geometry_kernel.sdf.nodes.base import SDFNode
 from implicit_geometry_kernel.sdf.solve import GeometrySolver
 
 _EDGES = ((0, 1), (1, 2), (2, 3), (3, 0))

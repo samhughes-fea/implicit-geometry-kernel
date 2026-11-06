@@ -51,13 +51,13 @@ from plotting.palette import (
     draw_distance_field,
 )
 
-from implicit_geometry_kernel.sdf.grid import SDFGrid
-from implicit_geometry_kernel.sdf.csg import (
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
+from implicit_geometry_kernel.sdf.kernels.csg import (
     blend,
     smooth_subtract,
     smooth_union,
 )
-from implicit_geometry_kernel.sdf.ir import (
+from implicit_geometry_kernel.sdf.nodes import (
     Capsule,
     Circle,
     Intersect,

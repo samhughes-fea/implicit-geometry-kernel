@@ -7,7 +7,7 @@ import numpy as np
 from implicit_geometry_kernel.contract.errors import (
     InfeasibleSectionGeometry,
 )
-from implicit_geometry_kernel.sdf.ir import CallableField, HalfPlane, Intersect, Polygon
+from implicit_geometry_kernel.sdf.nodes import CallableField, HalfPlane, Intersect, Polygon
 
 
 def _ensure_f64(a):

@@ -17,8 +17,8 @@ import numpy as np
 
 from implicit_geometry_kernel.contract.errors import InfeasibleSectionGeometry
 from implicit_geometry_kernel.profiling import timed_stage
-from implicit_geometry_kernel.sdf.ir import Offset
-from implicit_geometry_kernel.sdf.nodes import ExprSDF
+from implicit_geometry_kernel.sdf.nodes import Offset
+from implicit_geometry_kernel.sdf.nodes.tagged import ExprSDF
 from implicit_geometry_kernel.section.assembly.clip_algebra import airfoil_expr, flapwise_web_normal, web_station_projection
 from implicit_geometry_kernel.section.assembly.web_layout import resolve_web_anchors
 from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
@@ -175,7 +175,7 @@ def plan_section(
         t_ps = clamp_skin_thickness_m(float(skin_thickness[1]))
     t_skin = max(t_ss, t_ps)
     if rule.kind in ("fixed_band", "per_web_pads"):
-        from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+        from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
         if not isinstance(airfoil_sdf, AirfoilSDF):
             raise TypeError("fixed_band / per_web_pads require airfoil_sdf "
@@ -243,7 +243,7 @@ def plan_section(
 
 def b_frame_web_search(plan: SectionPlan):
     """``(phi_inner_b, y_search_b)`` for flapwise webs on a twisted section, else ``(None, y_search)``."""
-    from implicit_geometry_kernel.sdf.transforms import rotate_field
+    from implicit_geometry_kernel.sdf.kernels.transforms import rotate_field
 
     flapwise = any(a == "flapwise" for a in plan.web_alignments)
     if not (flapwise and abs(plan.twist) > 1e-10):

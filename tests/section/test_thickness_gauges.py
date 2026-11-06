@@ -8,7 +8,7 @@ from implicit_geometry_kernel.section.api.kwarg_aliases import (
     resolve_shear_web_thickness,
     resolve_skin_gauges,
 )
-from implicit_geometry_kernel.sdf.airfoil import (
+from implicit_geometry_kernel.sdf.shapes.airfoil import (
     AirfoilSDF,
 )
 from implicit_geometry_kernel.section.assembly.multicell import (
@@ -55,7 +55,7 @@ def test_zone_gauges_m_preserve_independent_webs(airfoil=None):
     from implicit_geometry_kernel.section.layout.system_layout import (
         resolve_system_type,
     )
-    from implicit_geometry_kernel.sdf.airfoil import (
+    from implicit_geometry_kernel.sdf.shapes.airfoil import (
         AirfoilSDF,
     )
 
@@ -95,7 +95,7 @@ def test_prep_key_distinguishes_unequal_zone_maps():
     from implicit_geometry_kernel.section.layout.system_layout import (
         resolve_system_type,
     )
-    from implicit_geometry_kernel.sdf.airfoil import (
+    from implicit_geometry_kernel.sdf.shapes.airfoil import (
         AirfoilSDF,
     )
 

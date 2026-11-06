@@ -5,7 +5,7 @@
 * :class:`LawOffsetNode` offsets a field by an amount that varies with ``z``.
 * :class:`SpanIntervalNode` keeps a field only for ``z`` in a closed interval.
 
-All of them keep the 2.5-D contract of :mod:`implicit_geometry_kernel.sdf.field`:
+All of them keep the 2.5-D contract of :mod:`implicit_geometry_kernel.sdf.nodes.base`:
 ``phi`` is a distance in ``(x, y)`` at each point's own ``z``.
 """
 
@@ -15,7 +15,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.field import EvalCache, FieldSample, SDFNode
+from implicit_geometry_kernel.sdf.nodes.base import EvalCache, FieldSample, SDFNode
 
 SpanFunction = Callable[[np.ndarray], np.ndarray]
 """Any vectorised ``z -> value`` map, for example a ``structure`` span law."""

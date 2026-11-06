@@ -44,8 +44,8 @@ from plotting.palette import (
     tighten_to_section,
 )
 
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import resolve_system_type
 from implicit_geometry_kernel.section.api import build_section_view
 from plotting.plot import (

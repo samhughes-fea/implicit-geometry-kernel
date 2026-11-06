@@ -180,7 +180,7 @@ def main(argv: list[str] | None = None) -> None:
     from implicit_geometry_kernel.section.api.factory import (
         resolve_system_type,
     )
-    from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+    from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
     argv = list(sys.argv[1:] if argv is None else argv)
 

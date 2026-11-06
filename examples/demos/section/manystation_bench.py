@@ -57,7 +57,7 @@ from implicit_geometry_kernel.section.api.factory import (
 from implicit_geometry_kernel.section.props.backend import (
     quadtree_spec_for_airfoil,
 )
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.props.compute import (
     compute_section_properties,
 )
@@ -128,7 +128,7 @@ def _run_bench(args, backend: str) -> dict:
                 SectionPropertiesReport,
                 export_section_json,
             )
-            from implicit_geometry_kernel.sdf.grid import SDFGrid
+            from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 
             grid = SDFGrid.from_bbox(spec.x_min, spec.x_max, spec.y_min, spec.y_max, 384, 180)
             report = SectionPropertiesReport.from_precomputed(

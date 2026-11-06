@@ -52,7 +52,7 @@ from plotting.palette import (
     strip_axes_chrome,
 )
 
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )

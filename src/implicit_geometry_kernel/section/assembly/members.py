@@ -22,8 +22,8 @@ import numpy as np
 
 from implicit_geometry_kernel.contract.errors import InfeasibleSectionGeometry
 from implicit_geometry_kernel.profiling import timed_stage
-from implicit_geometry_kernel.sdf.ir import HalfPlane
-from implicit_geometry_kernel.sdf.nodes import ExprSDF
+from implicit_geometry_kernel.sdf.nodes import HalfPlane
+from implicit_geometry_kernel.sdf.nodes.tagged import ExprSDF
 from implicit_geometry_kernel.section.assembly.build_spar_caps import build_spar_caps
 from implicit_geometry_kernel.section.assembly.clip_algebra import (
     _parallel_web_half_gt,

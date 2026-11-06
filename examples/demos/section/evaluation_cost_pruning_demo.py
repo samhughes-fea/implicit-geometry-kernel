@@ -63,11 +63,11 @@ from plotting.palette import (
     RED,
 )
 
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
-from implicit_geometry_kernel.sdf.grid import SDFGrid
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import resolve_system_type
 from implicit_geometry_kernel.section.api import build_section_view
-from implicit_geometry_kernel.sdf.ir import (
+from implicit_geometry_kernel.sdf.nodes import (
     eval_expr_batch,
     expr_bbox,
 )

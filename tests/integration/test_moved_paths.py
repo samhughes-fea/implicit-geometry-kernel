@@ -7,7 +7,7 @@ PKG = "implicit_geometry_kernel.integration."
 
 def test_quadtree_package_keeps_old_names():
     qt = importlib.import_module(PKG + "quadtree")
-    for sub in ("tree", "refine", "refine_multi", "soa", "marching"):
+    for sub in ("tree", "soa", "marching"):
         mod = importlib.import_module(PKG + "quadtree." + sub)
         names = [n for n in vars(mod) if getattr(getattr(mod, n), "__module__", None) == mod.__name__]
         for name in names:

@@ -9,8 +9,7 @@ from implicit_geometry_kernel.integration import (
     QuadtreeSpec,
     build_area_mesh_2d,
     build_area_meshes_2d,
-    refine_quadtree,
-    build_root_quadtree,
+    build_shared_quadtree,
 )
 
 
@@ -24,8 +23,7 @@ def _circle_sampler(radius: float = 0.2):
 
 def test_quadtree_refines_near_zero_contour():
     spec = QuadtreeSpec(-0.5, 0.5, -0.5, 0.5, max_depth=5, min_cell_size=0.02)
-    mesh = build_root_quadtree(spec, _circle_sampler())
-    mesh = refine_quadtree(mesh, _circle_sampler())
+    mesh = build_shared_quadtree(spec, {"phi": _circle_sampler()})
     leaves = mesh.leaf_cells()
     assert len(leaves) > 1
     min_w = min(c.width for c in leaves)

@@ -10,11 +10,47 @@ from typing import Any, Callable
 import numpy as np
 
 from implicit_geometry_kernel.integration.spec import QuadtreeSpec
-from implicit_geometry_kernel.integration.quadtree.refine import _CHILD_CORNER_RECIPE, _cells_need_refine_batch
 from implicit_geometry_kernel.integration.quadtree.tree import QuadCell, QuadTreeMesh, SupportBox, _exterior_sentinel, _n_interior_probes, _square_forest_domain
 
 
 BatchEval = Callable[[np.ndarray], dict[str, np.ndarray]]
+
+# Maps each child's 4 corners (in QuadCell.corners() order) to a source in the
+# parent's decision-phase samples: ("c", k) = parent corner k, ("p", k) =
+# interior probe k.
+_CHILD_CORNER_RECIPE: tuple[tuple[tuple[str, int], ...], ...] = (
+    (("c", 0), ("p", 1), ("p", 0), ("p", 4)),  # child 0: (x_min, xm, y_min, ym)
+    (("p", 1), ("c", 1), ("p", 2), ("p", 0)),  # child 1: (xm, x_max, y_min, ym)
+    (("p", 0), ("p", 2), ("c", 2), ("p", 3)),  # child 2: (xm, x_max, ym, y_max)
+    (("p", 4), ("p", 0), ("p", 3), ("c", 3)),  # child 3: (x_min, xm, ym, y_max)
+)
+
+
+def _cell_needs_refine(
+    all_phi_cell: np.ndarray,
+    band_ceiling: float,
+    band_scale: float,
+    cell_diag: float,
+) -> bool:
+    if np.min(all_phi_cell) <= 0.0 <= np.max(all_phi_cell):
+        return True
+    band = min(float(band_ceiling), float(band_scale) * float(cell_diag))
+    return bool(np.min(np.abs(all_phi_cell)) < band)
+
+
+def _cells_need_refine_batch(
+    all_phi: np.ndarray,
+    band_ceiling: float,
+    band_scale: float,
+    cell_diags: np.ndarray,
+) -> np.ndarray:
+    """Vectorized refine test; ``all_phi`` shape ``(n_cells, n_probes)``."""
+    mins = all_phi.min(axis=1)
+    maxs = all_phi.max(axis=1)
+    sign_change = (mins <= 0.0) & (maxs >= 0.0)
+    abs_mins = np.abs(all_phi).min(axis=1)
+    bands = np.minimum(float(band_ceiling), float(band_scale) * cell_diags)
+    return sign_change | (abs_mins < bands)
 
 
 def _samplers_as_batch(samplers: dict[str, Any], labels: list[str]) -> BatchEval:
@@ -102,7 +138,7 @@ def _expand_children_soa(
 
     Child-corner φ is gathered from the parents' corner φ + interior probes via
     ``_CHILD_CORNER_RECIPE`` (no field re-evaluation), with per-child support
-    sentinel masking — the array-native form of ``_subdivide_refined_reuse``.
+    sentinel masking.
     """
     sentinel = _exterior_sentinel(spec)
     x0, x1, y0, y1 = bounds[:, 0], bounds[:, 1], bounds[:, 2], bounds[:, 3]
@@ -153,7 +189,7 @@ def _refine_soa(
 ) -> QuadTreeMesh:
     """Struct-of-arrays adaptive refinement (no per-cell ``QuadCell`` objects).
 
-    Mirrors the ``refine_quadtree_multi`` decision (corner cache + interior probe
+    Mirrors the SoA refine decision (corner cache + interior probe
     band test, per-label support culling) but carries the frontier as arrays and
     expands children by reshaping. Produces the same leaf *set* and count as the
     object path; leaf *order* is refinement/level order (summation reorders, so

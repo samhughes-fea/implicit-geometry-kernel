@@ -81,7 +81,7 @@ def test_component_support_bbox_is_local():
 
 
 def test_effective_refine_band_scales_with_cell_size():
-    from implicit_geometry_kernel.integration.quadtree.refine import _cell_needs_refine
+    from implicit_geometry_kernel.integration.quadtree.soa import _cell_needs_refine
 
     phi_near = np.array([0.01, 0.01, 0.01, 0.01, 0.01])
     assert _cell_needs_refine(phi_near, band_ceiling=0.02, band_scale=1.5, cell_diag=0.01)

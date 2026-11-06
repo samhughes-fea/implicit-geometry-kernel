@@ -17,8 +17,6 @@ from implicit_geometry_kernel.integration.quadtree.marching import (
     contour_from_quadtree_marching_squares,
     summarize_quadtree,
 )
-from implicit_geometry_kernel.integration.quadtree.refine import refine_quadtree
-from implicit_geometry_kernel.integration.quadtree.refine_multi import refine_quadtree_multi
 from implicit_geometry_kernel.integration.quadtree.quadrature import (
     section_properties_all_labels,
     section_properties_from_quadtree,
@@ -42,12 +40,10 @@ __all__ = [
     "build_square_root_forest",
     "contour_from_quadtree_marching_squares",
     "ensure_closed",
-    "refine_quadtree",
     "ring_sums_S",
     "section_properties_S",
     "section_properties_Sprime",
     "validate_and_orient_polygon",
-    "refine_quadtree_multi",
     "section_properties_all_labels",
     "section_properties_from_quadtree",
     "smooth_contour",

@@ -4,25 +4,18 @@ from __future__ import annotations
 
 from typing import Mapping
 
-from implicit_geometry_kernel.integration.quadtree.tree import build_root_quadtree
-
 from implicit_geometry_kernel.integration.quadtree.marching import (
-
     contour_from_quadtree_marching_squares,
-
     summarize_quadtree,
-
 )
-
-from implicit_geometry_kernel.integration.quadtree.refine import refine_quadtree
+from implicit_geometry_kernel.integration.quadtree.soa import build_shared_quadtree
 from implicit_geometry_kernel.integration.spec import QuadtreeSpec
 from implicit_geometry_kernel.integration.types import AreaMesh2D, FieldMesh2D, PhiSampler
 
 
 def build_area_mesh_2d(phi_sampler: PhiSampler, spec: QuadtreeSpec) -> FieldMesh2D:
     """Refine a quadtree on ``phi_sampler`` and optionally extract the φ=0 contour."""
-    mesh = build_root_quadtree(spec, phi_sampler)
-    mesh = refine_quadtree(mesh, phi_sampler)
+    mesh = build_shared_quadtree(spec, {"phi": phi_sampler})
     stats = summarize_quadtree(mesh)
     contour = None
     try:

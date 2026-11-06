@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Quadtree refinement is the array-based path only (`soa.py`). Object-model
+  `refine.py` / `refine_multi.py` are gone; `build_area_mesh_2d` uses
+  `build_shared_quadtree`.
+
 - Live `docs/` no longer import or path into downstream packages; fork history
   stays in `docs/FORK.md`.
 

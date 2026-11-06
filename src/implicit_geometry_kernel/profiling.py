@@ -1,7 +1,7 @@
 """Optional section_geometry profiling (``SECTION_GEOMETRY_PROFILE=1``).
 
 Cross-cutting timing helpers shared by api / assemble / constructive / topology.
-Kept out of ``sdf/`` so G-row homes do not skip-import the SDF kernel for timers.
+Kept out of ``sdf/`` so section packages do not skip-import the SDF kernel for timers.
 """
 
 from __future__ import annotations

@@ -132,9 +132,8 @@ class SectionGeometryResult:
     rotated-NACA, **not** frame **B** (`twisted_pitch_axis_blade_frame`). Do not
     silently re-twist the map to match emit midlines.
 
-    ``quadtree_mesh`` is **G-PROPS debug only** (populated when ``retain_mesh``
-    is true). It is not a shell-mesh product; density / Q4 / +x3 stay in
-    ``section_mesh``.
+    ``quadtree_mesh`` is debug only (populated when ``retain_mesh``
+    is true). It is not a shell-mesh product; density and Q4 stay downstream.
 
     ``stage_timings`` is a small ``{stage: seconds}`` dict populated when
     ``SECTION_GEOMETRY_PROFILE=1`` (assemble / assemble_* / properties /

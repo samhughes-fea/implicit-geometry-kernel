@@ -1,8 +1,8 @@
 """Characterization of parked Pass 2 gaps. Does not close them.
 
 Numbers here are the inventory in ``docs/section/reports/MERGED_SHELL_GAPS.md``.
-Loft from ``shell_graph``; snap with ``wall_mid_sdf``. Joint
-vertices are out of the Pass 1 ``|phi| < 5e-4`` check (max 4 mm = t_cap/2).
+Loft from ``shell_graph``; snap with ``wall_mid_sdf`` (signed SDF of the
+skin loop). Partition vertices lie on that loop.
 """
 
 from pathlib import Path
@@ -125,8 +125,8 @@ def test_g5_sdf_vs_polyline_residual():
     cap_phi = _max_abs_phi(mid, cap_pts)
     skin_phi = _max_abs_phi(mid, skin_pts)
     assert cap_mid_phi < 1e-12
-    assert cap_phi == pytest.approx(4.000e-3, rel=1e-3)
-    assert skin_phi == pytest.approx(4.000e-3, rel=1e-3)
+    assert cap_phi < 1e-9
+    assert skin_phi < 1e-9
     snapped = geo.snap_wall_mid(cap_pts)
     snap_phi = _max_abs_phi(mid, snapped.points)
     assert snap_phi < 1e-6

@@ -45,7 +45,7 @@ Sandwich cores and trailing-edge inserts stay constructive solids (not loop runs
 | `BladeGeometry.section_at(z)` | Cut at `z`; LRU 256 keyed by `round(z, 9)` (no BVH) |
 | `web_positions_from_windio_structure` | Chord fractions from windIO `structure.anchors` `nd_arc` |
 | `geo.oml_sdf()` | Exact polygon SDF at each point's own `z` |
-| `geo.cavity_sdf()` / `geo.wall_mid_sdf()` | `oml + T` with `T = t_skin` except `t_skin + t_cap` in cap footprints; mid is `(oml + cavity)/2` |
+| `geo.cavity_sdf()` / `geo.wall_mid_sdf()` | cavity is `oml + T`; mid is the signed SDF of the `shell_graph` skin loop |
 | `geo.wall_meta()` | Tagged bands of that graph; `evaluate((x,y,z)).meta` is the partition id |
 | `GeometrySolver.project(..., plane=True)` | Snap nodes onto `phi = 0` in the station plane |
 | `station_network(cut)` | Discrete graph from `shell_graph()` (loop runs + webs) |
@@ -71,11 +71,10 @@ Two oracles, on purpose:
 fixture that jump is **8 mm**; a shared cap/skin vertex may evaluate as either
 3 mm or 11 mm.
 
-**Partition joints are not a Newton spec.** Pass 1 `|φ| < 5e-4` applies to
-**run interiors** (cap midpoint ~0). At cap/skin ends, `|wall_mid_sdf φ|` reaches
-`t_cap/2` (**4.000 mm** on that fixture). Solver defaults (`tolerance=1e-6`,
-`snap_wall_mid` `1e-8`) do not make the discrete joint land on `φ = 0`. Do not
-project along the thickness jump expecting the graph vertex.
+`wall_mid_sdf` is the signed polygon SDF of that skin loop, so partition vertices
+are on `φ = 0` as well as run interiors. `StackThickness` is still a **step**
+(8 mm cap jump on the 2D-F fixture); that jump is a thickness oracle, not the
+mid-surface field.
 
 Numbers and remaining waves: [`MERGED_SHELL_GAPS.md`](../reports/MERGED_SHELL_GAPS.md).
 

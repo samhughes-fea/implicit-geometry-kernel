@@ -32,7 +32,7 @@ the same work; they are not extra steps.
 | 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **Done** — tagged `v0.5.0` |
 | 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started. Coupling location is open decision 4 |
 | 7 | Completeness (Phase 5 list below) | **Done** (7.1–7.10). Open decisions still block 6/9 |
-| 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Nose, insert polygons and PCHIP loft scalars done. Mid-surface row is blocked on open decision 2 |
+| 8 | Exactness (Phase 4 below). Tag 0.6.0 after mid-surface, plots extra, and alias removal | Nose, insert polygons, PCHIP loft scalars, and mid-surface field from `shell_graph` done |
 | 9 | Separate blade-model package (only if the maintainer chooses it) | Not decided (open decision 4) |
 
 Step 5 breakdown (Phase 2 complete; tagged `v0.5.0`):
@@ -311,7 +311,7 @@ reference. Golden numbers are regenerated in these PRs with the change stated.
 | Gap | Today | Change | Check |
 |-----|-------|--------|-------|
 | Airfoil nose | surfaces looked up by x after a cubic resample, split at the smallest-x vertex (NACA 0015 upper surface 8e-5 c off at x = 0) | **Done.** split at the true LE (farthest from TE); NACA 4-digit thickness from the formula | error against analytic NACA thickness at x/c 0 to 0.01 below 1e-8 |
-| Mid-surface field | `(outer + cavity) / 2`, only a true mid-surface where thickness is uniform | build the midline from the exact wall polygons and use the field only for queries, or add a gradient drift check (open decision 2) | midline against polygon midline on all 40 layouts, worst gap reported |
+| Mid-surface field | `(outer + cavity) / 2`, only a true mid-surface where thickness is uniform | **Done.** signed SDF of the `shell_graph` skin loop | `|phi|` at loop-run interiors vs graph midpoints on all 40 layouts below 5e-4 |
 | Quadtree remainder | LE/TE inserts still integrated on a depth-7 quadtree | **Done.** emit inserts as polygons; keep the quadtree as a test cross-check | insert area and moments match shoelace sums to 1e-12 |
 | Loft scalars | chord, twist, pitch axis, offset linear between stations | **Done.** optional PCHIP (monotone, no overshoot); airfoils stay linear blends | reference planforms match their tables with smooth first derivatives |
 

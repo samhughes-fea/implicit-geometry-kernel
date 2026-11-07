@@ -66,7 +66,7 @@ cut = geo.section_at(4.0)          # SectionCut at z = 4 m (calls SectionGeometr
 geo.interpolate(4.0)               # chord, twist, pitch axis, offset, surfaces
 geo.oml_polyline(4.0)              # closed OML in the blade frame
 geo.oml_sdf()                      # exact 2-D polygon SDF at each point's own z
-geo.wall_mid_sdf()                 # (oml + cavity) / 2, stack T inside cap footprints
+geo.wall_mid_sdf()                 # signed SDF of the shell_graph skin loop at each z
 geo.wall_meta()                    # tagged shell-graph bands
 cut.walls                          # SectionWall: solids stay split (caps listed)
 cut.cells                          # CellPolygon: closed cell interiors and their areas

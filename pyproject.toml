@@ -58,6 +58,7 @@ python_version = "3.11"
 ignore_missing_imports = true
 show_error_codes = true
 files = ["src/implicit_geometry_kernel"]
+exclude = ["implicit_geometry_kernel/plotting"]
 
 [tool.ruff]
 line-length = 120

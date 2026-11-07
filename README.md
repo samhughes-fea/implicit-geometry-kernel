@@ -1,14 +1,16 @@
 # implicit-geometry-kernel
 
-Geometry of blade and wing cross-sections, independent of materials and meshes.
+Geometry of blade and wing cross-sections: the source of truth for **blade
+geometry parameterisation** (airfoils, planform, layout catalogue, gauges in
+metres, members, span topology). Other tools consume this geometry; they do not
+keep a parallel airfoil/planform/layout model.
 
 The kernel describes **what the walls are** (skin, webs, caps, optional cores and
-inserts) as signed-distance solids and constructive polygons. It does not describe
-materials, plies, stiffness, loads, solvers, or a 3-D FEM mesh. Those belong
-downstream:
-
-- [shell-fem](https://github.com/samhughes-fea/shell-fem) meshes wall midlines as layered shells (`BladeBuilder.from_geometry`).
-- [anisotropic-section-model](https://github.com/samhughes-fea/anisotropic-section-model) builds thin-walled beam sections from the cut (`ThinWalledSection.from_geometry`).
+inserts) as signed-distance solids and constructive polygons. It does not own
+constitutive plies, stiffness, loads, solvers, or a Gmsh driver. Those stay in
+consuming tools. The three products — integrated properties, wall midlines /
+`shell_graph`, cell wall loops — are what beam FE, thin-wall section models,
+ply thickness laws, and conformal shell FE all read.
 
 ![Eight of the 40 layouts](examples/01_loft_and_cut/figures/layouts.png)
 

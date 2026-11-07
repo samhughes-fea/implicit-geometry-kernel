@@ -30,7 +30,6 @@ splines = ["scipy>=1.8"]
 plots = ["matplotlib>=3.5"]
 dev = ["scipy>=1.8", "matplotlib>=3.5", "pytest>=7", "build>=1.0", "ruff>=0.6", "mypy>=1.10"]
 reference = ["pyyaml>=6"]
-mesh = ["gmsh"]
 
 [project.urls]
 Homepage = "https://github.com/samhughes-fea/implicit-geometry-kernel"
@@ -59,6 +58,7 @@ python_version = "3.11"
 ignore_missing_imports = true
 show_error_codes = true
 files = ["src/implicit_geometry_kernel"]
+exclude = ["implicit_geometry_kernel/plotting"]
 
 [tool.ruff]
 line-length = 120

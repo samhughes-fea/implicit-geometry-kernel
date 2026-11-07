@@ -21,10 +21,10 @@ python examples/09_reference_blades/reference_blades.py
 `REFERENCE_BLADES` may point at an existing checkout (for example the sibling
 `../reference-blades` folder).
 
-Optional Gmsh OML probe (IEA 15 MW only; skipped if `gmsh` is not installed). Gmsh is
-**not** part of the kernel — `pip install -e ".[plots,reference,mesh]"` and a
-gitignored `figures/iea15/oml.msh`. That file is a ThruSections experiment on
-`oml_polyline` rings, not the conformal wall-strip mesh in tidalshell / shell-fem.
+Optional Gmsh OML probe (IEA 15 MW only; skipped if `gmsh` is not installed).
+The kernel does not depend on or advertise Gmsh. If present locally, the script
+may write a gitignored `figures/iea15/oml.msh` as a ThruSections experiment on
+`oml_polyline` rings, not a conformal wall-strip mesh.
 `figures/iea15/mesh_closeup.png` shows those triangles in the same short z-window.
 
 Figures are per blade under `figures/<stem>/`.

@@ -2,7 +2,8 @@
 
 `implicit_geometry_kernel.structure` describes what a thin-walled structure is made of
 and combines the parts into signed-distance fields. It is geometry only: thicknesses are
-span laws in metres, and plies, materials and meshes belong to downstream packages.
+span laws in metres. Constitutive plies and meshers belong to consuming tools;
+this package supplies the geometry seams (`ThicknessLaw` in metres, named edges).
 
 It sits between `sdf` and `section` and imports only `sdf` (enforced by
 `tests/test_import_boundary.py`).

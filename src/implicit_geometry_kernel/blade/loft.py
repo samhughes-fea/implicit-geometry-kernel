@@ -464,14 +464,21 @@ class BladeGeometry:
         return FieldOffsetNode(self.oml_sdf(meta), StackThickness(self), scale=1.0)
 
     def wall_mid_sdf(self, meta: int = 0):
-        """Stacked wall mid-surface: ``(oml + cavity) / 2``.
+        """Signed polygon SDF of the ``shell_graph`` skin loop at each point's ``z``.
 
-        Snap oracle: run interiors match ``shell_graph`` midpoints;
-        partition vertices are not a Newton spec (``|phi|`` up to ``t_cap/2``).
+        The graph loop is the spec (run interiors and partition vertices on
+        ``phi = 0``). Webs are branches, not this contour. Colour is ``wall_meta``.
         """
-        from implicit_geometry_kernel.sdf.nodes.tagged import MidSurfaceNode
+        from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
+        from implicit_geometry_kernel.sdf.nodes.lofted import LoftedPolygonSDF
 
-        return MidSurfaceNode(self.oml_sdf(meta), self.cavity_sdf(meta))
+        def provider(z: float):
+            try:
+                return self.section_at(float(z)).shell_graph().loop_polygon()
+            except InfeasibleSectionGeometry:
+                return self.oml_polyline(float(z))[:, :2]
+
+        return LoftedPolygonSDF(provider, meta=meta)
 
     def wall_meta(self, table=None):
         """Tagged wall-strip DAG: ``evaluate((x,y,z)).meta`` is the region at that ``z``."""
@@ -682,7 +689,7 @@ class BladeGeometry:
         return solver.project(self.oml_sdf(), np.asarray(points, float), plane=True)
 
     def snap_wall_mid(self, points, solver=None):
-        """Project onto ``wall_mid_sdf`` in each point's ``z``-plane (not a spec at ``T``-step joints)."""
+        """Project onto the ``shell_graph`` loop field in each point's ``z``-plane."""
         from implicit_geometry_kernel.sdf.solve import GeometrySolver
 
         solver = solver or GeometrySolver(tolerance=1e-8, max_step=0.05)

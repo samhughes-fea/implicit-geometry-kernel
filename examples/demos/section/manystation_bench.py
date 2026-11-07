@@ -50,7 +50,7 @@ if _erp.exists():
 
 import numpy as np
 
-from implicit_geometry_kernel.section.api.factory import (
+from implicit_geometry_kernel.section.spec.factory import (
     build_section_view,
     resolve_system_type,
 )

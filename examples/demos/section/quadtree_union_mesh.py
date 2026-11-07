@@ -62,7 +62,7 @@ system_type_display_name = _taxonomy.system_type_display_name
 twist_deg_for_layout = _taxonomy.twist_deg_for_layout
 twist_rad_for_layout = _taxonomy.twist_rad_for_layout
 
-from implicit_geometry_kernel.section.api.factory import (
+from implicit_geometry_kernel.section.spec.factory import (
     SYSTEM_TYPE_KEYS,
     build_section_view,
     resolve_system_type,

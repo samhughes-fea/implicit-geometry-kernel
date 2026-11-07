@@ -35,7 +35,7 @@ _ensure_mod.ensure_repo_path()
 from implicit_geometry_kernel.section import (
     SectionGeometry,
 )
-from implicit_geometry_kernel.section.api.factory import (
+from implicit_geometry_kernel.section.spec.factory import (
     build_section_view,
     resolve_system_type,
 )
@@ -304,6 +304,21 @@ def main(argv: list[str] | None = None) -> int:
         out_dir=out_dir,
         presentation=bool(args.presentation),
     )
+
+    from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
+
+    loft = BladeGeometry(
+        [
+            Station(0.0, float(args.chord), Airfoil.naca4(args.naca), pitch_axis=0.3),
+            Station(1.0, float(args.chord), Airfoil.naca4(args.naca), pitch_axis=0.3),
+        ],
+        _LAYOUT_KEY,
+        skin_thickness=_SKIN_THICKNESS_M,
+        spar_cap_thickness=_SPAR_CAP_THICKNESS_M,
+        shear_web_thickness=_SHEAR_WEB_THICKNESS_M,
+    )
+    graph = loft.section_at(0.5).shell_graph()
+    print("shell_graph loop", tuple(r.name for r in graph.loop), "webs", tuple(r.name for r in graph.webs))
     return 0
 
 

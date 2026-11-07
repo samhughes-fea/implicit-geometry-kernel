@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- Architecture: this kernel is the source of truth for blade geometry
+  parameterisation. Plots go behind `[plots]`; mid-surface field from
+  `shell_graph`; demos stay and will be ported; seams for thickness/edges/size
+  live here; no Gmsh extra, no constitutive plies, no separate blade-model
+  package. Optional `[cad]` waits until after those seams.
+
+- Plots live in `implicit_geometry_kernel.plotting` behind extra `[plots]`.
+  Root `import plotting` is an alias until 0.6.0. Geometry modules still do not
+  import matplotlib.
+
+- Exactness: `wall_mid_sdf` is the signed polygon SDF of the `shell_graph`
+  skin loop at each `z` (run interiors and partition vertices on `phi = 0`).
+  Webs remain branches. Section and blade goldens unchanged. Worst `|phi|` at
+  loop-run interiors on all 40 layouts is below 5e-4.
+
+- Demos under `examples/demos/` import `section.spec` (not the `section.api`
+  alias). Anatomy demo also prints a `BladeGeometry.shell_graph()` inventory.
+
 - Seams for meshing and thickness: `ThicknessLaw` is `T(z, s)` in metres
   (`from_span` wraps a span law). `BladeGeometry` exposes `thickness_law()`,
   `named_edges(z)`, `size_fields(points)`, ply-drop ends on `forced_stations()`,

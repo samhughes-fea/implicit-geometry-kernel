@@ -14,7 +14,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from shapely.geometry import LineString  # noqa: E402
 
-from plotting.palette import NAVY, RED, TEAL  # noqa: E402
+from implicit_geometry_kernel.plotting.palette import NAVY, RED, TEAL  # noqa: E402
 
 TEXT_SECONDARY = "#52514e"
 REFERENCE = "#0b0b0b"  # closed-form references are drawn in ink, dashed

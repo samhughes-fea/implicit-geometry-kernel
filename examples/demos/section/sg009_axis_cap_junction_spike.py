@@ -32,7 +32,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.section.api.factory import (
+from implicit_geometry_kernel.section.spec.factory import (
     build_section_view,
     resolve_system_type,
 )

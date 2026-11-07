@@ -56,7 +56,7 @@ _ensure_mod.ensure_repo_path()
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import resolve_system_type
-from implicit_geometry_kernel.section.api import build_section_view
+from implicit_geometry_kernel.section.spec import build_section_view
 from implicit_geometry_kernel.section.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M,
 )

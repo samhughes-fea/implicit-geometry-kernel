@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Demos under `examples/demos/` import `section.spec` (not the `section.api`
+  alias). Anatomy demo also prints a `BladeGeometry.shell_graph()` inventory.
+
 - Blade completeness: ply-drop `T(z, s)` ramps, named key points, watertight
   OML STL/OBJ, batched point queries, planform CSV in / windIO dict out, and
   `validate()` with station and member named. NACA 4-digit thickness at the

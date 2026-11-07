@@ -164,3 +164,27 @@ def test_span_tables_override_station_scalars_not_airfoils():
 def test_bad_span_table():
     with pytest.raises(ValueError, match="chord"):
         BladeGeometry(_prismatic(), "2D-F", 0.003, chord=([0.0], [1.0]))
+
+
+def test_pchip_span_hits_knots_and_is_smoother_than_linear():
+    stations = [
+        Station(0.0, 2.0, AIRFOIL, pitch_axis=0.3),
+        Station(5.0, 1.2, AIRFOIL, pitch_axis=0.3),
+        Station(10.0, 1.0, AIRFOIL, pitch_axis=0.3),
+    ]
+    linear = BladeGeometry(stations, "2D-F", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004)
+    pchip = BladeGeometry(stations, "2D-F", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
+                          span_kind="pchip")
+    for z, c in ((0.0, 2.0), (5.0, 1.2), (10.0, 1.0)):
+        assert pchip.interpolate(z)[0] == pytest.approx(c)
+    chords = [pchip.interpolate(z)[0] for z in np.linspace(0.0, 10.0, 21)]
+    assert all(chords[i] >= chords[i + 1] - 1e-12 for i in range(len(chords) - 1))
+    h = 1e-3
+    d_lin = (linear.interpolate(5.0 + h)[0] - linear.interpolate(5.0 - h)[0]) / (2 * h)
+    d_pchip = (pchip.interpolate(5.0 + h)[0] - pchip.interpolate(5.0 - h)[0]) / (2 * h)
+    left_lin = (linear.interpolate(5.0)[0] - linear.interpolate(5.0 - h)[0]) / h
+    right_lin = (linear.interpolate(5.0 + h)[0] - linear.interpolate(5.0)[0]) / h
+    left_p = (pchip.interpolate(5.0)[0] - pchip.interpolate(5.0 - h)[0]) / h
+    right_p = (pchip.interpolate(5.0 + h)[0] - pchip.interpolate(5.0)[0]) / h
+    assert abs(right_lin - left_lin) > abs(right_p - left_p)
+    assert d_pchip != pytest.approx(d_lin, abs=1e-6)

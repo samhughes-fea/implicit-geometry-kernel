@@ -127,6 +127,9 @@ class BladeGeometry:
         Optional span tables that override the station scalars at ``z`` (callable or
         ``(z, values)``; ``offset`` values are shape ``(n, 2)``). Airfoil graphs still
         blend linearly between the bounding ``Station`` foils.
+    span_kind:
+        ``"linear"`` (default) or ``"pchip"`` for station chord, twist, pitch axis
+        and offset. Airfoil graphs stay linear blends.
     transverse:
         Ribs, bulkheads and frames at fixed ``z``. A member appears as a closed
         rib face on ``section_at(z).shell_graph().faces`` at that station only.
@@ -152,6 +155,7 @@ class BladeGeometry:
         cap_windows: Optional[SpanTable] = None,
         transverse: Sequence[TransverseMember] = (),
         stringers: Sequence[Stringer] = (),
+        span_kind: str = "linear",
     ):
         from implicit_geometry_kernel.section.layout.system_layout import resolve_system_type
 
@@ -203,6 +207,9 @@ class BladeGeometry:
         self.n_airfoil_points = int(n_airfoil_points)
         self.transverse = tuple(transverse)
         self.stringers = tuple(stringers)
+        if span_kind not in ("linear", "pchip"):
+            raise ValueError("span_kind must be 'linear' or 'pchip'")
+        self.span_kind = span_kind
         # Live fields (wall_meta / stack T) key stations by round(z, 9). Cache the
         # cut itself so those fields do not rebuild geometry on a second hit.
         self._section_cache: OrderedDict[float, SectionCut] = OrderedDict()
@@ -290,15 +297,28 @@ class BladeGeometry:
         upper = lerp(a.airfoil.surface("upper", x), b.airfoil.surface("upper", x))
         lower = lerp(a.airfoil.surface("lower", x), b.airfoil.surface("lower", x))
         zz = float(z)
-        chord = float(self._chord(zz)) if self._chord is not None else float(lerp(a.chord, b.chord))
-        twist = float(self._twist(zz)) if self._twist is not None else float(lerp(a.twist, b.twist))
-        pitch = float(self._pitch(zz)) if self._pitch is not None else float(lerp(a.pitch_axis, b.pitch_axis))
+        chord = self._span_scalar(self._chord, [s.chord for s in self.stations], zz)
+        twist = self._span_scalar(self._twist, [s.twist for s in self.stations], zz)
+        pitch = self._span_scalar(self._pitch, [s.pitch_axis for s in self.stations], zz)
         if self._offset is not None:
             off = self._offset(zz)
             offset = (float(off[0]), float(off[1]))
         else:
-            offset = tuple(lerp(a.offset, b.offset))
+            ox = self._span_scalar(None, [s.offset[0] for s in self.stations], zz)
+            oy = self._span_scalar(None, [s.offset[1] for s in self.stations], zz)
+            offset = (ox, oy)
         return (chord, twist, pitch, offset, (x, upper, lower))
+
+    def _span_scalar(self, table, values, z: float) -> float:
+        if table is not None:
+            return float(table(z))
+        if self.span_kind == "linear":
+            zs = np.array([s.z for s in self.stations], float)
+            return float(np.interp(z, zs, np.asarray(values, float)))
+        from implicit_geometry_kernel.structure.laws import TableLaw
+
+        knots = [float(s.z) for s in self.stations]
+        return float(TableLaw(knots, [float(v) for v in values], kind="pchip")(z))
 
     def station_at(self, z: float):
         """Deprecated alias of :meth:`interpolate`. Removed in 0.6.0."""

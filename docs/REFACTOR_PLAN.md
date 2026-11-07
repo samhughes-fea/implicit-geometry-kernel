@@ -31,7 +31,7 @@ the same work; they are not extra steps.
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
 | 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **Done** — tagged `v0.5.0` |
 | 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started. Coupling location is open decision 4 |
-| 7 | Completeness (Phase 5 list below) | **7.1–7.3 done**. 7.4–7.10 remain |
+| 7 | Completeness (Phase 5 list below) | **7.1–7.4 done**. 7.5–7.10 remain |
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Not started. Mid-surface row is blocked on open decision 2 |
 | 9 | Separate blade-model package (only if the maintainer chooses it) | Not decided (open decision 4) |
 
@@ -289,7 +289,7 @@ Each gap is closed with a worked example and a test. Order of need:
 2. **Done.** Branches with free ends and partial span (stringers).
 3. **Done.** CST airfoils, thickness-ratio families about the camber line, flatback/blunt TE with
    a set TE thickness, Selig and Lednicer readers, interpolation by t/c.
-4. Span laws with PCHIP for planform; root cylinder to airfoil transition as a named law.
+4. **Done.** Span laws with PCHIP for planform; root cylinder to airfoil transition as a named law.
 5. Thickness fields over (z, s) with ply-drop ramps as geometry (law plus taper length).
 6. Named key points (LE, TE, cap edges, web feet) at every station.
 7. Watertight OML surface mesh (STL/OBJ), quad surface grid, mid-surface patches per
@@ -312,7 +312,7 @@ reference. Golden numbers are regenerated in these PRs with the change stated.
 | Airfoil nose | surfaces looked up by x after a cubic resample, split at the smallest-x vertex (NACA 0015 upper surface 8e-5 c off at x = 0) | split at the spline's true LE (farthest point from TE), look up by arc length, evaluate NACA from the formula | error against analytic NACA thickness at x/c 0 to 0.01 below 1e-8 |
 | Mid-surface field | `(outer + cavity) / 2`, only a true mid-surface where thickness is uniform | build the midline from the exact wall polygons and use the field only for queries, or add a gradient drift check (open decision 2) | midline against polygon midline on all 40 layouts, worst gap reported |
 | Quadtree remainder | LE/TE inserts still integrated on a depth-7 quadtree | emit inserts as polygons; keep the quadtree as a test cross-check | insert area and moments match shoelace sums to 1e-12 |
-| Loft scalars | chord, twist, pitch axis, offset linear between stations | optional PCHIP (monotone, no overshoot); airfoils stay linear blends | reference planforms match their tables with smooth first derivatives |
+| Loft scalars | chord, twist, pitch axis, offset linear between stations | **Done.** optional PCHIP (monotone, no overshoot); airfoils stay linear blends | reference planforms match their tables with smooth first derivatives |
 
 Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays.
 

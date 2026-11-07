@@ -60,3 +60,14 @@ def test_selig_and_lednicer_readers(tmp_path: Path):
     led_path.write_text("\n".join(lines), encoding="utf-8")
     led = Airfoil.from_lednicer(led_path)
     np.testing.assert_allclose(led.surface("upper", x), foil.surface("upper", x), atol=5e-3)
+
+
+def test_cylinder_to_airfoil_named_law():
+    foil = Airfoil.naca4("0018")
+    root = Airfoil.cylinder_to_airfoil(foil, 0.0)
+    tip = Airfoil.cylinder_to_airfoil(foil, 1.0)
+    assert root.max_thickness == pytest.approx(foil.max_thickness, rel=0.05)
+    x = np.linspace(0.1, 0.9, 15)
+    np.testing.assert_allclose(tip.surface("upper", x), foil.surface("upper", x), atol=5e-3)
+    mid = Airfoil.cylinder_to_airfoil(foil, 0.5)
+    assert foil.name in mid.name

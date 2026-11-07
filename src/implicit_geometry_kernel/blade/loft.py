@@ -42,7 +42,7 @@ from typing import Callable, Optional, Sequence, Union
 import numpy as np
 
 from implicit_geometry_kernel.blade.cut import CellPolygon, SectionCut, SectionWall, _twist_offset
-from implicit_geometry_kernel.blade.stations import Station, Stringer, TransverseMember
+from implicit_geometry_kernel.blade.stations import PlyDrop, Station, Stringer, TransverseMember
 from implicit_geometry_kernel.section.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M as _MIN_SKIN,
     MIN_REALISTIC_SPAR_WALL_THICKNESS_M as _MIN_CAP,
@@ -136,6 +136,8 @@ class BladeGeometry:
     stringers:
         Partial-span or free-end branches. Present on ``shell_graph().branches``
         inside ``extent``; ends are topology events.
+    ply_drops:
+        Geometry-only extra thickness windows in ``(z, s)`` with linear tapers.
     """
 
     def __init__(
@@ -156,6 +158,7 @@ class BladeGeometry:
         transverse: Sequence[TransverseMember] = (),
         stringers: Sequence[Stringer] = (),
         span_kind: str = "linear",
+        ply_drops: Sequence[PlyDrop] = (),
     ):
         from implicit_geometry_kernel.section.layout.system_layout import resolve_system_type
 
@@ -210,6 +213,7 @@ class BladeGeometry:
         if span_kind not in ("linear", "pchip"):
             raise ValueError("span_kind must be 'linear' or 'pchip'")
         self.span_kind = span_kind
+        self.ply_drops = tuple(ply_drops)
         # Live fields (wall_meta / stack T) key stations by round(z, 9). Cache the
         # cut itself so those fields do not rebuild geometry on a second hit.
         self._section_cache: OrderedDict[float, SectionCut] = OrderedDict()
@@ -453,6 +457,147 @@ class BladeGeometry:
         from implicit_geometry_kernel.sdf.nodes.base import FeatureTable
 
         return CutWallMetaSDF(self, table if table is not None else FeatureTable())
+
+    def thickness_at(self, z, s) -> np.ndarray:
+        """Skin thickness at span ``z`` and chord fraction ``s``, plus ply-drop ramps."""
+        z = np.asarray(z, float)
+        s = np.asarray(s, float)
+        z, s = np.broadcast_arrays(z, s)
+        out = np.empty(z.shape, dtype=float)
+        for idx in np.ndindex(z.shape):
+            t = float(self._skin(float(z[idx])))
+            for drop in self.ply_drops:
+                t += drop.extra(float(z[idx]), float(s[idx]))
+            out[idx] = t
+        return out
+
+    def key_points(self, z: float) -> dict[str, np.ndarray]:
+        """Named points at ``z``: LE, TE, cap edges, web feet."""
+        return self.section_at(z).key_points()
+
+    def query(self, points) -> dict[str, np.ndarray]:
+        """Batched thickness, owning member, local frame and OML distance at 3-D points."""
+        pts = np.asarray(points, float).reshape(-1, 3)
+        oml = self.oml_sdf().evaluate(pts)
+        field = self.wall_meta()
+        sample = field.evaluate(pts)
+        table = field.table
+        names, kinds = [], []
+        for m in sample.meta.astype(int):
+            if m <= 0:
+                names.append("")
+                kinds.append("")
+            else:
+                spec = table[int(m)]
+                names.append(spec.name)
+                kinds.append(spec.kind)
+        s = []
+        for p in pts:
+            chord, _, pitch, _, _ = self.interpolate(float(p[2]))
+            s.append(float(np.clip((p[0] + pitch * chord) / max(chord, 1e-15), 0.0, 1.0)))
+        T = np.array([float(np.ravel(self.thickness_at(p[2], ss))[0]) for p, ss in zip(pts, s)])
+        frames = []
+        for p in pts:
+            _, twist, _, _, _ = self.interpolate(float(p[2]))
+            c, si = np.cos(np.radians(twist)), np.sin(np.radians(twist))
+            frames.append(np.array([[c, -si, 0.0], [si, c, 0.0], [0.0, 0.0, 1.0]]))
+        return {
+            "thickness": T,
+            "member": np.array(names, dtype=object),
+            "kind": np.array(kinds, dtype=object),
+            "distance": oml.phi,
+            "frame": np.stack(frames, axis=0),
+        }
+
+    def write_oml(self, path, n_span: int = 41, n_chord: int = 81) -> str:
+        """Watertight OML as STL or OBJ from a quad grid of span rings."""
+        from pathlib import Path as _Path
+
+        path = _Path(path)
+        zs = np.linspace(self.stations[0].z, self.stations[-1].z, int(n_span))
+        rings = []
+        for z in zs:
+            poly = self.oml_polyline(z)
+            if np.allclose(poly[0], poly[-1]):
+                poly = poly[:-1]
+            idx = np.linspace(0, len(poly) - 1, int(n_chord), endpoint=False)
+            rings.append(np.vstack([poly[int(i) % len(poly)] for i in np.round(idx)]))
+        verts = np.vstack(rings)
+        ns, nc = len(rings), int(n_chord)
+        faces = []
+        for i in range(ns - 1):
+            for j in range(nc):
+                a = i * nc + j
+                b = i * nc + (j + 1) % nc
+                c = (i + 1) * nc + (j + 1) % nc
+                d = (i + 1) * nc + j
+                faces.append((a, b, c))
+                faces.append((a, c, d))
+        # close root and tip
+        for base, sign in ((0, 1), ((ns - 1) * nc, -1)):
+            hub = verts[base:base + nc].mean(axis=0)
+            verts = np.vstack([verts, hub])
+            h = len(verts) - 1
+            for j in range(nc):
+                if sign > 0:
+                    faces.append((h, base + j, base + (j + 1) % nc))
+                else:
+                    faces.append((h, base + (j + 1) % nc, base + j))
+        if path.suffix.lower() == ".obj":
+            lines = [f"v {x:g} {y:g} {z:g}" for x, y, z in verts]
+            lines += [f"f {i + 1} {j + 1} {k + 1}" for i, j, k in faces]
+            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        else:
+            def tri(i, j, k):
+                n = np.cross(verts[j] - verts[i], verts[k] - verts[i])
+                ln = np.linalg.norm(n)
+                if ln:
+                    n = n / ln
+                return n, verts[i], verts[j], verts[k]
+            with path.open("w", encoding="utf-8") as fh:
+                fh.write("solid oml\n")
+                for i, j, k in faces:
+                    n, a, b, c = tri(i, j, k)
+                    fh.write(f" facet normal {n[0]:.6e} {n[1]:.6e} {n[2]:.6e}\n  outer loop\n")
+                    for p in (a, b, c):
+                        fh.write(f"   vertex {p[0]:.6e} {p[1]:.6e} {p[2]:.6e}\n")
+                    fh.write("  endloop\n endfacet\n")
+                fh.write("endsolid oml\n")
+        return str(path)
+
+    def validate(self) -> list[str]:
+        """Named station/member checks: span order, thin walls, members outside the OML."""
+        issues = []
+        zs = [s.z for s in self.stations]
+        if any(b <= a for a, b in zip(zs, zs[1:])):
+            issues.append("stations must increase in z")
+        for i, st in enumerate(self.stations):
+            if st.chord <= 0:
+                issues.append(f"station {i} at z={st.z:g}: non-positive chord")
+        for member in self.transverse:
+            if member.z < zs[0] or member.z > zs[-1]:
+                issues.append(f"transverse {member.name!r} at z={member.z:g} leaves the blade")
+            if member.thickness < 1e-6:
+                issues.append(f"transverse {member.name!r}: too thin")
+        for stringer in self.stringers:
+            if stringer.extent is not None:
+                if stringer.extent[0] < zs[0] - 1e-9 or stringer.extent[1] > zs[-1] + 1e-9:
+                    issues.append(f"stringer {stringer.name!r} extent leaves the blade")
+            if stringer.thickness < 1e-6:
+                issues.append(f"stringer {stringer.name!r}: too thin")
+        for z in (zs[0], 0.5 * (zs[0] + zs[-1]), zs[-1]):
+            try:
+                cut = self.section_at(z)
+            except Exception as exc:
+                issues.append(f"station z={z:g}: {exc}")
+                continue
+            oml = self.oml_polyline(z)
+            if not np.allclose(oml[0], oml[-1]):
+                issues.append(f"station z={z:g}: OML is not closed")
+            for wall in cut.walls:
+                if wall.thickness < 1e-6:
+                    issues.append(f"station z={z:g} member {wall.label}: too thin")
+        return issues
 
     def snap_oml(self, points, solver=None):
         """Project points onto the OML in each point's own ``z``-plane."""

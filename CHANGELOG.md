@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Blade completeness: ply-drop `T(z, s)` ramps, named key points, watertight
+  OML STL/OBJ, batched point queries, planform CSV in / windIO dict out, and
+  `validate()` with station and member named. NACA 4-digit thickness at the
+  nose matches the analytic formula to 1e-8; insert polygons match shoelace
+  area to 1e-12. Geometry goldens unchanged.
+
 - Optional `BladeGeometry(span_kind="pchip")` interpolates chord, twist, pitch
   axis and offset with a monotone cubic (airfoils stay linear).
   `Airfoil.cylinder_to_airfoil` is the named root cylinder→airfoil law.

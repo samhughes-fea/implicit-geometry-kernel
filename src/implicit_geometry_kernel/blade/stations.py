@@ -121,6 +121,48 @@ class Stringer:
             object.__setattr__(self, "extent", (z0, z1))
 
 
+@dataclass(frozen=True)
+class PlyDrop:
+    """Geometry-only ply-drop ramp: extra thickness inside a (z, s) window.
+
+    ``s`` is chord fraction from the leading edge. Thickness ramps linearly
+    over ``taper`` in both s and z. Not a layup library.
+    """
+
+    name: str
+    s0: float
+    s1: float
+    z0: float
+    z1: float
+    thickness: float
+    taper: float = 0.05
+
+    def __post_init__(self):
+        if not str(self.name).strip():
+            raise ValueError("name is required")
+        if not 0.0 <= self.s0 < self.s1 <= 1.0:
+            raise ValueError("ply-drop needs 0 <= s0 < s1 <= 1")
+        if self.z0 >= self.z1:
+            raise ValueError("ply-drop needs z0 < z1")
+        if self.thickness < 0.0 or self.taper < 0.0:
+            raise ValueError("thickness and taper must be >= 0")
+
+    def extra(self, z: float, s: float) -> float:
+        wz = _ramp(float(z), self.z0, self.z1, self.taper)
+        ws = _ramp(float(s), self.s0, self.s1, self.taper)
+        return float(self.thickness) * min(wz, ws)
+
+
+def _ramp(x: float, lo: float, hi: float, taper: float) -> float:
+    if x < lo - taper or x > hi + taper:
+        return 0.0
+    if x < lo:
+        return 0.0 if taper <= 0.0 else (x - (lo - taper)) / taper
+    if x > hi:
+        return 0.0 if taper <= 0.0 else ((hi + taper) - x) / taper
+    return 1.0
+
+
 def __getattr__(name: str):
     if name == "SpanWeb":
         import warnings

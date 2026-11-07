@@ -20,6 +20,7 @@ integration.
 | 11 | [Partial-span stringer](11_partial_span_stringer/) | A free-end stringer on the graph between two span stations | `Stringer`, `ShellGraph.branches` |
 | 12 | [Airfoil families](12_airfoil_families/) | CST, t/c family, flatback TE, NACA 5/6 | `Airfoil.cst`, `with_thickness` |
 | 13 | [PCHIP span](13_pchip_span/) | Monotone cubic planform; cylinder→airfoil root law | `span_kind`, `Airfoil.cylinder_to_airfoil` |
+| 14 | [Blade queries](14_blade_queries/) | Ply-drop T(z,s), batched queries, OML STL, validate | `thickness_at`, `query`, `write_oml`, `validate` |
 
 ## Running
 

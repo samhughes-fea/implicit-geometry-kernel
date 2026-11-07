@@ -1,24 +1,20 @@
-"""Matplotlib plot helpers and visualisation demos for section_geometry."""
+"""Deprecated import path; use ``implicit_geometry_kernel.plotting``. Removed in 0.6.0."""
 
-from .plot import _DEFAULT_COLOR, _component_color, apply_structural_section_axes, draw_section_sdf_panel, fit_square_section_axes, plot_sdf_field, plot_section, plot_section_from_mesh, plot_section_hybrid, plot_section_with_quadtree, plot_shell_midline_strip_topology, taxonomy_plot_caption
-from .plot_cell_wall_loops import LOOP_STYLES, draw_cell_wall_loops_dashed, draw_cell_wall_loops_filled, draw_component_midlines, plot_section_with_cell_wall_loops
+from __future__ import annotations
 
-__all__ = [
-    "plot_sdf_field",
-    "apply_structural_section_axes",
-    "fit_square_section_axes",
-    "plot_section",
-    "plot_section_from_mesh",
-    "plot_section_hybrid",
-    "plot_section_with_quadtree",
-    "plot_shell_midline_strip_topology",
-    "draw_section_sdf_panel",
-    "taxonomy_plot_caption",
-    "_DEFAULT_COLOR",
-    "_component_color",
-    "LOOP_STYLES",
-    "draw_component_midlines",
-    "draw_cell_wall_loops_dashed",
-    "draw_cell_wall_loops_filled",
-    "plot_section_with_cell_wall_loops",
-]
+import sys
+import warnings
+
+warnings.warn(
+    "import plotting is deprecated; use implicit_geometry_kernel.plotting. Removed in 0.6.0.",
+    DeprecationWarning,
+    stacklevel=1,
+)
+
+import implicit_geometry_kernel.plotting as _moved
+
+_prefix = "implicit_geometry_kernel.plotting"
+for _name, _mod in list(sys.modules.items()):
+    if _name == _prefix or _name.startswith(_prefix + "."):
+        sys.modules["plotting" + _name[len(_prefix) :]] = _mod
+sys.modules[__name__] = _moved

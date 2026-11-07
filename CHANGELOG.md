@@ -8,6 +8,10 @@
   live here; no Gmsh extra, no constitutive plies, no separate blade-model
   package. Optional `[cad]` waits until after those seams.
 
+- Plots live in `implicit_geometry_kernel.plotting` behind extra `[plots]`.
+  Root `import plotting` is an alias until 0.6.0. Geometry modules still do not
+  import matplotlib.
+
 - Blade completeness: ply-drop `T(z, s)` ramps, named key points, watertight
   OML STL/OBJ, batched point queries, planform CSV in / windIO dict out, and
   `validate()` with station and member named. NACA 4-digit thickness at the

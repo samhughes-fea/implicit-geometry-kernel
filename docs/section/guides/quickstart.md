@@ -30,7 +30,7 @@ from implicit_geometry_kernel.section import (
     SectionGeometry,
     resolve_system_type,
 )
-from plotting import plot_section
+from implicit_geometry_kernel.plotting import plot_section
 
 layout = resolve_system_type("2D-F")
 airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)

@@ -36,8 +36,13 @@ def _files():
 
 
 def test_only_the_gateway_imports_shapely():
-    bad = [(rel, m) for path, rel in _files() if rel not in SHAPELY_HOMES
-           for m in _imports(path) if m.split(".")[0] == "shapely"]
+    bad = [
+        (rel, m)
+        for path, rel in _files()
+        if rel not in SHAPELY_HOMES and not rel.startswith("plotting/")
+        for m in _imports(path)
+        if m.split(".")[0] == "shapely"
+    ]
     assert not bad, f"import Shapely through section.boundary: {bad}"
 
 

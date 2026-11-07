@@ -32,8 +32,8 @@ contract      the hand-off types (ShellMidlineStrip, CellWallLoop)
 extract       in-plane zero loops and feature curves (not a mesh)
 
 Dependencies: numpy, shapely and numba; scipy (``[splines]``) for spline-resampled
-airfoils. Matplotlib (``[plots]``) is for the sibling ``plotting`` package, not
-the kernel. Nothing else in the suite.
+airfoils. Matplotlib (``[plots]``) is ``implicit_geometry_kernel.plotting``, not
+imported by geometry modules. Root ``plotting`` is an alias until 0.6.0.
 """
 
 from implicit_geometry_kernel.blade import (

@@ -5,7 +5,8 @@ The kernel is the base of the suite:
     implicit_geometry_kernel  <-  shell_fem  (with laminate_constitutive_model)
 
 and the section model reads its cuts, so it never imports the laminate, shell or section
-packages. Matplotlib lives in the sibling ``plotting`` package, not the kernel.
+packages. Matplotlib lives in ``implicit_geometry_kernel.plotting`` (extra ``[plots]``),
+not in geometry modules.
 ``sdf`` stands on its own (it may be split out as a general implicit-geometry
 library), so it imports nothing from ``section`` or ``blade``.
 """
@@ -42,12 +43,14 @@ def test_no_imports_of_the_models_built_on_it():
 
 
 def test_kernel_does_not_import_matplotlib_or_plotting():
-    for path, rel in _library_files():
+    for path, rel in _library_files(exclude=("plotting",)):
         for module in _imports(path):
             if rel.as_posix() == "sdf/kernels/grid.py" and module.startswith("matplotlib"):
                 continue  # contour fallback inside a function when contourpy is missing
             assert not module.startswith("matplotlib"), (rel, module)
             assert module.split(".")[0] != "plotting", (rel, module)
+            if module.startswith("implicit_geometry_kernel."):
+                assert module.split(".")[1] != "plotting", (rel, module)
 
 
 def test_sdf_stands_alone():

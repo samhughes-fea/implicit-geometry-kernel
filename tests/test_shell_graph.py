@@ -8,6 +8,7 @@ from implicit_geometry_kernel import (
     BladeGeometry,
     Station,
     Stringer,
+    SYSTEM_TYPE_KEYS,
     TransverseMember,
     partition_edge_curve,
     shared_loft_names,
@@ -16,6 +17,7 @@ from implicit_geometry_kernel import (
     wall_meta_from_cut,
 )
 from implicit_geometry_kernel.blade.cut import ShellGraph, ShellRun
+from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
 from implicit_geometry_kernel.sdf import FeatureTable
 
 
@@ -255,3 +257,31 @@ def test_partial_span_stringer_branch_and_topology():
     diff = topology_diff(inside, geo.section_at(8.0).shell_graph())
     assert any(e.kind == "lost_stringer" and e.name == "str_le" for e in diff.events)
     assert "str_le" not in diff.shared
+
+
+@pytest.mark.parametrize("key", SYSTEM_TYPE_KEYS)
+def test_wall_mid_matches_graph_run_interiors(key):
+    """Exactness: ``wall_mid_sdf`` is a view of ``shell_graph`` (all 40 layouts)."""
+    stations = [
+        Station(0.0, 1.0, Airfoil.naca4("0024"), pitch_axis=0.3),
+        Station(3.0, 0.8, Airfoil.naca4("2418"), pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(
+        stations,
+        key,
+        skin_thickness=0.004,
+        spar_cap_thickness=0.012,
+        shear_web_thickness=0.005,
+    )
+    try:
+        cut = geo.section_at(1.5)
+    except InfeasibleSectionGeometry:
+        pytest.skip("layout infeasible at these gauges")
+    mid = geo.wall_mid_sdf()
+    worst = 0.0
+    for run in cut.shell_graph().loop:
+        if len(run.points) < 2:
+            continue
+        p = run.points[len(run.points) // 2].reshape(1, 3)
+        worst = max(worst, abs(float(mid.evaluate(p).phi[0])))
+    assert worst < 5e-4, f"{key} worst |phi| at loop-run interiors: {worst}"

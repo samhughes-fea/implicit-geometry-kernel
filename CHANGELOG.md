@@ -12,6 +12,11 @@
   Root `import plotting` is an alias until 0.6.0. Geometry modules still do not
   import matplotlib.
 
+- Exactness: `wall_mid_sdf` is the signed polygon SDF of the `shell_graph`
+  skin loop at each `z` (run interiors and partition vertices on `phi = 0`).
+  Webs remain branches. Section and blade goldens unchanged. Worst `|phi|` at
+  loop-run interiors on all 40 layouts is below 5e-4.
+
 - Blade completeness: ply-drop `T(z, s)` ramps, named key points, watertight
   OML STL/OBJ, batched point queries, planform CSV in / windIO dict out, and
   `validate()` with station and member named. NACA 4-digit thickness at the

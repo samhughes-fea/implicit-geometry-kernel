@@ -121,6 +121,21 @@ class ShellGraph:
                 return e
         return None
 
+    def loop_polygon(self) -> np.ndarray:
+        """Closed ``(N, 2)`` mid-loop from ordered partitions (the snap/query contour)."""
+        strips = [(r.name, np.asarray(r.points[:, :2], float)) for r in self.loop if len(r.points) >= 2]
+        if not strips:
+            raise ValueError("shell graph has no loop runs")
+        scale = max(1.0, max(float(np.max(np.abs(xy))) for _, xy in strips))
+        chain = _chain(strips, 1e-9 * scale)
+        if chain is None:
+            ring = np.vstack([xy for _, xy in strips])
+        else:
+            ring = np.vstack([xy[::-1] if rev else xy for _, xy, rev in chain])
+        if len(ring) and not np.allclose(ring[0], ring[-1]):
+            ring = np.vstack([ring, ring[0]])
+        return ring
+
     def with_web_feet_on_loop(self) -> "ShellGraph":
         """Snap web endpoints onto the nearest stacked-loop vertex (shell re-host).
 

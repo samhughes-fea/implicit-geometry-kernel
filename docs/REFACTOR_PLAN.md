@@ -21,7 +21,7 @@ the same work; they are not extra steps.
 | 7 | Phase 5 | Completeness |
 | 8 | Phase 4 | Exactness |
 | 9 | — | Optional separate blade-model package |
-| — | Phase 3a–c, 3e | Naming and plots; 3e is blocked on open decision 1 |
+| — | Phase 3a–c, 3e | Naming and plots; 3e is plots into `[plots]` |
 
 | Step | What | State |
 |------|------|-------|
@@ -30,10 +30,10 @@ the same work; they are not extra steps.
 | 3 | Member model in `structure/` (contributions, builders, assembler, span laws, span field nodes) | Done (PR #6) |
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
 | 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **Done** — tagged `v0.5.0` |
-| 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started. Coupling location is open decision 4 |
-| 7 | Completeness (Phase 5 list below) | **Done** (7.1–7.10). Open decisions still block 6/9 |
-| 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Nose, insert polygons and PCHIP loft scalars done. Mid-surface row is blocked on open decision 2 |
-| 9 | Separate blade-model package (only if the maintainer chooses it) | Not decided (open decision 4) |
+| 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started. Location decided: seams in this repo; Gmsh and constitutive plies stay in consumers. No separate blade-model package |
+| 7 | Completeness (Phase 5 list below) | **Done** (7.1–7.10). Mid-surface patches / optional STEP (`[cad]`) deferred until after step 6 |
+| 8 | Exactness (Phase 4 below). Tag 0.6.0 after mid-surface, plots extra, and alias removal | Nose, insert polygons, PCHIP loft scalars, and mid-surface field from `shell_graph` done |
+| 9 | Separate blade-model package | **Declined.** Consumers keep their own adapters |
 
 Step 5 breakdown (Phase 2 complete; tagged `v0.5.0`):
 
@@ -63,18 +63,27 @@ Decisions already made by the maintainer:
 - `sdf/` stays self-contained: nothing in it imports `section/` or `blade/`.
 - `section/` stays one package, with subpackages in pipeline order (decided 6 Nov).
 - Release tags are made by the maintainer only.
-
-Open decisions (ask the maintainer; do not assume; do not start the blocked work):
-
-1. Plots package: rename it to `implicit_geometry_kernel_plots`, or move it back inside
-   the kernel behind the `[plots]` extra? Blocks Phase 3e.
-2. Phase 4 mid-surface: rebuild it from the polygons, or keep the field and add a drift
-   check? Blocks the mid-surface row of step 8.
-3. Should any of the 41 older demos in `examples/demos/section` be retired rather than
-   moved? Blocks relocating those demos.
-4. Where the coupling with materials and Gmsh lives (recommended: a separate blade-model
-   package that imports the kernel; the kernel stays free of Gmsh). Blocks step 9 and
-   the packaging of step 6.
+- This package is the source of truth for **blade geometry parameterisation**
+  (airfoils, planform, layout catalogue, gauges in metres, members, span topology,
+  `shell_graph`). It compiles published windIO (and parametric) inputs into
+  `BladeGeometry` for suite benchmarks. Source YAML stays in the private
+  reference-blade catalogue. Constitutive plies, loads, solvers and Gmsh stay in
+  consumers. `src/` names no consumer.
+- Plots live in `implicit_geometry_kernel.plotting` behind `[plots]`; root
+  `plotting/` is an alias until 0.6.0 (decision 1).
+- The mid-surface query field is a view of `shell_graph`, not `(oml + cavity) / 2`
+  as the spec (decision 2).
+- Older demos under `examples/demos/` stay; port them onto `SectionSpec` /
+  `SectionGeometry` / `BladeGeometry` / `shell_graph`. Do not delete (decision 3).
+- Seams with materials and meshing live **in this kernel** (step 6). A Gmsh driver
+  and ply ABD/PCOMP do not. No third blade-model package (decision 4; step 9 no).
+- Public docs describe the three geometry products and roles. `src/` and `tests/`
+  must not name consumer packages (`tests/test_consumer_names.py`). Scripts and
+  `docs/FORK.md` may name checkouts.
+- Optional extra `[mesh]` (`gmsh`) is not advertised. `[cad]` / STEP patches wait
+  until after step 6.
+- 0.6.0 (maintainer tags it) closes the deprecation window: mid-surface exactness,
+  plots extra, alias removal. Step 6 may follow in 0.6.x / 0.7.0.
 
 ## How to work on a step
 
@@ -106,10 +115,13 @@ python scripts/check_consumer.py PATH/TO/CONSUMER  # each downstream checkout
 
 ## Target architecture
 
-The kernel is a general-purpose library for blade and wing section geometry. It names no
-consumer: no repository-specific code paths, options, defaults or docs. A consumer pins a
-release tag (as a git submodule or with pip), imports only the public API, and keeps its
-own adapters on its own side.
+The kernel is a general-purpose library for blade and wing section geometry, and the
+source of truth for that **parameterisation**. It names no consumer in `src/`: no
+repository-specific code paths, options or defaults. A consumer pins a release tag,
+imports the public API, and keeps adapters (mesher, ply stacks, solvers) on its own
+side. The three products — integrated properties, wall midlines / `shell_graph`,
+cell wall loops — are the shared geometry for beam FE, thin-wall section models,
+constitutive thickness, and conformal shell FE.
 
 Layers, with imports pointing down only:
 
@@ -121,18 +133,19 @@ contract  <-  sdf, integration, frames  <-  structure  <-  section  <-  blade  <
   transverse members) in geometric terms only.
 - `section/` turns them into exact walls, midlines and properties at one station.
 - `blade/` lofts stations and places transverse members along the span.
-- Materials, plies, meshing, solvers and loads stay out of the kernel.
+- Constitutive plies, Gmsh, solvers and loads stay out of the kernel. Step 6
+  defines seams (`ThicknessLaw`, named edges, size fields) so consumers plug in.
 
 ### Robustness rules
 
 | Area | Rule | Enforced by |
 |------|------|-------------|
-| Agnostic | No consumer names, paths or special cases in `src/`, tests or docs. Generic extension points only | `tests/test_consumer_names.py` (src and tests) |
+| Agnostic | No consumer names, paths or special cases in `src/` or tests. Docs describe products and roles | `tests/test_consumer_names.py` (src and tests) |
 | Public API | Only names in the top-level `__all__` and `contract/` are public | API snapshot test |
 | Versioning | Semantic versions; removals only in a minor release (pre-1.0) after one release of deprecation warnings; tags never move | Changelog; tags by the maintainer |
 | Main branch | Every change through a PR with green CI (lint, tests on Python 3.11 to 3.13, examples, wheel build) | Branch protection on `main` |
 | Numbers | Results reproducible between releases unless the changelog says otherwise | Golden-number test |
-| Dependencies | Runtime: numpy, shapely, numba. Extras: scipy, matplotlib, pyyaml, gmsh | Core-install CI job |
+| Dependencies | Runtime: numpy, shapely, numba. Extras: scipy, matplotlib, pyyaml | Core-install CI job |
 | Typing | Ships `py.typed`; public API annotated | mypy on `src/` in CI |
 | Data | No private reference-blade inputs in the repo; examples that need them skip without a local clone | Example 09 pattern |
 | Submodule use | `pip install -e path/to/kernel`, no build step or generated files | Wheel-build job |
@@ -261,14 +274,16 @@ Not a status-table step. 3d is already tracked as step 5.
   `SectionGeometry`/`SectionGeometryRunner`, `web_offsets`/`web_x_positions_m`,
   `ShearWeb`/`SpanWeb`).
 - **3d.** The tree moves (step 5). Moves only, no logic.
-- **3e.** Plots package (open decision 1). Blocked until the maintainer chooses.
+- **3e.** Plots: `implicit_geometry_kernel.plotting` behind `[plots]`; alias root
+  `plotting/` until 0.6.0.
 - Also: Done: leftover downstream package names stripped from live `docs/`
   (fork history stays in `docs/FORK.md`).
 
 ## Step 6: seams with materials and meshing
 
 The kernel defines small interfaces; the other side plugs in. The kernel imports
-neither side. Where the other side lives is open decision 4.
+neither Gmsh nor a ply library. Adapters live in consuming tools, not in a
+separate blade-model package.
 
 | Seam | Kernel provides | Other side provides |
 |------|-----------------|---------------------|
@@ -293,15 +308,16 @@ Each gap is closed with a worked example and a test. Order of need:
 5. **Done.** Thickness fields over (z, s) with ply-drop ramps as geometry (law plus taper length).
 6. **Done.** Named key points (LE, TE, cap edges, web feet) at every station.
 7. **Done (OML).** Watertight OML surface mesh (STL/OBJ) from a quad span grid.
-   Mid-surface patches per member and optional STEP behind `[cad]` wait on
-   meshing / open decision 4.
+   Mid-surface patches per member and optional STEP behind `[cad]` wait until
+   after step 6.
 8. **Done.** Point queries: thickness, member and local frame at any 3-D point; distance
    to the OML; batched.
 9. **Done.** Planform plus airfoil CSV reader and a windIO writer so a geometry round-trips.
 10. **Done.** `validate()`: members leaving the span, too-thin walls, unclosed OML,
     with station and member named.
 
-Out of scope on purpose: materials, plies and stiffness; meshing; solvers; loads.
+Out of scope on purpose: constitutive plies and stiffness; Gmsh; solvers; loads.
+Geometry seams for thickness, named edges and size fields are step 6.
 
 ## Step 8 (Phase 4): exactness
 
@@ -311,7 +327,7 @@ reference. Golden numbers are regenerated in these PRs with the change stated.
 | Gap | Today | Change | Check |
 |-----|-------|--------|-------|
 | Airfoil nose | surfaces looked up by x after a cubic resample, split at the smallest-x vertex (NACA 0015 upper surface 8e-5 c off at x = 0) | **Done.** split at the true LE (farthest from TE); NACA 4-digit thickness from the formula | error against analytic NACA thickness at x/c 0 to 0.01 below 1e-8 |
-| Mid-surface field | `(outer + cavity) / 2`, only a true mid-surface where thickness is uniform | build the midline from the exact wall polygons and use the field only for queries, or add a gradient drift check (open decision 2) | midline against polygon midline on all 40 layouts, worst gap reported |
+| Mid-surface field | `(outer + cavity) / 2`, only a true mid-surface where thickness is uniform | **Done.** signed SDF of the `shell_graph` skin loop | `|phi|` at loop-run interiors vs graph midpoints on all 40 layouts below 5e-4 |
 | Quadtree remainder | LE/TE inserts still integrated on a depth-7 quadtree | **Done.** emit inserts as polygons; keep the quadtree as a test cross-check | insert area and moments match shoelace sums to 1e-12 |
 | Loft scalars | chord, twist, pitch axis, offset linear between stations | **Done.** optional PCHIP (monotone, no overshoot); airfoils stay linear blends | reference planforms match their tables with smooth first derivatives |
 

@@ -30,7 +30,7 @@ the same work; they are not extra steps.
 | 3 | Member model in `structure/` (contributions, builders, assembler, span laws, span field nodes) | Done (PR #6) |
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
 | 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **Done** — tagged `v0.5.0` |
-| 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started. Coupling location is open decision 4 |
+| 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | **Done.** Seams in this kernel; Gmsh and constitutive plies stay in consumers |
 | 7 | Completeness (Phase 5 list below) | **Done** (7.1–7.10). Open decisions still block 6/9 |
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after | Nose, insert polygons and PCHIP loft scalars done. Mid-surface row is blocked on open decision 2 |
 | 9 | Separate blade-model package (only if the maintainer chooses it) | Not decided (open decision 4) |
@@ -268,7 +268,7 @@ Not a status-table step. 3d is already tracked as step 5.
 ## Step 6: seams with materials and meshing
 
 The kernel defines small interfaces; the other side plugs in. The kernel imports
-neither side. Where the other side lives is open decision 4.
+neither Gmsh nor a ply library. Adapters live in consuming tools.
 
 | Seam | Kernel provides | Other side provides |
 |------|-----------------|---------------------|

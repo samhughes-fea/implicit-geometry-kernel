@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Seams for meshing and thickness: `ThicknessLaw` is `T(z, s)` in metres
+  (`from_span` wraps a span law). `BladeGeometry` exposes `thickness_law()`,
+  `named_edges(z)`, `size_fields(points)`, ply-drop ends on `forced_stations()`,
+  and opt-in `merge_cap_and_skin` (default off; goldens use stacked caps).
+
 - Blade completeness: ply-drop `T(z, s)` ramps, named key points, watertight
   OML STL/OBJ, batched point queries, planform CSV in / windIO dict out, and
   `validate()` with station and member named. NACA 4-digit thickness at the

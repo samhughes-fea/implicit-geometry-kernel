@@ -41,12 +41,14 @@ class SectionOptions:
     qt_depth: int | None = None
     qt_max_cells: int | None = None
     qt_band_scale: float | None = None
+    merge_cap_and_skin: bool = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "outputs", tuple(normalize_output_gates(self.outputs)))
         object.__setattr__(self, "n_web_samples", int(self.n_web_samples))
         object.__setattr__(self, "n_cap_samples", int(self.n_cap_samples))
         object.__setattr__(self, "retain_mesh", bool(self.retain_mesh))
+        object.__setattr__(self, "merge_cap_and_skin", bool(self.merge_cap_and_skin))
         if self.qt_depth is None:
             object.__setattr__(self, "qt_depth", _env_int("SECTION_GEOMETRY_QT_DEPTH", 7))
         if self.qt_max_cells is None:
@@ -65,6 +67,7 @@ class SectionOptions:
         retain_mesh: bool = False,
         quadtree_spec: Any | None = None,
         airfoil_for_spec: Any | None = None,
+        merge_cap_and_skin: bool = False,
         **_ignored: Any,
     ) -> SectionOptions:
         return cls(
@@ -75,4 +78,5 @@ class SectionOptions:
             retain_mesh=retain_mesh,
             quadtree_spec=quadtree_spec,
             airfoil_for_spec=airfoil_for_spec,
+            merge_cap_and_skin=merge_cap_and_skin,
         )

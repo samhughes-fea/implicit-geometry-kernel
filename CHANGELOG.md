@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Architecture: this kernel is the source of truth for blade geometry
+  parameterisation. Plots go behind `[plots]`; mid-surface field from
+  `shell_graph`; demos stay and will be ported; seams for thickness/edges/size
+  live here; no Gmsh extra, no constitutive plies, no separate blade-model
+  package. Optional `[cad]` waits until after those seams.
+
 - Plots live in `implicit_geometry_kernel.plotting` behind extra `[plots]`.
   Root `import plotting` is an alias until 0.6.0. Geometry modules still do not
   import matplotlib.

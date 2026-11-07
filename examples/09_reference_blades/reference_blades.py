@@ -686,7 +686,7 @@ def figure_mesh_closeup(stem: str, faces: list[np.ndarray], half: float, n_nodes
 
 def gmsh_oml_probe(rings: list[np.ndarray], stem: str, max_chord: float, geo: BladeGeometry) -> None:
     if importlib.util.find_spec("gmsh") is None:
-        print("gmsh not installed; skip OML mesh probe (pip install -e '.[mesh]')")
+        print("gmsh not installed; skip OML mesh probe")
         return
     import gmsh
 

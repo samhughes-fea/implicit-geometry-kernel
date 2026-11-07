@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Architecture: this kernel is the source of truth for blade geometry
+  parameterisation. Plots go behind `[plots]`; mid-surface field from
+  `shell_graph`; demos stay and will be ported; seams for thickness/edges/size
+  live here; no Gmsh extra, no constitutive plies, no separate blade-model
+  package. Optional `[cad]` waits until after those seams.
+
 - Blade completeness: ply-drop `T(z, s)` ramps, named key points, watertight
   OML STL/OBJ, batched point queries, planform CSV in / windIO dict out, and
   `validate()` with station and member named. NACA 4-digit thickness at the

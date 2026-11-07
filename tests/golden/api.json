@@ -29,20 +29,23 @@
    "forced_stations": "(self) -> 'tuple[float, ...]'",
    "interpolate": "(self, z: 'float')",
    "key_points": "(self, z: 'float') -> 'dict[str, np.ndarray]'",
+   "named_edges": "(self, z: 'float')",
    "oml_polyline": "(self, z: 'float') -> 'np.ndarray'",
    "oml_sdf": "(self, meta: 'int' = 0)",
    "query": "(self, points) -> 'dict[str, np.ndarray]'",
    "section_at": "(self, z: 'float') -> 'SectionCut'",
+   "size_fields": "(self, points) -> 'dict[str, np.ndarray]'",
    "snap_oml": "(self, points, solver=None)",
    "snap_wall_mid": "(self, points, solver=None)",
    "station_at": "(self, z: 'float')",
    "thickness_at": "(self, z, s) -> 'np.ndarray'",
+   "thickness_law": "(self)",
    "validate": "(self) -> 'list[str]'",
    "wall_meta": "(self, table=None)",
    "wall_mid_sdf": "(self, meta: 'int' = 0)",
    "write_oml": "(self, path, n_span: 'int' = 41, n_chord: 'int' = 81) -> 'str'"
   },
-  "signature": "(stations: 'Sequence[Station]', layout, skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), span_kind: 'str' = 'linear', ply_drops: 'Sequence[PlyDrop]' = ())"
+  "signature": "(stations: 'Sequence[Station]', layout, skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), span_kind: 'str' = 'linear', ply_drops: 'Sequence[PlyDrop]' = (), merge_cap_and_skin: 'bool' = False)"
  },
  "implicit_geometry_kernel.CellLoop": {
   "kind": "class",
@@ -374,7 +377,7 @@
  "implicit_geometry_kernel.structure.ThicknessLaw": {
   "kind": "class",
   "members": {
-   "at": "(self, z: 'float') -> 'float'"
+   "from_span": ""
   },
   "signature": "()"
  },

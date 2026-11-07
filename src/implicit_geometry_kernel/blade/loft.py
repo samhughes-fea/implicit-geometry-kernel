@@ -136,8 +136,12 @@ class BladeGeometry:
     stringers:
         Partial-span or free-end branches. Present on ``shell_graph().branches``
         inside ``extent``; ends are topology events.
-    ply_drops:
+        ply_drops:
         Geometry-only extra thickness windows in ``(z, s)`` with linear tapers.
+    merge_cap_and_skin:
+        If True, ``section_at`` walls follow ``shell_graph`` runs (caps as
+        partitions, combined thickness). Default False keeps stacked cap solids
+        (golden numbers).
     """
 
     def __init__(
@@ -159,6 +163,7 @@ class BladeGeometry:
         stringers: Sequence[Stringer] = (),
         span_kind: str = "linear",
         ply_drops: Sequence[PlyDrop] = (),
+        merge_cap_and_skin: bool = False,
     ):
         from implicit_geometry_kernel.section.layout.system_layout import resolve_system_type
 
@@ -214,6 +219,7 @@ class BladeGeometry:
             raise ValueError("span_kind must be 'linear' or 'pchip'")
         self.span_kind = span_kind
         self.ply_drops = tuple(ply_drops)
+        self.merge_cap_and_skin = bool(merge_cap_and_skin)
         # Live fields (wall_meta / stack T) key stations by round(z, 9). Cache the
         # cut itself so those fields do not rebuild geometry on a second hit.
         self._section_cache: OrderedDict[float, SectionCut] = OrderedDict()
@@ -228,6 +234,9 @@ class BladeGeometry:
             if stringer.extent is None:
                 continue
             for z in stringer.extent:
+                by_key[round(float(z), 9)] = float(z)
+        for drop in self.ply_drops:
+            for z in (drop.z0, drop.z1):
                 by_key[round(float(z), 9)] = float(z)
         return tuple(by_key[key] for key in sorted(by_key))
 
@@ -423,6 +432,19 @@ class BladeGeometry:
         key = getattr(resolution.layout, "catalogue_key", None) or self.layout
         cut = SectionCut(z, chord, twist, pitch, (float(offset[0]), float(offset[1])), str(key), tuple(walls), cells,
                          dropped, self._transverse_at(z), self._stringers_at(z))
+        if self.merge_cap_and_skin:
+            from implicit_geometry_kernel.blade.shell_graph import shell_strips_from_graph
+            from dataclasses import replace as _replace
+
+            merged = []
+            for strip in shell_strips_from_graph(cut):
+                xy = np.asarray(strip.midline_twisted_pitch_axis_blade_frame, float)
+                if xy.shape[1] == 2:
+                    pts = np.column_stack([xy, np.full(len(xy), z)])
+                else:
+                    pts = xy
+                merged.append(SectionWall(strip.label, strip.kind, pts, float(strip.thickness_m), None, {}))
+            cut = _replace(cut, walls=tuple(merged))
         self._section_cache[z] = cut
         while len(self._section_cache) > self._section_cache_size:
             self._section_cache.popitem(last=False)
@@ -464,6 +486,59 @@ class BladeGeometry:
         from implicit_geometry_kernel.sdf.nodes.base import FeatureTable
 
         return CutWallMetaSDF(self, table if table is not None else FeatureTable())
+
+    def thickness_law(self):
+        """:class:`~implicit_geometry_kernel.structure.laws.ThicknessLaw` over ``(z, s)``."""
+        from implicit_geometry_kernel.structure.laws import ThicknessLaw
+
+        geo = self
+
+        class _BladeThickness(ThicknessLaw):
+            def __call__(self, z, s) -> np.ndarray:
+                return geo.thickness_at(z, s)
+
+        return _BladeThickness()
+
+    def named_edges(self, z: float):
+        """Partition edges and ply-drop ``s`` bounds at ``z`` (mesher feature curves)."""
+        from implicit_geometry_kernel.blade.shell_graph import PartitionEdge
+
+        z = float(z)
+        edges = list(self.section_at(z).shell_graph().partition_edges())
+        chord, _, pitch, offset, (x, upper, lower) = self.interpolate(z)
+        for drop in self.ply_drops:
+            if not (float(drop.z0) - 1e-12 <= z <= float(drop.z1) + 1e-12):
+                continue
+            for s_frac, tag in ((drop.s0, "s0"), (drop.s1, "s1")):
+                s_frac = float(np.clip(s_frac, 0.0, 1.0))
+                i = int(np.clip(round(s_frac * (len(x) - 1)), 0, len(x) - 1))
+                local = np.array([[x[i] - pitch * chord, 0.5 * (upper[i] + lower[i])]], float)
+                xy = _twist_offset(local, self.interpolate(z)[1], offset)[0]
+                pt = np.array([xy[0], xy[1], z], float)
+                name = f"{drop.name}:{tag}"
+                edges.append(PartitionEdge(z, name, name, pt))
+        return tuple(edges)
+
+    def size_fields(self, points) -> dict[str, np.ndarray]:
+        """Distance, thickness and a polyline curvature estimate at 3-D points."""
+        pts = np.asarray(points, float).reshape(-1, 3)
+        out = self.query(pts)
+        curv = np.zeros(len(pts))
+        for i, p in enumerate(pts):
+            poly = self.oml_polyline(float(p[2]))[:, :2]
+            j = int(np.argmin(np.linalg.norm(poly - p[:2], axis=1)))
+            a = poly[(j - 1) % len(poly)]
+            b = poly[j]
+            c = poly[(j + 1) % len(poly)]
+            ab, bc = b - a, c - b
+            lab = float(np.linalg.norm(ab))
+            lbc = float(np.linalg.norm(bc))
+            if lab < 1e-15 or lbc < 1e-15:
+                continue
+            cross = ab[0] * bc[1] - ab[1] * bc[0]
+            curv[i] = abs(cross) / max(lab * lbc * 0.5 * (lab + lbc), 1e-15)
+        out["curvature"] = curv
+        return out
 
     def thickness_at(self, z, s) -> np.ndarray:
         """Skin thickness at span ``z`` and chord fraction ``s``, plus ply-drop ramps."""

@@ -30,7 +30,7 @@ the same work; they are not extra steps.
 | 3 | Member model in `structure/` (contributions, builders, assembler, span laws, span field nodes) | Done (PR #6) |
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
 | 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **Done** — tagged `v0.5.0` |
-| 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | Not started. Location decided: seams in this repo; Gmsh and constitutive plies stay in consumers. No separate blade-model package |
+| 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | **Done.** Seams in this kernel; Gmsh and constitutive plies stay in consumers |
 | 7 | Completeness (Phase 5 list below) | **Done** (7.1–7.10). Mid-surface patches / optional STEP (`[cad]`) deferred until after step 6 |
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after mid-surface, plots extra, and alias removal | Nose, insert polygons, PCHIP loft scalars, and mid-surface field from `shell_graph` done |
 | 9 | Separate blade-model package | **Declined.** Consumers keep their own adapters |

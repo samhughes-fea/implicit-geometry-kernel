@@ -42,8 +42,29 @@ class SpanLaw(ABC):
     __rmul__ = __mul__
 
 
-ThicknessLaw = SpanLaw
-"""A span law whose value is a thickness in metres."""
+class ThicknessLaw(ABC):
+    """Thickness in metres at span ``z`` and chord fraction ``s``.
+
+    A ply stack implements this; geometry only consumes metres. Span-only
+    gauges wrap a :class:`SpanLaw` with :meth:`from_span` (``s`` ignored).
+    """
+
+    @abstractmethod
+    def __call__(self, z, s) -> np.ndarray:
+        """Broadcast ``z`` and ``s``; return thickness in metres."""
+
+    @classmethod
+    def from_span(cls, law: SpanLaw) -> ThicknessLaw:
+        return _SpanThickness(law)
+
+
+class _SpanThickness(ThicknessLaw):
+    def __init__(self, law: SpanLaw) -> None:
+        self.law = law
+
+    def __call__(self, z, s) -> np.ndarray:
+        zz, ss = np.broadcast_arrays(np.asarray(z, dtype=np.float64), np.asarray(s, dtype=np.float64))
+        return np.reshape(self.law(zz.ravel()), zz.shape)
 
 
 class ConstantLaw(SpanLaw):

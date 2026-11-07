@@ -27,7 +27,7 @@ from __future__ import annotations
 from pathlib import Path
 import importlib.util
 
-# When run as a script, load repo root onto sys.path so ``import blade_structure_utilities`` works.
+# When run as a script, load repo root onto sys.path.
 _erp = Path(__file__).resolve().parent / "_ensure_repo_path.py"
 if not _erp.is_file():
     raise RuntimeError(f"Missing helper {_erp.name}; run from the repository checkout.")
@@ -51,7 +51,7 @@ from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section.properties.export import export_section_json
 from implicit_geometry_kernel.section.properties.export import SectionPropertiesReport
 from implicit_geometry_kernel.section import MultiCellSection, resolve_system_type
-from implicit_geometry_kernel.section.api import build_section_geometry
+from implicit_geometry_kernel.section.spec import build_section_geometry
 from plotting import plot_section
 from implicit_geometry_kernel.frames import naca_to_twisted_pitch_axis_blade_frame
 from plotting.frames import section_plot_axes

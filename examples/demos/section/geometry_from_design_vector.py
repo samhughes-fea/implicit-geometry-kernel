@@ -28,7 +28,7 @@ from pathlib import Path
 
 import numpy as np
 
-# ``import blade_structure_utilities`` needs repo root on sys.path when run as a script.
+# Load repo root onto sys.path when run as a script.
 _erp = Path(__file__).resolve().parent / "_ensure_repo_path.py"
 if not _erp.is_file():
     raise RuntimeError(f"Missing helper {_erp.name}; run from the repository checkout.")

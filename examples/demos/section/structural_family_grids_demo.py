@@ -57,7 +57,7 @@ from plotting.figure_io import (
 )
 _taxonomy = _load_sibling("_taxonomy_cases", "_taxonomy_cases.py")
 
-from implicit_geometry_kernel.section.api.factory import (
+from implicit_geometry_kernel.section.spec.factory import (
     SYSTEM_TYPE_KEYS,
     build_section_view,
     resolve_system_type,

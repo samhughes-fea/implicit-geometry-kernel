@@ -145,7 +145,7 @@ def _run_single_layout(
     twist_deg: float,
     out_dir: Path,
 ) -> None:
-    from implicit_geometry_kernel.section.api.factory import (
+    from implicit_geometry_kernel.section.spec.factory import (
         build_section_view,
         resolve_system_type,
     )
@@ -177,7 +177,7 @@ def _run_single_layout(
 def main(argv: list[str] | None = None) -> None:
     import numpy as np
 
-    from implicit_geometry_kernel.section.api.factory import (
+    from implicit_geometry_kernel.section.spec.factory import (
         resolve_system_type,
     )
     from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF

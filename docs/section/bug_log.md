@@ -46,6 +46,7 @@ Deviations are stated per entry.
 | [SG-016](#sg-016) | 50 package tests fail at HEAD (`SparCap._camber_surface`, g-row hardening) | **Fixed** — wrap copies `_camber_surface`; barrel / comment gates cleared |
 | [SG-017](#sg-017) | Caps are built from the skin but their bond to it is never emitted | **Fixed** — `bond_caps_to_skin` pairs every cap vertex with the skin; `ShellMidlineStrip.bonds` |
 | [SG-018](#sg-018) | Residual nearest / argmin sites vs standing invariant (Exactness item 6 follow-on) | **Logged** (2026-09-26) — no relocation defect |
+| [SG-019](#sg-019) | Family-C constructive cap union omitted pad 0 (canonical label) so hybrid area was half the SDF | **Fixed** — union indexed pads *and* the canonical pad |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -1302,4 +1303,32 @@ construction.
 ### Verification
 Re-grep of `point_to_open_polyline_nearest`, `nearest_on_closed_polyline`, and
 production `np.argmin` under `section_geometry/` (2026-09-26).
+
+## SG-019
+
+**Family-C constructive cap union omitted pad 0**
+
+**Status:** Fixed
+**Area:** `section/boundary/walls.py` `_union_discrete_caps`
+
+### Symptom
+Hybrid shoelace area for catalogue **C** (per-web pads) was about half the
+quadtree occupancy of the same canonical cap labels (rtol 0.55 in
+`test_hybrid_parity`).
+
+### Evidence
+On ``2C-CN-LC-0R`` / NACA 2412, each pad SDF occupies ~9.5e-4 m² and the
+min-φ union is their sum (~1.91e-3). Hybrid / constructive area was ~9.14e-4
+(one pad). ``spar_cap_components_unrotated`` holds pad 0 under
+``spar_cap_suction_surface`` and pad 1 under ``spar_cap_suction_surface_1``.
+
+### Root cause
+``_union_discrete_caps`` skipped the canonical surface key so family **D**
+would not treat the continuous box as a pad. Family **C** stores pad 0 on
+that same key, so emit unioned only ``*_1`` onward.
+
+### Verification
+Include the canonical key when indexed siblings exist. Hybrid 2C suction
+9.15e-4 → 1.83e-3; C-family wall solids use the same hybrid/quadtree rtol as
+the other families.
 

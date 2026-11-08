@@ -1,7 +1,7 @@
 """Loft mapped strips between sampled stations."""
 from __future__ import annotations
 
-from typing import Mapping, Sequence
+from typing import Mapping
 
 import numpy as np
 
@@ -11,7 +11,6 @@ from implicit_geometry_kernel.blade.topology.template import (
     ShellTopologyTemplate,
     WebBranch,
 )
-from implicit_geometry_kernel.blade.topology.map_walk import _as_xyz
 
 def loft_mapped_strips(s0: Mapping[str, np.ndarray], s1: Mapping[str, np.ndarray],
                        t0: ShellTopologyTemplate, t1: ShellTopologyTemplate
@@ -122,6 +121,53 @@ def _concat_side_samples(samples: Mapping[str, np.ndarray], tmpl: ShellTopologyT
     if not parts:
         return None
     return np.vstack(parts)
+
+
+def _resample_keys(p0: np.ndarray, p1: np.ndarray, arc: np.ndarray, n: int,
+                   *, bunch_end: bool = False) -> np.ndarray:
+    """Arc-length resample between two keys that already lie on ``arc`` (TE→LE)."""
+    n = max(int(n), 2)
+    if len(arc) < 2:
+        out = np.repeat(np.asarray(p0, float).reshape(1, -1), n, axis=0)
+        out[-1] = p1
+        return out
+    i0 = int(np.argmin(np.linalg.norm(arc - p0, axis=1)))
+    i1 = int(np.argmin(np.linalg.norm(arc - p1, axis=1)))
+    if i0 == i1:
+        sub = np.vstack([p0, p1])
+    elif i0 < i1:
+        sub = np.vstack([p0, arc[i0 + 1 : i1], p1])
+    else:
+        sub = np.vstack([p0, arc[i0 - 1 : i1 : -1], p1])
+    if bunch_end and n > 2:
+        sampled = _arc_resample_bunched(sub, n)
+    else:
+        sampled = arc_resample_open(sub, n)
+    sampled[0] = np.asarray(p0, float)
+    sampled[-1] = np.asarray(p1, float)
+    return sampled
+
+
+def _arc_resample_bunched(pts: np.ndarray, n: int) -> np.ndarray:
+    """Arc-length resample clustered toward the last vertex (TE)."""
+    pts = np.asarray(pts, float)
+    n = max(int(n), 2)
+    if len(pts) < 2:
+        return arc_resample_open(pts, n)
+    seg = np.linalg.norm(np.diff(pts, axis=0), axis=1)
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    if s[-1] <= 1e-15:
+        return arc_resample_open(pts, n)
+    u = np.sin(np.linspace(0.0, 0.5 * np.pi, n)) ** 2
+    t = u * s[-1]
+    out = np.empty((n, pts.shape[1]))
+    for j, tj in enumerate(t):
+        k = int(np.searchsorted(s, tj, side="right") - 1)
+        k = min(max(k, 0), len(seg) - 1)
+        span = seg[k] if seg[k] > 1e-15 else 1.0
+        w = (tj - s[k]) / span
+        out[j] = pts[k] + w * (pts[k + 1] - pts[k])
+    return out
 
 
 def _on_chain(chain: np.ndarray, p: np.ndarray) -> np.ndarray:

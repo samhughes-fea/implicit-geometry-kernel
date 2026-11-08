@@ -19,6 +19,8 @@ from typing import Any, Callable
 
 import numpy as np
 
+from implicit_geometry_kernel.blade.stations import TransverseMember
+
 
 def nd_arc_to_chord_frac(s: float) -> float:
     """Map windIO ``nd_arc`` to chord fraction from the leading edge."""
@@ -420,8 +422,6 @@ def transverse_members_from_windio(
     windIO files typically omit a tip block. The plate sits at last span and takes
     the tip skin / TE gauge (geometry thickness only).
     """
-    from implicit_geometry_kernel.blade.stations import TransverseMember
-
     z_table = None if z_of_s is None else np.asarray(z_of_s, float)
     if z_table is not None and z_table.size:
         arr = np.asarray(z_table, float)

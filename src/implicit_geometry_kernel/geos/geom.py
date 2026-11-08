@@ -214,6 +214,26 @@ class Polygon:
         cy = np.sum((y + np.roll(y, -1)) * (x * np.roll(y, -1) - np.roll(x, -1) * y)) / (3.0 * a2)
         return Point(float(cx), float(cy))
 
+    def representative_point(self) -> Point:
+        """A point on the surface (inward of the first exterior edge)."""
+        xy = self._ext.coords._xy
+        if xy.shape[0] < 3:
+            return Point(0.0, 0.0)
+        mid = 0.5 * (xy[0] + xy[1])
+        t = xy[1] - xy[0]
+        nrm = np.array([-t[1], t[0]], float)
+        ln = float(np.linalg.norm(nrm))
+        if ln < 1e-18:
+            return self.centroid
+        nrm = nrm / ln
+        if _signed_area(xy) < 0.0:
+            nrm = -nrm
+        for scale in (1e-6, 1e-4, 1e-3, 1e-2, 1e-1):
+            cand = Point(float(mid[0] + scale * nrm[0]), float(mid[1] + scale * nrm[1]))
+            if self.contains(cand):
+                return cand
+        return self.centroid
+
     @property
     def wkb(self) -> bytes:
         from implicit_geometry_kernel.geos.wkb import dumps

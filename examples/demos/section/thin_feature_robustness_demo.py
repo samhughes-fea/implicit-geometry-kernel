@@ -67,8 +67,10 @@ from implicit_geometry_kernel.plotting.plot import (
     plot_section_hybrid,
 )
 from implicit_geometry_kernel.plotting.plot_section import (
-    _naca_xy_to_plot_hv,
     apply_structural_section_axes,
+)
+from implicit_geometry_kernel.plotting.plot_section_axes import (
+    _naca_xy_to_plot_hv,
 )
 from implicit_geometry_kernel.section.properties.compute import (
     compute_section_properties,

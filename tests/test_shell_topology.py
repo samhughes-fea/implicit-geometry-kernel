@@ -156,7 +156,6 @@ def test_write_mid_surfaces_obj_region_groups_and_rib(tmp_path: Path):
 
 
 def test_mapped_loft_omits_rib_strips():
-    from implicit_geometry_kernel.blade.stations import TransverseMember
 
     z_of_s = np.column_stack([[0.0, 1.0], [0.0, 10.0]])
     structure = {

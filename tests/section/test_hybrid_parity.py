@@ -11,6 +11,7 @@ from implicit_geometry_kernel.catalogue import (
 from implicit_geometry_kernel.section.assembly import (
     build_section_view,
 )
+from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
 from implicit_geometry_kernel.section.boundary.labels import (
     classify_property_labels,
     is_constructive_label,
@@ -31,22 +32,18 @@ from implicit_geometry_kernel.section.properties.compute import (
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
 
-def _assert_props_close(hy, qt, *, wall_solid: bool, le_te: bool = False, per_web_pads: bool = False):
+def _assert_props_close(hy, qt, *, wall_solid: bool, le_te: bool = False):
     a_qt = float(qt["area"])
     if a_qt < 1e-5:
         return
     if le_te:
         rtol, atol = 0.15, 1e-3
-    elif wall_solid and per_web_pads:
-        # Catalogue C-family caps: constructive emit is a union of per-web pads;
-        # SDF/quadtree fill is still about twice that area. Keep other families tight.
-        rtol, atol = 0.55, 1.2e-3
     elif wall_solid:
         rtol, atol = 1e-3, 5e-4
     else:
         rtol, atol = 5e-3, 5e-4
     np.testing.assert_allclose(hy["area"], a_qt, rtol=rtol, atol=atol)
-    if wall_solid and not per_web_pads:
+    if wall_solid:
         np.testing.assert_allclose(hy["cx"], qt["cx"], atol=0.02)
         np.testing.assert_allclose(hy["cy"], qt["cy"], atol=0.02)
         if np.isfinite(qt["Ixx"]):
@@ -61,6 +58,7 @@ def _assert_props_close(hy, qt, *, wall_solid: bool, le_te: bool = False, per_we
         ("2D-CN-LC-0R", 0.0),
         ("2D-F-LC-0R", 0.0),
         ("2C-CN-LC-0R", 0.0),
+        ("2C-F-LC-0R", 0.0),
         ("1B-CN-LC-0R", 0.0),
         ("2D-CN-LC-0R", 15.0),
         ("0A-LC-0R", 0.0),
@@ -81,7 +79,6 @@ def test_hybrid_vs_quadtree_taxonomy(layout_key: str, twist_deg: float):
         section, backend="quadtree", quadtree_spec=spec, airfoil_for_spec=af_spec
     )
     assert hy_meta["backend"] == "hybrid"
-    per_web_pads = layout_key.split("-")[0].endswith("C")
     # Cores and inserts are constructive; residual list empty for standard builds
     for lab in section.labels:
         key = str(getattr(lab, "value", lab))
@@ -90,13 +87,13 @@ def test_hybrid_vs_quadtree_taxonomy(layout_key: str, twist_deg: float):
         if key in {"leading_edge_insert", "trailing_edge_insert"}:
             assert key in hy_meta["constructive_labels"]
             assert key not in hy_meta["residual_labels"]
-            _assert_props_close(hy[key], qt[key], wall_solid=True, per_web_pads=per_web_pads)
+            _assert_props_close(hy[key], qt[key], wall_solid=True)
         if is_core_label(key):
             assert key in hy_meta["constructive_labels"]
             assert key not in hy_meta["residual_labels"]
-            _assert_props_close(hy[key], qt[key], wall_solid=True, per_web_pads=per_web_pads)
+            _assert_props_close(hy[key], qt[key], wall_solid=True)
         elif is_wall_solid_label(key):
-            _assert_props_close(hy[key], qt[key], wall_solid=True, per_web_pads=per_web_pads)
+            _assert_props_close(hy[key], qt[key], wall_solid=True)
         elif is_residual_label(key):
             _assert_props_close(
                 hy[key],
@@ -104,6 +101,18 @@ def test_hybrid_vs_quadtree_taxonomy(layout_key: str, twist_deg: float):
                 wall_solid=False,
                 le_te=key in {"leading_edge_insert", "trailing_edge_insert"},
             )
+
+
+def test_family_c_constructive_union_includes_pad_zero():
+    """Pad 0 is stored under the canonical label; emit must still union it with *_1."""
+    airfoil = AirfoilSDF.from_naca("2412", n_points=100, chord=1.0)
+    section = build_section_view(airfoil, resolve_system_type("2C-CN-LC-0R"))
+    pads = dict(section.spar_cap_components_unrotated or {})
+    assert "spar_cap_suction_surface" in pads
+    assert "spar_cap_suction_surface_1" in pads
+    polys = emit_wall_solid_polygons(section)
+    su = polys["spar_cap_suction_surface"]
+    assert float(su.area) > 1.5e-3
 
 
 def test_overlap_policy_independent_label_moments():

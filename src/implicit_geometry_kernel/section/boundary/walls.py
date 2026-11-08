@@ -60,13 +60,22 @@ def _union_discrete_caps(
 ) -> Polygon | MultiPolygon | None:
     parts = []
     # One deeper offset for all discrete bands on this surface (same skin+cap_h).
-    # Indexed pads only; the canonical surface label is the continuous-box recipe.
+    # Family C stores pad 0 under the canonical surface label and later pads as
+    # ``*_1``, ``*_2``, … Family D's continuous box lives only on that canonical
+    # key, so skip it unless indexed siblings show a pad union.
     shared_deeper = deeper_cavity
     canon = CapBuilder.canonical_surface_label(surface)
     legacy = f"spar_cap_{surface}"
+    indexed = [
+        str(_label_key(k))
+        for k in discrete
+        if CapBuilder.matches_surface(k, surface)
+        and str(_label_key(k)) not in (canon, legacy)
+    ]
+    include_canon_pad = bool(indexed)
     for key, comp in discrete.items():
         lk = str(_label_key(key))
-        if lk in (canon, legacy):
+        if lk in (canon, legacy) and not include_canon_pad:
             continue
         if not CapBuilder.matches_surface(lk, surface):
             continue

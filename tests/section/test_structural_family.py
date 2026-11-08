@@ -115,7 +115,7 @@ def test_structural_C_cap_recipes_centered_on_webs(af, web_xs):
     )
     recipes = m.spar_cap_wall_recipes
     for i, web_x in enumerate(web_xs):
-        key = "spar_cap_suction_surface" if i == 0 else f"spar_cap_suction_surface_{i}"
+        key = f"spar_cap_suction_surface_{i}"
         assert key in recipes, sorted(recipes)
         wall = recipes[key]
         mid = 0.5 * (float(wall.x_start) + float(wall.x_end))

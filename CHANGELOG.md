@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Family **C** pad 0 is stored as ``spar_cap_*_0`` in the unrotated pad dict.
+  Constructive union is indexed pads only; the canonical label stays the merged
+  product (and family **D** box).
+
 ## 0.8.1
 
 - Family **C** constructive cap union includes pad 0 (stored under the

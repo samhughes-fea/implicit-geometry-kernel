@@ -2,7 +2,9 @@
 
 Gmsh jobs, ply ABD/PCOMP and solvers stay downstream. This kernel only hands
 over metres: ``ThicknessLaw``, ``named_edges``, ``size_fields``, and
-``merge_cap_and_skin``.
+``merge_cap_and_skin``. Clip with ``apply_clip``. Pin
+``implicit-geometry-kernel>=0.8.2`` if you read indexed C-family pads or mapped
+loft faces.
 
 Run from the repository root::
 

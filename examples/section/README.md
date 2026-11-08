@@ -25,6 +25,13 @@ python examples/section/teaching/01_first_station.py
 5. [05_midline_handoff.py](teaching/05_midline_handoff.py) — print `ShellMidlineStrip` fields (no mesher)
 6. [06_consumer_seams.py](teaching/06_consumer_seams.py) — `ThicknessLaw`, named edges, size fields, merged cap+skin
 
+Downstream packages live **outside** this tree. Pin
+`implicit-geometry-kernel>=0.8.2` if you read C-family indexed pad keys
+(`spar_cap_*_0`) or mapped loft faces; `>=0.8.1` is enough for hybrid C-family
+areas and `apply_clip` only (`apply_shapely` is gone). Copy
+`teaching/06_consumer_seams.py`. Check a local checkout with
+`python scripts/check_consumer.py PATH/TO/CONSUMER`.
+
 Guides: [quickstart](../../docs/section/guides/quickstart.md),
 [geometry_to_mesh](../../docs/section/guides/geometry_to_mesh.md).
 Gallery: [../demos/section/](../demos/section/).

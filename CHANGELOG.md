@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Architecture programme (steps 1–9) is closed at 0.8.2. SG-019 union is
+  indexed pads only. Teaching notes say how to pin the kernel from a consumer
+  checkout (``apply_clip``, ``check_consumer.py``).
+
 ## 0.8.2
 
 - Family **C** pad 0 is stored as ``spar_cap_*_0`` in the unrotated pad dict.

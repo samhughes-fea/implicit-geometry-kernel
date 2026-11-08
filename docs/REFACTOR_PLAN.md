@@ -37,6 +37,13 @@ the same work; they are not extra steps.
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after mid-surface, plots extra, and alias removal | **Done.** Nose, insert polygons, PCHIP loft scalars, mid-surface field from `shell_graph`, plots extra, and 0.5.x alias removal |
 | 9 | Separate blade-model package | **Declined.** Consumers keep their own adapters |
 
+The numbered programme (steps 1–9) is **closed**. Tagged releases through
+**0.8.2** sit on that tree. Remaining swap surface is `geos/` ctypes
+`libgeos_c` (WKB / `OPS`); a C++ link is a new programme, not a numbered
+step. Consumers pin the kernel outside this repo (`>=0.8.2` for indexed
+C-family pad keys and mapped loft faces; `>=0.8.1` for hybrid C areas and
+`apply_clip`).
+
 Step 5 breakdown (Phase 2 complete; tagged `v0.5.0`):
 
 | Slice | What | State |
@@ -106,7 +113,8 @@ python scripts/check_consumer.py PATH/TO/CONSUMER  # each downstream checkout
 - **API snapshot** (`tests/golden/api.json`): new public names pass; a changed or removed
   signature fails. Regenerate only when the change is intended and in the changelog.
 - **Downstream check**: run `scripts/check_consumer.py` against each package that pins
-  the kernel. It installs this checkout and runs that package's tests.
+  the kernel (`>=0.8.2` for indexed C pads and loft faces). It installs this
+  checkout and runs that package's tests. No consumer pins live in `src/`.
 - **One concern per PR.** Moves and renames go in their own PRs, apart from logic
   changes.
 - **Deprecate, then remove.** An old import path stayed as an alias module for one minor

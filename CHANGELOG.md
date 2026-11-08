@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.8.0
+
+- Breaking: ``apply_shapely`` is removed. Use ``apply_clip``. The name was a
+  deprecated alias in 0.7.0.
+
 - CI after the tree freeze: mypy on loft mixins and GEOS ctypes; named
   ``feature_curve`` passes all four ``partition_edge_curve`` arguments;
   ``PolygonOps.distance`` is GEOS ``GEOSDistance_r`` (tests use ``OPS``, not

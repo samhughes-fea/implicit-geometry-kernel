@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.1
+
 - Family **C** constructive cap union includes pad 0 (stored under the
   canonical surface label). Hybrid ``2C-CN-LC-0R`` ``spar_cap_suction_surface``
   area 9.15e-4 → 1.83e-3 (×2.00); pressure 9.13e-4 → 1.82e-3. Cores lose the

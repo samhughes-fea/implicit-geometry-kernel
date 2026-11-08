@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- CI after the tree freeze: mypy on loft mixins and GEOS ctypes; named
+  ``feature_curve`` passes all four ``partition_edge_curve`` arguments;
+  ``PolygonOps.distance`` is GEOS ``GEOSDistance_r`` (tests use ``OPS``, not
+  methods on kernel ``Polygon``); C-family hybrid vs quadtree area is
+  documented as per-web pads, not circular disks; ``09_blade_concepts``
+  ignores empty/non-finite 3-D faces and degenerate axis limits. Public API snapshot records the
+  GEOS / ``apply_clip`` names; ``apply_shapely`` remains a deprecated alias.
+
 - Shapely is gone. Constructive offset and overlay stay **GEOS** (JTS C++)
   through ``implicit_geometry_kernel.geos`` (ctypes ``libgeos_c``, kernel
   ``Polygon``, WKB). Install system/conda GEOS or set ``GEOS_LIBRARY_PATH``.

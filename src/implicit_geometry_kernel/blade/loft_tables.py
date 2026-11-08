@@ -21,7 +21,9 @@ def _as_function(value: Thickness, name: str) -> Callable[[float], float]:
 
 def _as_pivot_fraction(value: Union[float, SpanTable]):
     """Required piercing-point fraction: a constant in (0, 1) or a span table."""
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
+    if isinstance(value, bool):
+        raise TypeError("pivot_fraction is required (a chord fraction or span table)")
+    if isinstance(value, (int, float)):
         f = float(value)
         if not 0.0 < f < 1.0:
             raise ValueError("pivot_fraction must be a chord fraction in (0, 1)")

@@ -63,6 +63,14 @@ show_error_codes = true
 files = ["src/implicit_geometry_kernel"]
 exclude = ["implicit_geometry_kernel/plotting"]
 
+# Mixins are copied onto BladeGeometry in loft.py; self is that host.
+[[tool.mypy.overrides]]
+module = [
+    "implicit_geometry_kernel.blade.loft_cut",
+    "implicit_geometry_kernel.blade.loft_fields",
+]
+disable_error_code = ["misc"]
+
 [tool.ruff]
 line-length = 120
 

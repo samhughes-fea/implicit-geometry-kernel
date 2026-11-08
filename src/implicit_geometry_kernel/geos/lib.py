@@ -12,6 +12,7 @@ import ctypes.util
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 _EMPTY_POLYGON_WKB = bytes([1, 3, 0, 0, 0, 0, 0, 0, 0])
 
@@ -20,8 +21,8 @@ GEOSBUF_CAP_ROUND = 1
 GEOSBUF_JOIN_ROUND = 1
 GEOSBUF_JOIN_MITRE = 2
 
-_GEOS_C = None
-_HANDLE = None
+_GEOS_C: Any = None
+_HANDLE: Any = None
 _ERR: list[str] = []
 
 _Notice = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
@@ -119,6 +120,8 @@ def _bind(lib) -> None:
     lib.GEOSisValidReason_r.restype = ctypes.c_void_p
     lib.GEOSisValid_r.argtypes = [p, p]
     lib.GEOSisValid_r.restype = ctypes.c_char
+    lib.GEOSDistance_r.argtypes = [p, p, p, ctypes.POINTER(ctypes.c_double)]
+    lib.GEOSDistance_r.restype = ctypes.c_int
 
 
 def _handle():
@@ -218,6 +221,21 @@ def intersection(a: bytes, b: bytes) -> bytes:
     return _binary("GEOSIntersection_r", a, b)
 
 
+def distance(a: bytes, b: bytes) -> float:
+    h = _handle()
+    ga = _from_wkb(h, a)
+    gb = _from_wkb(h, b)
+    dist = ctypes.c_double()
+    try:
+        ok = _GEOS_C.GEOSDistance_r(h, ga, gb, ctypes.byref(dist))
+        if not ok:
+            raise RuntimeError(_ERR[-1] if _ERR else "GEOSDistance_r failed")
+        return float(dist.value)
+    finally:
+        _destroy(h, ga)
+        _destroy(h, gb)
+
+
 def difference(a: bytes, b: bytes) -> bytes:
     return _binary("GEOSDifference_r", a, b)
 
@@ -279,7 +297,8 @@ def is_valid_reason(wkb: bytes) -> str:
         if not ptr:
             return "Unknown"
         try:
-            return ctypes.cast(ptr, ctypes.c_char_p).value.decode("utf-8", "replace")
+            raw = ctypes.cast(ptr, ctypes.c_char_p).value
+            return (raw or b"Unknown").decode("utf-8", "replace")
         finally:
             _GEOS_C.GEOSFree_r(h, ptr)
     finally:
@@ -292,6 +311,7 @@ __all__ = [
     "GEOSBUF_JOIN_ROUND",
     "buffer",
     "difference",
+    "distance",
     "intersection",
     "is_valid",
     "is_valid_reason",

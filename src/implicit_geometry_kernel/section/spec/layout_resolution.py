@@ -106,10 +106,10 @@ def _reattach_catalogue_preset(
         return layout
     reattached = SectionLayout.from_system_layout_spec(preset)
     cap = reattached.cap_placement
-    fam = reattached.structural_family
+    fam = str(reattached.structural_family or fam)
     if layout.cap_placement.chord_window is not None:
         cap = layout.cap_placement
-        fam = layout.structural_family or fam
+        fam = str(layout.structural_family or fam)
     return SectionLayout(
         web_chord_fracs=layout.web_chord_fracs or reattached.web_chord_fracs,
         orientation=reattached.orientation,

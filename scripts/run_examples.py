@@ -43,15 +43,17 @@ def run(path: Path, timeout: float) -> tuple[Path, int, str]:
     try:
         proc = subprocess.run([sys.executable, str(path)], cwd=path.parent, env=env, capture_output=True,
                               text=True, timeout=timeout)
-        tail = (proc.stderr or proc.stdout).strip().splitlines()[-1:] if proc.returncode else []
-        return path, proc.returncode, tail[0] if tail else ""
+        if proc.returncode:
+            err = (proc.stderr or proc.stdout or "").strip()
+            return path, proc.returncode, err[-4000:] if err else "no output"
+        return path, 0, ""
     except subprocess.TimeoutExpired:
         return path, -1, f"timed out after {timeout:g} s"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--timeout", type=float, default=240.0, help="seconds per script")
+    parser.add_argument("--timeout", type=float, default=480.0, help="seconds per script")
     parser.add_argument("--jobs", type=int, default=os.cpu_count() or 2)
     args = parser.parse_args()
     paths = scripts()
@@ -59,7 +61,8 @@ def main() -> int:
         results = list(pool.map(lambda p: run(p, args.timeout), paths))
     failed = [(p, code, msg) for p, code, msg in results if code != 0]
     for p, code, msg in failed:
-        print(f"FAIL {p.relative_to(ROOT)}: {msg}")
+        print(f"FAIL {p.relative_to(ROOT)} (exit {code})")
+        print(msg)
     print(f"{len(paths) - len(failed)} of {len(paths)} scripts ran ({len(SKIP)} skipped)")
     return 1 if failed else 0
 

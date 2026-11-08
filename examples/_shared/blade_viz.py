@@ -81,7 +81,10 @@ def save_fig(fig, root: Path, stem: str, category: str, name: str, *,
     out = Path(root) / stem / category
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"{name}.png"
-    fig.savefig(path, dpi=dpi, bbox_inches="tight")
+    try:
+        fig.savefig(path, dpi=dpi, bbox_inches="tight")
+    except ValueError:
+        fig.savefig(path, dpi=dpi)
     plt.close(fig)
     if repo is not None:
         print(f"wrote {path.relative_to(repo)}")
@@ -181,7 +184,9 @@ def _landmark_ticks(ax, marks, y_top: float) -> None:
 
 
 def _finish_planform(ax, fig, title: str, caption: str, marks, te_x) -> None:
-    y_top = float(np.max(te_x))
+    te_x = np.asarray(te_x, float)
+    te_x = te_x[np.isfinite(te_x)]
+    y_top = float(np.max(te_x)) if te_x.size else 1.0
     _landmark_ticks(ax, marks, y_top)
     ax.set_aspect("equal", adjustable="datalim")
     ax.set_xlabel("z [m]")
@@ -189,7 +194,10 @@ def _finish_planform(ax, fig, title: str, caption: str, marks, te_x) -> None:
     ax.set_title(title)
     ax.legend(loc="upper right", fontsize=8)
     note(fig, caption)
-    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    try:
+        fig.tight_layout(rect=(0, 0.06, 1, 1))
+    except ValueError:
+        pass
 
 
 def figure_planforms(stem: str, title: str, geo, marks, *, figures: Path, repo: Path,

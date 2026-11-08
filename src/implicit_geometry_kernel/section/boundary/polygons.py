@@ -96,6 +96,9 @@ class GeosPolygonOps:
     def difference(self, a, b):
         return _geom(geos_lib.difference(_wkb(a), _wkb(b)))
 
+    def distance(self, a, b) -> float:
+        return geos_lib.distance(_wkb(a), _wkb(b))
+
     def union(self, geoms):
         if geoms is None:
             return Polygon()

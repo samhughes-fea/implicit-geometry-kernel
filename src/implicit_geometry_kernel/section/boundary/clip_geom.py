@@ -22,7 +22,7 @@ def stadium_polygon(
     radius: float,
     *,
     resolution: int = 16,
-) -> Polygon:
+) -> Polygon | MultiPolygon:
     """Capsule / stadium as a buffered line segment."""
     r = float(radius)
     if r <= 0:
@@ -60,7 +60,7 @@ def half_plane_clip(geom, *, surface: str):
     return ensure_polygon(OPS.intersection(geom, box), allow_empty=True)
 
 
-def chordwise_box(geom, x_start: float, x_end: float) -> Polygon:
+def chordwise_box(geom, x_start: float, x_end: float) -> Polygon | MultiPolygon:
     minx, miny, maxx, maxy = geom.bounds
     pad = max(maxy - miny, 1.0) + 1.0
     return Polygon(
@@ -73,7 +73,7 @@ def chordwise_box(geom, x_start: float, x_end: float) -> Polygon:
     )
 
 
-def _padded_world_box(geom, pad_scale: float = 2.0) -> Polygon:
+def _padded_world_box(geom, pad_scale: float = 2.0) -> Polygon | MultiPolygon:
     minx, miny, maxx, maxy = geom.bounds
     span = max(maxx - minx, maxy - miny, 1.0)
     pad = pad_scale * span + 1.0
@@ -95,7 +95,7 @@ def flapwise_bay_clip(
     clip_mode: str,
     c_lo: float | None,
     c_hi: float | None,
-) -> Polygon:
+) -> Polygon | MultiPolygon:
     """Bay clip for flapwise webs: half_lt / half_gt / strip on n·p."""
     world = _padded_world_box(geom, pad_scale=4.0)
     minx, miny, maxx, maxy = world.bounds

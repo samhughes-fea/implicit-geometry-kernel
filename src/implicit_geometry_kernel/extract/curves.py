@@ -62,9 +62,9 @@ def feature_curve(a, b, zs, guess_xy=None, solver: GeometrySolver | None = None)
     if isinstance(b, str):
         from implicit_geometry_kernel.blade.shell_graph import partition_edge_curve
 
-        if isinstance(zs, str):
-            return partition_edge_curve(a, b, zs, guess_xy)
-        return partition_edge_curve(a, b, zs)
+        if not isinstance(zs, str):
+            raise TypeError("named feature_curve needs (geo, name_a, name_b, zs)")
+        return partition_edge_curve(a, b, zs, guess_xy)
     solver = solver or GeometrySolver(tolerance=1e-8, max_step=0.05)
     g = np.asarray(guess_xy, float).reshape(2)
     out = []

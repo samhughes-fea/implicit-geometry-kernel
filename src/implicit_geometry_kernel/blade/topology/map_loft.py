@@ -210,7 +210,7 @@ def _collapsed_parent(branch: LoopBranch, s0: Mapping[str, np.ndarray],
         p0 = p1
     if p1 is None:
         p1 = p0
-    if p0 is None:
+    if p0 is None or p1 is None:
         return None
     n = max(int(n), 2)
     if np.allclose(p0, p1):

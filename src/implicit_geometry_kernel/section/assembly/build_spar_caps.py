@@ -25,7 +25,7 @@ from implicit_geometry_kernel.sdf.nodes import (
 
 from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
 from implicit_geometry_kernel.section.layout.section_axes import max_thickness_chord_x, pitch_axis_x_from_le
-from implicit_geometry_kernel.section.assembly.cap_feasibility import cap_feasibility_clamp
+from implicit_geometry_kernel.section.assembly.cap_feasibility import ExtentAnchor, cap_feasibility_clamp
 from implicit_geometry_kernel.section.assembly.cap_ply_snap import snap_cap_heights
 from implicit_geometry_kernel.section.assembly.clip_algebra import (
     _parallel_web_strip_clip,
@@ -259,6 +259,7 @@ def build_spar_caps(
         )
     elif rule.kind == "fixed_band":
         window = rule.chord_window
+        extent_anchor: ExtentAnchor
         if window is not None:
             chord = float(getattr(airfoil_sdf, "chord", 1.0))
             lo_f, hi_f = float(window[0]), float(window[1])

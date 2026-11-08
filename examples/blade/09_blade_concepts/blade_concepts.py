@@ -160,8 +160,30 @@ def _span_xyz(points: np.ndarray) -> np.ndarray:
     return np.column_stack([p[..., 2], p[..., 0], p[..., 1]])
 
 
+def _finite_span_faces(
+    faces: list[np.ndarray], kinds: list[str]
+) -> tuple[list[np.ndarray], list[str]]:
+    shown, keep = [], []
+    for face, kind in zip(faces, kinds):
+        xyz = _span_xyz(face)
+        if xyz.size == 0 or xyz.ndim != 2 or xyz.shape[0] < 3 or xyz.shape[1] != 3:
+            continue
+        if not np.all(np.isfinite(xyz)) or float(np.max(np.abs(xyz))) > 1.0e6:
+            continue
+        shown.append(xyz)
+        keep.append(kind)
+    return shown, keep
+
+
 def _face_rgba(kinds: list[str], alpha: float = 0.88) -> np.ndarray:
     return np.array([to_rgba(panel_colour(k), alpha) for k in kinds])
+
+
+def _tight(fig, **kwargs) -> None:
+    try:
+        fig.tight_layout(**kwargs)
+    except ValueError:
+        pass
 
 
 def _legend_kinds(fig, kinds: list[str], *, ncol: int | None = None, fontsize: int = 7) -> None:
@@ -178,10 +200,17 @@ def _legend_kinds(fig, kinds: list[str], *, ncol: int | None = None, fontsize: i
 
 
 def _finish_3d(ax, pts: np.ndarray, *, elev: float, azim: float, zoom: float = 1.0) -> None:
-    lo = pts.min(axis=0)
-    hi = pts.max(axis=0)
+    pts = np.asarray(pts, float)
+    if pts.size == 0 or not np.all(np.isfinite(pts)):
+        lo, hi = np.array([-1.0, -1.0, -1.0]), np.array([1.0, 1.0, 1.0])
+    else:
+        lo = pts.min(axis=0)
+        hi = pts.max(axis=0)
     box = hi - lo
-    box[box == 0.0] = 1.0
+    pad = np.where(box == 0.0, 1.0, 0.0)
+    lo = lo - 0.5 * pad
+    hi = hi + 0.5 * pad
+    box = hi - lo
     ax.set_xlim(float(lo[0]), float(hi[0]))
     ax.set_ylim(float(lo[1]), float(hi[1]))
     ax.set_zlim(float(lo[2]), float(hi[2]))
@@ -198,13 +227,19 @@ def _finish_3d(ax, pts: np.ndarray, *, elev: float, azim: float, zoom: float = 1
 def _draw_walls(ax, faces: list[np.ndarray], kinds: list[str], *,
                 elev: float = VIEW_LE[0], azim: float = VIEW_LE[1],
                 zoom: float = 1.0) -> None:
-    shown = [_span_xyz(f) for f in faces]
+    shown, kinds = _finite_span_faces(faces, kinds)
+    if not shown:
+        _finish_3d(ax, np.zeros((0, 3), float), elev=elev, azim=azim, zoom=zoom)
+        return
     rgba = _face_rgba(kinds)
-    ax.add_collection3d(Poly3DCollection(
-        shown, facecolors=rgba, shade=True,
-        edgecolors=np.broadcast_to(to_rgba("#9ca3af", 0.45), (len(shown), 4)).copy(),
-        linewidths=0.12,
-    ))
+    try:
+        ax.add_collection3d(Poly3DCollection(
+            shown, facecolors=rgba, shade=True,
+            edgecolors=np.broadcast_to(to_rgba("#9ca3af", 0.45), (len(shown), 4)).copy(),
+            linewidths=0.12,
+        ))
+    except ValueError:
+        pass
     _finish_3d(ax, np.concatenate(shown), elev=elev, azim=azim, zoom=zoom)
 
 
@@ -245,7 +280,7 @@ def figure_sections(key: str, geo: BladeGeometry, marks: list) -> None:
         print(f"{label:>12} {z:8.2f} {cut.chord:8.2f} {cut.twist:8.2f} {len(cut.walls):6d} "
               f"{len(cut.cells):6d}  {cut.layout}{dropped}")
     fig.suptitle(f"{key} — synthetic planform, 2-D cuts (skin / cap / web midlines)", fontsize=10)
-    fig.tight_layout()
+    _tight(fig)
     save_fig(fig, key, "sections", category=CROSS_SECTIONS)
 
 
@@ -257,14 +292,13 @@ def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         crop = _strip_window(walls, zc)
         faces, kinds = _wall_faces(crop, geo=geo)
         z0, z1 = crop[0][0], crop[-1][0]
-        if faces:
-            _draw_walls(ax, faces, kinds, elev=VIEW_LE[0], azim=VIEW_LE[1])
-            panel_kinds.extend(kinds)
+        _draw_walls(ax, faces, kinds, elev=VIEW_LE[0], azim=VIEW_LE[1])
+        panel_kinds.extend(kinds)
         ax.set_title(f"{label}\nz={z0:.1f}–{z1:.1f} m", fontsize=8)
     fig.suptitle(f"{key} — mapped loft close-ups (true scale)", fontsize=10)
     _legend_kinds(fig, panel_kinds)
     note(fig, "Authored WallRegionGraph; web ends are shared skin-loop keys. tip_closure is a station face.")
-    fig.tight_layout(rect=(0, 0.10, 1, 0.92))
+    _tight(fig, rect=(0, 0.10, 1, 0.92))
     save_fig(fig, key, "closeups", category=FULL_BLADE)
     te_strip = plt.figure(figsize=(16.5, 3.8))
     te_kinds: list[str] = []
@@ -273,14 +307,13 @@ def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         crop = _strip_window(walls, zc)
         faces, kinds = _wall_faces(crop, geo=geo)
         z0, z1 = crop[0][0], crop[-1][0]
-        if faces:
-            _draw_walls(ax, faces, kinds, elev=VIEW_TE[0], azim=VIEW_TE[1])
-            te_kinds.extend(kinds)
+        _draw_walls(ax, faces, kinds, elev=VIEW_TE[0], azim=VIEW_TE[1])
+        te_kinds.extend(kinds)
         ax.set_title(f"{label}\nz={z0:.1f}–{z1:.1f} m", fontsize=8)
     te_strip.suptitle(f"{key} — mapped loft close-ups TE (true scale)", fontsize=10)
     _legend_kinds(te_strip, te_kinds)
     note(te_strip, "Trailing-edge view of the same five landmark strips.")
-    te_strip.tight_layout(rect=(0, 0.10, 1, 0.92))
+    _tight(te_strip, rect=(0, 0.10, 1, 0.92))
     save_fig(te_strip, key, "closeups_te", category=FULL_BLADE)
     for name, zc, label in marks:
         crop = _strip_window(walls, zc)
@@ -288,21 +321,19 @@ def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         z0, z1 = crop[0][0], crop[-1][0]
         one = plt.figure(figsize=(8.5, 6.1))
         ax = one.add_subplot(111, projection="3d")
-        if faces:
-            _draw_walls(ax, faces, kinds, elev=VIEW_LE[0], azim=VIEW_LE[1])
+        _draw_walls(ax, faces, kinds, elev=VIEW_LE[0], azim=VIEW_LE[1])
         ax.set_title(f"{key} — {label}, true scale, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(one, kinds)
         note(one, f"{max(len(crop) - 1, 0)} mapped loft strips (region roles + ribs).")
-        one.tight_layout(rect=(0, 0.10, 1, 0.96))
+        _tight(one, rect=(0, 0.10, 1, 0.96))
         save_fig(one, key, name, category=REGIONS)
         te = plt.figure(figsize=(8.5, 6.1))
         ax_te = te.add_subplot(111, projection="3d")
-        if faces:
-            _draw_walls(ax_te, faces, kinds, elev=VIEW_TE[0], azim=VIEW_TE[1])
+        _draw_walls(ax_te, faces, kinds, elev=VIEW_TE[0], azim=VIEW_TE[1])
         ax_te.set_title(f"{key} — {label} TE, true scale, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(te, kinds)
         note(te, f"{max(len(crop) - 1, 0)} mapped loft strips, trailing-edge view.")
-        te.tight_layout(rect=(0, 0.10, 1, 0.96))
+        _tight(te, rect=(0, 0.10, 1, 0.96))
         save_fig(te, key, f"{name}_te", category=REGIONS)
 
 
@@ -319,7 +350,7 @@ def figure_cutaways(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         ax.set_title(f"{key} — {label}, suction skin removed, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(fig, kinds)
         note(fig, "Cutaway of mapped region strips (pressure, caps, webs, ribs).")
-        fig.tight_layout(rect=(0, 0.10, 1, 0.96))
+        _tight(fig, rect=(0, 0.10, 1, 0.96))
         save_fig(fig, key, name, category=REGION_CUTAWAYS)
         te = plt.figure(figsize=(8.5, 6.1))
         ax_te = te.add_subplot(111, projection="3d")
@@ -327,11 +358,21 @@ def figure_cutaways(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         ax_te.set_title(f"{key} — {label} TE, suction skin removed, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(te, kinds)
         note(te, "Cutaway trailing-edge view.")
-        te.tight_layout(rect=(0, 0.10, 1, 0.96))
+        _tight(te, rect=(0, 0.10, 1, 0.96))
         save_fig(te, key, f"{name}_te", category=REGION_CUTAWAYS)
 
 
 def _elevation_polys(faces: list[np.ndarray], kinds: list[str], *, depth_sign: float = 1.0):
+    kept = []
+    for face, kind in zip(faces, kinds):
+        arr = np.asarray(face, float)
+        if arr.ndim != 2 or arr.shape[1] < 3 or not np.all(np.isfinite(arr)):
+            continue
+        if float(np.max(np.abs(arr))) > 1.0e6:
+            continue
+        kept.append((arr, kind))
+    faces = [item[0] for item in kept]
+    kinds = [item[1] for item in kept]
     polys = [np.column_stack([np.asarray(f, float)[:, 2], np.asarray(f, float)[:, 1]]) for f in faces]
     depth = depth_sign * np.array([float(np.mean(np.asarray(f, float)[:, 0])) for f in faces])
     all_uv = np.vstack(polys) if polys else np.zeros((0, 2))
@@ -342,7 +383,7 @@ def _elevation_polys(faces: list[np.ndarray], kinds: list[str], *, depth_sign: f
     uv = [p.copy() for p in polys]
     for p in uv:
         p[:, 1] = mid + (p[:, 1] - mid) * factor
-    return uv, np.argsort(depth), factor, span
+    return uv, np.argsort(depth), factor, span, kinds
 
 
 def _save_elevation(key: str, name: str, faces: list[np.ndarray], kinds: list[str], *,
@@ -350,9 +391,15 @@ def _save_elevation(key: str, name: str, faces: list[np.ndarray], kinds: list[st
                     legend: bool = True) -> None:
     if not faces:
         return
-    uv, order, factor, span = _elevation_polys(faces, kinds, depth_sign=depth_sign)
+    uv, order, factor, span, kinds = _elevation_polys(faces, kinds, depth_sign=depth_sign)
+    if not uv:
+        return
     stretched = np.vstack(uv)
+    if stretched.size == 0 or not np.all(np.isfinite(stretched)):
+        return
     fig_h = 13.0 * float(np.ptp(stretched[:, 1])) / max(span, 1e-6) + (1.35 if legend else 0.55)
+    if not np.isfinite(fig_h):
+        return
     fig, ax = plt.subplots(figsize=(13.0, max(3.2, fig_h)))
     ax.add_collection(PolyCollection(
         [uv[i] for i in order], facecolors=_face_rgba(kinds, 0.92)[order],
@@ -364,9 +411,9 @@ def _save_elevation(key: str, name: str, faces: list[np.ndarray], kinds: list[st
     ax.set_title(title, loc="left", fontsize=10)
     if legend:
         _legend_kinds(fig, kinds)
-        fig.tight_layout(rect=(0, 0.08, 1, 1))
+        _tight(fig, rect=(0, 0.08, 1, 1))
     else:
-        fig.tight_layout(rect=(0, 0.04, 1, 1))
+        _tight(fig, rect=(0, 0.04, 1, 1))
     note(fig, caption)
     save_fig(fig, key, name, category=FULL_BLADE)
 
@@ -388,13 +435,17 @@ def _save_corner_cutaway(key: str, name: str, faces: list[np.ndarray], kinds: li
     if not faces:
         return
     right, up, toward = _camera_basis(elev, azim)
-    shown = [_span_xyz(f) for f in faces]
+    shown, kinds = _finite_span_faces(faces, kinds)
+    if not shown:
+        return
     raw, depth = [], np.empty(len(shown), float)
     for i, pts in enumerate(shown):
         raw.append(np.column_stack([pts @ right, pts @ up]))
         depth[i] = float(np.mean(pts @ toward))
     z_span = np.array([float(np.mean(p[:, 0])) for p in shown])
     cents = np.array([np.mean(p, axis=0) for p in raw])
+    if not np.all(np.isfinite(cents)):
+        return
     root = cents[z_span <= z_span.min() + 1e-9].mean(axis=0)
     tip = cents[z_span >= z_span.max() - 1e-9].mean(axis=0)
     axis = tip - root
@@ -404,6 +455,8 @@ def _save_corner_cutaway(key: str, name: str, faces: list[np.ndarray], kinds: li
     uv = [p @ rot.T for p in raw]
     order = np.argsort(depth)
     stacked = np.vstack(uv)
+    if stacked.size == 0 or not np.all(np.isfinite(stacked)):
+        return
     span_u = float(np.ptp(stacked[:, 0]))
     span_v = float(np.ptp(stacked[:, 1]))
     pad_u, pad_v = 0.015 * span_u, 0.06 * span_v
@@ -442,7 +495,7 @@ def figure_full_cutaway(key: str, faces: list[np.ndarray], kinds: list[str]) -> 
 
 
 def figure_elevation(key: str, title: str, faces: list[np.ndarray], kinds: list[str]) -> None:
-    _, _, factor, _ = _elevation_polys(faces, kinds)
+    _, _, factor, _, _ = _elevation_polys(faces, kinds)
     note_txt = "true scale" if factor < 1.05 else f"flapwise drawn at {factor:.0f}×"
     _save_elevation(
         key, "elevation", faces, kinds,

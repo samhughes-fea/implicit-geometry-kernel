@@ -16,6 +16,7 @@ from implicit_geometry_kernel.section import (
     SectionGeometry,
     resolve_system_type,
 )
+from implicit_geometry_kernel.section.boundary.polygons import OPS
 from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
 
 _MAX_SOLID_GAP_M = 1e-6
@@ -52,7 +53,7 @@ def test_family_d_cap_web_solid_flush_under_twist(twist_deg):
 
     for cap_key, cap in caps.items():
         for web_key, web in webs.items():
-            gap = float(cap.distance(web))
+            gap = float(OPS.distance(cap, web))
             assert gap <= _MAX_SOLID_GAP_M, (
                 f"2D-F @ {twist_deg} deg: solid {cap_key} to {web_key} gap "
                 f"{gap * 1e3:.3f} mm (limit {_MAX_SOLID_GAP_M * 1e3:.3f} mm). "

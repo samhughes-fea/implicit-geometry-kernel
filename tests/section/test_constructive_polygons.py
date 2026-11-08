@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from shapely.geometry import Polygon
-
+from implicit_geometry_kernel.geos.geom import Polygon
 from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
 )

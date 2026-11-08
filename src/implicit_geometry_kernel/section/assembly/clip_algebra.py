@@ -175,17 +175,6 @@ def apply_clip(clip: ClipSpec, polygon, *, camber_xy: Any = None):
     raise TypeError(f"Unsupported clip type: {type(clip)!r}")
 
 
-def apply_shapely(clip: ClipSpec, polygon, *, camber_xy: Any = None):
-    import warnings
-
-    warnings.warn(
-        "apply_shapely is deprecated; use apply_clip. The alias will be removed in a later minor.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return apply_clip(clip, polygon, camber_xy=camber_xy)
-
-
 __all__ = [
     "CamberSide",
     "ChordBand",
@@ -199,7 +188,6 @@ __all__ = [
     "airfoil_expr",
     "flapwise_strip_params",
     "apply_clip",
-    "apply_shapely",
     "camber_side_field",
     "chordwise_clip_expr",
     "flapwise_web_normal",

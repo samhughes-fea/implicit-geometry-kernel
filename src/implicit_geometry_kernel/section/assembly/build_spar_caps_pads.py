@@ -130,8 +130,8 @@ def fill_per_web_pads(
             fw=strip_c_fw,
             camber_xy=_camber_c,
         )
-        su_key = "spar_cap_suction_surface" if i == 0 else f"spar_cap_suction_surface_{i}"
-        ps_key = "spar_cap_pressure_surface" if i == 0 else f"spar_cap_pressure_surface_{i}"
+        su_key = f"spar_cap_suction_surface_{i}"
+        ps_key = f"spar_cap_pressure_surface_{i}"
         if wall_u is not None:
             recipes[su_key] = wall_u
             cu = _project_cap(
@@ -159,7 +159,7 @@ def fill_per_web_pads(
         ("pressure_surface", ComponentLabel.SPAR_CAP_PRESSURE_SURFACE),
     ):
         for i in range(N):
-            key = f"spar_cap_{side}" if i == 0 else f"spar_cap_{side}_{i}"
+            key = f"spar_cap_{side}_{i}"
             if key in recipes:
                 recipes[_label_str(cont)] = recipes[key]
                 break

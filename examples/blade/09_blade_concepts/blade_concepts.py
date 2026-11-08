@@ -178,8 +178,12 @@ def _legend_kinds(fig, kinds: list[str], *, ncol: int | None = None, fontsize: i
 
 
 def _finish_3d(ax, pts: np.ndarray, *, elev: float, azim: float, zoom: float = 1.0) -> None:
-    lo = pts.min(axis=0)
-    hi = pts.max(axis=0)
+    pts = np.asarray(pts, float)
+    if pts.size == 0 or not np.all(np.isfinite(pts)):
+        lo, hi = np.array([-1.0, -1.0, -1.0]), np.array([1.0, 1.0, 1.0])
+    else:
+        lo = pts.min(axis=0)
+        hi = pts.max(axis=0)
     box = hi - lo
     box[box == 0.0] = 1.0
     ax.set_xlim(float(lo[0]), float(hi[0]))

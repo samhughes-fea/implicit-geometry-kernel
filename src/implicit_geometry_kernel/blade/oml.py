@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from implicit_geometry_kernel.blade.topology.template import ShellTopologyTemplate
 
 
 def write_stl_solid(fh, name: str, verts: np.ndarray, faces: list) -> None:
@@ -112,7 +116,7 @@ def write_mid_surfaces(
         if z0 - 1e-12 <= float(z) <= z1 + 1e-12:
             zs.append(float(z))
     zs = sorted(set(round(float(z), 9) for z in zs))
-    samples: list[tuple[float, object, dict]] = []
+    samples: list[tuple[float, ShellTopologyTemplate, dict]] = []
     for z in zs:
         cut = section_cut_near(geo, float(z))
         if cut is None:
@@ -155,21 +159,21 @@ def write_mid_surfaces(
     if path.suffix.lower() == ".obj":
         lines: list[str] = []
         base = 0
-        for name, verts, faces in chunks:
+        for name, chunk_verts, chunk_faces in chunks:
             lines.append(f"g {name}")
-            lines += [f"v {x:g} {y:g} {z:g}" for x, y, z in verts]
-            for face in faces:
+            lines += [f"v {x:g} {y:g} {z:g}" for x, y, z in chunk_verts]
+            for face in chunk_faces:
                 lines.append("f " + " ".join(str(base + i + 1) for i in face))
-            base += len(verts)
+            base += len(chunk_verts)
         path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     else:
         with path.open("w", encoding="utf-8") as fh:
-            for name, verts, faces in chunks:
-                tris = []
-                for face in faces:
+            for name, chunk_verts, chunk_faces in chunks:
+                tris: list[tuple[int, ...]] = []
+                for face in chunk_faces:
                     if len(face) == 3:
                         tris.append(face)
                     else:
                         tris.extend((face[0], face[i], face[i + 1]) for i in range(1, len(face) - 1))
-                write_stl_solid(fh, name, verts, tris)
+                write_stl_solid(fh, name, chunk_verts, tris)
     return str(path)

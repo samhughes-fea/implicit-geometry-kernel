@@ -29,9 +29,17 @@ def _as_law(value) -> FracLaw:
         return value
     if isinstance(value, (tuple, list)) and len(value) == 2 and np.ndim(value[0]) == 1:
         zs, vs = np.asarray(value[0], float), np.asarray(value[1], float)
-        return lambda z, _z=zs, _v=vs: _interp_table(z, _z, _v)
+
+        def _table(z: float, *, _z=zs, _v=vs) -> float:
+            return _interp_table(z, _z, _v)
+
+        return _table
     c = float(value)
-    return lambda z, _c=c: _c
+
+    def _const(z: float, *, _c: float = c) -> float:
+        return _c
+
+    return _const
 
 
 @dataclass(frozen=True)
@@ -143,8 +151,8 @@ class WallRegionGraph:
                 structural_family=str(getattr(layout, "structural_family", "") or ""),
             )
         webs_frac = tuple(float(f) for f in getattr(layout, "web_chord_fracs", ()) or ())
-        cap = getattr(layout, "cap_placement", None)
-        anchors, regions, webs = _layout_parts(webs_frac, cap)
+        cap_rule = getattr(layout, "cap_placement", None)
+        anchors, regions, webs = _layout_parts(webs_frac, cap_rule)
         return cls(anchors, regions, webs, te_arc=float(te_arc), min_gap=float(min_gap))
 
     @classmethod
@@ -170,8 +178,9 @@ class WallRegionGraph:
                      if isinstance(w, Mapping)]
             for j in range(cols.shape[1]):
                 z0 = z1 = None
-                if j < len(windows_span) and windows_span[j] is not None:
-                    z0, z1 = windows_span[j]
+                win = windows_span[j] if j < len(windows_span) else None
+                if win is not None:
+                    z0, z1 = win
                 law = (zg, cols[:, j])
                 name = names[j] if j < len(names) else f"web_{j}"
                 webs.append(WebMember(int(j), law, z0, z1, name=name))
@@ -182,7 +191,9 @@ class WallRegionGraph:
             anchors.append(Anchor("cap_lo", (zg, vals[:, 0])))
             anchors.append(Anchor("cap_hi", (zg, vals[:, 1])))
             web_fracs = tuple(float(np.median(web_table[1][:, j])) for j in range(web_table[1].shape[1])) if web_table is not None else ()
-            dummy_cap = _CapWindow(tuple(float(np.median(windows[1][:, k])) for k in (0, 1)))
+            lo = float(np.median(windows[1][:, 0]))
+            hi = float(np.median(windows[1][:, 1]))
+            dummy_cap = _CapWindow((lo, hi))
             _, regions, _ = _layout_parts(web_fracs, dummy_cap)
         else:
             _, regions, _ = _layout_parts(tuple(w.at(0.0) for w in webs) if webs else (), None)

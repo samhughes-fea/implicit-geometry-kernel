@@ -225,9 +225,12 @@ def export_section_json(
         for g in geoms:
             if g.is_empty:
                 continue
-            rings.append(np.asarray(g.exterior.coords, dtype=float).tolist())
-            for hole in g.interiors:
-                rings.append(np.asarray(hole.coords, dtype=float).tolist())
+            exterior = getattr(g, "exterior", None)
+            if exterior is None:
+                continue
+            rings.append(np.asarray(exterior.coords, dtype=np.float64).tolist())
+            for hole in getattr(g, "interiors", ()):
+                rings.append(np.asarray(hole.coords, dtype=np.float64).tolist())
         return rings or None
 
     def _component_boundary(label):

@@ -12,6 +12,7 @@ import ctypes.util
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 _EMPTY_POLYGON_WKB = bytes([1, 3, 0, 0, 0, 0, 0, 0, 0])
 
@@ -20,8 +21,8 @@ GEOSBUF_CAP_ROUND = 1
 GEOSBUF_JOIN_ROUND = 1
 GEOSBUF_JOIN_MITRE = 2
 
-_GEOS_C = None
-_HANDLE = None
+_GEOS_C: Any = None
+_HANDLE: Any = None
 _ERR: list[str] = []
 
 _Notice = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
@@ -279,7 +280,8 @@ def is_valid_reason(wkb: bytes) -> str:
         if not ptr:
             return "Unknown"
         try:
-            return ctypes.cast(ptr, ctypes.c_char_p).value.decode("utf-8", "replace")
+            raw = ctypes.cast(ptr, ctypes.c_char_p).value
+            return (raw or b"Unknown").decode("utf-8", "replace")
         finally:
             _GEOS_C.GEOSFree_r(h, ptr)
     finally:

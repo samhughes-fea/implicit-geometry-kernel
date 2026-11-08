@@ -1,27 +1,32 @@
 """SDF oracles, query and size fields for BladeGeometry."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from implicit_geometry_kernel.blade.loft import BladeGeometry
 
 from implicit_geometry_kernel.blade.cut import _twist_offset
 from implicit_geometry_kernel.blade.shell_graph import PartitionEdge
 
 
 class LoftFieldsMixin:
-    def oml_sdf(self, meta: int = 0):
+    def oml_sdf(self: BladeGeometry, meta: int = 0):
         """Exact 2-D polygon SDF of ``oml_polyline(z)`` at each point's own ``z``."""
         from implicit_geometry_kernel.sdf.nodes.lofted import LoftedPolygonSDF
 
         return LoftedPolygonSDF(lambda z: self.oml_polyline(float(z))[:, :2], meta=meta)
 
-    def cavity_sdf(self, meta: int = 0):
+    def cavity_sdf(self: BladeGeometry, meta: int = 0):
         """Inner mould line: ``oml + T``. ``T`` is a step (skin, plus cap inside footprints); no taper."""
         from implicit_geometry_kernel.blade.fields import StackThickness
         from implicit_geometry_kernel.sdf.nodes.tagged import FieldOffsetNode
 
         return FieldOffsetNode(self.oml_sdf(meta), StackThickness(self), scale=1.0)
 
-    def wall_mid_sdf(self, meta: int = 0):
+    def wall_mid_sdf(self: BladeGeometry, meta: int = 0):
         """Signed polygon SDF of the ``shell_graph`` skin loop at each point's ``z``.
 
         The graph loop is the spec (run interiors and partition vertices on
@@ -38,14 +43,14 @@ class LoftFieldsMixin:
 
         return LoftedPolygonSDF(provider, meta=meta)
 
-    def wall_meta(self, table=None):
+    def wall_meta(self: BladeGeometry, table=None):
         """Tagged wall-strip DAG: ``evaluate((x,y,z)).meta`` is the region at that ``z``."""
         from implicit_geometry_kernel.blade.fields import CutWallMetaSDF
         from implicit_geometry_kernel.sdf.nodes.base import FeatureTable
 
         return CutWallMetaSDF(self, table if table is not None else FeatureTable())
 
-    def thickness_law(self):
+    def thickness_law(self: BladeGeometry):
         """:class:`~implicit_geometry_kernel.structure.laws.ThicknessLaw` over ``(z, s)``."""
         from implicit_geometry_kernel.structure.laws import ThicknessLaw
 
@@ -57,7 +62,7 @@ class LoftFieldsMixin:
 
         return _BladeThickness()
 
-    def named_edges(self, z: float):
+    def named_edges(self: BladeGeometry, z: float):
         """Partition edges and ply-drop ``s`` bounds at ``z`` (mesher feature curves)."""
 
         z = float(z)
@@ -76,7 +81,7 @@ class LoftFieldsMixin:
                 edges.append(PartitionEdge(z, name, name, pt))
         return tuple(edges)
 
-    def size_fields(self, points) -> dict[str, np.ndarray]:
+    def size_fields(self: BladeGeometry, points) -> dict[str, np.ndarray]:
         """Distance, thickness and a polyline curvature estimate at 3-D points."""
         pts = np.asarray(points, float).reshape(-1, 3)
         out = self.query(pts)
@@ -97,7 +102,7 @@ class LoftFieldsMixin:
         out["curvature"] = curv
         return out
 
-    def thickness_at(self, z, s) -> np.ndarray:
+    def thickness_at(self: BladeGeometry, z, s) -> np.ndarray:
         """Skin thickness at span ``z`` and chord fraction ``s``, plus ply-drop ramps."""
         z = np.asarray(z, float)
         s = np.asarray(s, float)
@@ -110,15 +115,15 @@ class LoftFieldsMixin:
             out[idx] = t
         return out
 
-    def shell_graph(self, z: float, include_solids: bool = False):
+    def shell_graph(self: BladeGeometry, z: float, include_solids: bool = False):
         """Loftable shell graph at ``z``. Solids (cores/inserts) are opt-in."""
         return self.section_at(z).shell_graph(include_solids=include_solids)
 
-    def key_points(self, z: float) -> dict[str, np.ndarray]:
+    def key_points(self: BladeGeometry, z: float) -> dict[str, np.ndarray]:
         """Named points at ``z``: LE, TE, cap edges, web feet."""
         return self.section_at(z).key_points()
 
-    def query(self, points) -> dict[str, np.ndarray]:
+    def query(self: BladeGeometry, points) -> dict[str, np.ndarray]:
         """Batched thickness, owning member, local frame and OML distance at 3-D points."""
         pts = np.asarray(points, float).reshape(-1, 3)
         oml = self.oml_sdf().evaluate(pts)
@@ -152,14 +157,14 @@ class LoftFieldsMixin:
             "frame": np.stack(frames, axis=0),
         }
 
-    def write_oml(self, path, n_span: int = 41, n_chord: int = 81) -> str:
+    def write_oml(self: BladeGeometry, path, n_span: int = 41, n_chord: int = 81) -> str:
         """Watertight OML as STL or OBJ from a quad grid of span rings."""
         from implicit_geometry_kernel.blade.oml import write_oml as _write_oml
 
         return _write_oml(self, path, n_span=n_span, n_chord=n_chord)
 
     def write_mid_surfaces(
-        self,
+        self: BladeGeometry,
         path,
         n_span: int = 41,
         n_chord: int = 81,
@@ -174,7 +179,7 @@ class LoftFieldsMixin:
             members=members, include_solids=include_solids,
         )
 
-    def validate(self) -> list[str]:
+    def validate(self: BladeGeometry) -> list[str]:
         """Named station/member checks: span order, thin walls, members outside the OML."""
         issues = []
         zs = [s.z for s in self.stations]
@@ -208,14 +213,14 @@ class LoftFieldsMixin:
                     issues.append(f"station z={z:g} member {wall.label}: too thin")
         return issues
 
-    def snap_oml(self, points, solver=None):
+    def snap_oml(self: BladeGeometry, points, solver=None):
         """Project points onto the OML in each point's own ``z``-plane."""
         from implicit_geometry_kernel.sdf.solve import GeometrySolver
 
         solver = solver or GeometrySolver(tolerance=1e-8, max_step=0.05)
         return solver.project(self.oml_sdf(), np.asarray(points, float), plane=True)
 
-    def snap_wall_mid(self, points, solver=None):
+    def snap_wall_mid(self: BladeGeometry, points, solver=None):
         """Project onto the ``shell_graph`` loop field in each point's ``z``-plane."""
         from implicit_geometry_kernel.sdf.solve import GeometrySolver
 

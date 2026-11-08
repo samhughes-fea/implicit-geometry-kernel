@@ -1,8 +1,12 @@
 """Interpolate, OML polyline and section_at for BladeGeometry."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from implicit_geometry_kernel.blade.loft import BladeGeometry
 
 from implicit_geometry_kernel.blade.cut import CellPolygon, SectionCut, SectionWall, _twist_offset
 from implicit_geometry_kernel.blade.loft_tables import _FORK_TWIST_SIGN, _match, _morph_surfaces
@@ -14,7 +18,7 @@ from implicit_geometry_kernel.section.layout.thickness_limits import (
 
 
 class LoftCutMixin:
-    def interpolate(self, z: float):
+    def interpolate(self: BladeGeometry, z: float):
         """(chord, twist, pitch_axis, offset, (x, upper, lower)) interpolated at z.
 
         Circle-like parents morph with a smoothstep blend; otherwise surfaces follow
@@ -43,18 +47,18 @@ class LoftCutMixin:
             offset = (ox, oy)
         return (chord, twist, pitch, offset, (x, upper, lower))
 
-    def _span_scalar(self, table, values, z: float) -> float:
+    def _span_scalar(self: BladeGeometry, table, values, z: float) -> float:
         if table is not None:
             return float(table(z))
         if self.span_kind == "linear":
-            zs = np.array([s.z for s in self.stations], float)
-            return float(np.interp(z, zs, np.asarray(values, float)))
+            zs = np.asarray([s.z for s in self.stations], dtype=np.float64)
+            return float(np.interp(z, zs, np.asarray(values, dtype=np.float64)))
         from implicit_geometry_kernel.structure.laws import TableLaw
 
         knots = [float(s.z) for s in self.stations]
         return float(TableLaw(knots, [float(v) for v in values], kind="pchip")(z))
 
-    def oml_polyline(self, z: float) -> np.ndarray:
+    def oml_polyline(self: BladeGeometry, z: float) -> np.ndarray:
         """Closed outer mould line in the blade frame at ``z``, shape ``(N, 3)``.
 
         Same interpolator and placement as ``section_at`` (pitch axis, twist, offset).
@@ -70,7 +74,7 @@ class LoftCutMixin:
         return np.vstack([pts, pts[0]])
 
     # ------------------------------------------------------------ cutting
-    def section_at(self, z: float) -> SectionCut:
+    def section_at(self: BladeGeometry, z: float) -> SectionCut:
         """The wall midlines, thicknesses, labels and cell loops of the section at z.
 
         Cuts are cached per ``round(z, 9)`` (LRU 256). ``CutWallMetaSDF`` and
@@ -170,7 +174,9 @@ class LoftCutMixin:
             for c in (result.cell_wall_loops or ())
         )
         dropped = tuple(f"web at {d.x_m / k:.6g} m from the LE: {d.reason}" for d in resolution.dropped)
-        dropped_idx = tuple(int(d.index) for d in resolution.dropped if getattr(d, "index", None) is not None)
+        dropped_idx = tuple(
+            int(idx) for d in resolution.dropped if (idx := getattr(d, "index", None)) is not None
+        )
         key = getattr(resolution.layout, "catalogue_key", None) or self.layout
         cut = SectionCut(
             z, chord, twist, pitch, (float(offset[0]), float(offset[1])), str(key), tuple(walls), cells,

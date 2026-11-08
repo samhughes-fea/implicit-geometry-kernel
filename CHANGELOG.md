@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- CI after the tree freeze: mypy on loft mixins and GEOS ctypes; named
+  ``feature_curve`` passes all four ``partition_edge_curve`` arguments;
+  circular-cap hybrid vs quadtree area is documented as coarse constructive
+  disks; ``09_blade_concepts`` ignores empty/non-finite 3-D bounds.
+
 - Shapely is gone. Constructive offset and overlay stay **GEOS** (JTS C++)
   through ``implicit_geometry_kernel.geos`` (ctypes ``libgeos_c``, kernel
   ``Polygon``, WKB). Install system/conda GEOS or set ``GEOS_LIBRARY_PATH``.

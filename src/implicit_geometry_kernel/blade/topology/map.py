@@ -128,16 +128,16 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
         if su_ft is None or pr_ft is None:
             continue
         match = _web_run_at_frac(graph.webs, cut, by_frac.get(web.index))
-        chord = np.vstack([su_ft, pr_ft])
+        ends = np.vstack([su_ft, pr_ft])
         if match is None:
-            sampled = arc_resample_open(chord, n)
+            sampled = arc_resample_open(ends, n)
         else:
             mid = _as_xyz(np.asarray(match.points, float), z)
             d0 = min(np.linalg.norm(mid[0] - su_ft), np.linalg.norm(mid[-1] - su_ft))
             d1 = min(np.linalg.norm(mid[0] - pr_ft), np.linalg.norm(mid[-1] - pr_ft))
             span = max(float(np.linalg.norm(su_ft - pr_ft)), 1e-12)
             if d0 > 0.05 * span or d1 > 0.05 * span:
-                sampled = arc_resample_open(chord, n)
+                sampled = arc_resample_open(ends, n)
             else:
                 sampled = arc_resample_open(mid, n)
         if np.linalg.norm(sampled[0] - su_ft) <= np.linalg.norm(sampled[0] - pr_ft):

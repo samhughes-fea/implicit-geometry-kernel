@@ -32,7 +32,7 @@ from implicit_geometry_kernel.catalogue import (
 )
 from implicit_geometry_kernel.section.assembly import MultiCellSection
 
-__version__ = "0.8.1"
+__version__ = "0.8.2"
 __author__ = "Sam Hughes"
 
 __all__ = [

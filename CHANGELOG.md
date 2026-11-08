@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.2
+
 - Family **C** pad 0 is stored as ``spar_cap_*_0`` in the unrotated pad dict.
   Constructive union is indexed pads only; the canonical label stays the merged
   product (and family **D** box).

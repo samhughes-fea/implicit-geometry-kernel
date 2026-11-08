@@ -14,6 +14,10 @@
   (cadquery compound, no fuse). ``members=`` filters patches. Debug SDF contours
   declare extra ``[contours]`` (contourpy).
 
+- Teaching example ``06_consumer_seams.py`` shows how a laminate or
+  section-model repo consumes ``ThicknessLaw``, ``named_edges``, ``size_fields``
+  and ``merge_cap_and_skin``.
+
 - Architecture programme closed at the target tree: ``catalogue/`` is a layer;
   ``plotting``, ``mesh``, ``blade.cad``, and ``profiling`` are extras. House-rule
   splits: loft façade, topology map, shell-graph build, spar-cap pads, section

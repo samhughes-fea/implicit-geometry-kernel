@@ -7,21 +7,24 @@
 - Breaking: ``apply_shapely`` is removed. Use ``apply_clip``. The name was a
   deprecated alias in 0.7.0.
 
+## 0.7.0
+
 - CI after the tree freeze: mypy on loft mixins and GEOS ctypes; named
   ``feature_curve`` passes all four ``partition_edge_curve`` arguments;
   ``PolygonOps.distance`` is GEOS ``GEOSDistance_r`` (tests use ``OPS``, not
   methods on kernel ``Polygon``); C-family hybrid vs quadtree area is
   documented as per-web pads, not circular disks; ``09_blade_concepts``
-  ignores empty/non-finite 3-D faces and degenerate axis limits. Public API snapshot records the
-  GEOS / ``apply_clip`` names; ``apply_shapely`` remains a deprecated alias.
+  ignores empty/non-finite 3-D faces and degenerate axis limits. Public API
+  snapshot records the GEOS / ``apply_clip`` names; ``apply_shapely`` is a
+  deprecated alias of ``apply_clip``.
 
 - Shapely is gone. Constructive offset and overlay stay **GEOS** (JTS C++)
   through ``implicit_geometry_kernel.geos`` (ctypes ``libgeos_c``, kernel
   ``Polygon``, WKB). Install system/conda GEOS or set ``GEOS_LIBRARY_PATH``.
   ``GeosPolygonOps`` is production ``OPS``. Emitters and ``apply_clip`` route
-  Booleans through ``OPS``. ``apply_shapely`` is a deprecated alias of
-  ``apply_clip``. Catalogue section goldens follow the kernel WKB ``Polygon``
-  (same GEOS as Shapely 2 on this machine; previous JSON was slightly off).
+  Booleans through ``OPS``. Catalogue section goldens follow the kernel WKB
+  ``Polygon`` (same GEOS as Shapely 2 on this machine; previous JSON was
+  slightly off).
 
 - Mid-surface patches: STL/OBJ per authored member; STEP via extra ``[cad]``
   (cadquery compound, no fuse). ``members=`` filters patches. Debug SDF contours
@@ -39,8 +42,9 @@
 
 - Constructive polygon calls go through ``PolygonOps`` (gateway
   ``section/boundary/polygons.py``). ``apply_clip`` is the clip interpreter;
-  ``apply_shapely`` is a deprecated alias. Shoelace and plotting do not import
-  Shapely. Oracles live in ``tests/section/test_polygon_ops_oracle.py``.
+  ``apply_shapely`` is a deprecated alias (removed in 0.8.0). Shoelace and
+  plotting do not import Shapely. Oracles live in
+  ``tests/section/test_polygon_ops_oracle.py``.
 
 - Target tree lists ``catalogue/`` as a layer; ``plotting``, ``mesh``, ``blade.cad``,
   and ``profiling`` are extras. Import-boundary tests cover ``mesh``. ``SDFGrid``
@@ -170,8 +174,6 @@
   `examples/<package>/NN_*` (blade, section, structure, sdf, frames). Teaching
   scripts moved to `examples/section/teaching/` including
   `05_midline_handoff.py` (replaces the deleted mesh-driver twin).
-
-## 0.7.0
 
 - WallType: leftover label tests go through `wall_type_for_label` / `kind`
   (cut key-points, zone gauges, web counts, property wall-solid keys). A

@@ -116,7 +116,7 @@ def _camber_clip(geom, camber_xy, *, surface: str):
     ys = np.concatenate(([cam[0, 1]], cam[:, 1], [cam[-1, 1]]))
     y_far = (maxy + pad) if surface == "upper" else (miny - pad)
     ring = [(x, y) for x, y in zip(xs, ys)] + [(xs[-1], y_far), (xs[0], y_far)]
-    return geom.intersection(Polygon(ring))
+    return OPS.intersection(geom, Polygon(ring))
 
 
 def emit_spar_cap_polygon(
@@ -151,7 +151,7 @@ def emit_spar_cap_polygon(
     )
     if inner.is_empty:
         raise ValueError("SparCap: inner-skin offset is empty.")
-    slab = inner if deeper.is_empty else inner.difference(deeper)
+    slab = inner if deeper.is_empty else OPS.difference(inner, deeper)
     CamberSide, ChordBand, FlapwiseStrip, apply_clip = _clip_algebra()
     camber_xy = getattr(comp, "_camber_xy", None)
     slab = apply_clip(
@@ -352,6 +352,6 @@ def emit_leading_edge_insert_polygon(
     radius = getattr(comp, "radius", None)
     if radius is None:
         radius = x_end
-    disk = Point(le_x, le_y).buffer(float(radius), quad_segs=32)
+    disk = OPS.buffer(Point(le_x, le_y), float(radius), quad_segs=32, join_style=1)
     region = OPS.intersection(region, disk)
     return ensure_polygon(region, allow_empty=True)

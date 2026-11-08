@@ -33,7 +33,7 @@ the same work; they are not extra steps.
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
 | 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **Done** — tagged `v0.5.0` |
 | 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | **Done.** Seams in this kernel; Gmsh and constitutive plies stay in consumers |
-| 7 | Completeness (Phase 5 list below) | **Done** (7.1–7.10). Mid-surface patches / optional STEP (`[cad]`) deferred until after step 6 |
+| 7 | Completeness (Phase 5 list below) | **Done** (7.1–7.10). Mid-surface patches and optional STEP (`[cad]`) land with WP9 |
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after mid-surface, plots extra, and alias removal | **Done.** Nose, insert polygons, PCHIP loft scalars, mid-surface field from `shell_graph`, plots extra, and 0.5.x alias removal |
 | 9 | Separate blade-model package | **Declined.** Consumers keep their own adapters |
 
@@ -152,7 +152,7 @@ Gmsh jobs; `mesh/gmsh_shell.py` is a convenience.
 | Versioning | Semantic versions; removals only in a minor release (pre-1.0) after one release of deprecation warnings; tags never move | Changelog; tags by the maintainer |
 | Main branch | Every change through a PR with green CI (lint, tests on Python 3.11 to 3.13, examples, wheel build) | Branch protection on `main` |
 | Numbers | Results reproducible between releases unless the changelog says otherwise | Golden-number test |
-| Dependencies | Runtime: numpy, shapely, numba. Extras: scipy, matplotlib, cadquery, gmsh, pyyaml | Core-install CI job |
+| Dependencies | Runtime: numpy, numba. Offset/overlay: ctypes ``libgeos_c`` (system/conda GEOS). Extras: scipy, matplotlib, cadquery, gmsh, pyyaml, contourpy | Core-install CI job |
 | Typing | Ships `py.typed`; public API annotated | mypy on `src/` in CI |
 | Data | No private reference-blade inputs in the repo; examples that need them skip without a local clone | Example 09 pattern |
 | Submodule use | `pip install -e path/to/kernel`, no build step or generated files | Wheel-build job |
@@ -164,6 +164,7 @@ The end state. Every phase moves code toward it, and nothing is added outside it
 ```
 implicit_geometry_kernel/
   contract/        hand-off types (public)
+  geos/            ctypes libgeos_c, WKB, kernel Polygon (C++ swap surface)
   sdf/             distance fields, self-contained
     nodes/           base, primitives, csg, bbox, tagged, span, lofted   (done)
     kernels/         numba kernels: primitives, polygon, grid, csg, transforms   (done)

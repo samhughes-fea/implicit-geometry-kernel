@@ -22,6 +22,7 @@ from implicit_geometry_kernel.sdf.nodes import (
 )
 
 from implicit_geometry_kernel.section.boundary.polygons import (
+    OPS,
     chordwise_box,
     ensure_polygon,
     flapwise_bay_clip,
@@ -147,10 +148,10 @@ def apply_clip(clip: ClipSpec, polygon, *, camber_xy: Any = None):
             c_lo=-plane_d / n_norm,
             c_hi=None,
         )
-        return ensure_polygon(polygon.intersection(bay), allow_empty=True)
+        return ensure_polygon(OPS.intersection(polygon, bay), allow_empty=True)
     if isinstance(clip, ChordBand):
         box = chordwise_box(polygon, float(clip.x_start), float(clip.x_end))
-        return ensure_polygon(polygon.intersection(box), allow_empty=True)
+        return ensure_polygon(OPS.intersection(polygon, box), allow_empty=True)
     if isinstance(clip, FlapwiseStrip):
         bay = flapwise_bay_clip(
             polygon,
@@ -160,7 +161,7 @@ def apply_clip(clip: ClipSpec, polygon, *, camber_xy: Any = None):
             c_lo=clip.c_lo,
             c_hi=clip.c_hi,
         )
-        return ensure_polygon(polygon.intersection(bay), allow_empty=True)
+        return ensure_polygon(OPS.intersection(polygon, bay), allow_empty=True)
     if isinstance(clip, CamberSide):
         cam = None if camber_xy is None else np.asarray(camber_xy, dtype=float)
         if cam is not None and cam.ndim == 2 and cam.shape[0] >= 2 and cam.shape[1] >= 2:
@@ -174,7 +175,15 @@ def apply_clip(clip: ClipSpec, polygon, *, camber_xy: Any = None):
     raise TypeError(f"Unsupported clip type: {type(clip)!r}")
 
 
-apply_shapely = apply_clip
+def apply_shapely(clip: ClipSpec, polygon, *, camber_xy: Any = None):
+    import warnings
+
+    warnings.warn(
+        "apply_shapely is deprecated; use apply_clip. The alias will be removed in a later minor.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return apply_clip(clip, polygon, camber_xy=camber_xy)
 
 
 __all__ = [

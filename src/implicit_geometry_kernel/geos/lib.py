@@ -120,6 +120,8 @@ def _bind(lib) -> None:
     lib.GEOSisValidReason_r.restype = ctypes.c_void_p
     lib.GEOSisValid_r.argtypes = [p, p]
     lib.GEOSisValid_r.restype = ctypes.c_char
+    lib.GEOSDistance_r.argtypes = [p, p, p, ctypes.POINTER(ctypes.c_double)]
+    lib.GEOSDistance_r.restype = ctypes.c_int
 
 
 def _handle():
@@ -219,6 +221,21 @@ def intersection(a: bytes, b: bytes) -> bytes:
     return _binary("GEOSIntersection_r", a, b)
 
 
+def distance(a: bytes, b: bytes) -> float:
+    h = _handle()
+    ga = _from_wkb(h, a)
+    gb = _from_wkb(h, b)
+    dist = ctypes.c_double()
+    try:
+        ok = _GEOS_C.GEOSDistance_r(h, ga, gb, ctypes.byref(dist))
+        if not ok:
+            raise RuntimeError(_ERR[-1] if _ERR else "GEOSDistance_r failed")
+        return float(dist.value)
+    finally:
+        _destroy(h, ga)
+        _destroy(h, gb)
+
+
 def difference(a: bytes, b: bytes) -> bytes:
     return _binary("GEOSDifference_r", a, b)
 
@@ -294,6 +311,7 @@ __all__ = [
     "GEOSBUF_JOIN_ROUND",
     "buffer",
     "difference",
+    "distance",
     "intersection",
     "is_valid",
     "is_valid_reason",

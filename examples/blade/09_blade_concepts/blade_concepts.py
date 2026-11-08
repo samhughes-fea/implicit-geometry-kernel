@@ -203,6 +203,9 @@ def _draw_walls(ax, faces: list[np.ndarray], kinds: list[str], *,
                 elev: float = VIEW_LE[0], azim: float = VIEW_LE[1],
                 zoom: float = 1.0) -> None:
     shown = [_span_xyz(f) for f in faces]
+    if not shown:
+        _finish_3d(ax, np.zeros((0, 3), float), elev=elev, azim=azim, zoom=zoom)
+        return
     rgba = _face_rgba(kinds)
     ax.add_collection3d(Poly3DCollection(
         shown, facecolors=rgba, shade=True,
@@ -393,12 +396,16 @@ def _save_corner_cutaway(key: str, name: str, faces: list[np.ndarray], kinds: li
         return
     right, up, toward = _camera_basis(elev, azim)
     shown = [_span_xyz(f) for f in faces]
+    if not shown:
+        return
     raw, depth = [], np.empty(len(shown), float)
     for i, pts in enumerate(shown):
         raw.append(np.column_stack([pts @ right, pts @ up]))
         depth[i] = float(np.mean(pts @ toward))
     z_span = np.array([float(np.mean(p[:, 0])) for p in shown])
     cents = np.array([np.mean(p, axis=0) for p in raw])
+    if not np.all(np.isfinite(cents)):
+        return
     root = cents[z_span <= z_span.min() + 1e-9].mean(axis=0)
     tip = cents[z_span >= z_span.max() - 1e-9].mean(axis=0)
     axis = tip - root
@@ -408,6 +415,8 @@ def _save_corner_cutaway(key: str, name: str, faces: list[np.ndarray], kinds: li
     uv = [p @ rot.T for p in raw]
     order = np.argsort(depth)
     stacked = np.vstack(uv)
+    if stacked.size == 0 or not np.all(np.isfinite(stacked)):
+        return
     span_u = float(np.ptp(stacked[:, 0]))
     span_v = float(np.ptp(stacked[:, 1]))
     pad_u, pad_v = 0.015 * span_u, 0.06 * span_v

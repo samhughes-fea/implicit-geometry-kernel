@@ -42,3 +42,10 @@ def test_ctypes_overlay_partition_box():
 def test_geos_polygon_ops_is_the_production_engine():
     inner = GeosPolygonOps().offset_inward(_box(), 0.05)
     assert abs(inner.area - 0.9 * 0.3) < 1e-9
+
+
+def test_ctypes_polygon_distance():
+    a = Polygon([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
+    b = Polygon([(2.0, 0.0), (3.0, 0.0), (3.0, 1.0), (2.0, 1.0)])
+    assert abs(geos_lib.distance(dumps(a), dumps(b)) - 1.0) < 1e-9
+    assert abs(GeosPolygonOps().distance(a, b) - 1.0) < 1e-9

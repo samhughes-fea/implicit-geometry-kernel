@@ -16,6 +16,7 @@ from implicit_geometry_kernel.section import (
     SectionGeometry,
     resolve_system_type,
 )
+from implicit_geometry_kernel.section.boundary.polygons import OPS
 from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
 
 
@@ -44,7 +45,7 @@ def test_constructive_caps_follow_cavity_midline_not_y0(twist_deg: float) -> Non
     su = polys["spar_cap_suction_surface"]
     pr = polys["spar_cap_pressure_surface"]
     assert not su.is_empty and not pr.is_empty
-    assert su.intersection(pr).area < 1e-10
+    assert OPS.intersection(su, pr).area < 1e-10
 
     # Pre-fix: ratio ~ 2.7 with the shared boundary pinned at y=0.
     ratio = float(su.area / pr.area)

@@ -14,14 +14,21 @@ from implicit_geometry_kernel.blade.topology.graph import (
 from implicit_geometry_kernel.blade.topology.template import (
     ShellTopologyTemplate,
 )
+from implicit_geometry_kernel.blade.topology.map_loft import (
+    _append_ring as _append_ring,
+    _quad_bowtie as _quad_bowtie,
+    _web_pts_from_su as _web_pts_from_su,
+    loft_mapped_strips as loft_mapped_strips,
+)
 from implicit_geometry_kernel.blade.topology.map_walk import (
     _as_xyz,
-    _chord_fracs,
+    _chord_fracs as _chord_fracs,
+    _oml_te_xyz as _oml_te_xyz,
     _side_arcs,
     _skin_mid_loop,
     _te_corner_indices,
     _te_frac_drop,
-    _te_wrap_arc,
+    _te_wrap_arc as _te_wrap_arc,
     _xyz_at_frac,
 )
 

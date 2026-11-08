@@ -24,6 +24,11 @@ SKIP = {
     # renders every layout at full resolution; takes several minutes
     "demos/section/quadtree_union_mesh.py",
 }
+# Wall-clock seconds. 09 draws every catalogue key; mapped strips now keep
+# unmatched TE verts so Linux CI needs longer than the default 480 s.
+SLOW = {
+    "blade/09_blade_concepts/blade_concepts.py": 720.0,
+}
 HELPERS = {"_ensure_repo_path.py", "_plot_debug.py", "_taxonomy_cases.py", "cell_wall_loops_case_payload.py",
            "feature_flythrough_specs.py"}
 
@@ -40,6 +45,8 @@ def scripts() -> list[Path]:
 
 def run(path: Path, timeout: float) -> tuple[Path, int, str]:
     env = dict(os.environ, MPLBACKEND="Agg")
+    rel = path.relative_to(EXAMPLES).as_posix()
+    timeout = max(float(timeout), float(SLOW.get(rel, 0.0)))
     try:
         proc = subprocess.run([sys.executable, str(path)], cwd=path.parent, env=env, capture_output=True,
                               text=True, timeout=timeout)

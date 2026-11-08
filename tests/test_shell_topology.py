@@ -602,6 +602,48 @@ def test_09_le_loft_drops_aft_web():
     assert saw_drop
 
 
+def test_strip_faces_resample_unequal_counts_and_drop_nonfinite():
+    from implicit_geometry_kernel.blade.topology.map_loft import (
+        _finite_loft_face,
+        _strip_faces,
+    )
+    from implicit_geometry_kernel.blade.topology.template import LoopBranch
+
+    t0 = ShellTopologyTemplate(z=0.0, signature=(), loop=(), webs=(), vertices=(), n_chord=2)
+    t1 = t0
+    branch = LoopBranch(
+        "te_pr", ("TE", "pressure"), ("anchor", "web_0", "pressure"), n=8, side="pressure",
+    )
+    pa = np.column_stack([np.linspace(0.0, 1.0, 3), np.zeros(3), np.zeros(3)])
+    pb = np.column_stack([np.linspace(0.0, 1.0, 8), np.zeros(8), np.ones(8)])
+    faces = _strip_faces("te_pr", pa, pb, t0, t1, branch)
+    assert faces
+    assert all(len(face) == 4 for _n, face, _c in faces)
+    assert all(_finite_loft_face(face) for _n, face, _c in faces)
+    nan_face = np.array([[np.nan, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]])
+    assert not _finite_loft_face(nan_face)
+    assert not _finite_loft_face(np.zeros((4, 3)))
+
+
+@pytest.mark.parametrize("key", ["2D-F-LC-0R", "4D-F-PA-10R"])
+def test_09_mapped_loft_faces_are_finite_and_bounded(key):
+    geo = _09_geo(key)
+    zs = (0.0, 1.0, 5.0, 20.0)
+    tpls, samples = _templates(geo, zs, n_chord=12)
+    bound = 1.0e3
+    n_faces = 0
+    for s0, s1, t0, t1 in zip(samples, samples[1:], tpls, tpls[1:]):
+        for name, face, _c in loft_mapped_strips(s0, s1, t0, t1):
+            n_faces += 1
+            arr = np.asarray(face, float)
+            z0, z1 = float(t0.z), float(t1.z)
+            assert arr.ndim == 2 and arr.shape[1] == 3 and len(arr) >= 3, (name, z0, z1, arr.shape)
+            assert np.all(np.isfinite(arr)), (name, z0, z1)
+            extent = float(np.max(np.abs(arr)))
+            assert extent <= bound, (name, z0, z1, extent)
+    assert n_faces > 0
+
+
 def test_09_te_chatter_and_tip_span():
     import sys
     from pathlib import Path

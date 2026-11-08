@@ -24,10 +24,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import numpy as np  # noqa: E402
-from shapely.geometry import Polygon  # noqa: E402
-
 from _shared.plotting import note, draw_cut, plt, save  # noqa: E402
 from implicit_geometry_kernel import SYSTEM_TYPE_LAYOUT_KEYS, Airfoil, BladeGeometry, Station, resolve_system_type  # noqa: E402
+from implicit_geometry_kernel.section.boundary import OPS, Polygon  # noqa: E402
 
 CHORD, TWIST, PITCH = 2.0, 15.0, 0.3
 SKIN, CAP, WEB = 0.008, 0.03, 0.015
@@ -42,11 +41,11 @@ def blade():
 
 
 def skin_midline_area(airfoil: Airfoil) -> float:
-    """Reference: the outer mould line offset inward by half the skin thickness (Shapely)."""
+    """Reference: the outer mould line offset inward by half the skin thickness."""
     x = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, 400)))
     upper, lower = airfoil.surface("upper", x), airfoil.surface("lower", x)
     outline = np.vstack([np.column_stack([x[::-1], upper[::-1]]), np.column_stack([x[1:], lower[1:]])]) * CHORD
-    return Polygon(outline).buffer(-0.5 * SKIN, join_style=2).area
+    return OPS.offset_inward(Polygon(outline), 0.5 * SKIN).area
 
 
 def cut_all(stations):

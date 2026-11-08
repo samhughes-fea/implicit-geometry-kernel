@@ -2,20 +2,24 @@
 
 ## Unreleased
 
+- Shapely is gone. Constructive offset and overlay stay **GEOS** (JTS C++)
+  through ``implicit_geometry_kernel.geos`` (ctypes ``libgeos_c``, kernel
+  ``Polygon``, WKB). Install system/conda GEOS or set ``GEOS_LIBRARY_PATH``.
+  ``GeosPolygonOps`` is production ``OPS``. Emitters and ``apply_clip`` route
+  Booleans through ``OPS``. ``apply_shapely`` is a deprecated alias of
+  ``apply_clip``. Catalogue section goldens follow the kernel WKB ``Polygon``
+  (same GEOS as Shapely 2 on this machine; previous JSON was slightly off).
+
 - Architecture programme closed at the target tree: ``catalogue/`` is a layer;
   ``plotting``, ``mesh``, ``blade.cad``, and ``profiling`` are extras. House-rule
   splits: loft façade, topology map, shell-graph build, spar-cap pads, section
   plotters. ``StiffenerWall`` is a registered constructive kind; ``build`` is the
   only ``WallType`` pipeline hook. Extract tests live under ``tests/extract/``.
 
-- Constructive GEOS calls go through ``PolygonOps`` (gateway
-  ``section/boundary/polygons.py``). ``apply_clip`` replaces ``apply_shapely``.
-  Shoelace and plotting do not import Shapely. ``KernelPolygonOps`` implements
-  numpy affine maps and is compared to Shapely in
-  ``tests/section/test_polygon_ops_oracle.py``. Production ``OPS`` remains
-  ``ShapelyPolygonOps`` (GEOS overlay and mitre offset) so catalogue goldens
-  do not move. Shapely stays a runtime dependency until a numpy overlay matches
-  those goldens.
+- Constructive polygon calls go through ``PolygonOps`` (gateway
+  ``section/boundary/polygons.py``). ``apply_clip`` is the clip interpreter;
+  ``apply_shapely`` is a deprecated alias. Shoelace and plotting do not import
+  Shapely. Oracles live in ``tests/section/test_polygon_ops_oracle.py``.
 
 - Target tree lists ``catalogue/`` as a layer; ``plotting``, ``mesh``, ``blade.cad``,
   and ``profiling`` are extras. Import-boundary tests cover ``mesh``. ``SDFGrid``

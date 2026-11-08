@@ -315,6 +315,7 @@ def _chain(strips, tol):
 
 
 from implicit_geometry_kernel.blade.shell_graph_build import (  # noqa: E402
+    _mid_surface as _mid_surface,
     _rib_faces,
     _runs_of,
     _solid_runs,

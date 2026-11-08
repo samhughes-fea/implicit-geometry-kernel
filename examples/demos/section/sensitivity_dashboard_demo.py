@@ -26,7 +26,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
@@ -42,10 +42,10 @@ from implicit_geometry_kernel.section.properties.backend import (
 from implicit_geometry_kernel.section.properties.compute import (
     compute_section_properties,
 )
-from plotting.plot import (
+from implicit_geometry_kernel.plotting.plot import (
     plot_section,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     INK,
     MUTED,
     NAVY,
@@ -180,7 +180,7 @@ def _plot_sensitivity_slide(
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--key", default="2D-F")
+    p.add_argument("--key", default="2D-F-LC-0R")
     p.add_argument("--naca", default="2412")
     p.add_argument("--chord", type=float, default=1.0)
     p.add_argument("--twist-deg", type=float, default=15.0)

@@ -1,4 +1,4 @@
-"""`SectionGeometryRunner`: the two products, and the promise about their cost.
+"""`SectionGeometry`: the two products, and the promise about their cost.
 
 This runner had **no test and no caller**, and had already drifted: its module
 docstring said the layout "is resolved *before* anything is assembled, so a
@@ -20,8 +20,8 @@ import pytest
 from implicit_geometry_kernel.section import (
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.api.runner import (
-    SectionGeometryRunner,
+from implicit_geometry_kernel.section.spec.runner import (
+    SectionGeometry,
 )
 
 
@@ -35,8 +35,8 @@ def airfoil():
 
 
 def _runner(airfoil, **kw):
-    return SectionGeometryRunner(
-        layout=resolve_system_type(kw.pop("key", "2B-CN")),
+    return SectionGeometry(
+        layout=resolve_system_type(kw.pop("key", "2B-CN-LC-0R")),
         airfoil=airfoil,
         skin_thickness=kw.pop("skin_thickness", 0.004),
         spar_cap_thickness=kw.pop("spar_cap_thickness", 0.008),
@@ -53,7 +53,7 @@ def test_resolve_yields_a_layout_without_building(airfoil, monkeypatch):
     Counts the *builder*, because "did not pay for a build" is a statement about
     work done, not about which attribute happens to be populated.
     """
-    import implicit_geometry_kernel.section.api.runner as mod
+    import implicit_geometry_kernel.section.spec.runner as mod
 
     calls = {"n": 0}
     real = mod.build_section_geometry
@@ -80,7 +80,7 @@ def test_execute_yields_both_products(airfoil):
 
 def test_execute_after_resolve_reuses_the_resolution(airfoil, monkeypatch):
     """Calling both must not resolve twice — the loop does exactly this."""
-    import implicit_geometry_kernel.section.api.runner as mod
+    import implicit_geometry_kernel.section.spec.runner as mod
 
     calls = {"n": 0}
     real = mod.resolve_station_layout
@@ -123,7 +123,7 @@ def test_a_supplied_resolution_is_not_re_resolved(airfoil, monkeypatch):
     trial's thickness could return a different web set than the station was
     frozen against.
     """
-    import implicit_geometry_kernel.section.api.runner as mod
+    import implicit_geometry_kernel.section.spec.runner as mod
 
     frozen = _runner(airfoil).resolve().get_layout_resolution()
 
@@ -149,10 +149,10 @@ def test_the_build_follows_the_supplied_resolution(airfoil):
     A resolution that is accepted and then ignored would be worse than not
     accepting one, because the caller would believe the frozen topology held.
     """
-    nominal = _runner(airfoil, key="5D-CN")
+    nominal = _runner(airfoil, key="5D-CN-LC-0R")
     frozen = nominal.resolve().get_layout_resolution()
 
-    built = _runner(airfoil, key="5D-CN", resolution=frozen).execute().get_results()
+    built = _runner(airfoil, key="5D-CN-LC-0R", resolution=frozen).execute().get_results()
     n_web_strips = sum(
         1 for s in (built.midline_strips or []) if str(s.kind) == "web"
     )
@@ -166,7 +166,7 @@ def test_the_build_uses_the_effective_layout_not_the_nominal(airfoil):
     nominal layout would hand the search a `shear_web_thickness` for a web the section does
     not have.
     """
-    runner = _runner(airfoil, key="5D-CN").execute()
+    runner = _runner(airfoil, key="5D-CN-LC-0R").execute()
     resolution = runner.get_layout_resolution()
     result = runner.get_results()
 

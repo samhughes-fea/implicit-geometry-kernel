@@ -20,12 +20,15 @@ Turn gated midlines into downstream mesh inputs. Overview:
 
 ## Pipeline
 
-```text
-section (midlines) → ShellMidlineStrip list / shell_graph()
-                   → downstream mesher
+```mermaid
+flowchart LR
+  Cut[SectionCut] --> Mid[ShellMidlineStrip]
+  Cut --> Graph[shell_graph]
+  Mid --> Mesh[DownstreamMesher]
+  Graph --> Mesh
 ```
 
-This package stays material-bind agnostic: handoff is wall centrelines and
+The kernel remains material-bind agnostic: the hand-off is wall centrelines and
 thicknesses only.
 
 ## Spanwise geometry for a shell mesher (2.5-D)

@@ -53,9 +53,9 @@ def prepare_shell_midline_junctions(
 
     cfg = spec if spec is not None else ShellMidlineJunctionPreparationOptions()
     has_webs = any(wall_cell_face(s.label) == "web" for s in strips)
+    has_caps = any(wall_cell_face(s.label) == "cap" for s in strips)
 
-    # N = 0 (skin ± caps): do not invent web feet / LE–bay–TE panelisation.
-    # Cap ray resample still applies for family-B caps; cap–web inserts no-op.
+    # N = 0: do not invent web feet / LE–bay–TE panelisation.
     if has_webs:
         with timed_stage("junction_preparation_split", stage_sink):
             out = split_skin_at_junctions(strips, merge_s_tol_m=cfg.merge_s_tol_m)
@@ -63,12 +63,13 @@ def prepare_shell_midline_junctions(
         with timed_stage("junction_preparation_split", stage_sink):
             out = strips
 
-    if cfg.cap_resample_from_skin_rays:
+    # Cap polylines are not on the public mesh product. Skip dual-panel prep
+    # unless a caller still passed cap strips (legacy tests of helpers).
+    if has_caps and cfg.cap_resample_from_skin_rays:
         with timed_stage("junction_preparation_cap_ray", stage_sink):
             out = resample_cap_interiors_from_skin_rays(out)
 
-    # Cap–web interior junctions are a no-op without webs; skip the stage.
-    if has_webs:
+    if has_caps and has_webs:
         with timed_stage("junction_preparation_cap_web", stage_sink):
             out = insert_cap_web_interior_junctions(
                 out,
@@ -76,9 +77,7 @@ def prepare_shell_midline_junctions(
                 cap_mid_depth_m=cap_mid_depth_m,
             )
 
-    # Last: every later pass must leave cap and skin vertices alone, because the
-    # bonds name them (thin_wall_section TW-001).
-    if any(wall_cell_face(s.label) == "cap" for s in out):
+    if has_caps:
         with timed_stage("junction_preparation_cap_bond", stage_sink):
             out = bond_caps_to_skin(tuple(out))
     return out

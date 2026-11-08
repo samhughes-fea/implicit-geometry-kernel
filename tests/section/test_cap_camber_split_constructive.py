@@ -13,7 +13,7 @@ import pytest
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    SectionGeometryRunner,
+    SectionGeometry,
     resolve_system_type,
 )
 from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
@@ -24,8 +24,8 @@ def test_constructive_caps_follow_cavity_midline_not_y0(twist_deg: float) -> Non
     """Equal-height caps on NACA 2412 must not meet on y=0 with a 2.7x area skew."""
     chord = 0.1228
     result = (
-        SectionGeometryRunner(
-            layout=resolve_system_type("2D-F"),
+        SectionGeometry(
+            layout=resolve_system_type("2D-F-LC-0R"),
             airfoil=AirfoilSDF.from_naca("2412", chord=chord),
             skin_thickness=0.003,
             spar_cap_thickness=0.006125,

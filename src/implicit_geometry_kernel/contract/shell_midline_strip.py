@@ -98,6 +98,15 @@ class ShellMidlineStrip:
     bonds
         For caps: how the strip is bonded to the skin arcs it lies on
         (:class:`StripBond`, one per host arc). Empty for skin and web.
+    layers
+        Wall labels inside first (``(cap, skin)`` on an offset region).
+    layer_thicknesses_m
+        Gauges aligned with ``layers``. Empty on a legacy strip.
+    requires_eccentricity
+        True on a named cap footprint. Do not infer from ``kind`` alone.
+    eccentricity_m
+        Signed ``+n`` (inward) of the equal-modulus stack mid. ``0`` on bare
+        skin and webs; ``t_cap/2`` on a cap partition.
     """
 
     label: str
@@ -119,6 +128,10 @@ class ShellMidlineStrip:
     placement_digest: str | None = None
     reference_face: str | None = None
     bonds: tuple[StripBond, ...] = ()
+    layers: tuple[str, ...] = ()
+    layer_thicknesses_m: tuple[float, ...] = ()
+    requires_eccentricity: bool = False
+    eccentricity_m: float = 0.0
 
     def arc_length_m(self) -> float:
         """Total polyline arc length in metres (twisted pitch-axis blade frame)."""

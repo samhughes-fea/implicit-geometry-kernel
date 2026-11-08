@@ -1,5 +1,8 @@
 # Frames inventory — coordinate-frame safety baseline
 
+**Audience: internal.** Programme status for frame tagging. Semantics and
+transforms belong in [README.md](README.md) and [section_frames](section_frames/README.md).
+
 In this repository, live frame code is `src/implicit_geometry_kernel/frames/`.
 Rows below that name `blade_structure_*` or `material_utilities` are the fork
 baseline (see [FORK.md](../FORK.md)), not in-tree packages.

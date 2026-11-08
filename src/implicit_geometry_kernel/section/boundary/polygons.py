@@ -13,18 +13,95 @@ are the package's parallelism contract (see ``docs/section/bug_log.md``).
 from __future__ import annotations
 
 import numpy as np
-from shapely import make_valid
-from shapely.affinity import rotate as _shapely_rotate
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.geometry import box as shapely_box
-from shapely.ops import unary_union
+
+from shapely import make_valid
+from shapely.affinity import rotate as _shapely_rotate
+from shapely.affinity import translate as _shapely_translate
+from shapely.geometry.polygon import orient
+from shapely.ops import unary_union as _shapely_unary_union
+from shapely.validation import explain_validity
 
 from implicit_geometry_kernel.contract.errors import InfeasibleSectionGeometry
-from implicit_geometry_kernel.integration.shoelace import validate_and_orient_polygon
+from implicit_geometry_kernel.section.boundary.polygon_ops import (
+    OFFSET_JOIN_STYLE,
+    OFFSET_MITRE_LIMIT,
+    OFFSET_QUAD_SEGS,
+    PolygonOps,
+    oriented_rings,
+)
 
-OFFSET_QUAD_SEGS = 16
-OFFSET_JOIN_STYLE = 2  # mitre
-OFFSET_MITRE_LIMIT = 5.0
+
+class ShapelyPolygonOps:
+    """GEOS via Shapely. Overlay backend until a numpy offseter matches goldens."""
+
+    def offset_inward(self, poly, depth: float, *, quad_segs: int | None = None):
+        d = float(depth)
+        if not np.isfinite(d) or d < 0.0:
+            raise ValueError(f"offset_inward requires a finite depth >= 0; got {depth!r}.")
+        return poly.buffer(
+            -d,
+            quad_segs=OFFSET_QUAD_SEGS if quad_segs is None else int(quad_segs),
+            join_style=OFFSET_JOIN_STYLE,
+            mitre_limit=OFFSET_MITRE_LIMIT,
+        )
+
+    def intersection(self, a, b):
+        return a.intersection(b)
+
+    def difference(self, a, b):
+        return a.difference(b)
+
+    def union(self, geoms):
+        return _shapely_unary_union(geoms)
+
+    def make_valid(self, geom):
+        return make_valid(geom)
+
+    def rotate(self, geom, angle_rad: float, *, cx: float = 0.0, cy: float = 0.0):
+        if abs(float(angle_rad)) <= 1e-12:
+            return geom
+        return _shapely_rotate(geom, float(np.degrees(angle_rad)), origin=(float(cx), float(cy)))
+
+    def envelope(self, minx, miny, maxx, maxy):
+        return shapely_box(minx, miny, maxx, maxy)
+
+    def orient(self, poly, *, sign: float = 1.0):
+        return orient(poly, sign=sign)
+
+    def translate(self, geom, xoff: float, yoff: float):
+        return _shapely_translate(geom, xoff=float(xoff), yoff=float(yoff))
+
+    def explain_validity(self, geom) -> str:
+        return explain_validity(geom)
+
+
+class KernelPolygonOps(ShapelyPolygonOps):
+    """In-repo ops. Affine methods are numpy; overlay still GEOS until oracles pass.
+
+    References: JTS/GEOS buffer with mitre joins; overlay (intersection /
+    difference / union). Do not copy Shapely's Python wrappers.
+    """
+
+    def rotate(self, geom, angle_rad: float, *, cx: float = 0.0, cy: float = 0.0):
+        if abs(float(angle_rad)) <= 1e-12:
+            return geom
+        if not isinstance(geom, Polygon) or geom.is_empty:
+            return ShapelyPolygonOps.rotate(self, geom, angle_rad, cx=cx, cy=cy)
+        c, s = np.cos(angle_rad), np.sin(angle_rad)
+        ox, oy = float(cx), float(cy)
+
+        def _rot(coords):
+            xy = np.asarray(coords, float)
+            x, y = xy[:, 0] - ox, xy[:, 1] - oy
+            return np.column_stack([c * x - s * y + ox, s * x + c * y + oy])
+
+        holes = [_rot(r.coords) for r in geom.interiors]
+        return Polygon(_rot(geom.exterior.coords), holes)
+
+
+OPS = ShapelyPolygonOps()
 
 
 def offset_polygon_inward(poly, depth: float, *, quad_segs: int | None = None):
@@ -36,12 +113,7 @@ def offset_polygon_inward(poly, depth: float, *, quad_segs: int | None = None):
     d = float(depth)
     if not np.isfinite(d) or d < 0.0:
         raise ValueError(f"offset_polygon_inward requires a finite depth >= 0; got {depth!r}.")
-    return poly.buffer(
-        -d,
-        quad_segs=OFFSET_QUAD_SEGS if quad_segs is None else int(quad_segs),
-        join_style=OFFSET_JOIN_STYLE,
-        mitre_limit=OFFSET_MITRE_LIMIT,
-    )
+    return OPS.offset_inward(poly, d, quad_segs=quad_segs)
 
 
 def airfoil_polygon(airfoil_sdf) -> Polygon:
@@ -97,6 +169,32 @@ def locus_at_depth(
 _MIN_PART_AREA = 1e-16
 
 
+def validate_and_orient_polygon(poly, allow_empty: bool = False):
+    """Validate and CCW-orient a polygon. Repair via buffer(0) if needed."""
+    if allow_empty and (poly.is_empty or poly.area <= 0.0):
+        return poly
+    if not allow_empty and (poly.is_empty or poly.area <= 0.0):
+        raise ValueError("Invalid polygon: empty or zero area")
+    poly = OPS.orient(poly, sign=1.0)
+    if not poly.is_valid:
+        poly = poly.buffer(0)
+        if isinstance(poly, MultiPolygon):
+            raise ValueError(
+                "Polygon repair via buffer(0) produced MultiPolygon. "
+                f"Original validity: {OPS.explain_validity(poly) if hasattr(OPS, 'explain_validity') else ''}"
+            )
+        if allow_empty and poly.is_empty:
+            return poly
+    poly = OPS.orient(poly, sign=1.0)
+    if not poly.is_valid or (not allow_empty and poly.is_empty):
+        raise ValueError("Invalid polygon after orient")
+    return poly
+
+
+def unary_union(geoms):
+    return OPS.union(geoms)
+
+
 def _positive_area(geom) -> bool:
     try:
         return float(getattr(geom, "area", 0.0) or 0.0) > _MIN_PART_AREA
@@ -112,7 +210,7 @@ def ensure_polygon(geom, *, allow_empty: bool = False) -> Polygon | MultiPolygon
     # Repair self-touches / bow-ties from offset+Boolean before orientation.
     try:
         if not geom.is_valid:
-            geom = make_valid(geom)
+            geom = OPS.make_valid(geom)
     except Exception:
         pass
     if geom is None or geom.is_empty or not _positive_area(geom):
@@ -148,8 +246,8 @@ def ensure_polygon(geom, *, allow_empty: bool = False) -> Polygon | MultiPolygon
             if allow_empty:
                 return Polygon()
             raise ValueError("No polygonal parts in geometry collection.")
-        return ensure_polygon(unary_union(parts), allow_empty=allow_empty)
-    merged = unary_union(geom)
+        return ensure_polygon(OPS.union(parts), allow_empty=allow_empty)
+    merged = OPS.union(geom)
     if merged is geom or (
         hasattr(merged, "geom_type")
         and merged.geom_type not in {"Polygon", "MultiPolygon"}
@@ -166,7 +264,7 @@ def rotate_geom(geom, angle_rad: float, *, cx: float = 0.0, cy: float = 0.0):
     """Rotate geometry about (cx, cy) by ``angle_rad`` (radians, CCW)."""
     if abs(float(angle_rad)) <= 1e-12:
         return geom
-    return _shapely_rotate(geom, float(np.degrees(angle_rad)), origin=(float(cx), float(cy)))
+    return OPS.rotate(geom, float(angle_rad), cx=float(cx), cy=float(cy))
 
 
 def stadium_polygon(
@@ -297,7 +395,7 @@ def flapwise_bay_clip(
     xy = [tuple(n * nc + t * tc) for nc, tc in nt_corners]
     clip = Polygon(xy)
     # Keep finite intersection with world (numerical safety)
-    return ensure_polygon(clip.intersection(shapely_box(minx, miny, maxx, maxy)), allow_empty=True)
+    return ensure_polygon(clip.intersection(OPS.envelope(minx, miny, maxx, maxy)), allow_empty=True)
 
 
 def cavity_polygon(
@@ -318,8 +416,12 @@ __all__ = [
     "OFFSET_JOIN_STYLE",
     "OFFSET_MITRE_LIMIT",
     "OFFSET_QUAD_SEGS",
+    "PolygonOps",
     "Point",
     "Polygon",
+    "KernelPolygonOps",
+    "OPS",
+    "ShapelyPolygonOps",
     "airfoil_offset_ring",
     "airfoil_polygon",
     "cavity_polygon",
@@ -329,7 +431,9 @@ __all__ = [
     "half_plane_clip",
     "locus_at_depth",
     "offset_polygon_inward",
+    "oriented_rings",
     "rotate_geom",
+    "validate_and_orient_polygon",
     "shapely_box",
     "stadium_polygon",
     "unary_union",

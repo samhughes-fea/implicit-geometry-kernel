@@ -1,8 +1,9 @@
 # Structural systems gallery
 
-All 40 `SYSTEM_TYPE_KEYS`. Pass any key to `resolve_system_type(...)` /
-`SectionGeometry(layout=...)`. Grouped by web count **X** (≠ spar-cap
-family **Y**). Decode: [`system_type_xyz_taxonomy.md`](system_type_xyz_taxonomy.md).
+All 40 orientation cores. Pass any key to `resolve_system_type(...)` /
+`SectionGeometry(layout=...)`. Grouped by web count **W** (spar-cap family is
+**X**). Decode: [blade-concept taxonomy](../../blade/concepts/taxonomy.md).
+Station figures of the W/X/Y slice; Z and R are loft concerns.
 
 ↑ [`section_geometry`](../README.md) · [`../guides/quickstart.md`](../guides/quickstart.md)
 
@@ -220,7 +221,7 @@ Higher web count; default chord fractions come from the layout registry.
 ## Web count X = 5 — five shear webs
 
 Maximum registered web count in the layout catalogue
-([`../layout/system_layout.py`](../../../src/implicit_geometry_kernel/section/layout/system_layout.py)).
+([`catalogue/system_layout.py`](../../../src/implicit_geometry_kernel/catalogue/system_layout.py)).
 
 ### `5A-CN`
 
@@ -259,7 +260,7 @@ Maximum registered web count in the layout catalogue
 ## See also
 
 - [`../guides/quickstart.md`](../guides/quickstart.md) — progressive call guide
-- [`system_type_xyz_taxonomy.md`](system_type_xyz_taxonomy.md) — id decode, cascade
+- [blade-concept taxonomy](../../blade/concepts/taxonomy.md) — id decode, cascade
 - [`../guides/caller_patterns.md`](../guides/caller_patterns.md) — sizing loop and spanwise webs
 - [`../layout/README.md`](../layout/README.md) — layout resolve and web drop
 - Demo script: `examples/demos/section/structural_family_grids_demo.py`

@@ -29,11 +29,13 @@ def _compat_kwargs_from_zone_gauges(zone_gauges_m: Mapping[str, float]) -> dict[
     Callers that already hold a realization should pass ``zone_gauges_m``
     rather than collapsing to component maxima first.
     """
+    from implicit_geometry_kernel.section.assembly.members import zone_kind_for_id
+
     items = {str(k): float(v) for k, v in dict(zone_gauges_m).items()}
-    skins = [v for k, v in items.items() if k.startswith("skin:")]
-    caps = [v for k, v in items.items() if k.startswith("cap:") or k.startswith("spar:")]
+    skins = [v for k, v in items.items() if zone_kind_for_id(k) == "skin"]
+    caps = [v for k, v in items.items() if zone_kind_for_id(k) == "cap"]
     webs = sorted(
-        ((k, v) for k, v in items.items() if k.startswith("web:")),
+        ((k, v) for k, v in items.items() if zone_kind_for_id(k) == "web"),
         key=lambda kv: kv[0],
     )
     ss = float(items.get("skin:suction", max(skins) if skins else 0.0))
@@ -81,7 +83,7 @@ def section_geometry_prep_key(
     ``placement_digest_by_kind`` participates so a surface-aware policy change
     invalidates geometry caches (WP3 D3.3 / WP5 D5.3).
     """
-    from implicit_geometry_kernel.section.spec.kwarg_aliases import (
+    from implicit_geometry_kernel.section.spec.section_spec import (
         resolve_shear_web_thickness,
         resolve_skin_gauges,
         resolve_spar_cap_thickness,
@@ -179,6 +181,7 @@ def build_section_with_thicknesses(
     web_y_coords: Sequence[tuple[float, float]] | None = None,
     stage_sink: dict[str, float] | None = None,
     spar_cap_ply_pitch_m: float | None = None,
+    web_indices: Sequence[int] | None = None,
 ) -> SectionMidlineHost:
     """Build sized implicit section geometry for a layout and free DVs.
 
@@ -187,7 +190,7 @@ def build_section_with_thicknesses(
     builds a :class:`MultiCellSection`. Prefer long thickness / twist names;
     ``cap_height`` / ``web_thickness`` remain accepted aliases.
     """
-    from implicit_geometry_kernel.section.spec.kwarg_aliases import (
+    from implicit_geometry_kernel.section.spec.section_spec import (
         resolve_shear_web_thickness,
         resolve_skin_gauges,
         resolve_spar_cap_thickness,
@@ -222,6 +225,7 @@ def build_section_with_thicknesses(
         web_y_coords=web_y_coords,
         stage_sink=stage_sink,
         spar_cap_ply_pitch_m=spar_cap_ply_pitch_m,
+        web_indices=web_indices,
     )
 
 

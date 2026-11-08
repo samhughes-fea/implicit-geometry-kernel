@@ -1,5 +1,7 @@
 # Where this geometry came from
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 `section_geometry`, `section_contract`, `coordinate_frames`, `area_2d` and
 `shoelace_integration` are a one-time fork, with history, of the same packages in
 [samhughes-fea/blade-structure](https://github.com/samhughes-fea/blade-structure)

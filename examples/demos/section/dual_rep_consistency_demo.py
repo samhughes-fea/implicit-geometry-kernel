@@ -36,7 +36,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
@@ -162,14 +162,14 @@ def _draw_gap_map(section, polys, grid, out_path: Path, *, presentation: bool) -
     from matplotlib.collections import LineCollection
     from matplotlib.colors import LinearSegmentedColormap, LogNorm
 
-    from plotting.palette import (
+    from implicit_geometry_kernel.plotting.palette import (
         INK,
         MUTED,
         RED,
         region_color,
         strip_axes_chrome,
     )
-    from plotting.plot_section import (
+    from implicit_geometry_kernel.plotting.plot_section import (
         apply_structural_section_axes,
     )
 
@@ -345,7 +345,7 @@ def main(argv: list[str] | None = None) -> Path:
         )
         ax.legend(fontsize=7, loc="best")
         ax.grid(True, alpha=0.3)
-        from plotting.plot_section import (
+        from implicit_geometry_kernel.plotting.plot_section import (
             apply_structural_section_axes,
         )
 

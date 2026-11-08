@@ -64,19 +64,22 @@ class WallType(Protocol):
     is_wall_solid: bool
     is_core: bool
     is_insert: bool
+    on_shell_product: bool
+    polygon_by_surface: bool
     cell_face_kind: str | None
     label_prefixes: ClassVar[tuple[str, ...]]
     exact_labels: ClassVar[tuple[str, ...]]
+    zone_prefixes: ClassVar[tuple[str, ...]]
 
-    def place(self, spec: Any) -> list[Any]: ...
-    def field(self, inst: Any) -> Any: ...
-    def polygon(self, inst: Any, boundary: Any) -> Any: ...
-    def midline(self, inst: Any, boundary: Any) -> Any | None: ...
-    def junctions(self, inst: Any, others: Any) -> list[Any]: ...
+    def build(self, ctx: Any, prior: Any) -> list[Any]: ...
 
 
 class WallTypeMixin:
-    """Shared label matching and stage flags for :class:`SECTION_BUILDERS`."""
+    """Shared label matching and stage flags for :class:`SECTION_BUILDERS`.
+
+    ``build`` is the only pipeline hook. Stages dispatch on flags
+    (``on_shell_product``, ``polygon_by_surface``, ``has_midline``), not on names.
+    """
 
     kind: str = ""
     has_midline: bool = False
@@ -84,9 +87,12 @@ class WallTypeMixin:
     is_wall_solid: bool = True
     is_core: bool = False
     is_insert: bool = False
+    on_shell_product: bool = True
+    polygon_by_surface: bool = False
     cell_face_kind: str | None = None
     label_prefixes: ClassVar[tuple[str, ...]] = ()
     exact_labels: ClassVar[tuple[str, ...]] = ()
+    zone_prefixes: ClassVar[tuple[str, ...]] = ()
 
     @classmethod
     def matches_label(cls, label: Any) -> bool:
@@ -96,24 +102,24 @@ class WallTypeMixin:
         return any(key.startswith(prefix) for prefix in cls.label_prefixes)
 
     @classmethod
+    def matches_zone_id(cls, zone_id: Any) -> bool:
+        key = str(zone_id)
+        return any(key.startswith(prefix) for prefix in cls.zone_prefixes)
+
+    @classmethod
     def format_label(cls, index: int) -> str:
         if cls.label_prefixes:
             prefix = cls.label_prefixes[0]
             return f"{prefix}{index}" if prefix.endswith("_") else f"{prefix}_{index}"
         return f"{cls.kind}_{index}"
 
-    def place(self, spec: Any) -> list[Any]:
-        return self.build(spec, ())  # type: ignore[attr-defined]
+    @classmethod
+    def matches_surface(cls, label: Any, surface: str) -> bool:
+        return False
 
-    def field(self, inst: Any) -> Any:
-        return getattr(inst, "expr", None)
-
-    def polygon(self, inst: Any, boundary: Any) -> Any:
-        if not self.has_polygon:
-            return None
-        if hasattr(inst, "to_boundary_polygon"):
-            return inst.to_boundary_polygon(boundary)
-        return None
+    @classmethod
+    def canonical_surface_label(cls, surface: str) -> str:
+        return f"{cls.kind}_{surface}"
 
     def midline(self, inst: Any, boundary: Any) -> Any | None:
         if not self.has_midline:
@@ -139,6 +145,14 @@ def wall_cell_face(label: Any) -> str | None:
     return None if wt is None else wt.cell_face_kind
 
 
+def zone_kind_for_id(zone_id: Any) -> str | None:
+    """Wall kind for a zone-gauge id such as ``skin:suction`` or ``web:0``."""
+    for builder in SECTION_BUILDERS:
+        if builder.matches_zone_id(zone_id):
+            return builder.kind
+    return None
+
+
 class SkinBuilder(WallTypeMixin, MemberBuilder):
     """Suction and pressure skins (camber-upper and camber-lower half annuli)."""
 
@@ -147,6 +161,7 @@ class SkinBuilder(WallTypeMixin, MemberBuilder):
     cell_face_kind = "skin"
     exact_labels = ("outer_skin",)
     label_prefixes = ("skin_suction_surface", "skin_pressure_surface")
+    zone_prefixes = ("skin:",)
 
     def build(self, ctx: SectionPlan, prior):  # type: ignore
         out: list[Contribution] = []
@@ -174,6 +189,7 @@ class WebBuilder(WallTypeMixin, MemberBuilder):
     has_midline = True
     cell_face_kind = "web"
     label_prefixes = ("shear_web_", "web_")
+    zone_prefixes = ("web:",)
 
     def build(self, ctx: SectionPlan, prior):  # type: ignore
         out: list[Contribution] = []
@@ -185,9 +201,15 @@ class WebBuilder(WallTypeMixin, MemberBuilder):
                 if ctx.explicit_endpoints is not None:
                     xt, yt, xb, yb = ctx.explicit_endpoints[i]
                 elif align == "flapwise" and phi_inner_b is not None:
-                    xt, yt, xb, yb = flapwise_web_sframe_inputs(
-                        x, y_top, y_bot, ctx.twist, phi_inner_b, y_search_b
-                    )
+                    try:
+                        xt, yt, xb, yb = flapwise_web_sframe_inputs(
+                            x, y_top, y_bot, ctx.twist, phi_inner_b, y_search_b
+                        )
+                    except InfeasibleSectionGeometry as exc:
+                        authored = ctx.web_indices[i] if i < len(ctx.web_indices) else i
+                        raise InfeasibleSectionGeometry(
+                            str(exc), web_index=int(authored), web_x=float(x),
+                        ) from exc
                 else:
                     xt, yt, xb, yb = x, y_top, x, y_bot
                 wall = WebWall(
@@ -196,7 +218,8 @@ class WebBuilder(WallTypeMixin, MemberBuilder):
                     twist_angle=ctx.twist,
                 )
                 comp = wall.to_sdf_component(ctx.airfoil_sdf, airfoil_expr_node=ctx.airfoil_expr)
-                label = self.format_label(i)
+                authored = ctx.web_indices[i] if i < len(ctx.web_indices) else i
+                label = self.format_label(int(authored))
                 out.append(BranchContribution(
                     ctx.table.add(label, "web"),
                     mid=ExprSDF(_axis_line(xt, yt, xb, yb)),
@@ -221,8 +244,30 @@ class CapBuilder(WallTypeMixin, MemberBuilder):
 
     kind = "cap"
     has_midline = True
+    on_shell_product = False
+    polygon_by_surface = True
     cell_face_kind = "cap"
     label_prefixes = ("spar_cap",)
+    zone_prefixes = ("cap:", "spar:")
+
+    @classmethod
+    def canonical_surface_label(cls, surface: str) -> str:
+        if surface in ("upper", "suction_surface"):
+            return "spar_cap_suction_surface"
+        if surface in ("lower", "pressure_surface"):
+            return "spar_cap_pressure_surface"
+        return f"{cls.label_prefixes[0]}_{surface}"
+
+    @classmethod
+    def matches_surface(cls, label: Any, surface: str) -> bool:
+        if not cls.matches_label(label):
+            return False
+        key = str(getattr(label, "value", label)).lower()
+        if surface in ("upper", "suction_surface"):
+            return "suction" in key or "upper" in key
+        if surface in ("lower", "pressure_surface"):
+            return "pressure" in key or "lower" in key
+        return surface.lower() in key
 
     def build(self, ctx: SectionPlan, prior):  # type: ignore
         if ctx.cap_rule.kind == "none":
@@ -358,10 +403,32 @@ class InsertBuilder(WallTypeMixin, MemberBuilder):
                                   source=SectionMember(label, comp, {_label_str(label): wall}))
 
 
-SECTION_BUILDERS = (SkinBuilder, WebBuilder, CapBuilder, CoreBuilder, InsertBuilder)
+class BondlineBuilder(WallTypeMixin, MemberBuilder):
+    """Adhesive bondline region. Registered so labels resolve; ``build`` is empty.
+
+    Catalogue layouts do not carry bondlines. Tests may override ``build`` to
+    emit a :class:`RegionContribution`.
+    """
+
+    kind = "bondline"
+    has_midline = False
+    is_wall_solid = False
+    has_polygon = True
+    cell_face_kind = None
+    exact_labels = ("bondline",)
+    label_prefixes = ("bondline_",)
+
+    def build(self, ctx, prior):  # type: ignore[override]
+        return []
+
+
+SECTION_BUILDERS = (
+    SkinBuilder, WebBuilder, CapBuilder, CoreBuilder, InsertBuilder, BondlineBuilder,
+)
 """Default build order for a section."""
 
 __all__ = [
+    "BondlineBuilder",
     "CapBuilder",
     "CoreBuilder",
     "InsertBuilder",
@@ -373,4 +440,5 @@ __all__ = [
     "members_of",
     "wall_cell_face",
     "wall_type_for_label",
+    "zone_kind_for_id",
 ]

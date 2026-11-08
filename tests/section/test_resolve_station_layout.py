@@ -21,7 +21,7 @@ from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.api.worker import (
+from implicit_geometry_kernel.section.spec.worker import (
     resolve_station_layout,
 )
 
@@ -38,14 +38,14 @@ def _anchored(layout, root_chord: float = ROOT_CHORD) -> list[float]:
 
 
 def test_root_station_keeps_every_web():
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
 
     res = resolve_station_layout(
         layout, _airfoil(ROOT_CHORD), skin_thickness=T_SKIN,
         web_x_positions_m=_anchored(layout),
     )
 
-    assert res.layout.key == "5D-F"
+    assert res.layout.key == "5D-F-LC-0R"
     assert len(res.web_x_positions_m) == 5
     assert len(res.web_y_coords) == 5
     for yt, yb in res.web_y_coords:
@@ -57,16 +57,16 @@ def test_root_station_keeps_every_web():
 @pytest.mark.parametrize(
     "chord, expected_key, expected_webs",
     [
-        (0.2409, "5D-F", 5),
-        (0.2026, "4D-F", 4),
-        (0.1353, "3D-F", 3),
-        (0.1121, "2D-F", 2),
-        (0.0878, "1C-F", 1),
+        (0.2409, "5D-F-LC-0R", 5),
+        (0.2026, "4D-F-LC-0R", 4),
+        (0.1353, "3D-F-LC-0R", 3),
+        (0.1121, "2D-F-LC-0R", 2),
+        (0.0878, "1C-F-LC-0R", 1),
     ],
 )
 def test_layout_steps_down_as_the_section_tapers(chord, expected_key, expected_webs):
     """The measured ladder from A1, now resolved in one call."""
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
 
     res = resolve_station_layout(
         layout, _airfoil(chord), skin_thickness=T_SKIN,
@@ -80,7 +80,7 @@ def test_layout_steps_down_as_the_section_tapers(chord, expected_key, expected_w
 
 def test_survivors_stay_on_their_anchored_offsets():
     """No migration: a surviving web is exactly where the root put it."""
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
     anchored = _anchored(layout)
 
     res = resolve_station_layout(
@@ -92,7 +92,7 @@ def test_survivors_stay_on_their_anchored_offsets():
 
 
 def test_dropped_webs_carry_a_reason():
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
 
     res = resolve_station_layout(
         layout, _airfoil(0.0878), skin_thickness=T_SKIN,
@@ -112,11 +112,11 @@ def test_omitting_anchored_positions_keeps_the_legacy_behaviour():
 
     This is what keeps every existing call site unaffected until it opts in.
     """
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
 
     res = resolve_station_layout(layout, _airfoil(0.0878), skin_thickness=T_SKIN)
 
-    assert res.layout.key == "5D-F"
+    assert res.layout.key == "5D-F-LC-0R"
     assert len(res.web_x_positions_m) == 5
     assert res.dropped == ()
     assert res.stepped_down is False
@@ -124,7 +124,7 @@ def test_omitting_anchored_positions_keeps_the_legacy_behaviour():
 
 def test_zero_web_layout_resolves_without_probing():
     """0A / 0B are selected, never stepped into, and have no webs to check."""
-    for key in ("0A", "0B"):
+    for key in ("0A-LC-0R", "0B-LC-0R"):
         layout = resolve_system_type(key)
         res = resolve_station_layout(layout, _airfoil(0.0878), skin_thickness=T_SKIN)
 
@@ -139,7 +139,7 @@ def test_a_section_that_cannot_hold_any_web_is_infeasible():
     Anchoring a 5-web layout on a chord far larger than the station's puts every
     web outside the buildable cavity.
     """
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
     far_anchored = _anchored(layout, root_chord=2.0)
 
     with pytest.raises(InfeasibleSectionGeometry):
@@ -151,19 +151,23 @@ def test_a_section_that_cannot_hold_any_web_is_infeasible():
 
 def test_nominal_layout_is_retained_for_comparison():
     """Callers need to report what was asked for as well as what was built."""
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
 
     res = resolve_station_layout(
         layout, _airfoil(0.0878), skin_thickness=T_SKIN,
         web_x_positions_m=_anchored(layout),
     )
 
-    assert res.nominal_layout.key == "5D-F"
-    assert res.layout.key == "1C-F"
+    assert res.nominal_layout.key == "5D-F-LC-0R"
+    assert res.layout.key == "1C-F-LC-0R"
     assert res.stepped_down is True
+    lost = {d.index for d in res.dropped}
+    assert None not in lost
+    assert set(res.web_indices).isdisjoint(lost)
+    assert set(res.web_indices) | lost == set(range(5))
 
 
-@pytest.mark.parametrize("start", ["5C-CN", "5B-F", "5A-F"])
+@pytest.mark.parametrize("start", ["5C-CN-LC-0R", "5B-F-LC-0R", "5A-F-LC-0R"])
 def test_other_families_step_down_too(start):
     """The entry point is family-general, not 5D-F-specific."""
     layout = resolve_system_type(start)

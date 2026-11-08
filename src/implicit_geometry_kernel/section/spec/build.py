@@ -2,22 +2,17 @@
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Mapping
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 from implicit_geometry_kernel.contract.cell_wall_loop import CellWallLoop
 from implicit_geometry_kernel.contract.shell_midline_strip import ShellMidlineStrip
 from implicit_geometry_kernel.integration.quadtree.tree import QuadTreeMesh
-from implicit_geometry_kernel.integration.spec import QuadtreeSpec
 from implicit_geometry_kernel.section.spec.results import (
-    LayoutInput,
     SectionGeometryResult,
     SectionPropertiesMeta,
     normalize_output_gates,
 )
-from implicit_geometry_kernel.section.properties.compute import PropsBackendArg
-from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.spec.prep import (
     build_section_with_thicknesses,
     section_geometry_prep_key,
@@ -25,75 +20,19 @@ from implicit_geometry_kernel.section.spec.prep import (
 
 
 def build_section_geometry(
-    layout: LayoutInput | Any,
-    airfoil: AirfoilSDF | None = None,
-    *,
-    skin_thickness: float | None = None,
-    spar_cap_thickness: float | None = None,
-    shear_web_thickness: float | None = None,
-    twist_rad: float | None = None,
-    twist_angle_rad: float | None = None,
-    twist_angle: float | None = None,
-    outputs: Iterable[str] = ("properties", "midlines", "cell_wall_loops"),
-    props_backend: PropsBackendArg | None = None,
-    n_web_samples: int = 20,
-    n_cap_samples: int = 80,
-    retain_mesh: bool = False,
-    quadtree_spec: QuadtreeSpec | None = None,
-    airfoil_for_spec: AirfoilSDF | None = None,
-    web_x_positions_m: Sequence[float] | None = None,
-    web_offsets: Sequence[float] | None = None,
-    web_y_coords: Sequence[tuple[float, float]] | None = None,
-    spar_cap_ply_pitch_m: float | None = None,
-    zone_gauges_m: Mapping[str, float] | None = None,
+    spec: Any,
     options: Any | None = None,
 ) -> SectionGeometryResult:
     """Geometry worker entry: assemble section and emit gated carriers.
 
-    Prefer ``build_section_geometry(SectionSpec, options=SectionOptions())``.
-    The keyword form builds a spec, warns, and is removed in 0.6.0.
-
-    ``layout`` may be a :class:`SectionSpec`, a catalogue
-    :class:`SystemLayoutSpec` or a parametric :class:`SectionLayout`.
+    ``spec`` is a :class:`SectionSpec`; ``options`` is a :class:`SectionOptions`.
     """
     from implicit_geometry_kernel.section.spec.options import SectionOptions
     from implicit_geometry_kernel.section.spec.section_spec import SectionSpec
 
-    if isinstance(layout, SectionSpec):
-        return _emit_section(layout, options or SectionOptions())
-    if airfoil is None:
-        raise TypeError("airfoil is required unless a SectionSpec is passed")
-    warnings.warn(
-        "build_section_geometry(layout, airfoil, **kwargs) is deprecated; "
-        "pass a SectionSpec and SectionOptions",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    spec = SectionSpec.from_kwargs(
-        layout,
-        airfoil,
-        skin_thickness=skin_thickness,
-        spar_cap_thickness=spar_cap_thickness,
-        shear_web_thickness=shear_web_thickness,
-        twist_rad=twist_rad,
-        twist_angle_rad=twist_angle_rad,
-        twist_angle=twist_angle,
-        web_x_positions_m=web_x_positions_m,
-        web_offsets=web_offsets,
-        web_y_coords=web_y_coords,
-        spar_cap_ply_pitch_m=spar_cap_ply_pitch_m,
-        zone_gauges_m=zone_gauges_m,
-    )
-    opts = options or SectionOptions.from_kwargs(
-        outputs=outputs,
-        props_backend=props_backend,
-        n_web_samples=n_web_samples,
-        n_cap_samples=n_cap_samples,
-        retain_mesh=retain_mesh,
-        quadtree_spec=quadtree_spec,
-        airfoil_for_spec=airfoil_for_spec,
-    )
-    return _emit_section(spec, opts)
+    if not isinstance(spec, SectionSpec):
+        raise TypeError("build_section_geometry expects a SectionSpec")
+    return _emit_section(spec, options or SectionOptions())
 
 
 def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
@@ -105,6 +44,7 @@ def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
     web = spec.gauges.web_arg
     twist_rad = spec.twist_rad
     web_x_positions_m = spec.webs
+    web_indices = spec.web_indices
     web_y_coords = spec.web_y_anchors
     spar_cap_ply_pitch_m = spec.spar_cap_ply_pitch_m
     zone_gauges_m = dict(spec.zone_gauges_m) if spec.zone_gauges_m else None
@@ -159,6 +99,7 @@ def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
             spar_cap_thickness=float(spar),
             shear_web_thickness=web,
             web_x_positions_m=web_x_positions_m,
+            web_indices=web_indices,
             web_y_coords=web_y_coords,
             stage_sink=stage_s,
             spar_cap_ply_pitch_m=spar_cap_ply_pitch_m,
@@ -236,26 +177,11 @@ def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
                 twist_rad=float(twist_rad),
                 n_web_samples=int(n_web_samples),
                 n_cap_samples=int(n_cap_samples),
+                pivot_fraction=spec.pivot_fraction,
             )
         with timed_stage("junction_preparation", stage_s):
-            # Offset-locus interiors require the same frame as the strips.
-            # Midlines are emitted in B; the airfoil locus is authored in S —
-            # only share them when twist is ~0.
-            locus_af = airfoil if abs(float(twist_rad)) < 1e-10 else None
-            cap_depth = None
-            if locus_af is not None:
-                skin_max = max(
-                    float(x)
-                    for x in (skin if isinstance(skin, (list, tuple)) else (skin,))
-                )
-                cap_depth = float(skin_max) + 0.5 * float(spar)
             midline_strips = tuple(
-                prepare_shell_midline_junctions(
-                    raw,
-                    stage_sink=stage_s,
-                    airfoil=locus_af,
-                    cap_mid_depth_m=cap_depth,
-                )
+                prepare_shell_midline_junctions(raw, stage_sink=stage_s)
             )
         if need_void:
             from implicit_geometry_kernel.section.cells.loops import (
@@ -271,21 +197,27 @@ def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
         # strips above. A bare rotation would leave LE/TE in the raw-NACA frame
         # while the strips were canonical B.
         from implicit_geometry_kernel.frames import (
+            PIVOT_FRACTION_DEFAULT,
             naca_to_twisted_pitch_axis_blade_frame,
         )
 
+        f_pivot = (
+            PIVOT_FRACTION_DEFAULT
+            if spec.pivot_fraction is None
+            else float(spec.pivot_fraction)
+        )
         le_S = np.asarray(airfoil.leading_edge, dtype=float).reshape(1, 2)
         te_S = np.asarray(airfoil.trailing_edge, dtype=float).reshape(1, 2)
         leading_edge_twisted_pitch_axis_blade_frame = tuple(  # type: ignore
             float(v)
             for v in naca_to_twisted_pitch_axis_blade_frame(
-                le_S, float(twist_rad), chord_m
+                le_S, float(twist_rad), chord_m, f_pivot
             )[0]
         )
         trailing_edge_twisted_pitch_axis_blade_frame = tuple(  # type: ignore
             float(v)
             for v in naca_to_twisted_pitch_axis_blade_frame(
-                te_S, float(twist_rad), chord_m
+                te_S, float(twist_rad), chord_m, f_pivot
             )[0]
         )
     else:

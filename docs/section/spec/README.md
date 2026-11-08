@@ -1,13 +1,13 @@
 # spec — section input and geometry worker
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 ↑ [`section`](../README.md)
 
 Public surface: construct `SectionGeometry`, optionally `resolve()` the
 layout, `execute()` the build, read `SectionGeometryResult`. Validates inputs
 (`SectionSpec`, `SectionOptions`), sequences work, and packages the product;
 domain maths lives in the other modules.
-
-`section.api` is an alias of this package until 0.6.0.
 
 Lifecycle: construct stores arguments; `resolve()` → `StationLayoutResolution`
 (no solids); `execute()` builds gated outputs; `get_results()` returns the
@@ -51,7 +51,6 @@ Spine context: `CASCADE_GLOSSARY` ·
 | `factory.py` | `build_section_view` and related helpers |
 | `layout_resolution.py` | `resolve_station_layout` |
 | `results.py` | Result dataclasses and output gates |
-| `kwarg_aliases.py` | Historical keyword aliases (until 0.6.0) |
 
 ## API
 
@@ -87,7 +86,7 @@ Important keyword arguments on `SectionGeometry` /
 | `quadtree_spec` | Optional QT refinement settings |
 | `retain_mesh` | **G-PROPS debug only** — keep hybrid/quadtree occupancy mesh on the result. Not a `section_mesh` product |
 
-Layouts `"0A"` / `"0B"`: valid zero-web hosts; shell-mesh handoff accepts
+Layouts `"0A-LC-0R"` / `"0B-LC-0R"`: valid zero-web hosts; shell-mesh handoff accepts
 skin ± optional caps (no web junctions) — see
 [`ADR_ZERO_WEB_SHELL_MESH.md`](../reference/ADR_ZERO_WEB_SHELL_MESH.md).
 

@@ -1,17 +1,26 @@
-"""``blade.cut`` still exports the shell-graph names until 0.6.0."""
-
-import importlib
-import sys
+"""``blade.cut`` no longer re-exports shell-graph names."""
 
 import implicit_geometry_kernel.blade.cut as cut
 
+SHELL_GRAPH_NAMES = (
+    "MidSegment",
+    "MidSurface",
+    "PartitionEdge",
+    "ShellGraph",
+    "ShellRun",
+    "TopologyDiff",
+    "TopologyEvent",
+    "partition_edge_curve",
+    "shared_loft_names",
+    "shell_graph",
+    "shell_strips_from_graph",
+    "topology_diff",
+    "LockedLoftPlan",
+    "resample_locked",
+    "shell_loft_zones",
+)
 
-def test_cut_reexports_shell_graph_names():
-    # ``blade.shell_graph`` is also a public function on the blade package, so
-    # the submodule is taken from sys.modules (loaded by ``blade.cut``).
-    mod = sys.modules.get("implicit_geometry_kernel.blade.shell_graph")
-    if mod is None:
-        mod = importlib.import_module("implicit_geometry_kernel.blade.shell_graph")
-    assert mod is not cut.shell_graph
-    for name in mod.__all__:
-        assert getattr(cut, name) is getattr(mod, name), name
+
+def test_cut_does_not_reexport_shell_graph_names() -> None:
+    for name in SHELL_GRAPH_NAMES:
+        assert not hasattr(cut, name), name

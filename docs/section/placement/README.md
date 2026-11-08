@@ -1,8 +1,9 @@
 # Placement geometry (WP3+)
 
-Moved (aliases until 0.6.0). Through-thickness anchoring lives in
-`section/layout/` (`anchoring.py`, `collision.py`, `handoff.py`). The
-`section.placement` import path still works.
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
+Moved to `section/layout/` (`anchoring.py`, `collision.py`, `handoff.py`).
+The `section.placement` import path was removed in 0.6.0.
 
 Anchored wall geometry for surface-aware ply drop.
 

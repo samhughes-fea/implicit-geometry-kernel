@@ -9,7 +9,7 @@ from typing import Any
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.spec.results import DroppedWeb, LayoutInput
 from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
-from implicit_geometry_kernel.section.layout.system_layout import SystemLayoutSpec
+from implicit_geometry_kernel.catalogue.system_layout import SystemLayoutSpec
 
 
 def _layout_web_fracs(layout: LayoutInput) -> tuple[float, ...]:
@@ -22,7 +22,16 @@ def _layout_n_webs(layout: LayoutInput) -> int:
     return int(layout.n_webs or 0)
 
 
-def _step_down_section_layout(layout: SectionLayout, n_webs: int) -> SectionLayout:
+def _pick_by_index(seq, indices: Sequence[int]):
+    if seq is None:
+        return None
+    n = len(seq)
+    return tuple(seq[i] for i in indices if 0 <= int(i) < n)
+
+
+def _step_down_section_layout(
+    layout: SectionLayout, n_webs: int, *, indices: Sequence[int] | None = None,
+) -> SectionLayout:
     """Reduce a keyless parametric layout to ``n_webs`` survivors."""
     from implicit_geometry_kernel.section.layout.cap_placement import (
         CapPlacementRule,
@@ -31,22 +40,21 @@ def _step_down_section_layout(layout: SectionLayout, n_webs: int) -> SectionLayo
     n = int(n_webs)
     if n < 0:
         raise ValueError(f"n_webs must be >= 0; got {n_webs!r}.")
-    fracs = tuple(float(f) for f in layout.web_chord_fracs[:n])
-    stations = (
-        None
-        if layout.web_stations_m is None
-        else tuple(float(x) for x in layout.web_stations_m[:n])
-    )
-    axes = (
-        None
-        if layout.web_axes_m is None
-        else tuple(layout.web_axes_m[:n])
-    )
+    if indices is None:
+        indices = tuple(range(n))
+    else:
+        indices = tuple(int(i) for i in indices)
+        if len(indices) != n:
+            n = len(indices)
+    fracs = _pick_by_index(layout.web_chord_fracs, indices) or ()
+    stations = _pick_by_index(layout.web_stations_m, indices)
+    axes = _pick_by_index(layout.web_axes_m, indices)
     cap = layout.cap_placement
-    if n < 2 and cap.kind == "continuous_box":
+    published_window = cap.chord_window is not None
+    if n < 2 and cap.kind == "continuous_box" and not published_window:
         cap = CapPlacementRule.per_web_pads()
     fam = layout.structural_family
-    if n < 2 and str(fam or "").upper() == "D":
+    if n < 2 and str(fam or "").upper() == "D" and not published_window:
         fam = "C"
     return SectionLayout(
         web_chord_fracs=fracs,
@@ -69,9 +77,19 @@ def _as_section_layout(layout: LayoutInput) -> SectionLayout:
     return as_section_layout(layout)
 
 
-def _reattach_catalogue_preset(layout: SectionLayout) -> SectionLayout:
-    """Best-effort ``N{family}-{orient}`` preset re-attach after a parametric drop."""
-    from implicit_geometry_kernel.section.layout.system_layout import (
+def _catalogue_suffix(layout: SectionLayout) -> str:
+    key = str(layout.catalogue_key or "")
+    parts = key.split("-")
+    if len(parts) >= 3:
+        return "-" + "-".join(parts[2:])
+    return "-LC-0R"
+
+
+def _reattach_catalogue_preset(
+    layout: SectionLayout, nominal: SectionLayout | None = None,
+) -> SectionLayout:
+    """Best-effort ``N{family}-{orient}-[Z]-[R]`` preset re-attach after a drop."""
+    from implicit_geometry_kernel.catalogue.system_layout import (
         resolve_system_type,
     )
 
@@ -80,20 +98,26 @@ def _reattach_catalogue_preset(layout: SectionLayout) -> SectionLayout:
     if not fam:
         return layout
     orient = "F" if str(layout.orientation) == "flapwise" else "CN"
-    key = f"{n}{fam}-{orient}"
+    suffix = _catalogue_suffix(nominal or layout)
+    key = f"{n}{fam}-{orient}{suffix}"
     try:
         preset = resolve_system_type(key)
     except KeyError:
         return layout
     reattached = SectionLayout.from_system_layout_spec(preset)
+    cap = reattached.cap_placement
+    fam = reattached.structural_family
+    if layout.cap_placement.chord_window is not None:
+        cap = layout.cap_placement
+        fam = layout.structural_family or fam
     return SectionLayout(
         web_chord_fracs=layout.web_chord_fracs or reattached.web_chord_fracs,
         orientation=reattached.orientation,
-        cap_placement=reattached.cap_placement,
+        cap_placement=cap,
         catalogue_key=reattached.catalogue_key,
         web_stations_m=layout.web_stations_m,
         web_axes_m=layout.web_axes_m,
-        structural_family=reattached.structural_family,
+        structural_family=fam,
         flags=reattached.flags,
     )
 
@@ -120,6 +144,7 @@ class StationLayoutResolution:
     dropped: tuple[DroppedWeb, ...]
     nominal_layout: SectionLayout
     web_y_coords: tuple[tuple[float, float], ...] = ()
+    web_indices: tuple[int, ...] = ()
 
     @property
     def stepped_down(self) -> bool:
@@ -144,10 +169,10 @@ def resolve_station_layout(
     phi_inner: Any | None = None,
 ) -> StationLayoutResolution:
     """Resolve the layout a station can actually carry, before building anything."""
-    from implicit_geometry_kernel.section.spec.kwarg_aliases import (
+    from implicit_geometry_kernel.section.spec.section_spec import (
         resolve_skin_thickness,
     )
-    from implicit_geometry_kernel.section.layout.system_layout import (
+    from implicit_geometry_kernel.contract.errors import (
         InfeasibleSectionGeometry,
     )
     from implicit_geometry_kernel.section.assembly.web_layout import (
@@ -180,6 +205,11 @@ def resolve_station_layout(
     )
     survivors = tuple(float(a[0]) for a in resolved)
     y_coords = tuple((float(a[1]), float(a[2])) for a in resolved)
+    lost = {int(d.index) for d in dropped if d.index is not None}
+    order = sorted(range(len(requested)), key=lambda i: float(requested[i]))
+    web_indices = tuple(i for i in order if i not in lost)
+    if len(web_indices) != len(survivors):
+        web_indices = tuple(range(len(survivors)))
 
     if len(survivors) == 0 and _layout_n_webs(nominal_sl) > 0:
         label = nominal_sl.catalogue_key or "SectionLayout"
@@ -190,9 +220,11 @@ def resolve_station_layout(
             "targets. Report this station as over-constrained."
         )
 
-    effective_sl = _step_down_section_layout(nominal_sl, len(survivors))
+    effective_sl = _step_down_section_layout(
+        nominal_sl, len(survivors), indices=web_indices,
+    )
     if wanted_preset:
-        effective_sl = _reattach_catalogue_preset(effective_sl)
+        effective_sl = _reattach_catalogue_preset(effective_sl, nominal_sl)
 
     return StationLayoutResolution(
         effective_sl,
@@ -200,6 +232,7 @@ def resolve_station_layout(
         tuple(dropped),
         nominal_sl,
         web_y_coords=y_coords,
+        web_indices=web_indices,
     )
 
 

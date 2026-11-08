@@ -58,7 +58,7 @@ class StationNetwork:
 
 def station_network(cut: SectionCut, table: FeatureTable | None = None) -> StationNetwork:
     """Build a station network from the merged shell graph (caps are partitions, not extra loops)."""
-    from implicit_geometry_kernel.blade.cut import shell_graph
+    from implicit_geometry_kernel.blade.shell_graph import shell_graph
 
     if table is None:
         table = FeatureTable()
@@ -72,7 +72,7 @@ def station_network(cut: SectionCut, table: FeatureTable | None = None) -> Stati
 
 def wall_meta_from_cut(cut: SectionCut, table: FeatureTable | None = None) -> tuple[SDFNode, FeatureTable]:
     """Tagged bands of the shell graph: one wall loop plus webs, no nested cap strip."""
-    from implicit_geometry_kernel.blade.cut import shell_graph
+    from implicit_geometry_kernel.blade.shell_graph import shell_graph
 
     if table is None:
         table = FeatureTable()

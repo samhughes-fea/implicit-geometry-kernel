@@ -1,22 +1,25 @@
 # implicit-geometry-kernel
 
-Geometry of blade and wing cross-sections: the source of truth for **blade
-geometry parameterisation** (airfoils, planform, layout catalogue, gauges in
-metres, members, span topology). Other tools consume this geometry; they do not
-keep a parallel airfoil/planform/layout model.
+Geometry of blade and wing cross-sections. This kernel is the source of truth
+for aerofoils, planform, the layout catalogue, gauges in metres, members, and
+span topology. Consuming tools read this geometry; they must not keep a parallel
+aerofoil, planform, or layout model.
 
-The kernel describes **what the walls are** (skin, webs, caps, optional cores and
-inserts) as signed-distance solids and constructive polygons. It does not own
-constitutive plies, stiffness, loads, solvers, or a Gmsh driver. Those stay in
-consuming tools. The three products — integrated properties, wall midlines /
-`shell_graph`, cell wall loops — are what beam FE, thin-wall section models,
-ply thickness laws, and conformal shell FE all read.
+Walls (skin, webs, caps, optional cores and inserts) are signed-distance solids
+and constructive polygons. The kernel does not own constitutive plies,
+stiffness, loads, solvers, or a mesh driver. The three products — integrated
+properties, wall midlines / `shell_graph`, and cell-wall loops — are what beam,
+thin-wall, and shell models consume.
 
-![Eight of the 40 layouts](examples/01_loft_and_cut/figures/layouts.png)
+Manual: [docs/README.md](docs/README.md). Names: [glossary](docs/glossary.md).
+Frames: [docs/frames](docs/frames/README.md#which-array).
+Catalogue: [WX-Y-Z-NR](docs/blade/concepts/taxonomy.md).
+
+![Eight of the 40 layouts](examples/blade/01_loft_and_cut/figures/layouts.png)
 
 ## What it can do
 
-Two nested entry points, not two engines:
+Two nested entry points share one geometry engine:
 
 - **One station** — `SectionGeometry` (`implicit_geometry_kernel.section`): one aerofoil, one layout, wall gauges, and position. `execute()` returns the three products below.
 - **Span loft** — `BladeGeometry`: a list of `Station`s. `interpolate(z)` blends chord, twist, pitch axis, offset and the aerofoil. `section_at(z)` then **calls `SectionGeometry`** and wraps the result as a `SectionCut` in the blade frame. Loft oracles (`oml_polyline`, `oml_sdf`, `wall_mid_sdf`, `wall_meta`) are extra fields, not a second geometry engine.
@@ -29,7 +32,7 @@ Two **tracks** into **one** assembler (`Airfoil` + `SectionLayout` + gauges + po
 
 | Track | What you pass | Becomes |
 | --- | --- | --- |
-| Parametric | `Airfoil` (NACA or vertices); layout as `SectionLayout` **or** a catalogue key (`"2D-F"` / `SYSTEM_TYPE_KEYS`); **gauges** (skin / web / cap thicknesses); **position** (twist, pitch axis, offset, chord); loft: `Station` list | `Airfoil` + `SectionLayout` + gauges + position |
+| Parametric | `Airfoil` (NACA or vertices); layout as `SectionLayout` **or** a catalogue key (`"2D-F-LC-0R"` / `SYSTEM_TYPE_KEYS`); **gauges** (skin / web / cap thicknesses); **position** (twist, pitch axis, offset, chord); loft: `Station` list | `Airfoil` + `SectionLayout` + gauges + position |
 | Published reference | windIO structure (`blade.windio`) | the same four objects (aerofoil stations, web/cap windows, gauges, position) |
 
 Station callers use `Airfoil.to_sdf()` (`AirfoilSDF` is the implicit adapter). Loft keeps `Airfoil` on each `Station`.
@@ -41,29 +44,29 @@ Three **products**. Loft wraps them in `SectionCut`; a station returns `SectionG
 | Product | Gate / API | What it is |
 | --- | --- | --- |
 | Integrated section properties | `"properties"` → `properties_map` | Area, first and second moments of the solids. Not stiffness. |
-| Mesh | `"midlines"` → `ShellMidlineStrip`; loft also `SectionCut.walls` / `mid_surface()` / `shell_graph()` | Wall midlines + thickness + region labels. A downstream mesher turns this into a shell mesh. Not a 3-D mesh; not `quadtree_mesh` (`retain_mesh` debug). |
+| Mesh | `"midlines"` → `ShellMidlineStrip`; loft also `shell_graph()` / `offset_regions()` | Conformal **skin-mid** loop + laminate OFFSET tags. Caps stay on `cut.walls` as solids. Not a 3-D mesh; not `quadtree_mesh`. |
 | Cell wall loops | `"cell_wall_loops"` → `CellWallLoop` | Closed cell circuits for the beam/section model. Distinct from loft `CellPolygon` interiors on `SectionCut`. |
 | Failures | `InfeasibleSectionGeometry` | Cavity too thin, empty offset, last web dropped, etc. |
 
 Loft extras (oracles, not a fourth product): `oml_polyline` / `oml_sdf` / `wall_mid_sdf` / `wall_meta`.
 
-Names that look similar but are different layers (do not merge them):
-
-- `ShearWeb` — blade station DTO (chord fraction). `WebWall` — section recipe. `ShearWebComponent` — SDF IR (`recipes.shear_web`).
-- `CellPolygon` — loft cut interiors. `CellWallLoop` — station FE DTO.
-- `CapPlacementRule` — plan-form cap policy (`section.layout`). `AnchoredWallGeometry` — through-thickness face offsets (`section.layout.anchoring`; `section.placement` is an alias until 0.6.0).
+Names that look similar but are different layers: [glossary](docs/glossary.md#lookalikes)
+(`ShearWeb` / `WebWall`; `CellPolygon` / `CellWallLoop`; `SectionCut` /
+`SectionGeometryResult`; solids on `cut.walls` versus `shell_graph` partitions).
 
 ## Quick start
 
 **Span loft**
+
+`BladeGeometry` **requires** `pivot_fraction` (S-frame origin; no 0.333 fallback).
 
 ```python
 from implicit_geometry_kernel import SYSTEM_TYPE_KEYS, Airfoil, BladeGeometry, Station
 
 stations = [Station(0.0, 2.0, Airfoil.naca4("0024"), twist=10.0, pitch_axis=0.3),
             Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3)]
-geo = BladeGeometry(stations, "2D-F", skin_thickness=0.003, spar_cap_thickness=0.008,
-                    shear_web_thickness=0.002, web_positions=(0.18, 0.48))
+geo = BladeGeometry(stations, "2D-F-LC-0R", skin_thickness=0.003, pivot_fraction=0.3,
+                    spar_cap_thickness=0.008, shear_web_thickness=0.002, web_positions=(0.18, 0.48))
 cut = geo.section_at(4.0)          # SectionCut at z = 4 m (calls SectionGeometry)
 geo.interpolate(4.0)               # chord, twist, pitch axis, offset, surfaces
 geo.oml_polyline(4.0)              # closed OML in the blade frame
@@ -72,9 +75,9 @@ geo.wall_mid_sdf()                 # signed SDF of the shell_graph skin loop at 
 geo.wall_meta()                    # tagged shell-graph bands
 cut.walls                          # SectionWall: solids stay split (caps listed)
 cut.cells                          # CellPolygon: closed cell interiors and their areas
-cut.mid_surface()                  # one wall graph, caps merged into their skins
-cut.shell_graph()                  # loft oracle: loop partitions + webs
-SYSTEM_TYPE_KEYS                   # the 40 layout keys: "0A", "0B", "1A-CN", ... "5D-F"
+cut.mid_surface()                  # one wall graph on the skin mid (cap partitions)
+cut.shell_graph()                  # loft oracle; offset_regions() for constitutive OFFSET
+SYSTEM_TYPE_KEYS                   # 120 tokens: "0A-LC-0R", "2D-F-LC-0R", "2D-F-LE-0R", "2D-F-PA-0R"; plus "-10R" ribs
 ```
 
 **One station**
@@ -84,7 +87,7 @@ from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.section import SectionGeometry, resolve_system_type
 
 result = SectionGeometry(
-    layout=resolve_system_type("2D-F"),
+    layout=resolve_system_type("2D-F-LC-0R"),
     airfoil=Airfoil.naca4("2412").to_sdf(chord=1.0),
     skin_thickness=0.004,
     spar_cap_thickness=0.012,
@@ -98,7 +101,8 @@ result.midline_strips              # ShellMidlineStrip: mesh hand-off in frame B
 result.cell_wall_loops             # CellWallLoop: closed cell circuits
 ```
 
-Nine worked examples: [examples/README.md](examples/README.md).
+Start here: [docs/README.md](docs/README.md) (capability map). Worked examples:
+[examples/README.md](examples/README.md).
 
 Blade frame: z along the span, x along the chord from the pitch axis towards the
 trailing edge, y through the thickness (suction side positive). Positive twist is nose
@@ -115,32 +119,32 @@ pip install -e ".[dev]"
 
 Python 3.11 or newer. NumPy, Shapely and Numba are required: the signed-distance
 kernels are compiled with Numba. SciPy (`[splines]`) is used for spline-resampled
-airfoils, and Matplotlib (`[plots]`) for the sibling `plotting` package.
+airfoils, and Matplotlib (`[plots]`) for `implicit_geometry_kernel.plotting`.
 
 ## Layout
 
 ```
 src/implicit_geometry_kernel/
 ├── blade/          Airfoil, Station, SkinRegion, ShearWeb; BladeGeometry (loft); SectionCut; shell_graph
-├── section/        one 2-D station: 40 layouts, placement, midlines, junctions,
+├── section/        one 2-D station: 40 layouts, walls, midlines, junctions,
 │                   cell-wall loops, area and second moments
+├── structure/      thin-wall member assembler (span laws, four contribution kinds)
 ├── sdf/            2-D signed-distance modelling: primitives, CSG, offsets, Numba kernels
 ├── frames/         geometric coordinate frames (R, B, S, S′, C) and point transforms
 ├── integration/    quadtree and shoelace area and moment integrals
 ├── contract/       the hand-off types (ShellMidlineStrip, CellWallLoop)
 ├── extract/        in-plane zero loops and feature curves (not a mesh)
+├── plotting/       Matplotlib figures (needs the [plots] extra)
 └── profiling.py    optional timers (SECTION_GEOMETRY_PROFILE=1)
-plotting/           Matplotlib figures (sibling package; needs the [plots] extra)
-tests/              one folder per subpackage, plus the loft and import-rule tests
-examples/           worked examples, one folder each; demos/ holds the figure scripts
-docs/               guides, references, ADRs, reports and bug logs, per subpackage
+tests/              one folder per subpackage, plus loft and import-rule tests
+examples/           blade/ section/ structure/ sdf/ frames/; demos/ is the gallery
+docs/               hub README, then one folder per subpackage
 ```
 
 The kernel is geometry only. Consumers: kernel barrel for loft;
 `implicit_geometry_kernel.section` for one station; `contract` for mesh/beam
 hand-off; `extract` as a subpackage (off the kernel `__all__`). `sdf` imports
-nothing from `section` or `blade`. Matplotlib lives in sibling `plotting`, not
-inside the kernel.
+nothing from `section` or `blade`. Matplotlib lives in `implicit_geometry_kernel.plotting`.
 
 `section`, `sdf`, `frames`, `integration` and `contract` started as a one-time fork of
 the same code in [blade-structure](https://github.com/samhughes-fea/blade-structure);
@@ -156,8 +160,9 @@ pytest -q
 
 - One skin thickness per section (it may vary along the span). Sandwich panels whose
   core differs from region to region need a region-based model downstream.
-- Web positions are fixed chord fractions or fixed distances from the leading edge.
-  A web that no longer fits a thin station is dropped, and the cut says so.
+- Web positions are authored LC fractions, LE offsets from the root chord, or PA
+  blade-\(x\) (primary root band, secondary trailing-edge shelf). A web that no
+  longer intercepts a station is omitted; the cut lists the drop.
 
 ## Licence
 

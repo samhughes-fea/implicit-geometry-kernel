@@ -86,7 +86,7 @@ def test_insert_wall_allows_constructive_maturity():
     assert poly is not None
 
 
-@pytest.mark.parametrize("layout_key", ["2D-F"])
+@pytest.mark.parametrize("layout_key", ["2D-F-LC-0R"])
 def test_insert_constructive_vs_sdf_area_parity(layout_key):
     """Constructive insert area vs SDF occupancy within wall-solid hybrid band."""
     from implicit_geometry_kernel.section.assembly.multicell import (

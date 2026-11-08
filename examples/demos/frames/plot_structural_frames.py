@@ -18,9 +18,9 @@ import numpy as np
 from numpy.typing import NDArray
 
 from implicit_geometry_kernel.frames import PIVOT_FRACTION_DEFAULT, naca_to_zero_twist_pitch_axis_station_frame, rotate_S_to_B
-from plotting.figure_io import apply_doc_style, save_figure
-from plotting.frames import fit_square_section_axes, setup_section_axes
-from plotting.palette import RED, TEAL
+from implicit_geometry_kernel.plotting.figure_io import apply_doc_style, save_figure
+from implicit_geometry_kernel.plotting.frames import fit_square_section_axes, setup_section_axes
+from implicit_geometry_kernel.plotting.palette import RED, TEAL
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
 # This demo deliberately imports the *production* transforms rather than

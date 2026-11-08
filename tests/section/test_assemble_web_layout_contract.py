@@ -19,11 +19,11 @@ from implicit_geometry_kernel.section import (
     resolve_station_layout,
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.api import build_section_with_thicknesses
+from implicit_geometry_kernel.section.spec import build_section_with_thicknesses
 from implicit_geometry_kernel.section.layout.cap_placement import (
     CapPlacementRule,
 )
-from implicit_geometry_kernel.section.layout.system_layout import (
+from implicit_geometry_kernel.catalogue.system_layout import (
     layout_without_spar_caps,
 )
 from implicit_geometry_kernel.section.assembly.build_spar_caps import (
@@ -40,7 +40,7 @@ def _naca_chord(chord: float) -> AirfoilSDF:
 
 
 def _anchored_2d_f(root_chord: float = ROOT_CHORD) -> list[float]:
-    layout = resolve_system_type("2D-F")
+    layout = resolve_system_type("2D-F-LC-0R")
     return [float(f) * root_chord for f in layout.web_chord_fracs]
 
 
@@ -72,12 +72,12 @@ def test_resolve_then_assemble_1c_succeeds_with_non_none_components():
     af = _naca_chord(chord)
     xs = _anchored_2d_f()
     res = resolve_station_layout(
-        resolve_system_type("2D-F"),
+        resolve_system_type("2D-F-LC-0R"),
         af,
         skin_thickness=0.004,
         web_x_positions_m=xs,
     )
-    assert res.layout.key == "1C-F"
+    assert res.layout.key == "1C-F-LC-0R"
     assert len(res.web_x_positions_m) == 1
     assert res.layout.cap_placement.kind == "per_web_pads"
 
@@ -104,12 +104,12 @@ def test_frozen_web_y_coords_do_not_silently_drop_a_web():
     af = _naca_chord(ROOT_CHORD)
     xs = _anchored_2d_f()
     res = resolve_station_layout(
-        resolve_system_type("2D-F"),
+        resolve_system_type("2D-F-LC-0R"),
         af,
         skin_thickness=T_SKIN_FLOOR,
         web_x_positions_m=xs,
     )
-    assert res.layout.key == "2D-F"
+    assert res.layout.key == "2D-F-LC-0R"
     assert len(res.web_x_positions_m) == 2
 
     section = build_section_with_thicknesses(
@@ -159,8 +159,8 @@ def test_build_spar_caps_rejects_continuous_box_with_one_web():
 
 def test_cap_runout_via_layout_without_spar_caps_omits_cap_keys():
     af = _naca_chord(ROOT_CHORD)
-    layout = layout_without_spar_caps(resolve_system_type("1C-F"))
-    assert layout.key == "1A-F"
+    layout = layout_without_spar_caps(resolve_system_type("1C-F-LC-0R"))
+    assert layout.key == "1A-F-LC-0R"
     assert not layout.has_spar_caps
     section = build_section_with_thicknesses(
         af,

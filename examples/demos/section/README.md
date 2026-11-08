@@ -1,14 +1,13 @@
-# visualisation demos ? run list
+# visualisation demos — run list
 
 Demo scripts for `section_geometry` products. Outputs:
 [`../figures/`](../figures/), committed and shown under [Figures](#figures) below. Artefact / regen index:
 [`ARTIFACTS.md`](ARTIFACTS.md). Run from the repository root.
 
 Teaching scripts (print-first, few flags):
-`../../examples/`.
+[`../../section/teaching/`](../../section/teaching/).
 
-? `section_geometry` ?
-`../README.md`
+See also [`../README.md`](../README.md).
 
 ```bash
 python examples/demos/section/<script>.py
@@ -51,16 +50,16 @@ Section / gallery / junctions / cell walls / anatomy.
 
 | Script | What it draws |
 |--------|----------------|
-| [`naca2412_section.py`](naca2412_section.py) | Twin-web section and twisted box examples ? `../figures/naca2412_section/` |
-| [`geometry_from_design_vector.py`](geometry_from_design_vector.py) | Build/plot from thicknesses + layout (families A?D) |
-| [`structural_family_grids_demo.py`](structural_family_grids_demo.py) | One PNG per layout id; `--wall` contact sheet ? `../figures/structural_family_grids/` |
-| [`anatomy_2d_f_demo.py`](anatomy_2d_f_demo.py) | Labelled `2D-F` with legend ? `../figures/anatomy_2d_f/` |
+| [`naca2412_section.py`](naca2412_section.py) | Twin-web section and twisted box examples — `../figures/naca2412_section/` |
+| [`geometry_from_design_vector.py`](geometry_from_design_vector.py) | Build/plot from thicknesses + layout (families A-D) |
+| [`structural_family_grids_demo.py`](structural_family_grids_demo.py) | One PNG per layout id; `--wall` contact sheet — `../figures/structural_family_grids/` |
+| [`anatomy_2d_f_demo.py`](anatomy_2d_f_demo.py) | Labelled `2D-F` with legend — `../figures/anatomy_2d_f/` |
 | [`section_centerline_geometry_taxonomy.py`](section_centerline_geometry_taxonomy.py) | Per-label SDF panels for layout keys |
 | [`system_types_twist_grid.py`](system_types_twist_grid.py) | Layout grids at fixed twist |
 | `spanwise_web_anchors.py` | Root-anchored vs per-station web positions |
 | [`skin_ss_ps_taxonomy_demo.py`](skin_ss_ps_taxonomy_demo.py) | Upper/lower skin solids and midline arcs |
 | [`shell_junction_topology_demo.py`](shell_junction_topology_demo.py) | Junction snap before/after (raw vs prepared midlines) |
-| [`cell_wall_loops_demo.py`](cell_wall_loops_demo.py) | Closed cell loops for 0?5 webs |
+| [`cell_wall_loops_demo.py`](cell_wall_loops_demo.py) | Closed cell loops for 0-5 webs |
 | `section_properties_dashboard.py` | Per-label area / inertia dashboard |
 | `feature_flythroughs.py` | Reusable GIF fly-through pipeline |
 | `design_vector_morph.py` | One design vector -> solids, midlines and Q4 mesh, animated |

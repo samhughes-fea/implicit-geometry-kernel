@@ -20,3 +20,10 @@ def test_to_sdf_returns_airfoil_sdf() -> None:
     field = Airfoil.naca4("2412").to_sdf(chord=2.0, n=81)
     assert isinstance(field, AirfoilSDF)
     assert field.chord == 2.0
+
+
+def test_only_one_airfoil_sdf_class() -> None:
+    from implicit_geometry_kernel.sdf import AirfoilSDF as barrel
+    from implicit_geometry_kernel.sdf.shapes import AirfoilSDF as shapes
+
+    assert barrel is shapes is AirfoilSDF

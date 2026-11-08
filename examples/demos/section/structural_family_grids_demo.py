@@ -49,7 +49,7 @@ def _load_sibling(name: str, filename: str):
 _ensure_mod = _load_sibling("_ensure_repo_path", "_ensure_repo_path.py")
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     DEFAULT_DPI,
     add_output_and_presentation_args,
     apply_presentation_style,
@@ -57,13 +57,15 @@ from plotting.figure_io import (
 )
 _taxonomy = _load_sibling("_taxonomy_cases", "_taxonomy_cases.py")
 
-from implicit_geometry_kernel.section.spec.factory import (
+from implicit_geometry_kernel.catalogue import (
     SYSTEM_TYPE_KEYS,
-    build_section_view,
     resolve_system_type,
 )
-from plotting.palette import strip_axes_chrome
-from plotting.plot import (
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
+)
+from implicit_geometry_kernel.plotting.palette import strip_axes_chrome
+from implicit_geometry_kernel.plotting.plot import (
     plot_section_hybrid,
 )
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
@@ -234,7 +236,7 @@ def _render_taxonomy_matrix(
     column headers already say what each cell is, and 40 sets of axis numbers
     would be the loudest thing on the sheet.
     """
-    from plotting.palette import (
+    from implicit_geometry_kernel.plotting.palette import (
         INK,
         MUTED,
         SURFACE,

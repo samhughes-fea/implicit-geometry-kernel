@@ -7,14 +7,20 @@ from typing import Any
 import numpy as np
 from implicit_geometry_kernel.section.boundary import MultiPolygon, Polygon
 
-from implicit_geometry_kernel.section.boundary import ensure_polygon, rotate_geom, stadium_polygon
-from implicit_geometry_kernel.section.boundary import airfoil_polygon, offset_polygon_inward
+from implicit_geometry_kernel.section.boundary.polygons import (
+    OPS,
+    airfoil_polygon,
+    ensure_polygon,
+    offset_polygon_inward,
+    rotate_geom,
+    stadium_polygon,
+)
 
 
 def _clip_algebra():
-    from implicit_geometry_kernel.section.assembly.clip_algebra import CamberSide, ChordBand, FlapwiseStrip, apply_shapely
+    from implicit_geometry_kernel.section.assembly.clip_algebra import CamberSide, ChordBand, FlapwiseStrip, apply_clip
 
-    return CamberSide, ChordBand, FlapwiseStrip, apply_shapely
+    return CamberSide, ChordBand, FlapwiseStrip, apply_clip
 
 
 def _af_from_component(comp: Any):
@@ -48,7 +54,7 @@ def emit_outer_skin_polygon(
     if inner.is_empty:
         annulus = ensure_polygon(poly)
     else:
-        annulus = ensure_polygon(poly.difference(inner))
+        annulus = ensure_polygon(OPS.difference(poly, inner))
 
     side = getattr(comp, "skin_side", None)
     if side is None:
@@ -61,8 +67,8 @@ def emit_outer_skin_polygon(
     else:
         return annulus
     camber_xy = getattr(comp, "_camber_xy", None)
-    CamberSide, _ChordBand, _FlapwiseStrip, apply_shapely = _clip_algebra()
-    return apply_shapely(
+    CamberSide, _ChordBand, _FlapwiseStrip, apply_clip = _clip_algebra()
+    return apply_clip(
         CamberSide(surface=surface),  # type: ignore[arg-type]
         annulus,
         camber_xy=camber_xy,
@@ -88,7 +94,7 @@ def emit_shear_web_polygon(
     # Inner-skin clip: Offset(airfoil, -skin).
     if cavity is not None:
         if not cavity.is_empty:
-            stadium = stadium.intersection(cavity)
+            stadium = OPS.intersection(stadium, cavity)
     else:
         af = getattr(comp, "_af", None)
         skin_thickness = getattr(comp, "skin_thickness", None)
@@ -96,7 +102,7 @@ def emit_shear_web_polygon(
             poly = airfoil_polygon(af)
             cav = offset_polygon_inward(poly, float(skin_thickness))
             if not cav.is_empty:
-                stadium = stadium.intersection(cav)
+                stadium = OPS.intersection(stadium, cav)
     # Thick skin / shallow sections can empty the cavity ∩ stadium Boolean.
     return ensure_polygon(stadium, allow_empty=True)
 
@@ -146,9 +152,9 @@ def emit_spar_cap_polygon(
     if inner.is_empty:
         raise ValueError("SparCap: inner-skin offset is empty.")
     slab = inner if deeper.is_empty else inner.difference(deeper)
-    CamberSide, ChordBand, FlapwiseStrip, apply_shapely = _clip_algebra()
+    CamberSide, ChordBand, FlapwiseStrip, apply_clip = _clip_algebra()
     camber_xy = getattr(comp, "_camber_xy", None)
-    slab = apply_shapely(
+    slab = apply_clip(
         CamberSide(surface=surface),  # type: ignore[arg-type]
         slab,
         camber_xy=camber_xy,
@@ -181,7 +187,7 @@ def emit_spar_cap_polygon(
                 "SparCap flapwise clip needs flapwise_nx/ny/c_lo/c_hi/clip_mode; "
                 "construct via CapWall / spar_family or pass them explicitly."
             )
-        slab = apply_shapely(
+        slab = apply_clip(
             FlapwiseStrip(
                 nx=float(fw_nx),
                 ny=float(fw_ny),
@@ -194,7 +200,7 @@ def emit_spar_cap_polygon(
         if slab.is_empty:
             return Polygon()
     else:
-        slab = apply_shapely(
+        slab = apply_clip(
             ChordBand(x_start=float(comp.x_start), x_end=float(comp.x_end)),
             slab,
         )
@@ -238,13 +244,13 @@ def emit_sandwich_core_polygon(
 
     region = cavity
     if wall_exclusion_union is not None and not wall_exclusion_union.is_empty:
-        region = region.difference(wall_exclusion_union)
+        region = OPS.difference(region, wall_exclusion_union)
 
     bay_mode = getattr(comp, "bay_mode", "chordwise")
-    _CamberSide, ChordBand, FlapwiseStrip, apply_shapely = _clip_algebra()
+    _CamberSide, ChordBand, FlapwiseStrip, apply_clip = _clip_algebra()
     target = region if not region.is_empty else cavity
     if bay_mode == "flapwise":
-        clipped = apply_shapely(
+        clipped = apply_clip(
             FlapwiseStrip(
                 nx=float(comp.flapwise_nx),
                 ny=float(comp.flapwise_ny),
@@ -261,7 +267,7 @@ def emit_sandwich_core_polygon(
         if x_start is None and x_end is None:
             clipped = target
         else:
-            clipped = apply_shapely(
+            clipped = apply_clip(
                 ChordBand(
                     x_start=float(x_start) if x_start is not None else -1e9,
                     x_end=float(x_end) if x_end is not None else 1e9,
@@ -278,7 +284,7 @@ def emit_sandwich_core_polygon(
             ybox = Polygon(
                 [(minx - pad, y0), (maxx + pad, y0), (maxx + pad, y1), (minx - pad, y1)]
             )
-            clipped = clipped.intersection(ybox)
+            clipped = OPS.intersection(clipped, ybox)
 
     if clipped.is_empty or float(getattr(clipped, "area", 0.0) or 0.0) <= 0.0:
         return Polygon()
@@ -303,10 +309,10 @@ def emit_trailing_edge_insert_polygon(
     if cavity.is_empty:
         return Polygon()
     # Half-plane x >= x_start via ChordBand from x_start to far TE.
-    _CamberSide, ChordBand, _FlapwiseStrip, apply_shapely = _clip_algebra()
+    _CamberSide, ChordBand, _FlapwiseStrip, apply_clip = _clip_algebra()
     minx, miny, maxx, maxy = cavity.bounds
     pad = max(maxx - minx, maxy - miny, 1.0) + 1.0
-    region = apply_shapely(
+    region = apply_clip(
         ChordBand(x_start=x_start, x_end=maxx + pad),
         cavity,
     )
@@ -332,10 +338,10 @@ def emit_leading_edge_insert_polygon(
     )
     if cavity.is_empty:
         return Polygon()
-    _CamberSide, ChordBand, _FlapwiseStrip, apply_shapely = _clip_algebra()
+    _CamberSide, ChordBand, _FlapwiseStrip, apply_clip = _clip_algebra()
     minx, miny, maxx, maxy = cavity.bounds
     pad = max(maxx - minx, maxy - miny, 1.0) + 1.0
-    region = apply_shapely(
+    region = apply_clip(
         ChordBand(x_start=minx - pad, x_end=x_end),
         cavity,
     )
@@ -347,5 +353,5 @@ def emit_leading_edge_insert_polygon(
     if radius is None:
         radius = x_end
     disk = Point(le_x, le_y).buffer(float(radius), quad_segs=32)
-    region = region.intersection(disk)
+    region = OPS.intersection(region, disk)
     return ensure_polygon(region, allow_empty=True)

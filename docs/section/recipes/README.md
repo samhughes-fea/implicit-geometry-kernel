@@ -1,5 +1,7 @@
 # Wall recipes
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 One recipe description, three projections (G-RECIPE SoT):
 
 | Projection | Status |
@@ -11,8 +13,8 @@ One recipe description, three projections (G-RECIPE SoT):
 Recipes hold parameters only. Assemble authors frozen recipes first; SDF IR
 classes (`OuterSkin`, `SparCap`, `ShearWebComponent`, `SandwichCore`, `LEInsert`,
 `TEInsert`) are private projection internals (not a second authoring
-surface). Import them from `recipes.outer_skin` and siblings, not the recipes
-barrel. The barrel `__all__` is wall recipes only.
+surface). Import them from `section.walls` (`outer_skin`, `spar_cap`, …), not a
+`recipes` barrel. The walls package `__all__` is wall recipes only.
 
 Emit / hybrid props consume recipes stored on the host.
 

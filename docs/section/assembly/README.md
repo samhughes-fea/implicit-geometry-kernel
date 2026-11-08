@@ -1,5 +1,7 @@
 # assembly — MultiCellSection host
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 ↑ [`section`](../README.md)
 
 Assembles a layout, aerofoil, and wall thicknesses into a `MultiCellSection`:

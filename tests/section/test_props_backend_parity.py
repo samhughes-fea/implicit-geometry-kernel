@@ -5,7 +5,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.section.api.factory import build_section_view, resolve_system_type
+from implicit_geometry_kernel.catalogue import resolve_system_type
+from implicit_geometry_kernel.section.assembly import build_section_view
 from implicit_geometry_kernel.section.properties.area_mesh import build_shared_section_quadtree
 from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
@@ -15,7 +16,7 @@ from implicit_geometry_kernel.integration.quadtree.marching import summarize_qua
 from implicit_geometry_kernel.section.properties.eval_cache import SectionEvalCache
 
 
-@pytest.mark.parametrize("layout_key", ["2D-CN", "2D-F"])
+@pytest.mark.parametrize("layout_key", ["2D-CN-LC-0R", "2D-F-LC-0R"])
 def test_quadtree_backend_parity_with_grid(layout_key: str):
     airfoil = AirfoilSDF.from_naca("2412", n_points=120, chord=1.0)
     section = build_section_view(airfoil, resolve_system_type(layout_key), twist_angle_rad=0.0)
@@ -47,7 +48,7 @@ def test_quadtree_backend_parity_with_grid(layout_key: str):
 
 def test_default_backend_is_hybrid():
     airfoil = AirfoilSDF.from_naca("0012", n_points=80, chord=1.0)
-    section = build_section_view(airfoil, resolve_system_type("2D-CN"), twist_angle_rad=0.0)
+    section = build_section_view(airfoil, resolve_system_type("2D-CN-LC-0R"), twist_angle_rad=0.0)
     grid = SDFGrid.from_airfoil(airfoil, nx=200, ny=100)
     report = SectionPropertiesReport(section, grid)
     assert report.backend_meta.get("backend") == "hybrid"
@@ -70,7 +71,7 @@ def test_quadtree_root_cell_size_twist_invariant():
 
 def test_quadtree_twist_resolution_matches():
     airfoil = AirfoilSDF.from_naca("2412", n_points=120, chord=1.0)
-    layout = resolve_system_type("2D-CN")
+    layout = resolve_system_type("2D-CN-LC-0R")
     twist_rad = float(np.deg2rad(15.0))
     section0 = build_section_view(airfoil, layout, twist_angle_rad=0.0)
     section15 = build_section_view(airfoil, layout, twist_angle_rad=twist_rad)
@@ -84,7 +85,7 @@ def test_quadtree_twist_resolution_matches():
     np.testing.assert_allclose(w15, w0, rtol=0.15, atol=1e-4)
 
 
-@pytest.mark.parametrize("layout_key", ["2D-CN"])
+@pytest.mark.parametrize("layout_key", ["2D-CN-LC-0R"])
 def test_quadtree_backend_parity_with_grid_twisted(layout_key: str):
     twist_rad = float(np.deg2rad(15.0))
     airfoil = AirfoilSDF.from_naca("2412", n_points=120, chord=1.0)

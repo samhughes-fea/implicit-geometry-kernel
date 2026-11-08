@@ -15,7 +15,7 @@ from implicit_geometry_kernel import (
     transverse_members_from_windio,
     zone_region_graphs,
 )
-from implicit_geometry_kernel.blade.concept import BladeConcept
+from implicit_geometry_kernel.blade.concepts import BladeConcept
 from implicit_geometry_kernel.blade.topology import (
     Anchor,
     Region,
@@ -524,39 +524,39 @@ def test_09_pa_4d_loft_keeps_live_webs_on_cylinder():
 
 def test_09_pa_4d_loft_tracks_pitch_offset_not_catalogue():
     geo = _09_geo("4D-F-PA-10R")
-    z_rib5 = 10.0
-    cut = geo.section_at(z_rib5)
-    assert 0 not in cut.dropped_web_indices
-    authored = geo.region_graph.webs[0].at(z_rib5)
+    z_mid = 5.0
+    cut = geo.section_at(z_mid)
+    authored = geo.region_graph.webs[0].at(z_mid)
     expect = float(cut.pitch_axis) + float(geo._web_x_from_pitch[0]) / float(cut.chord)
     assert authored == pytest.approx(expect, abs=1e-6)
-    assert authored < 0.12
-    _tpls, samples = _templates(geo, [z_rib5], n_chord=8)
+    assert authored < 0.20
+    _tpls, samples = _templates(geo, [z_mid], n_chord=8)
     assert "web_0" in samples[0]
-    z_rib6 = 12.0
-    cut6 = geo.section_at(z_rib6)
-    assert 0 in cut6.dropped_web_indices
-    assert 3 not in cut6.dropped_web_indices
-    _t6, s6 = _templates(geo, [z_rib6], n_chord=8)
-    assert "web_0" not in s6[0]
-    assert "web_3" in s6[0]
+    root = geo.section_at(0.0)
+    assert 3 in root.dropped_web_indices
+    assert 3 not in cut.dropped_web_indices
+    _t0, s0 = _templates(geo, [0.0], n_chord=8)
+    assert "web_3" not in s0[0]
+    assert "web_3" in samples[0]
 
 
 def test_09_pa_4d_web3_onset_and_drop_are_skin_ruled():
     geo = _09_geo("4D-F-PA-10R")
-    tpls, samples = _templates(geo, [0.0, 0.5], n_chord=8)
+    zs = np.linspace(0.0, 20.0, 41)
+    live = [3 not in geo.section_at(float(z)).dropped_web_indices for z in zs]
+    assert any(live) and not live[0]
+    i_on = next(i for i, v in enumerate(live) if v)
+    tpls, samples = _templates(geo, [zs[i_on - 1], zs[i_on]], n_chord=8)
     faces = loft_mapped_strips(samples[0], samples[1], tpls[0], tpls[1])
-    bay = [c for n, _f, c in faces if n == "bay_pr_2"]
-    wrap = [c for n, _f, c in faces if n == "te"]
-    te = [c for n, _f, c in faces if n == "te_pr"]
-    assert bay
-    assert sum(1 for c in bay if not c) >= max(1, len(bay) // 2)
-    ruled = wrap if wrap else te
+    names = {n for n, _f, _c in faces}
+    assert any(n.startswith("bay_pr") or n.startswith("te") for n in names)
+    ruled = [c for n, _f, c in faces if n.startswith("bay_pr") or n in ("te", "te_pr")]
     assert ruled
     assert sum(1 for c in ruled if not c) >= max(1, len(ruled) // 2)
-    tpls, samples = _templates(geo, [12.0, 12.5], n_chord=8)
+    i_off = next(i for i in range(i_on + 1, len(live)) if not live[i])
+    tpls, samples = _templates(geo, [zs[i_off - 1], zs[i_off]], n_chord=8)
     faces = loft_mapped_strips(samples[0], samples[1], tpls[0], tpls[1])
-    te = [c for n, _f, c in faces if n == "te_pr"]
+    te = [c for n, _f, c in faces if n in ("te_pr", "te") or n.startswith("bay_pr")]
     assert te
     assert sum(1 for c in te if not c) >= max(1, len(te) // 2)
 

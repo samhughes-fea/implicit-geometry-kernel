@@ -3,28 +3,33 @@
 ``BladeGeometry.section_at(z)`` returns a ``SectionCut``. Two views of the same cut:
 
 * **Solids / bonds / cells** — ``walls`` always lists every cap as its own
-  ``SectionWall`` (``kind="cap"``). Do not delete those rows.
-* **Shell graph** — ``mid_surface()`` never has ``kind="cap"``. A cap is a
-  *partition* on the skin wall: ``layers = (cap, skin)``, combined
-  ``T = t_cap + t_skin``, and the cap edge stays a feature line. ``shell_graph()``
-  exports that as one loftable skin loop plus web branches. Sandwich cores and
-  trailing-edge inserts stay constructive solids (G9); they are not loop runs.
+  ``SectionWall`` (``kind="cap"``). Do not delete those rows. Cap–skin
+  ``bonds`` are the solid footprint on the host skin.
+* **Shell graph** — conformal **skin mid**. A cap is a *partition* on that
+  loop (``kind="cap"`` as colour, xy stays the skin). Mesh thickness is
+  ``t_skin``; ``eccentricity_m = t_cap/2`` for constitutive OFFSET. Stack
+  ``T = t_cap + t_skin`` remains the thickness oracle (``StackThickness`` /
+  cavity), not the mesh gauge. ``shell_graph()`` exports one loftable skin
+  loop plus web branches. Sandwich cores and inserts stay off the loop by
+  default (G9); ``shell_graph(include_solids=True)`` adds polygon-boundary
+  runs with ``surface`` ``core`` / ``insert``.
 
-``cells`` are the closed cell interiors (``CellPolygon``; ``CellLoop`` is a
-deprecated alias until 0.6.0).
+``cells`` are the closed cell interiors (``CellPolygon``).
 
-Graph types and builders live in :mod:`implicit_geometry_kernel.blade.shell_graph`
-and are re-exported here until 0.6.0.
+Graph types and builders live in :mod:`implicit_geometry_kernel.blade.shell_graph`.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 import numpy as np
 
 from implicit_geometry_kernel.blade.stations import Stringer, TransverseMember
+
+if TYPE_CHECKING:
+    from implicit_geometry_kernel.blade.shell_graph import MidSurface, ShellGraph
 
 
 @dataclass(frozen=True)
@@ -89,6 +94,9 @@ class SectionCut:
     dropped_webs: Tuple[str, ...] = ()
     transverse: Tuple[TransverseMember, ...] = ()
     stringers: Tuple[Stringer, ...] = ()
+    host: Any = field(default=None, repr=False, compare=False)
+    scale: float = 1.0
+    dropped_web_indices: Tuple[int, ...] = ()
 
     def wall(self, label: str) -> SectionWall:
         for w in self.walls:
@@ -118,11 +126,29 @@ class SectionCut:
 
         return _mid_surface(self)
 
-    def shell_graph(self) -> "ShellGraph":
-        """Loftable shell: one wall loop (caps as partitions) plus web branches."""
+    def place_host_xy(self, pts_B) -> np.ndarray:
+        """Blade-frame polyline of section-frame points on this cut (G9 solids)."""
+        from implicit_geometry_kernel.frames import twisted_pitch_axis_blade_frame_to_naca
+
+        k = float(self.scale) if float(self.scale) else 1.0
+        pts = np.asarray(pts_B, float) / k
+        if pts.ndim != 2 or pts.shape[1] < 2:
+            return np.zeros((0, 3))
+        naca = twisted_pitch_axis_blade_frame_to_naca(
+            pts[:, :2], -np.radians(self.twist), self.chord, self.pitch_axis
+        )
+        local = np.column_stack([naca[:, 0] - self.pitch_axis * self.chord, naca[:, 1]])
+        xy = _twist_offset(local, self.twist, self.offset)
+        return np.column_stack([xy, np.full(len(xy), self.z)])
+
+    def shell_graph(self, include_solids: bool = False) -> "ShellGraph":
+        """Loftable shell: one wall loop (caps as partitions) plus web branches.
+
+        ``include_solids=True`` adds core and insert runs from polygon boundaries (G9).
+        """
         from implicit_geometry_kernel.blade.shell_graph import shell_graph as _shell_graph
 
-        return _shell_graph(self)
+        return _shell_graph(self, include_solids=include_solids)
 
     def key_points(self) -> dict[str, np.ndarray]:
         """LE, TE, cap-edge vertices and web feet at this station."""
@@ -131,8 +157,14 @@ class SectionCut:
         te = oml[int(np.argmax(oml[:, 0]))]
         out: dict[str, np.ndarray] = {"LE": le, "TE": te}
         graph = self.shell_graph()
+        from implicit_geometry_kernel.section.assembly.members import wall_type_for_label
+
+        def _is_cap(name: str) -> bool:
+            wt = wall_type_for_label(name)
+            return wt is not None and wt.kind == "cap"
+
         for i, edge in enumerate(graph.partition_edges()):
-            if "spar_cap" in edge.name_a or "spar_cap" in edge.name_b:
+            if _is_cap(edge.name_a) or _is_cap(edge.name_b):
                 out[f"cap_edge_{i}"] = np.asarray(edge.point, float)
         for web in graph.webs:
             pts = np.asarray(web.points, float)
@@ -148,49 +180,8 @@ def _twist_offset(xy: np.ndarray, twist_deg: float, offset) -> np.ndarray:
     return np.column_stack([c * x + s * y + offset[0], -s * x + c * y + offset[1]])
 
 
-from implicit_geometry_kernel.blade.shell_graph import (  # noqa: E402
-    MidSegment,
-    MidSurface,
-    PartitionEdge,
-    ShellGraph,
-    ShellRun,
-    TopologyDiff,
-    TopologyEvent,
-    partition_edge_curve,
-    shared_loft_names,
-    shell_graph,
-    shell_strips_from_graph,
-    topology_diff,
-)
-
-def __getattr__(name: str):
-    if name == "CellLoop":
-        import warnings
-
-        warnings.warn(
-            "CellLoop is deprecated; use CellPolygon. Removed in 0.6.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return CellPolygon
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
-__all__ = [  # CellLoop via __getattr__ until 0.6.0
-    "CellLoop",  # noqa: F822
+__all__ = [
     "CellPolygon",
-    "MidSegment",
-    "MidSurface",
-    "PartitionEdge",
     "SectionCut",
     "SectionWall",
-    "ShellGraph",
-    "ShellRun",
-    "TopologyDiff",
-    "TopologyEvent",
-    "partition_edge_curve",
-    "shared_loft_names",
-    "shell_graph",
-    "shell_strips_from_graph",
-    "topology_diff",
 ]

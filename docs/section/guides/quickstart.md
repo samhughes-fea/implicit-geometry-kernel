@@ -1,7 +1,11 @@
 # Quick start
 
-Progressive call paths. Overview: [`../README.md`](../docs_index.md). Recipes:
-[`caller_patterns.md`](caller_patterns.md).
+Progressive call paths for one station. Overview: [`../README.md`](../README.md).
+Recipes: [`caller_patterns.md`](caller_patterns.md).
+
+`SectionGeometry.execute()` returns `SectionGeometryResult` or raises
+`InfeasibleSectionGeometry`. Catalogue tokens are defined in the
+[WX-Y-Z-NR taxonomy](../../blade/concepts/taxonomy.md).
 
 ↑ [`section`](../docs_index.md)
 
@@ -22,7 +26,7 @@ Returns `SectionGeometryResult` or raises (e.g. `InfeasibleSectionGeometry`).
 ## 1. First call
 
 One station. Runnable twin:
-`../examples/01_first_station.py`.
+`../../../examples/section/teaching/01_first_station.py`.
 
 ```python
 from implicit_geometry_kernel import Airfoil
@@ -32,7 +36,7 @@ from implicit_geometry_kernel.section import (
 )
 from implicit_geometry_kernel.plotting import plot_section
 
-layout = resolve_system_type("2D-F")
+layout = resolve_system_type("2D-F-LC-0R")
 airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)
 
 result = SectionGeometry(
@@ -48,9 +52,8 @@ result = SectionGeometry(
 plot_section(result.section)
 ```
 
-`SectionGeometry` is the public call path (`SectionGeometryRunner` is an alias).
-`build_section_geometry` is a deep import (`section.spec`; `section.api` until
-0.6.0) for tests. Gate
+`SectionGeometry` is the public call path.
+`build_section_geometry` is a deep import (`section.spec`) for tests. Gate
 `"cell_wall_loops"` also fills midlines.
 
 ---
@@ -58,7 +61,7 @@ plot_section(result.section)
 ## 2. Read the result
 
 Runnable twin (properties table):
-`../examples/02_read_properties.py`.
+`../../../examples/section/teaching/02_read_properties.py`.
 Anatomy of labels on a figure:
 [`anatomy_on_a_figure.md`](anatomy_on_a_figure.md).
 
@@ -66,7 +69,7 @@ Anatomy of labels on a figure:
 |-------|--------------|-----|
 | `result.section` | always | Named planar solids (for plotting) |
 | `result.properties_map` | `"properties"` gated | Per-region area / second moments |
-| `result.midline_strips` | `"midlines"` or `"cell_wall_loops"` gated | Centreline polylines for meshing |
+| `result.midline_strips` | `"midlines"` or `"cell_wall_loops"` gated | Skin+web centrelines (conformal mesh) |
 | `result.cell_wall_loops` | `"cell_wall_loops"` gated | Closed cell-wall loops |
 
 ```python
@@ -86,20 +89,22 @@ Field schemas: [Using the result](../docs_index.md#using-the-result) and
 
 ## 3. Pick a layout
 
-Layout ids are strings in `SYSTEM_TYPE_KEYS` (40 keys). Examples:
+Layout ids are strings in `SYSTEM_TYPE_KEYS` (120 keys: 40 cores × LC/LE/PA × `0R`).
+A rib count is required; `"2D-F-LC-0R"` is none, `"2D-F-LC-10R"` is ten faces.
+Section goldens iterate `SYSTEM_TYPE_LAYOUT_KEYS` (the 40 `*-LC-0R` cores). Examples:
 
 | Need | Start with |
 |------|------------|
-| Twin-web torsion box | `"2D-F"` or `"2D-CN"` |
-| Skin-only station | `"0A"` |
-| Skin + single cap band | `"0B"` or `"1B-F"` |
-| Three webs, continuous box | `"3D-F"` |
+| Twin-web torsion box | `"2D-F-LC-0R"` or `"2D-CN-LC-0R"` |
+| Skin-only station | `"0A-LC-0R"` |
+| Skin + single cap band | `"0B-LC-0R"` or `"1B-F-LC-0R"` |
+| Three webs, continuous box | `"3D-F-LC-0R"` |
 
 Browse every key as a figure:
 [`../reference/structural_systems_gallery.md`](../reference/structural_systems_gallery.md).
 
-Decode `{X}{Y}-{Z}` (web count, cap family, orientation):
-[`../reference/system_type_xyz_taxonomy.md`](../reference/system_type_xyz_taxonomy.md).
+Decode `[W][X]-[Y]-[Z]-[R]` (web count, cap family, orientation, LC/LE/PA, rib count):
+[`taxonomy`](../../blade/concepts/taxonomy.md).
 
 ```python
 from implicit_geometry_kernel.section import (
@@ -107,8 +112,8 @@ from implicit_geometry_kernel.section import (
     resolve_system_type,
 )
 
-assert "2D-F" in SYSTEM_TYPE_KEYS
-spec = resolve_system_type("2D-F")
+assert "2D-F-LC-0R" in SYSTEM_TYPE_KEYS
+spec = resolve_system_type("2D-F-LC-0R")
 # spec.n_webs, spec.structural_family, spec.web_orientation, ...
 ```
 
@@ -126,7 +131,7 @@ Same layout, different stacks:
 
 ```python
 result = SectionGeometry(
-    layout=resolve_system_type("2D-F"),
+    layout=resolve_system_type("2D-F-LC-0R"),
     airfoil=AirfoilSDF.from_naca("2412", chord=1.0),
     skin_thickness=0.006,
     spar_cap_thickness=0.020,
@@ -136,7 +141,7 @@ result = SectionGeometry(
 ```
 
 Caller parameters and feasibility:
-[`../api/README.md`](../api/README.md).
+[`../spec/README.md`](../spec/README.md).
 
 ---
 
@@ -146,7 +151,7 @@ Freeze which webs fit at a minimum skin, then vary thicknesses without
 re-resolving so the design-variable set stays fixed. Full pattern:
 [`caller_patterns.md`](caller_patterns.md#2-resolve-once-then-rebuild-sizing-loop).
 Runnable twin:
-`../examples/03_resolve_then_size.py`.
+`../../../examples/section/teaching/03_resolve_then_size.py`.
 Feasibility notes: [`feasibility_and_drops.md`](feasibility_and_drops.md).
 
 ```python
@@ -180,7 +185,7 @@ If resolve cannot anchor any required web, it raises
 leading edge. Webs that no longer fit are **dropped**, not slid. Details:
 [`caller_patterns.md`](caller_patterns.md#3-spanwise-web-positions-vs-local-chord-fractions).
 Runnable twin:
-`../examples/04_spanwise_web_anchors.py`.
+`../../../examples/section/teaching/04_spanwise_web_anchors.py`.
 
 ```python
 result = SectionGeometry(
@@ -201,19 +206,19 @@ result = SectionGeometry(
 
 | Goal | Go to |
 |------|--------|
-| Runnable examples `01`–`04` | `../../../examples/section/` |
+| Runnable teaching `01`–`05` | [`../../../examples/section/teaching/`](../../../examples/section/teaching/) |
 | More call recipes | [`caller_patterns.md`](caller_patterns.md) |
-| Labels on a `"2D-F"` figure | [`anatomy_on_a_figure.md`](anatomy_on_a_figure.md) |
+| Labels on a `"2D-F-LC-0R"` figure | [`anatomy_on_a_figure.md`](anatomy_on_a_figure.md) |
 | Feasibility / dropped webs | [`feasibility_and_drops.md`](feasibility_and_drops.md) |
 | Geometry → mesh walkthrough | [`geometry_to_mesh.md`](geometry_to_mesh.md) |
 | All 40 layout figures | [`../reference/structural_systems_gallery.md`](../reference/structural_systems_gallery.md) |
-| Layout id decode / cascade | [`../reference/system_type_xyz_taxonomy.md`](../reference/system_type_xyz_taxonomy.md) |
+| Layout id decode / cascade | [taxonomy](../../blade/concepts/taxonomy.md) |
 | Module map | [`../README.md`](../docs_index.md#package-structure) |
 | Run tests | `../tests/README.md` |
 | Figure demos | `../../../examples/demos/section/` |
 
 Handoff to meshing (requires midlines). Runnable twin:
-`../examples/05_handoff_to_mesh.py`.
+[`../../../examples/section/teaching/05_midline_handoff.py`](../../../examples/section/teaching/05_midline_handoff.py).
 Guide: [`geometry_to_mesh.md`](geometry_to_mesh.md).
 
 ```python

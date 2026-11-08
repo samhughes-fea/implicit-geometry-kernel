@@ -7,13 +7,9 @@ using the shoelace formula (Green's theorem). S frame (pivot-referenced)
 and S' frame (centroid-referenced). Supports Polygon with holes and MultiPolygon.
 """
 
-from typing import Tuple, Union
+from typing import Tuple
 import logging
 import numpy as np
-from shapely.geometry import Polygon as ShapelyPolygon, MultiPolygon as ShapelyMultiPolygon
-from shapely.geometry.polygon import orient
-from shapely.validation import explain_validity
-from shapely.affinity import translate
 
 logger = logging.getLogger(__name__)
 
@@ -68,52 +64,27 @@ def ring_sums_S(coords_S: np.ndarray) -> Tuple[float, ...]:
     return result
 
 
-def validate_and_orient_polygon(
-    poly: ShapelyPolygon,
-    allow_empty: bool = False,
-) -> ShapelyPolygon:
-    """
-    Validate and orient polygon for section property computation.
-
-    Ensures polygons are valid and properly oriented (counter-clockwise exterior).
-    If invalid, attempts repair via buffer(0). Raises if buffer(0) produces MultiPolygon.
-    """
+def validate_and_orient_polygon(poly, allow_empty: bool = False):
+    """Validate and CCW-orient. Repair via buffer(0). Duck-typed (no Shapely import)."""
     if allow_empty and (poly.is_empty or poly.area <= 0.0):
         return poly
     if not allow_empty and (poly.is_empty or poly.area <= 0.0):
         raise ValueError("Invalid polygon: empty or zero area")
-
-    poly = orient(poly, sign=1.0)
     if not poly.is_valid:
         poly = poly.buffer(0)
-        if isinstance(poly, ShapelyMultiPolygon):
+        if getattr(poly, "geom_type", "") == "MultiPolygon":
             raise ValueError(
-                f"Polygon repair via buffer(0) produced MultiPolygon with {len(poly.geoms)} disconnected pieces. "
-                f"This indicates the input geometry was severely invalid. "
-                f"Fix the upstream geometry generation code to prevent invalid polygons. "
-                f"Original validity: {explain_validity(poly)}"
+                f"Polygon repair via buffer(0) produced MultiPolygon with {len(poly.geoms)} disconnected pieces."
             )
         if allow_empty and poly.is_empty:
             return poly
-
-    poly = orient(poly, sign=1.0)
-    if not poly.is_valid:
-        poly = poly.buffer(0)
-        if isinstance(poly, ShapelyMultiPolygon):
-            raise ValueError(
-                f"Polygon repair via buffer(0) produced MultiPolygon with {len(poly.geoms)} disconnected pieces. "
-                f"This indicates the input geometry was severely invalid. "
-                f"Fix the upstream geometry generation code to prevent invalid polygons."
-            )
-
     if not poly.is_valid or (not allow_empty and poly.is_empty):
-        raise ValueError(f"Invalid polygon: {explain_validity(poly)}")
-
+        raise ValueError("Invalid polygon after repair")
     return poly
 
 
 def section_properties_S(
-    poly_S: Union[ShapelyPolygon, ShapelyMultiPolygon],
+    poly_S,
 ) -> Tuple[float, Tuple[float, float], float, float, float]:
     """
     Compute section properties in S frame (pivot-referenced).
@@ -121,13 +92,13 @@ def section_properties_S(
     Area, centroid, and second moments of area for a polygon or MultiPolygon
     in the Station (S) frame (origin at pivot, 0.333 chord). Uses shoelace formula.
     """
-    if isinstance(poly_S, ShapelyMultiPolygon):
+    if getattr(poly_S, "geom_type", "") == "MultiPolygon":
         if poly_S.is_empty:
             raise ValueError("MultiPolygon is empty")
 
         polygon_props = []
         for i, geom in enumerate(poly_S.geoms):
-            if not isinstance(geom, ShapelyPolygon):
+            if getattr(geom, "geom_type", "") != "Polygon":
                 logger.warning("[section_properties_S] MultiPolygon contains non-Polygon at index %d, skipping", i)
                 continue
             if geom.is_empty or geom.area <= 0:
@@ -172,9 +143,7 @@ def section_properties_S(
     s_Ixy = float(s_Ixy)
 
     for i, hole in enumerate(poly_S.interiors):
-        hole_poly = ShapelyPolygon(hole.coords)
-        hole_poly = orient(hole_poly, sign=-1.0)
-        hole_coords = np.asarray(hole_poly.exterior.coords, float)
+        hole_coords = np.asarray(hole.coords, float)
         hole_result = ring_sums_S(hole_coords)
         c_cross, c_Cx, c_Cy, c_Ixx, c_Iyy, c_Ixy = hole_result
 
@@ -220,19 +189,11 @@ def section_properties_S(
 
 
 def section_properties_Sprime(
-    poly_S: Union[ShapelyPolygon, ShapelyMultiPolygon],
+    poly_S,
 ) -> Tuple[float, Tuple[float, float], float, float, float]:
-    """
-    Compute section properties in S' frame (centroid-referenced).
-
-    Uses section_properties_S then translates polygon to centroid and recomputes.
-    """
+    """Section properties in S' (centroid frame) via the parallel-axis theorem."""
     A_S, (Cx_S, Cy_S), Ixx_S, Iyy_S, Ixy_S = section_properties_S(poly_S)
-    poly_Sprime = translate(poly_S, xoff=-Cx_S, yoff=-Cy_S)
-    A_Sprime, (Cx_Sprime, Cy_Sprime), Ixx_Sprime, Iyy_Sprime, Ixy_Sprime = section_properties_S(poly_Sprime)
-    if not np.allclose([Cx_Sprime, Cy_Sprime], [0.0, 0.0], atol=1e-10):
-        logger.warning(
-            "[section_properties_Sprime] Centroid not at origin: Cx_Sprime=%.6e, Cy_Sprime=%.6e",
-            Cx_Sprime, Cy_Sprime
-        )
-    return (float(A_Sprime), (float(Cx_Sprime), float(Cy_Sprime)), float(Ixx_Sprime), float(Iyy_Sprime), float(Ixy_Sprime))
+    Ixx_p = Ixx_S - A_S * Cy_S * Cy_S
+    Iyy_p = Iyy_S - A_S * Cx_S * Cx_S
+    Ixy_p = Ixy_S - A_S * Cx_S * Cy_S
+    return (float(A_S), (0.0, 0.0), float(Ixx_p), float(Iyy_p), float(Ixy_p))

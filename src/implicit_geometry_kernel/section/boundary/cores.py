@@ -20,6 +20,7 @@ from implicit_geometry_kernel.section.boundary.labels import (
     is_skin_label,
     is_wall_solid_label,
 )
+from implicit_geometry_kernel.section.assembly.members import CapBuilder
 from implicit_geometry_kernel.section.boundary.walls import (
     _cap_from_recipes,
     _component_map,
@@ -32,7 +33,6 @@ from implicit_geometry_kernel.section.boundary.walls import (
     _resolve_host,
     _shared_deeper_by_surface,
     _skin_via_recipe,
-    _spar_cap_label_for_surface,
     _web_poly_via_recipe,
     _web_union,
     emit_wall_solid_polygons,
@@ -194,15 +194,10 @@ def emit_constructive_polygons(
             section, comps, discrete, airfoil_poly=af_poly
         )
         for surface in ("upper", "lower"):
-            key = _spar_cap_label_for_surface(surface)
+            key = CapBuilder.canonical_surface_label(surface)
             keys = {_label_key(k) for k in comps}
             recipe_keys = set(_host_recipes(section)) | set(_host_cap_recipes(section))
-            if (
-                key not in keys
-                and f"spar_cap_{surface}" not in keys
-                and key not in recipe_keys
-                and f"spar_cap_{surface}" not in recipe_keys
-            ):
+            if not any(CapBuilder.matches_surface(k, surface) for k in keys | recipe_keys):
                 continue
             cap = _cap_from_recipes(
                 section,

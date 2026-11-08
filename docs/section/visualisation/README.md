@@ -1,6 +1,8 @@
 # visualisation (moved)
 
-Plot helpers are the sibling package `plotting` (`import plotting`, extra
-`[plots]`). They are not a `section` module.
+↑ [docs](../README.md) · [src/plotting](../../../src/implicit_geometry_kernel/plotting/README.md)
 
-Demos: `examples/demos/`.
+Plot helpers are `implicit_geometry_kernel.plotting` (extra `[plots]`).
+They are not a `section` module.
+
+Demos: [`examples/demos/`](../../../examples/demos/).

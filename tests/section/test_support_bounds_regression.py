@@ -21,9 +21,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.section.api.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 # Real home, not the deprecated ``engine`` shim: that shim star-imports, and
 # star-import never re-exports underscore names.
@@ -46,7 +48,7 @@ def baseline():
 @pytest.fixture(scope="module")
 def canonical():
     airfoil = AirfoilSDF.from_naca("2412", n_points=120, chord=1.0)
-    section = build_section_view(airfoil, resolve_system_type("2D-CN"), twist_angle_rad=0.0)
+    section = build_section_view(airfoil, resolve_system_type("2D-CN-LC-0R"), twist_angle_rad=0.0)
     spec = quadtree_spec_for_airfoil(airfoil, chord=1.0, max_depth=7, max_cells=150000)
     return airfoil, section, spec
 

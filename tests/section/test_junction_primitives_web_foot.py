@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import numpy as np
 
-from implicit_geometry_kernel.section.api.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.midlines.junction_primitives import (
     solve_web_foot_on_skin_mid,
@@ -20,7 +22,7 @@ def test_web_foot_oracle_near_production_midline_ends():
     skin = 0.006
     section = build_section_view(
         AirfoilSDF.from_naca("2412", n_points=200, chord=1.0),
-        resolve_system_type("2D-F"),
+        resolve_system_type("2D-F-LC-0R"),
         twist_rad=0.0,
         skin_thickness=skin,
         spar_cap_thickness=0.014,

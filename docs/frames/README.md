@@ -1,186 +1,164 @@
 # Coordinate frames
 
-> **0.2.0:** the shell-frame home (`shell_frames/`: ply stress and strain rotations
-> E ↔ M and the shell-solver load channels) and the beam stiffness transform
-> (`section_frames/stiffness.py`) were removed. Ply transforms live in
-> laminate-constitutive-model (`laminate_mechanics.stress_transformation`,
-> `laminate_materials_3d.stress_rotation_3d`); see [FORK.md](../FORK.md). Mentions of
-> them below are history. The frame tags `FRAME_C`, `FRAME_E` and `FRAME_M` remain.
+↑ [docs](../README.md) · [src](../../src/implicit_geometry_kernel/frames/README.md) ·
+[examples](../../examples/frames/README.md) · [tests](../../tests/frames/README.md)
 
-Single source of truth for structural frames **R / B / S / S′**, the shell
-**curvilinear** strip basis **C**, and the shell **element** / ply frames
-**E** / **M**.
+This package is the source of truth for the structural frames \(\mathrm{R}\),
+\(\mathrm{B}\), \(\mathrm{S}\), and \(\mathrm{S}'\), and for the short tags
+`FRAME_*`. Always use these names. Do not reimplement the two-by-two twist map,
+the NACA pivot, or flap/edge moment polarity outside `implicit_geometry_kernel.frames`.
 
-Homes follow **Mathematics**, **Key equations → functions**, **Exact I/O**,
-and **Provenance / what happens today** — same idea as
-[`section`](../section/README.md) /
-`section_mesh`.
+**Import:** `from implicit_geometry_kernel.frames import …`
 
-Always use these explicit names — avoid bare “local/global” and “strip local”.
-
-**Import rule:** `from implicit_geometry_kernel.frames import …`
-— never reimplement 2×2 twist, NACA pivot, or flap↔`My`/`Mz` outside these homes.
+Ply frames \(\mathrm{E}\) and \(\mathrm{M}\) retain tags `FRAME_E` and `FRAME_M`.
+The corresponding rotation matrices live in the constitutive laminate package
+([FORK.md](../FORK.md)).
 
 ## Contents
 
-1. [Abstract and ownership](#1-abstract-and-ownership)
-2. [Frame inventory](#2-frame-inventory)
-3. [Who carries twist](#3-who-carries-twist)
-4. [Ownership homes](#4-ownership-homes)
-5. [Quick start](#5-quick-start)
-6. [Verification](#6-verification)
-7. [Package layout](#7-package-layout)
-8. [See also](#8-see-also)
+1. [Inventory](#inventory)
+2. [Which array](#which-array)
+3. [Twist](#twist)
+4. [Governing maps](#governing-maps)
+5. [Quick start](#quick-start)
+6. [Verification](#verification)
+7. [See also](#see-also)
 
 ---
 
-## 1. Abstract and ownership
+## Inventory
 
-| | |
-|---|---|
-| **Owns** | Short tags (`FrameTag` / `FRAME_*` / `require_frame_tag`); axis sense and plot contract for B/S/S′; S↔B geometry/moment/inertia maps; NACA↔S adapter; section-plot helpers; E↔M ply \(T_\sigma/T_\varepsilon\) (in-plane 3×3 and canonical 6×6); product shell load-channel adapter |
-| **Does not own** | SDF solids, strip meshing, MITC4 kinematics, Hashin FI evaluation, formulation projectors |
-| **Consumers** | `section_contract` (B midlines / `BeamResultantVector` frame tags), `section_geometry` (S authoring / B emit), `section_mesh` (+x3 / B midlines), FE tertiary/quaternary, beam `StressHistory`, root_blend adapters, BIS nests / BSP assemble scratch |
+| Frame | Role | Axes |
+|-------|------|------|
+| \(\mathrm{R}\) | Rotor span metadata | \(r\), \(r/R\) |
+| \(\mathrm{S}\) | Zero-twist station; origin on the pitch axis | \(X_S,Y_S,Z_S\) |
+| \(\mathrm{S}'\) | Zero-twist station; origin on the centroid | \(X_{S'},Y_{S'},Z_{S'}\) |
+| \(\mathrm{B}\) | Twisted blade outline and resultants | \(X_B,Y_B,Z_B\) |
+| \(\mathrm{C}\) | Curvilinear strip (shell degrees of freedom) | \(x,s,n\) |
+| \(\mathrm{E}\) | Laminate / element | \(x_1,x_2,x_3\) |
+| \(\mathrm{M}\) | Ply fibre | \(1,2,3\) |
 
----
-
-## 2. Frame inventory
-
-| Frame | Role | Axes | One-liner |
-|-------|------|------|-----------|
-| **R** | Turbine span metadata | \(r\), \(r/R\) | Not a section XYZ |
-| **S** (`zero_twist_pitch_axis_station_frame`) | Zero-twist station / authoring | \(X_S,Y_S,Z_S\) | Origin on pitch axis; plot: horiz \(Y_S\), vert \(X_S\), invert horiz (LE on RHS) |
-| **S′** (`zero_twist_centroid_axis_station_frame`) | Same as S; origin on centroid axis | \(X_{S'},Y_{S'},Z_{S'}\) | Same plot recipe as S; parallel-axis / fibre depth |
-| **B** (`twisted_pitch_axis_blade_frame`) | Twisted blade outline + resultants | \(X_B,Y_B,Z_B\) | Same plot recipe as S; midlines / FE mesh live here |
-| **C** | Curvilinear strip (MITC4 DOFs) | \(x,s,n\) | Attached to **B** midlines; not a section plot frame |
-| **E** | Element / laminate (same frame) | \(x_1,x_2,x_3\) | C≡E on each flat MITC4 facet |
-| **M** | Ply material (fibre) | \(1,2,3\) | E rotated in-plane by ply θ; **FI only in M** |
+Storage order is \((X_*,Y_*)\). Positive \(X_*\) is flapwise (up on the section).
+Positive \(Y_*\) is toward the trailing edge, so \(Y_{\mathrm{LE}}<0<Y_{\mathrm{TE}}\)
+at the frame origin. Section plots use horizontal \(Y_*\) and vertical \(X_*\), then
+invert the horizontal axis for display only so that the leading edge appears on
+the right. Stored \(Y\) must never be negated for that purpose.
 
 ```mermaid
 flowchart LR
-  NACA[NACA_adapter] --> S[S_pivot]
+  NACA[NACAAdapter] --> S[S_pitchOrigin]
   S --> Sp[Sprime_centroid]
-  S -->|"rotate_S_to_B"| B[B_twisted]
+  S -->|"R of theta"| B[B_twisted]
   B --> C[C_strip]
-  C --> E[E_laminate]
-  E -->|"T_sigma_T_eps"| M[M_ply]
 ```
 
----
-
-## 3. Who carries twist
-
-- **S** and **S′**: chord-aligned, **zero-twist** section view. Not aware of twist along \(Z_S\).
-- **B**: DNV blade axes; the **section outline in B** is the S outline rotated by geometric twist about \(Z\).
-- Twist appears only in **S ↔ B** maps (geometry rotate, moment / force / inertia transform).
-
-(Older wording “B fixed / S rotates” described the same polarity from the opposite narrative. Prefer S = zero-twist / B = twisted-outline.)
+Detail: [section_frames/README.md](section_frames/README.md). Programme inventory:
+[FRAMES_INVENTORY.md](FRAMES_INVENTORY.md).
 
 ---
 
-## 4. Ownership homes
+## Which array
 
-| # | Home | Owns |
-|---|------|------|
-| 0 | [`frame_tags.py`](../../src/implicit_geometry_kernel/frames/frame_tags.py) | Canonical short tags `FrameTag` / `FRAME_*` / `require_frame_tag` for structural dataclass fields |
-| 1 | [`section_frames/README.md`](section_frames/README.md) | Shared B/S/S′ storage + plot contract; NACA adapter; S↔B; Exact I/O for geometry helpers |
-| 2 | `shell_frames/README.md` | C / E / M axes; C≡E; \(T_\sigma\) / \(T_\varepsilon\); FI-in-M; Exact I/O for ply transforms |
+| Object | Frame |
+|---|---|
+| `Station` scalars and aerofoil vertices | Storage / NACA-like \((x_c, y_t)\) |
+| `SectionGeometry` solids, `properties_map` | Authoring / near \(\mathrm{S}\) (LE-origin rotation when twisted) |
+| `SectionCut.walls`, `CellPolygon.points` | \(\mathrm{B}\), arrays of shape \((n,3)\) |
+| `ShellMidlineStrip`, `CellWallLoop` | \(\mathrm{B}\) (`*_twisted_pitch_axis_blade_frame`) |
+| `shell_graph` runs | \(\mathrm{B}\) |
 
-**Container tagging.** Structural `frame` / `*_frame` fields on dataclasses across `src` should use `FrameTag` and validate with `require_frame_tag` at construction or finalize. Prefer `FRAME_B` (etc.) over bare string literals. Containers carry tags only — they must not reimplement S↔B / E↔M.
-
-Operational demos (demos / plots): `visualisation/`.
-
-Known-issue / package inventory: [`FRAMES_INVENTORY.md`](FRAMES_INVENTORY.md)
-(programme status for ARCH-MUST-016 remediation).
+The maps \((1)\)–\((2)\) below are the only \(\mathrm{S}\leftrightarrow\mathrm{B}\)
+and NACA\(\to\mathrm{S}\) conversions. Do not re-derive polarity here.
+Names: [glossary](../glossary.md).
 
 ---
 
-## 5. Quick start
+## Twist
+
+\(\mathrm{S}\) and \(\mathrm{S}'\) are chord-aligned and carry no geometric twist
+along \(Z_S\). Frame \(\mathrm{B}\) is the same outline after rotation by the
+geometric twist \(\theta\) about \(Z\). Twist appears only in the \(\mathrm{S}\leftrightarrow\mathrm{B}\)
+maps for geometry, force, moment, and inertia.
+
+---
+
+## Governing maps
+
+NACA storage \((x_c,y_t)\) with the leading edge at \(x_c=0\) is not a structural
+frame. The map into \(\mathrm{S}\) is
+
+$$
+X_S = y_t,\qquad Y_S = x_c - f_{\mathrm{pivot}}\, c
+\tag{1}
+$$
+
+where \(c\) is chord and \(f_{\mathrm{pivot}}\) is the pitch-axis fraction from the
+leading edge (`pivot_fraction` on a loft; typically \(\approx 1/3\) on a standalone
+station). Function: `naca_to_zero_twist_pitch_axis_station_frame`.
+
+On canonical \((X,Y)\) arrays, geometric twist \(\theta\) (radians) maps
+\(\mathrm{S}\to\mathrm{B}\) as
+
+$$
+\begin{pmatrix} X_B \\ Y_B \end{pmatrix}
+=
+\begin{pmatrix} \cos\theta & \sin\theta \\ -\sin\theta & \cos\theta \end{pmatrix}
+\begin{pmatrix} X_S \\ Y_S \end{pmatrix}.
+\tag{2}
+$$
+
+Function: `rotate_zero_twist_pitch_axis_station_frame_to_twisted_pitch_axis_blade_frame`
+(`rotate_S_to_B`). The composite NACA\(\to\mathrm{B}\) map is
+`naca_to_twisted_pitch_axis_blade_frame`.
+
+Second moments transform under the same rotation. With
+\(I_{xx}=\int Y^2\,\mathrm{d}A\) and \(I_{yy}=\int X^2\,\mathrm{d}A\),
+
+$$
+I_{xx,B},\; I_{yy,B},\; I_{xy,B}
+= \mathcal{T}_\theta(I_{xx,S},\, I_{yy,S},\, I_{xy,S}).
+\tag{3}
+$$
+
+Function: `CoordinateFrameTransforms.transform_second_moments_S_to_B`.
+
+---
+
+## Quick start
 
 ```python
 from implicit_geometry_kernel.frames import (
     CoordinateFrameTransforms,
-    blade_resultants_to_shell_channels,
     naca_to_twisted_pitch_axis_blade_frame,
     section_plot_axes,
     setup_section_axes,
 )
 
-# NACA → canonical B (pivot + twist)
 pts_B = naca_to_twisted_pitch_axis_blade_frame(verts_naca, twist_rad, chord_m)
-
-# Section plot: horizontal Y_*, vertical X_*, invert for LE on RHS
 h, v = section_plot_axes(pts_B)
-# ax.plot(h, v); setup_section_axes(ax)
-
-# S → B second moments (θ = geometric twist; S outline is zero-twist)
 transform = CoordinateFrameTransforms()
 I_xx_B, I_yy_B, I_xy_B = transform.transform_second_moments_S_to_B(
     I_xx_S, I_yy_S, I_xy_S, twist_deg
-)
-
-# Structural flap/edge → product shell FE solver channels (adapter)
-ch = blade_resultants_to_shell_channels(
-    M_flapwise=1.0, M_edgewise=0.0, V_flapwise=0.0, V_edgewise=0.0
-)
-```
-
-```python
-from implicit_geometry_kernel.frames import (
-    rotate_ply_stress_E_to_M,
-    rotate_ply_strain_E_to_M,
-)
-
-# E → M: stress and strain use DIFFERENT matrices — see shell_frames
-sigma_M = rotate_ply_stress_E_to_M(sigma_E, ply_angles_deg)
-eps_M = rotate_ply_strain_E_to_M(eps_E, ply_angles_deg)
-
-# Canonical 3D Voigt [11,22,33,23,13,12]
-from implicit_geometry_kernel.frames import (
-    rotate_ply_stress_3d_E_to_M,
-    rotate_transverse_shear_E_to_M,
 )
 ```
 
 ---
 
-## 6. Verification
-
-| Claim | Evidence |
-|-------|----------|
-| Shared B/S/S′ plot contract (LE on RHS, \(+Y\)→TE) | `examples/demos/frames/plot_structural_frames.py` → `examples/demos/figures/structural_frames_B_S_Sprime.png` |
-| `naca_to_twisted_pitch_axis_blade_frame` / `section_plot_axes` | Unit coverage + geometry/mesh demos |
-| E↔M stress vs strain matrices | `tests/test_ply_frame_transforms.py` |
-| Product load channels | `blade_resultants_to_shell_channels` call sites in BSP / BSF |
+## Verification
 
 ```bash
 python -m examples/demos/frames/plot_structural_frames.py
 ```
 
----
-
-## 7. Package layout
-
-```text
-coordinate_frames/
-├── README.md                 # package index
-├── FRAMES_INVENTORY.md       # classification / known issues
-├── frame_tags.py             # short-tag SoT (FrameTag / FRAME_* / require_frame_tag)
-├── section_frames/           # home 1 — B / S / S′
-├── shell_frames/             # home 2 — C / E / M
-├── visualisation/            # demos + output (demos / plots)
-└── tests/
-```
+The figure `examples/demos/figures/structural_frames_B_S_Sprime.png` shows
+\(\mathrm{B}\), \(\mathrm{S}\), and \(\mathrm{S}'\) with data \(+Y\) toward the
+trailing edge and display inversion (leading edge on the right).
 
 ---
 
-## 8. See also
+## See also
 
-- [`section_frames/README.md`](section_frames/README.md)
-- `shell_frames/README.md`
-- `visualisation/README.md`
-- Handoff DTOs that speak B: [`../section_contract/README.md`](../contract/README.md) (ABI-shaped geometry→mesh/load/FE vocabulary)
-- Element recovery: compute_tertiary docs
-- Quaternary FI: compute_quaternary docs
-- Root blend S/B adapters: `geometry_utilities/root_blend_model/adapters.py`
-- Shell station load map: BSP `shell_station/evaluate.py` (uses `blade_resultants_to_shell_channels`)
+- [section_frames/README.md](section_frames/README.md)
+- Names: [glossary](../glossary.md)
+- Hand-off types in \(\mathrm{B}\): [contract](../contract/README.md)
+- Station geometry: [section](../section/README.md)

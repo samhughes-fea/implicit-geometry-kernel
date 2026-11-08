@@ -14,7 +14,7 @@ from typing import Any
 
 import numpy as np
 
-from implicit_geometry_kernel.section.layout.system_layout import (
+from implicit_geometry_kernel.catalogue.system_layout import (
     layout_without_spar_caps,
 )
 from implicit_geometry_kernel.section.assembly.cap_feasibility import (

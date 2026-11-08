@@ -27,7 +27,11 @@ from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRu
 from implicit_geometry_kernel.section.layout.section_axes import max_thickness_chord_x, pitch_axis_x_from_le
 from implicit_geometry_kernel.section.assembly.cap_feasibility import cap_feasibility_clamp
 from implicit_geometry_kernel.section.assembly.cap_ply_snap import snap_cap_heights
-from implicit_geometry_kernel.section.assembly.clip_algebra import _parallel_web_strip_clip, web_station_projection
+from implicit_geometry_kernel.section.assembly.clip_algebra import (
+    _parallel_web_strip_clip,
+    flapwise_strip_params,
+    web_station_projection,
+)
 from implicit_geometry_kernel.section.walls.spar_cap import (
     SparCap,
 )
@@ -37,17 +41,6 @@ from implicit_geometry_kernel.section.assembly.web_layout import inner_y_at_x
 
 def _label_str(label: Any) -> str:
     return str(getattr(label, "value", label))
-
-
-def _flapwise_strip_params(nx, ny, c_lo, c_hi) -> dict[str, Any]:
-    """Kwargs mirroring a ``_parallel_web_strip_clip`` for the Shapely emitter."""
-    return {
-        "flapwise_nx": float(nx),
-        "flapwise_ny": float(ny),
-        "flapwise_c_lo": float(min(c_lo, c_hi)),
-        "flapwise_c_hi": float(max(c_lo, c_hi)),
-        "flapwise_clip_mode": "strip",
-    }
 
 
 def _wrap_expr_cap(base_cap: SparCap, expr: Expr) -> SparCap:
@@ -222,7 +215,7 @@ def build_spar_caps(
             chord_scale = float(getattr(airfoil_sdf, "chord", 1.0))
             if d_stat > 1e-9 * max(chord_scale, 1e-9):
                 cap_strip = _parallel_web_strip_clip(nx, ny, c_lo_cap, c_hi_cap)
-                cap_fw = _flapwise_strip_params(nx, ny, c_lo_cap, c_hi_cap)
+                cap_fw = flapwise_strip_params(nx, ny, c_lo_cap, c_hi_cap)
         _camber = _clamp_info.get("camber_xy")
         wall_u = _cap_wall(
             skin_thickness=skin_thickness,
@@ -265,14 +258,24 @@ def build_spar_caps(
             web_union=web_union,
         )
     elif rule.kind == "fixed_band":
-        anchor = rule.anchor or "max_thickness"
-        half = float(rule.half_width) if rule.half_width is not None else float(fhw)
-        if anchor == "pitching":
-            x_c = pitch_axis_x_from_le(airfoil_sdf, pitch_fr)
+        window = rule.chord_window
+        if window is not None:
+            chord = float(getattr(airfoil_sdf, "chord", 1.0))
+            lo_f, hi_f = float(window[0]), float(window[1])
+            x_lo = min(lo_f, hi_f) * chord
+            x_hi = max(lo_f, hi_f) * chord
+            x_c = 0.5 * (x_lo + x_hi)
+            extent_anchor = "deepest"
         else:
-            x_c = max_thickness_chord_x(airfoil_sdf)
-        x_lo = x_c - half
-        x_hi = x_c + half
+            anchor = rule.anchor or "max_thickness"
+            half = float(rule.half_width) if rule.half_width is not None else float(fhw)
+            if anchor == "pitching":
+                x_c = pitch_axis_x_from_le(airfoil_sdf, pitch_fr)
+            else:
+                x_c = max_thickness_chord_x(airfoil_sdf)
+            x_lo = x_c - half
+            x_hi = x_c + half
+            extent_anchor = "band_center"
         x_lo, x_hi, cap_h_upper, cap_h_lower, _clamp_b = cap_feasibility_clamp(
             airfoil_sdf,
             skin_thickness,
@@ -283,7 +286,7 @@ def build_spar_caps(
             y_search=y_search,
             phi_inner_ref=phi_inner_ref,
             aft_half_depth_rule=False,
-            extent_anchor="band_center",
+            extent_anchor=extent_anchor,
             center_x=float(x_c),
         )
         cap_h_upper, cap_h_lower = snap_cap_heights(
@@ -304,7 +307,7 @@ def build_spar_caps(
             c_lo = web_station_projection(nx, ny, x_lo, cy_c)
             c_hi = web_station_projection(nx, ny, x_hi, cy_c)
             strip_b = _parallel_web_strip_clip(nx, ny, c_lo, c_hi)
-            strip_b_fw = _flapwise_strip_params(nx, ny, c_lo, c_hi)
+            strip_b_fw = flapwise_strip_params(nx, ny, c_lo, c_hi)
         wall_u = _cap_wall(
             skin_thickness=skin_thickness,
             x_start=x_lo,
@@ -346,150 +349,33 @@ def build_spar_caps(
             web_union=web_union,
         )
     elif rule.kind == "per_web_pads":
-        if N < 1:
-            raise ValueError(
-                "per_web_pads cap placement requires at least one web "
-                f"(got N={N})."
-            )
-        # First pass: clamp each pad at the requested height to learn the
-        # shared (min) feasible height across webs that can carry a centred pad.
-        _clamped_c = [
-            cap_feasibility_clamp(
-                airfoil_sdf,
-                skin_thickness,
-                xs[i] - dhw,
-                xs[i] + dhw,
-                cap_h_upper,
-                cap_h_lower,
-                y_search=y_search,
-                phi_inner_ref=phi_inner_ref,
-                aft_half_depth_rule=False,
-                extent_anchor="band_center",
-                center_x=float(xs[i]),
-            )
-            for i in range(N)
-        ]
-        _live = [
-            c
-            for c in _clamped_c
-            if float(c[2]) > 0.0
-            and float(c[3]) > 0.0
-            and (float(c[1]) - float(c[0])) > 1e-12
-            and not bool(c[4].get("pad_run_out"))
-        ]
-        if _live:
-            cap_h_upper = min(float(c[2]) for c in _live)
-            cap_h_lower = min(float(c[3]) for c in _live)
-        elif _clamped_c:
-            # Every pad ran out — keep the clamp heights (all zero) so CapWall
-            # recipes are omitted rather than inventing a gauge.
-            cap_h_upper = min(float(c[2]) for c in _clamped_c)
-            cap_h_lower = min(float(c[3]) for c in _clamped_c)
-        cap_h_upper, cap_h_lower = snap_cap_heights(
-            cap_h_upper, cap_h_lower, spar_cap_ply_pitch_m
-        )
-        # Second pass: re-clamp extents at the shared height so pads
-        # that were over-trimmed at the taller request can grow back
-        # symmetrically within +/- dhw about each web.
-        _clamped_c = [
-            cap_feasibility_clamp(
-                airfoil_sdf,
-                skin_thickness,
-                xs[i] - dhw,
-                xs[i] + dhw,
-                cap_h_upper,
-                cap_h_lower,
-                y_search=y_search,
-                phi_inner_ref=phi_inner_ref,
-                aft_half_depth_rule=False,
-                extent_anchor="band_center",
-                center_x=float(xs[i]),
-            )
-            for i in range(N)
-        ]
+        from implicit_geometry_kernel.section.assembly.build_spar_caps_pads import fill_per_web_pads
 
-        caps_u = []
-        caps_l = []
-        for i in range(N):
-            x_lo, x_hi = float(_clamped_c[i][0]), float(_clamped_c[i][1])
-            if (x_hi - x_lo) < 1e-12 or bool(_clamped_c[i][4].get("pad_run_out")):
-                continue
-            _camber_c = _clamped_c[i][4].get("camber_xy")
-            strip_c = None
-            strip_c_fw: dict[str, Any] = {}
-            if all_flapwise and c_station is not None:
-                cy_i = 0.5 * (anchors[i][0] + anchors[i][1])
-                c_lo = web_station_projection(nx, ny, x_lo, cy_i)
-                c_hi = web_station_projection(nx, ny, x_hi, cy_i)
-                strip_c = _parallel_web_strip_clip(nx, ny, c_lo, c_hi)
-                strip_c_fw = _flapwise_strip_params(nx, ny, c_lo, c_hi)
-            wall_u = _cap_wall(
-                skin_thickness=skin_thickness,
-                x_start=x_lo,
-                x_end=x_hi,
-                cap_height=cap_h_upper,
-                surface="suction_surface",
-                fw=strip_c_fw,
-                camber_xy=_camber_c,
-            )
-            wall_l = _cap_wall(
-                skin_thickness=skin_thickness,
-                x_start=x_lo,
-                x_end=x_hi,
-                cap_height=cap_h_lower,
-                surface="pressure_surface",
-                fw=strip_c_fw,
-                camber_xy=_camber_c,
-            )
-            if wall_u is not None:
-                recipes[f"spar_cap_suction_surface_{i}"] = wall_u
-                cu = _project_cap(
-                    wall_u,
-                    airfoil_sdf,
-                    airfoil_expr_node=airfoil_expr_node,
-                    camber_xy=_camber_c,
-                    strip_clip=strip_c,
-                )
-                caps_u.append(cu)
-                unrotated[f"spar_cap_suction_surface_{i}"] = cu
-            if wall_l is not None:
-                recipes[f"spar_cap_pressure_surface_{i}"] = wall_l
-                cl = _project_cap(
-                    wall_l,
-                    airfoil_sdf,
-                    airfoil_expr_node=airfoil_expr_node,
-                    camber_xy=_camber_c,
-                    strip_clip=strip_c,
-                )
-                caps_l.append(cl)
-                unrotated[f"spar_cap_pressure_surface_{i}"] = cl
-        # Continuous labels point at the first surviving pad's recipe for
-        # midline emit; discrete labels remain in recipes for constructive unions.
-        for side, cont in (
-            ("suction_surface", ComponentLabel.SPAR_CAP_SUCTION_SURFACE),
-            ("pressure_surface", ComponentLabel.SPAR_CAP_PRESSURE_SURFACE),
-        ):
-            for i in range(N):
-                key = f"spar_cap_{side}_{i}"
-                if key in recipes:
-                    recipes[_label_str(cont)] = recipes[key]
-                    break
-        if caps_u:
-            cap_upper_expr = union_expr([c.expr for c in caps_u])
-            footprint = union_expr([c.footprint_expr for c in caps_u])
-            if web_union is not None:
-                cap_upper_expr = Subtract(cap_upper_expr, web_union)
-                footprint = Subtract(footprint, web_union)
-            cap_upper = _wrap_expr_cap(caps_u[0], cap_upper_expr)
-            cap_upper.footprint_expr = footprint
-        if caps_l:
-            cap_lower_expr = union_expr([c.expr for c in caps_l])
-            footprint = union_expr([c.footprint_expr for c in caps_l])
-            if web_union is not None:
-                cap_lower_expr = Subtract(cap_lower_expr, web_union)
-                footprint = Subtract(footprint, web_union)
-            cap_lower = _wrap_expr_cap(caps_l[0], cap_lower_expr)
-            cap_lower.footprint_expr = footprint
+        cap_upper, cap_lower = fill_per_web_pads(
+            airfoil_sdf=airfoil_sdf,
+            skin_thickness=skin_thickness,
+            xs=xs,
+            anchors=anchors,
+            cap_h_upper=cap_h_upper,
+            cap_h_lower=cap_h_lower,
+            N=N,
+            dhw=dhw,
+            y_search=y_search,
+            phi_inner_ref=phi_inner_ref,
+            spar_cap_ply_pitch_m=spar_cap_ply_pitch_m,
+            all_flapwise=all_flapwise,
+            c_station=c_station,
+            nx=nx,
+            ny=ny,
+            recipes=recipes,
+            unrotated=unrotated,
+            airfoil_expr_node=airfoil_expr_node,
+            web_union=web_union,
+            _cap_wall=_cap_wall,
+            _project_cap=_project_cap,
+            _wrap_expr_cap=_wrap_expr_cap,
+            _label_str=_label_str,
+        )
 
     return cap_upper, cap_lower, unrotated, recipes
 

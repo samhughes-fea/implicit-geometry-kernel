@@ -1,8 +1,7 @@
 """Shapely has one gateway: ``section/boundary/polygons.py``.
 
-Inside the kernel only that module and ``integration/shoelace.py`` (exact polygon
-sums, a lower layer) import Shapely. Production code imports polygon and offset
-helpers from ``boundary``, never from the old alias modules.
+Shoelace sums numpy rings and must not import Shapely. Plotting uses
+``oriented_rings``. Production code imports polygon helpers from ``boundary``.
 """
 
 from __future__ import annotations
@@ -12,14 +11,12 @@ import importlib
 from pathlib import Path
 
 PACKAGE = Path(importlib.import_module("implicit_geometry_kernel").__file__).resolve().parent
-SHAPELY_HOMES = {"section/boundary/polygons.py", "integration/shoelace.py"}
-ALIASES = {
-    "implicit_geometry_kernel.section.constructive.helpers",
-    "implicit_geometry_kernel.section.constructive.offset_locus",
-    "implicit_geometry_kernel.section.midlines.offset_math",
+SHAPELY_HOMES = {"section/boundary/polygons.py"}
+REMOVED_ALIAS_FILES = {
+    "section/constructive/helpers.py",
+    "section/constructive/offset_locus.py",
+    "section/midlines/offset_math.py",
 }
-ALIAS_FILES = {"section/constructive/helpers.py", "section/constructive/offset_locus.py",
-               "section/midlines/offset_math.py"}
 
 
 def _imports(path: Path):
@@ -39,22 +36,13 @@ def test_only_the_gateway_imports_shapely():
     bad = [
         (rel, m)
         for path, rel in _files()
-        if rel not in SHAPELY_HOMES and not rel.startswith("plotting/")
+        if rel not in SHAPELY_HOMES
         for m in _imports(path)
         if m.split(".")[0] == "shapely"
     ]
     assert not bad, f"import Shapely through section.boundary: {bad}"
 
 
-def test_production_code_does_not_use_the_alias_modules():
-    bad = [(rel, m) for path, rel in _files() if rel not in ALIAS_FILES
-           for m in _imports(path) if m in ALIASES]
-    assert not bad, f"import from section.boundary instead: {bad}"
-
-
-def test_aliases_point_at_the_gateway():
-    boundary = importlib.import_module("implicit_geometry_kernel.section.boundary")
-    for name in ALIASES:
-        mod = importlib.import_module(name)
-        for attr in mod.__all__:
-            assert getattr(mod, attr) is getattr(boundary, attr), (name, attr)
+def test_offset_alias_modules_removed():
+    for rel in REMOVED_ALIAS_FILES:
+        assert not (PACKAGE / rel).exists(), rel

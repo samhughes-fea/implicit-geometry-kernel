@@ -1,5 +1,7 @@
 # bug_log — blade loft
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 ↑ [`blade`](README.md) · [docs hub](../README.md)
 
 Worker debug log for span loft (`BladeGeometry`, `shell_graph`, mapped strips).
@@ -11,7 +13,7 @@ Each entry records the **symptom**, **evidence**, **root cause**, and
 ([`section/bug_log.md`](../section/bug_log.md)) and repo-root `BL-nnn`.
 
 **Reference cases.** Example 09 catalogue keys on the synthetic 20 m planform
-(`4D-F-PA-10R` for PA lattice). windIO: IEA 15 / 3.4 / 10 / 22, NREL 5 MW from
+(`4D-F-PA-10R` for PA freeze). windIO: IEA 15 / 3.4 / 10 / 22, NREL 5 MW from
 `reference_blades/` (example 08). Tests: [`tests/test_shell_topology.py`](../../tests/test_shell_topology.py),
 [`tests/test_reference_transition.py`](../../tests/test_reference_transition.py),
 [`tests/test_debug_mesh.py`](../../tests/test_debug_mesh.py).
@@ -38,7 +40,7 @@ Do not add per-blade branches (`if iea10`) in loft code.
 | No 0.08 cluster, no extra TE-plug omit | same keep-set path |
 | `_cluster_web_members` (0.08, cylinder TE-plug) | only when `dropped_web_indices is None` |
 | `_regularise_anchors`: `web_*` wins over nearby `cap_*` | always; do not merge two distinct webs |
-| Placement graph law = section law | PA/LE freeze in metres; LC is local chord fraction |
+| Placement graph law = section law | PA/LE freeze in metres (PA: hard-coded blade-x + regions); LC is local chord fraction |
 | Skin `t0` mould walk | PA onset/drop; not a cavity chord or collapsed TE |
 | TE wrap includes the OML ridge | `_te_wrap_arc`; metrics use ridge / max chord-frac, not max blade-x |
 
@@ -48,13 +50,13 @@ Do not add per-blade branches (`if iea10`) in loft code.
 instead of walking to the LE/TE with the live intercept.
 
 **Evidence.** Authored `WebMember.at(z)` followed catalogue LC fractions, not
-`pitch_axis + k·c_root/n`. `test_09_pa_4d_loft_tracks_pitch_offset_not_catalogue`.
+the PA blade-x freeze. `test_09_pa_4d_loft_tracks_pitch_offset_not_catalogue`.
 
 **Root cause.** Loft anchors used the layout token as a chord-fraction table
-rather than the metre freeze (PA lattice / LE offset).
+rather than the metre freeze (PA blade-x / LE offset).
 
-**Fix.** PA is `k·c_root/n` (`k = 1…n`); last point on the root TE may omit until
-a later station intercepts. Labels keep authored indices.
+**Fix.** PA is hard-coded blade-x about the pitch axis (primary in the root
+band, secondary on the TE shelf). Labels keep authored indices.
 
 **Verification.** `test_09_pa_4d_loft_tracks_pitch_offset_not_catalogue`,
 `test_09_pa_4d_loft_keeps_live_webs_on_cylinder`. **Fixed.**

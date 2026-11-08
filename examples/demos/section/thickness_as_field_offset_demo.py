@@ -47,12 +47,12 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     INK,
     NAVY,
     RED,
@@ -114,7 +114,7 @@ def union_field_for(section, grid: SDFGrid, prefixes: tuple[str, ...] | None = N
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--key", default="2D-F")
+    parser.add_argument("--key", default="2D-F-LC-0R")
     parser.add_argument("--naca", default="2412")
     parser.add_argument("--chord", type=float, default=1.0)
     parser.add_argument("--twist-deg", type=float, default=0.0)

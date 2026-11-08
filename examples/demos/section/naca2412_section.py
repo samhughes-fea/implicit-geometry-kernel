@@ -37,7 +37,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
@@ -51,16 +51,16 @@ from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section.properties.export import export_section_json
 from implicit_geometry_kernel.section.properties.export import SectionPropertiesReport
 from implicit_geometry_kernel.section import MultiCellSection, resolve_system_type
-from implicit_geometry_kernel.section.spec import build_section_geometry
-from plotting import plot_section
+from implicit_geometry_kernel.section.spec import SectionOptions, SectionSpec, build_section_geometry
+from implicit_geometry_kernel.plotting import plot_section
 from implicit_geometry_kernel.frames import naca_to_twisted_pitch_axis_blade_frame
-from plotting.frames import section_plot_axes
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.frames import section_plot_axes
+from implicit_geometry_kernel.plotting.palette import (
     distance_field_norm,
     draw_distance_field,
     tighten_to_section,
 )
-from plotting.plot_section import (
+from implicit_geometry_kernel.plotting.plot_section import (
     apply_structural_section_axes,
     blade_plot_sampling_grid,
 )
@@ -242,13 +242,15 @@ print(f"  Twist      : {np.degrees(TWIST):.1f}°")
 print("\n--- build_section_geometry (2D-F layout) -----------------")
 
 geom = build_section_geometry(
-    resolve_system_type("2D-F"),
-    af,
-    skin_thickness=0.003,
-    spar_cap_thickness=0.012,
-    shear_web_thickness=0.004,
-    twist_rad=float(TWIST),
-    outputs=("properties", "midlines"),
+    SectionSpec.from_kwargs(
+        resolve_system_type("2D-F-LC-0R"),
+        af,
+        skin_thickness=0.003,
+        spar_cap_thickness=0.012,
+        shear_web_thickness=0.004,
+        twist_rad=float(TWIST),
+    ),
+    options=SectionOptions(outputs=("properties", "midlines")),
 )
 n_strips = len(geom.midline_strips or ())
 n_labels = len(geom.properties_map or {})

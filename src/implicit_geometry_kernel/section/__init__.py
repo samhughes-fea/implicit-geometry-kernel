@@ -4,11 +4,11 @@ Public products (see ``docs/section/reference/G_ROW_OWNERSHIP_MATRIX.md``):
 ``SectionGeometry``, ``SectionGeometryResult``, ``MultiCellSection``,
 ``resolve_system_type`` / ``SYSTEM_TYPE_KEYS``, ``SectionLayout``.
 
-Prefer ``Airfoil.to_sdf()`` (or ``sdf.airfoil.AirfoilSDF``) for implicit
+Prefer ``Airfoil.to_sdf()`` (or ``sdf.shapes.airfoil.AirfoilSDF``) for implicit
 airfoils. Quadtree / hybrid props backends are debug — import from
 ``section.properties``, not this barrel. Thickness clamps live in
 ``section.layout.thickness_limits``. ``build_section_geometry`` is
-``section.spec`` (``section.api`` remains an alias until 0.6.0).
+``section.spec``.
 """
 
 from __future__ import annotations
@@ -25,10 +25,14 @@ from implicit_geometry_kernel.section.spec import (
     resolve_system_type,
 )
 from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
-from implicit_geometry_kernel.section.layout.system_layout import SYSTEM_TYPE_KEYS, SystemLayoutSpec
+from implicit_geometry_kernel.catalogue import (
+    SYSTEM_TYPE_KEYS,
+    SYSTEM_TYPE_LAYOUT_KEYS,
+    SystemLayoutSpec,
+)
 from implicit_geometry_kernel.section.assembly import MultiCellSection
 
-__version__ = "0.5.0"
+__version__ = "0.7.0"
 __author__ = "Sam Hughes"
 
 __all__ = [
@@ -37,7 +41,6 @@ __all__ = [
     "SectionSpec",
     "SectionGeometry",
     "SectionGeometryResult",
-    "SectionGeometryRunner",
     "SectionPropertiesMeta",
     "StationLayoutResolution",
     "SectionLayout",
@@ -45,18 +48,6 @@ __all__ = [
     "resolve_station_layout",
     "resolve_system_type",
     "SYSTEM_TYPE_KEYS",
+    "SYSTEM_TYPE_LAYOUT_KEYS",
     "SystemLayoutSpec",
 ]
-
-
-def __getattr__(name: str):
-    if name == "SectionGeometryRunner":
-        import warnings
-
-        warnings.warn(
-            "SectionGeometryRunner is deprecated; use SectionGeometry. Removed in 0.6.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return SectionGeometry
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

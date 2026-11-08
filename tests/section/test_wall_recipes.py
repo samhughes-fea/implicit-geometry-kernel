@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from implicit_geometry_kernel.section.api.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.boundary.emitters import emit_sandwich_core_polygon
 from implicit_geometry_kernel.section.boundary.cores import emit_constructive_polygons
@@ -74,7 +76,7 @@ def test_skin_wall_to_sdf_expr_and_midline():
 def test_core_wall_matches_emitter_area():
     airfoil = AirfoilSDF.from_naca("2412", n_points=120, chord=1.0)
     section = build_section_view(
-        airfoil, resolve_system_type("2D-CN"), twist_angle_rad=0.0
+        airfoil, resolve_system_type("2D-CN-LC-0R"), twist_angle_rad=0.0
     )
     host = getattr(section, "host", section)
     recipes = dict(getattr(host, "wall_recipes", {}) or {})

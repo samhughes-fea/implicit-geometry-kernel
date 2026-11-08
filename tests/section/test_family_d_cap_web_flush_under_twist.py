@@ -13,44 +13,26 @@ import pytest
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
-    SectionGeometryRunner,
+    SectionGeometry,
     resolve_system_type,
 )
 from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
 
 _MAX_SOLID_GAP_M = 1e-6
-_MAX_MIDLINE_GAP_M = 1e-6
-
-
-def _point_to_polyline_min(point: np.ndarray, poly: np.ndarray) -> float:
-    """Min Euclidean distance from point to an open polyline (vertices + segments)."""
-    p = np.asarray(point, dtype=float).reshape(2)
-    xy = np.asarray(poly, dtype=float)
-    if xy.shape[0] < 2:
-        return float(np.linalg.norm(xy[0] - p)) if xy.shape[0] else float("nan")
-    d_min = float(np.linalg.norm(xy - p, axis=1).min())
-    for a, b in zip(xy[:-1], xy[1:]):
-        ab = b - a
-        lab2 = float(np.dot(ab, ab))
-        if lab2 < 1e-30:
-            continue
-        t = float(np.clip(np.dot(p - a, ab) / lab2, 0.0, 1.0))
-        d_min = min(d_min, float(np.linalg.norm(a + t * ab - p)))
-    return d_min
 
 
 @pytest.mark.parametrize("twist_deg", [0.0, 15.0])
-def test_family_d_cap_web_solid_and_midline_flush_under_twist(twist_deg):
+def test_family_d_cap_web_solid_flush_under_twist(twist_deg):
     twist_rad = float(np.deg2rad(twist_deg))
     result = (
-        SectionGeometryRunner(
-            layout=resolve_system_type("2D-F"),
+        SectionGeometry(
+            layout=resolve_system_type("2D-F-LC-0R"),
             airfoil=AirfoilSDF.from_naca("2412", chord=1.0),
             skin_thickness=0.003,
             spar_cap_thickness=0.012,
             shear_web_thickness=0.004,
             twist_rad=twist_rad,
-            outputs=("properties", "midlines"),
+            outputs=("properties",)
         )
         .execute()
         .get_results()
@@ -77,20 +59,3 @@ def test_family_d_cap_web_solid_and_midline_flush_under_twist(twist_deg):
                 "CapWall flapwise strip must match web midplanes under twist."
             )
 
-    web_mid = [
-        np.asarray(s.midline_twisted_pitch_axis_blade_frame, dtype=float)
-        for s in (result.midline_strips or ())
-        if s.kind == "web"
-    ]
-    assert len(web_mid) == 2
-    for strip in result.midline_strips or ():
-        if strip.kind != "cap":
-            continue
-        pts = np.asarray(strip.midline_twisted_pitch_axis_blade_frame, dtype=float)
-        for end_i, end in enumerate((pts[0], pts[-1])):
-            d_web = min(_point_to_polyline_min(end, w) for w in web_mid)
-            assert d_web <= _MAX_MIDLINE_GAP_M, (
-                f"2D-F @ {twist_deg} deg: midline {strip.label} end{end_i} is "
-                f"{d_web * 1e3:.3f} mm from nearest web mid-surface "
-                f"(limit {_MAX_MIDLINE_GAP_M * 1e3:.3f} mm)."
-            )

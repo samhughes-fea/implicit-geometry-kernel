@@ -2,6 +2,49 @@
 
 ## Unreleased
 
+- Architecture programme closed at the target tree: ``catalogue/`` is a layer;
+  ``plotting``, ``mesh``, ``blade.cad``, and ``profiling`` are extras. House-rule
+  splits: loft façade, topology map, shell-graph build, spar-cap pads, section
+  plotters. ``StiffenerWall`` is a registered constructive kind; ``build`` is the
+  only ``WallType`` pipeline hook. Extract tests live under ``tests/extract/``.
+
+- Constructive GEOS calls go through ``PolygonOps`` (gateway
+  ``section/boundary/polygons.py``). ``apply_clip`` replaces ``apply_shapely``.
+  Shoelace and plotting do not import Shapely. ``KernelPolygonOps`` implements
+  numpy affine maps and is compared to Shapely in
+  ``tests/section/test_polygon_ops_oracle.py``. Production ``OPS`` remains
+  ``ShapelyPolygonOps`` (GEOS overlay and mitre offset) so catalogue goldens
+  do not move. Shapely stays a runtime dependency until a numpy overlay matches
+  those goldens.
+
+- Target tree lists ``catalogue/`` as a layer; ``plotting``, ``mesh``, ``blade.cad``,
+  and ``profiling`` are extras. Import-boundary tests cover ``mesh``. ``SDFGrid``
+  debug contours use contourpy only (no matplotlib fallback).
+
+- Station wall kinds dispatch on ``SECTION_BUILDERS`` flags (``on_shell_product``,
+  ``polygon_by_surface``). ``build_section_view`` is the assemble host helper in
+  ``section.assembly``; gated products stay on ``build_section_geometry``.
+  Catalogue and concept shims (``section.layout.system_layout``, ``blade.concept``)
+  are gone. ``blade.topology`` is a package; OML writers live in ``blade.oml``.
+
+- ``sdf`` is one tree: ``kernels``, ``nodes``, ``shapes``, ``solve``. Retired
+  top-level ``sdf/{ir,airfoil,csg,grid,primitives,naca,transforms,_polygon_numba}``.
+  One ``AirfoilSDF`` (``sdf.shapes``); author via ``Airfoil.to_sdf()``.
+  ``SDFGrid`` is an evaluation grid; product integrals stay in ``integration``.
+  ``GeometrySolver`` stays in ``sdf.solve``; ``extract`` traces zero-set polylines.
+
+- Catalogue tokens live in ``implicit_geometry_kernel.catalogue`` (below
+  ``section``). ``blade.concepts`` authors a full blade (``BladeConcept.from_key``,
+  R-letter ribs). Taxonomy: ``docs/blade/concepts/taxonomy.md``.
+
+- Documentation is split into a **manual** (package READMEs, guides, frames,
+  taxonomy, numbered equations) and **internal** pages (bug logs, ADRs,
+  reports). House style: ``docs/conventions/DOCUMENTATION_STANDARDS.md``.
+  Completeness: ``docs/glossary.md`` lists every kernel ``__all__`` name.
+  Hub data flow is ``BladeGeometry`` → ``SectionCut`` → ``SectionGeometry``.
+  ``docs/contract/README.md`` describes live DTOs only (loads remain in
+  ``docs/FORK.md``). Sphinx/autodoc is deferred.
+
 - Mapped loft and geometry-to-mesh handoff are frozen (consume table in
   ``docs/section/guides/geometry_to_mesh.md``; loft rules and closed bugs in
   ``docs/blade/bug_log.md``).
@@ -44,11 +87,13 @@
   keeps those n-gons; STL fans from the first loft vertex. TE keys are the
   start of each TE→LE side arc.
 
-- Breaking: PA web freeze is a root lattice ``k·c_root/n`` (``k = 1…n``), not
-  catalogue ``i/(n+1)`` fractions times root chord. The last point sits on the
-  root TE and may omit until a later station intercepts. Two-web PA keeps
-  ``(0.15, 0.50)``. Web labels keep authored indices through drop/onset (no
-  dense ``shear_web_0…n-1`` remap). Example 09 adds ``4D-F-PA-10R``.
+- Breaking: PA web freeze is hard-coded blade-x from the pitch axis, not a
+  ``k·c_root/n`` lattice and not the two-web ``(0.15, 0.50)`` pair. Primary
+  slots sit in the root ``[x_LE, x_TE]`` band about PA; secondary slots sit in
+  the TE shelf ``[x_TE(root), x_TE(max_chord)]``. LC/LE remain authored chord
+  fractions / metres from LE. ``BladeConcept`` lives in
+  ``blade.concepts`` (``blade.concept`` is a shim). Web labels keep authored
+  indices through drop/onset. Example 09 adds ``4D-F-PA-10R``.
 
 - Breaking: `BladeGeometry` requires `pivot_fraction` (float or span table) —
   the S-frame origin and XY stacking point. There is no 0.25 / 0.333 fallback.

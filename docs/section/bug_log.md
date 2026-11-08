@@ -1,5 +1,7 @@
 # bug_log — section_geometry
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 ↑ [`docs index`](docs_index.md) · [`section_geometry`](docs_index.md)
 
 ## Role
@@ -7,7 +9,7 @@
 Worker debug log for this package. Each entry records the **symptom** as
 observed, the **evidence** that pinned it, the **root cause**, and — once
 fixed — the **verification**. Entries stay in the log after they close, per
-`DOCUMENTATION_STANDARDS`;
+[`DOCUMENTATION_STANDARDS`](../conventions/DOCUMENTATION_STANDARDS.md);
 superseded conclusions are struck through or narrated rather than deleted,
 because several of these were mis-attributed on first pass and the correction is
 the useful part.
@@ -19,7 +21,7 @@ independent.
 
 **Reference case throughout:** NACA 2412, 1.0 m chord, 200 airfoil points,
 6 mm skin / 14 mm spar cap / 8 mm shear web, layouts named by the
-[system-type taxonomy](reference/system_type_xyz_taxonomy.md) (`2D-F`, `5D-CN`, …).
+[system-type taxonomy](../blade/concepts/taxonomy.md) (`2D-F`, `5D-CN`, …).
 Deviations are stated per entry.
 
 ## Index

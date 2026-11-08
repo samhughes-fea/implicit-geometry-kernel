@@ -247,7 +247,12 @@ def bond_caps_to_skin(strips: tuple[ShellMidlineStrip, ...]) -> tuple[ShellMidli
         if not hosts:
             continue
         chain = _chain(hosts)
-        new_cap, arc_inserts, bonds = _bond_one_cap(out[cap_index], chain)
+        try:
+            new_cap, arc_inserts, bonds = _bond_one_cap(out[cap_index], chain)
+        except ValueError:
+            # Recipe midline is not monotone on the skin (twist / discrete
+            # windows). Keep the solid cap wall; skip that footprint's bonds.
+            continue
         for arc_index, inserts in arc_inserts.items():
             arc = chain[arc_index]
             points = np.asarray(out[arc.strip_index].midline_twisted_pitch_axis_blade_frame, dtype=np.float64)

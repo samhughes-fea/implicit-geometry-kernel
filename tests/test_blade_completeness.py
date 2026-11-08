@@ -24,9 +24,14 @@ def _geo(**kw):
         Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
         Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3),
     ]
-    options = dict(spar_cap_thickness=0.008, shear_web_thickness=0.002, web_positions=(0.18, 0.48))
+    options = dict(
+        pivot_fraction=0.3,
+        spar_cap_thickness=0.008,
+        shear_web_thickness=0.002,
+        web_positions=(0.18, 0.48),
+    )
     options.update(kw)
-    return BladeGeometry(stations, "2D-F", 0.003, **options)
+    return BladeGeometry(stations, "2D-F-LC-0R", 0.003, **options)
 
 
 def test_ply_drop_ramps_thickness_field():
@@ -71,7 +76,7 @@ def test_batched_query_and_validate():
     broken = BladeGeometry(
         [Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
          Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3)],
-        "2D-F", 0.003, transverse=(TransverseMember("rib", 50.0, 0.01),),
+        "2D-F-LC-0R", 0.003, pivot_fraction=0.3, transverse=(TransverseMember("rib", 50.0, 0.01),),
     )
     assert any("leaves the blade" in m for m in broken.validate())
 
@@ -81,7 +86,7 @@ def test_planform_csv_roundtrip_windio(tmp_path: Path):
     csv.write_text("z,chord,twist,pitch_axis,offset_x,offset_y,airfoil\n"
                    "0,2,0,0.3,0,0,0018\n"
                    "10,1,5,0.3,0,0.1,0012\n", encoding="utf-8")
-    geo = read_planform_csv(csv, layout="2D-F", skin_thickness=0.004,
+    geo = read_planform_csv(csv, layout="2D-F-LC-0R", skin_thickness=0.004,
                             spar_cap_thickness=0.008, shear_web_thickness=0.004)
     assert geo.stations[0].chord == pytest.approx(2.0)
     doc = write_windio(geo)

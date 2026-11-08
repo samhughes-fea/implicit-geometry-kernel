@@ -1,4 +1,4 @@
-"""Typed clip algebra for section subcomponents (IR + Shapely).
+"""Typed clip algebra for section subcomponents (IR + constructive polygons).
 
 Public clip types (:class:`ClipSpec`) are the SoT for both SDF IR and
 constructive Shapely interpreters. Camber-side splits live here — not in
@@ -21,8 +21,24 @@ from implicit_geometry_kernel.sdf.nodes import (
     Intersect,
 )
 
-from implicit_geometry_kernel.section.boundary import chordwise_box, ensure_polygon, flapwise_bay_clip, half_plane_clip
+from implicit_geometry_kernel.section.boundary.polygons import (
+    chordwise_box,
+    ensure_polygon,
+    flapwise_bay_clip,
+    half_plane_clip,
+)
 from implicit_geometry_kernel.section.assembly.clips import _airfoil_offset_arc, _parallel_web_half_gt, _parallel_web_half_lt, _parallel_web_strip_clip, airfoil_expr, chordwise_clip_expr, flapwise_web_normal, lower_half_plane_expr, strip_clip_expr, upper_half_plane_expr, web_station_projection
+
+
+def flapwise_strip_params(nx, ny, c_lo, c_hi) -> dict[str, Any]:
+    """Kwargs mirroring a ``_parallel_web_strip_clip`` for the Shapely emitter."""
+    return {
+        "flapwise_nx": float(nx),
+        "flapwise_ny": float(ny),
+        "flapwise_c_lo": float(min(c_lo, c_hi)),
+        "flapwise_c_hi": float(max(c_lo, c_hi)),
+        "flapwise_clip_mode": "strip",
+    }
 
 
 @dataclass(frozen=True)
@@ -114,8 +130,8 @@ def to_ir(clip: ClipSpec):
     raise TypeError(f"Unsupported clip type: {type(clip)!r}")
 
 
-def apply_shapely(clip: ClipSpec, polygon, *, camber_xy: Any = None):
-    """Apply ``clip`` to a Shapely polygon via constructive helpers."""
+def apply_clip(clip: ClipSpec, polygon, *, camber_xy: Any = None):
+    """Apply ``clip`` to a constructive polygon."""
     if polygon is None or getattr(polygon, "is_empty", False):
         return Polygon()
     if isinstance(clip, HalfPlaneClip):
@@ -158,6 +174,9 @@ def apply_shapely(clip: ClipSpec, polygon, *, camber_xy: Any = None):
     raise TypeError(f"Unsupported clip type: {type(clip)!r}")
 
 
+apply_shapely = apply_clip
+
+
 __all__ = [
     "CamberSide",
     "ChordBand",
@@ -169,6 +188,8 @@ __all__ = [
     "_parallel_web_half_lt",
     "_parallel_web_strip_clip",
     "airfoil_expr",
+    "flapwise_strip_params",
+    "apply_clip",
     "apply_shapely",
     "camber_side_field",
     "chordwise_clip_expr",

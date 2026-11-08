@@ -17,11 +17,12 @@ def _geo(**kwargs):
     ]
     return BladeGeometry(
         stations,
-        "2D-F",
+        "2D-F-LC-0R",
         0.003,
         spar_cap_thickness=0.008,
         shear_web_thickness=0.002,
         web_positions=(0.18, 0.48),
+        pivot_fraction=0.3,
         **kwargs,
     )
 

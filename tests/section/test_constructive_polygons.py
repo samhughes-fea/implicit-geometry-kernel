@@ -6,9 +6,11 @@ import numpy as np
 import pytest
 from shapely.geometry import Polygon
 
-from implicit_geometry_kernel.section.api.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.boundary.labels import (
     classify_property_labels,
@@ -77,7 +79,7 @@ def test_section_properties_from_polygons_matches_shoelace_rectangle():
 
 def test_outer_skin_annulus_positive_area():
     airfoil = AirfoilSDF.from_naca("0012", n_points=80, chord=1.0)
-    section = build_section_view(airfoil, resolve_system_type("2D-CN"), twist_angle_rad=0.0)
+    section = build_section_view(airfoil, resolve_system_type("2D-CN-LC-0R"), twist_angle_rad=0.0)
     a_ss = emit_outer_skin_polygon(section["skin_suction_surface"]).area
     a_ps = emit_outer_skin_polygon(section["skin_pressure_surface"]).area
     assert a_ss > 0.0 and a_ps > 0.0
@@ -85,7 +87,7 @@ def test_outer_skin_annulus_positive_area():
 
 def test_emit_wall_solid_polygons_2d_cn():
     airfoil = AirfoilSDF.from_naca("2412", n_points=100, chord=1.0)
-    section = build_section_view(airfoil, resolve_system_type("2D-CN"), twist_angle_rad=0.0)
+    section = build_section_view(airfoil, resolve_system_type("2D-CN-LC-0R"), twist_angle_rad=0.0)
     polys = emit_wall_solid_polygons(section)
     assert "skin_suction_surface" in polys and "skin_pressure_surface" in polys
     assert any(k.startswith("shear_web_") for k in polys)
@@ -96,7 +98,7 @@ def test_emit_wall_solid_polygons_2d_cn():
 
 def test_twist_preserves_wall_solid_area():
     airfoil = AirfoilSDF.from_naca("2412", n_points=100, chord=1.0)
-    layout = resolve_system_type("2D-CN")
+    layout = resolve_system_type("2D-CN-LC-0R")
     s0 = build_section_view(airfoil, layout, twist_angle_rad=0.0)
     s15 = build_section_view(airfoil, layout, twist_angle_rad=float(np.deg2rad(15.0)))
     p0 = emit_wall_solid_polygons(s0)
@@ -105,7 +107,7 @@ def test_twist_preserves_wall_solid_area():
         np.testing.assert_allclose(p15[key].area, p0[key].area, rtol=1e-3, atol=1e-5)
 
 
-@pytest.mark.parametrize("layout_key", ["2D-CN", "2D-F"])
+@pytest.mark.parametrize("layout_key", ["2D-CN-LC-0R", "2D-F-LC-0R"])
 def test_hybrid_constructive_area_vs_quadtree(layout_key: str):
     airfoil = AirfoilSDF.from_naca("2412", n_points=120, chord=1.0)
     section = build_section_view(airfoil, resolve_system_type(layout_key), twist_angle_rad=0.0)
@@ -132,7 +134,7 @@ def test_hybrid_constructive_area_vs_quadtree(layout_key: str):
 
 def test_emit_core_polygons_bay_partition():
     airfoil = AirfoilSDF.from_naca("2412", n_points=100, chord=1.0)
-    section = build_section_view(airfoil, resolve_system_type("2D-CN"), twist_angle_rad=0.0)
+    section = build_section_view(airfoil, resolve_system_type("2D-CN-LC-0R"), twist_angle_rad=0.0)
     polys = emit_constructive_polygons(section)
     core_keys = sorted(
         k for k in polys if k.startswith("sandwich_core_")
@@ -161,7 +163,7 @@ def test_hybrid_5d_f_thick_skin_does_not_crash():
     # Chord must leave cavity depth for 12 mm skin + five webs; tip-scale
     # chords raise InfeasibleSectionGeometry before hybrid props can run.
     airfoil = AirfoilSDF.from_naca("0012", n_points=100, chord=1.0)
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
     xs = [float(f) * float(airfoil.chord) for f in layout.web_chord_fracs]
     section = MultiCellSection(
         airfoil,
@@ -193,7 +195,7 @@ def test_hybrid_5d_f_thick_skin_does_not_crash():
 def test_hybrid_retains_core_and_optional_inserts():
     airfoil = AirfoilSDF.from_naca("2412", n_points=100, chord=1.0)
     # MultiCellSection via build_section_view; enable inserts through factory if available.
-    section = build_section_view(airfoil, resolve_system_type("2D-CN"), twist_angle_rad=0.0)
+    section = build_section_view(airfoil, resolve_system_type("2D-CN-LC-0R"), twist_angle_rad=0.0)
     # Direct MultiCellSection with inserts for constructive coverage
     from implicit_geometry_kernel.section.assembly.multicell import (
         MultiCellSection,

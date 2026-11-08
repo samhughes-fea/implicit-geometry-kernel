@@ -16,6 +16,7 @@ class CapPlacementRule:
     kind: CapPlacementKind
     anchor: FixedBandAnchor | None = None
     half_width: float | None = None
+    chord_window: tuple[float, float] | None = None
 
     @staticmethod
     def none() -> CapPlacementRule:
@@ -38,7 +39,11 @@ class CapPlacementRule:
 
     @staticmethod
     def from_chord_windows(windows) -> CapPlacementRule:
-        """Family-B band from published chord windows ``((lo, hi), ...)``."""
+        """Family-B band from published chord windows ``((lo, hi), ...)``.
+
+        ``chord_window`` is the union interval in chord fraction from the LE.
+        Assemble uses that interval, not a pitch-centred pad of ``half_width``.
+        """
         pairs = [(float(a), float(b)) for a, b in (windows or ())]
         if not pairs:
             return CapPlacementRule.none()
@@ -47,7 +52,12 @@ class CapPlacementRule:
         half = 0.5 * (hi - lo)
         if half <= 0.0:
             return CapPlacementRule.none()
-        return CapPlacementRule.fixed_band(anchor="pitching", half_width=half)
+        return CapPlacementRule(
+            kind="fixed_band",
+            anchor="pitching",
+            half_width=half,
+            chord_window=(lo, hi),
+        )
 
     @staticmethod
     def from_structural_family(

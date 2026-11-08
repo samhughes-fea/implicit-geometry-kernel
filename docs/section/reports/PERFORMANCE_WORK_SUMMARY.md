@@ -1,9 +1,12 @@
 # section_geometry performance work — status and next steps
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 > **Status:** Historical performance handoff. Paths that cite deleted
 > `engine/` / `interface/` / `core/` trees are **stale** — those homes are gone
 > (see [G_ROW_OWNERSHIP_MATRIX](../reference/G_ROW_OWNERSHIP_MATRIX.md)). Prefer
 > live domain homes (`sdf/`, `sections/`, `props_emit/`, …) when following links.
+> Citations of `sdf/ir.py` now mean `sdf/nodes/` (the CSG expression tree).
 
 Phase timings for computational-efficiency work on `section_geometry`. Short
 handoff:
@@ -294,7 +297,7 @@ from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.profiling import reset_stats
 
 airfoil = AirfoilSDF.from_naca('2412', n_points=120, chord=1.0)
-section = build_section_view(airfoil, resolve_system_type('2D-CN'), twist_angle_rad=0.0)
+section = build_section_view(airfoil, resolve_system_type('2D-CN-LC-0R'), twist_angle_rad=0.0)
 spec = quadtree_spec_for_airfoil(airfoil, chord=1.0, max_depth=7, max_cells=150000)
 reset_stats()
 props, meta = compute_section_properties(section, backend='quadtree', quadtree_spec=spec, airfoil_for_spec=airfoil)

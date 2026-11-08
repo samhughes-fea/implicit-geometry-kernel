@@ -55,7 +55,6 @@ from implicit_geometry_kernel.sdf.kernels.transforms import SDFFrame, flapwise_a
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid  # noqa: E402
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF  # noqa: E402
 from implicit_geometry_kernel.sdf.nodes import CallableField, Capsule, Circle, Box, Expr, HalfPlane, Intersect, Offset, OrientedBox, Polygon, RoundedBox, Rotate, Shell, Slab, Subtract, Union, compile_expr, eval_expr, eval_expr_batch, intersect_expr, subtract_expr, union_expr
-from implicit_geometry_kernel.sdf.compile import compile_expr_to_node
 from implicit_geometry_kernel.sdf.nodes.base import FeatureKind, FeatureSpec, FeatureTable, FieldSample, NO_FEATURE, SDFNode
 from implicit_geometry_kernel.sdf.nodes.tagged import PriorityUnionNode, TagNode
 from implicit_geometry_kernel.sdf.nodes.lofted import LoftedPolygonSDF
@@ -79,11 +78,11 @@ __all__ = [
     "SDFGrid",
     # airfoil
     "AirfoilSDF",
-    # ir
+    # nodes
     "Expr", "Circle", "Box", "RoundedBox", "OrientedBox", "Capsule",
     "HalfPlane", "Polygon", "CallableField",
     "Union", "Intersect", "Subtract", "Offset", "Rotate", "Shell", "Slab",
-    "eval_expr", "eval_expr_batch", "compile_expr", "compile_expr_to_node",
+    "eval_expr", "eval_expr_batch", "compile_expr",
     "union_expr", "intersect_expr", "subtract_expr",
     # feature field
     "FieldSample", "FeatureTable", "FeatureSpec", "FeatureKind", "NO_FEATURE", "SDFNode",

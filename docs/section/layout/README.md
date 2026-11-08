@@ -2,10 +2,11 @@
 
 ↑ [`section`](../README.md)
 
-Resolves a layout id such as `"2D-F"` (web count · spar-cap family ·
-orientation) to a frozen `SystemLayoutSpec`, and owns the taper-time web-drop
-cascade. Solid assembly is [`../assembly/`](../assembly/README.md). Decode:
-[`../docs/reference/system_type_xyz_taxonomy.md`](../reference/system_type_xyz_taxonomy.md).
+Station slice of a blade concept: `SectionLayout`, caps, through-thickness
+anchoring, and applying the catalogue cascade when webs drop. Tokens and
+`SystemLayoutSpec` live in [`catalogue`](../../catalogue/README.md). Decode:
+[`blade-concept taxonomy`](../../blade/concepts/taxonomy.md). Solid assembly is
+[`../assembly/`](../assembly/README.md).
 
 Absolute web x-offsets [m from LE] may come from spanwise anchoring. Webs
 whose local cavity is too shallow are **dropped**, not slid.
@@ -25,8 +26,7 @@ whose local cavity is too shallow are **dropped**, not slid.
 
 | File | Role |
 |------|------|
-| `system_layout.py` | `SystemLayoutSpec`, registry, resolve, cascade |
-| `structural.py` | Cap-family and fixed-cap-anchor parsers |
+| `structural.py` | Fixed-cap-anchor parsers; family labels from `catalogue` |
 | `cap_placement.py` | `CapPlacementRule` — declarative cap policy |
 | `anchoring.py` | Through-thickness face offsets (`AnchoredWallGeometry`) |
 | `collision.py` | Placement feasibility / collisions |
@@ -40,12 +40,12 @@ whose local cavity is too shallow are **dropped**, not slid.
 
 | Name | File | Role |
 |------|------|------|
-| `SystemLayoutSpec` | `system_layout.py` | Frozen layout config |
-| `resolve_system_type` | `system_layout.py` | String → spec |
-| `SYSTEM_TYPE_KEYS` | `system_layout.py` | Registered ids |
-| `effective_layout_for_web_count` | `system_layout.py` | Surviving webs → catalogue rung |
-| `step_down_cascade` | `system_layout.py` | Ordered drop ladder |
-| `StructuralFamily` | `structural.py` | Cap family `"A"`…`"D"` |
+| `SystemLayoutSpec` | `catalogue` | Frozen layout config |
+| `resolve_system_type` | `catalogue` | String → spec |
+| `SYSTEM_TYPE_KEYS` | `catalogue` | Registered ids |
+| `effective_layout_for_web_count` | `catalogue` | Surviving webs → catalogue rung |
+| `step_down_cascade` | `catalogue` | Ordered drop ladder |
+| `StructuralFamily` | `catalogue` | Cap family `"A"`…`"D"` |
 | `CapPlacementRule` | `cap_placement.py` | Cap kind / anchor / half-width |
 | `SectionLayout` | `section_layout.py` | Parametric web + orientation + caps |
 
@@ -68,12 +68,12 @@ Catalogue keys are presets; `multicell_from_section_layout` /
 
 | Field | Meaning |
 |-------|---------|
-| `key` | Catalogue string (e.g. `"2D-F"`) |
+| `key` | Catalogue string (e.g. `"2D-F-LC-0R"`) |
 | `n_webs`, `n_cells` | Web and cell counts |
 | `has_spar_caps` | Whether caps are present |
 | `web_orientation` | `"chord_normal"` or `"flapwise"` |
 | `web_positioning` | How default chord fractions are chosen |
-| `web_chord_fracs` | Default web stations as fractions of chord from LE |
+| `web_chord_fracs` | Default web stations as fractions of chord from LE (LC; LE × root chord). PA freeze is hard-coded blade-x in `blade.concepts.web_anchoring`, not these fractions. |
 | `spar_cap_positioning` | Cap anchor policy |
 | `geometry_mode` | Catalogue metadata; `"zero_web_catalogue"` on `0A`/`0B` (host is still `MultiCellSection`) |
 | `structural_family` | Cap family `"A"`…`"D"` |
@@ -83,18 +83,18 @@ Catalogue keys are presets; `multicell_from_section_layout` /
 
 ```mermaid
 flowchart LR
-  Key["2D-F"] --> Resolve[resolve_system_type]
+  Key["2D-F-LC-0R"] --> Resolve[resolve_system_type]
   Resolve --> Spec[SystemLayoutSpec]
   Spec --> Station[resolve_station_layout]
   Station --> Sections[sections]
 ```
 
-Station resolve is orchestrated from [`../api/`](../api/README.md)
+Station resolve is orchestrated from [`../spec/`](../spec/README.md)
 (`resolve_station_layout`).
 
 **Visual SoT for root-anchored vs station-relative webs:**
-`examples/section/04_spanwise_web_anchors.py` (and loft
-`examples/06_web_placement`) show webs **dropped** when the local cavity can
+`examples/section/teaching/04_spanwise_web_anchors.py` (and loft
+`examples/blade/02_web_placement`) show webs **dropped** when the local cavity can
 no longer hold them (not slid). `StationLayoutResolution.web_x_positions_m`
 is the resolved metres-from-LE list; loft input `web_offsets` is the same
 quantity. This package owns the drop / catalogue step-down.
@@ -104,7 +104,8 @@ different spanwise product — see BSP
 
 ## See also
 
-- [`../docs/reference/system_type_xyz_taxonomy.md`](../reference/system_type_xyz_taxonomy.md)
+- [blade-concept taxonomy](../../blade/concepts/taxonomy.md)
+- [catalogue](../../catalogue/README.md)
 - [`../assembly/`](../assembly/README.md)
-- `../../../examples/section/04_spanwise_web_anchors.py`
+- `../../../examples/section/teaching/04_spanwise_web_anchors.py`
 - BSP `package_boundaries.md` §3.2 / §3.10

@@ -1,92 +1,14 @@
-"""Former section subpackage paths stay importable as aliases until 0.6.0."""
+"""Former section subpackage paths are gone as of 0.6.0."""
 
-import importlib
-import pkgutil
+from pathlib import Path
 
-import pytest
+import implicit_geometry_kernel.section as section
 
-PKG = "implicit_geometry_kernel.section."
-MOVED = {"props": "properties", "recipes": "walls"}
-
-
-def _cases():
-    for old, new in MOVED.items():
-        pkg = importlib.import_module(PKG + new)
-        for info in pkgutil.iter_modules(pkg.__path__):
-            yield old, new, info.name
+ROOT = Path(section.__file__).resolve().parent
+REMOVED = ("api", "placement", "constructive", "props", "recipes")
 
 
-@pytest.mark.parametrize("old,new,mod", list(_cases()))
-def test_old_submodule_is_new_module(old, new, mod):
-    assert importlib.import_module(f"{PKG}{old}.{mod}") is importlib.import_module(f"{PKG}{new}.{mod}")
-
-
-@pytest.mark.parametrize("old,new", sorted(MOVED.items()))
-def test_old_package_reexports(old, new):
-    o, n = importlib.import_module(PKG + old), importlib.import_module(PKG + new)
-    names = getattr(n, "__all__", [k for k in vars(n) if not k.startswith("_")])
-    for name in names:
-        assert getattr(o, name) is getattr(n, name), name
-
-
-CONSTRUCTIVE = {
-    "emitters": "boundary.emitters",
-    "labels": "boundary.labels",
-    "properties": "properties.polygons",
-}
-
-
-@pytest.mark.parametrize("old,new", sorted(CONSTRUCTIVE.items()))
-def test_constructive_modules_alias(old, new):
-    assert importlib.import_module(f"{PKG}constructive.{old}") is importlib.import_module(PKG + new)
-
-
-PLACEMENT = {
-    "anchoring": "layout.anchoring",
-    "collision": "layout.collision",
-    "handoff": "layout.handoff",
-}
-
-
-@pytest.mark.parametrize("old,new", sorted(PLACEMENT.items()))
-def test_placement_modules_alias(old, new):
-    assert importlib.import_module(f"{PKG}placement.{old}") is importlib.import_module(PKG + new)
-
-
-API = {
-    "factory": "spec.factory",
-    "kwarg_aliases": "spec.kwarg_aliases",
-    "layout_resolution": "spec.layout_resolution",
-    "results": "spec.results",
-    "runner": "spec.runner",
-    "worker": "spec.worker",
-}
-
-
-@pytest.mark.parametrize("old,new", sorted(API.items()))
-def test_api_modules_alias(old, new):
-    assert importlib.import_module(f"{PKG}api.{old}") is importlib.import_module(PKG + new)
-
-
-def test_api_package_reexports_spec():
-    api = importlib.import_module(PKG + "api")
-    spec = importlib.import_module(PKG + "spec")
-    names = getattr(spec, "__all__", [k for k in vars(spec) if not k.startswith("_")])
-    for name in names:
-        assert getattr(api, name) is getattr(spec, name), name
-
-
-def test_placement_package_reexports_layout_modules():
-    placement = importlib.import_module(PKG + "placement")
-    anchoring = importlib.import_module(PKG + "layout.anchoring")
-    assert placement.AnchoredWallGeometry is anchoring.AnchoredWallGeometry
-    assert placement.anchored_wall_geometry is anchoring.anchored_wall_geometry
-
-
-def test_constructive_export_reexports_walls_and_cores():
-    export = importlib.import_module(PKG + "constructive.export")
-    walls = importlib.import_module(PKG + "boundary.walls")
-    cores = importlib.import_module(PKG + "boundary.cores")
-    assert export.emit_wall_solid_polygons is walls.emit_wall_solid_polygons
-    assert export.emit_core_polygons is cores.emit_core_polygons
-    assert export.emit_constructive_polygons is cores.emit_constructive_polygons
+def test_moved_section_packages_absent() -> None:
+    for name in REMOVED:
+        assert not (ROOT / name).exists(), name
+    assert not (ROOT / "midlines" / "offset_math.py").exists()

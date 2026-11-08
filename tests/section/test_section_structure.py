@@ -6,7 +6,8 @@ import pytest
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.nodes import Circle
 from implicit_geometry_kernel.sdf.nodes.tagged import ExprSDF
-from implicit_geometry_kernel.section.api.factory import build_section_view, resolve_system_type
+from implicit_geometry_kernel.catalogue import resolve_system_type
+from implicit_geometry_kernel.section.assembly import build_section_view
 from implicit_geometry_kernel.section.assembly.members import SECTION_BUILDERS
 from implicit_geometry_kernel.section.assembly.multicell import MultiCellSection, section_registry
 from implicit_geometry_kernel.section.assembly.plan import SectionMember
@@ -30,7 +31,7 @@ def owner(structure, x, y):
     return structure.table[int(s.meta[0])].name if s.phi[0] < 0 else None
 
 
-@pytest.mark.parametrize("key", ["0A", "0B", "1C-CN", "2D-F", "3B-CN"])
+@pytest.mark.parametrize("key", ["0A-LC-0R", "0B-LC-0R", "1C-CN-LC-0R", "2D-F-LC-0R", "3B-CN-LC-0R"])
 def test_every_component_is_a_member(key):
     section = host(key)
     names = {spec.name for spec in section.structure.table}
@@ -39,7 +40,7 @@ def test_every_component_is_a_member(key):
 
 
 def test_box_section_members_and_fields():
-    section = host("2D-CN")
+    section = host("2D-CN-LC-0R")
     s = section.structure
     kinds = {spec.name: spec.kind for spec in s.table}
     assert kinds["skin_suction_surface"] == "skin" and kinds["skin_pressure_surface"] == "skin"
@@ -60,7 +61,7 @@ def test_box_section_members_and_fields():
 
 
 def test_webs_are_branches_on_their_axis():
-    s = host("2D-CN").structure
+    s = host("2D-CN-LC-0R").structure
     for b in s.branches:
         wall = next(iter(b.contribution.source.recipes.values()))
         on_axis = np.array([[wall.x_top, 0.5 * (wall.y_top + wall.y_bot), 0.0]])
@@ -85,7 +86,9 @@ def test_a_new_member_type_is_one_more_builder():
 
 def test_default_builders_and_sources():
     assert [b.__name__ for b in SECTION_BUILDERS] == [
-        "SkinBuilder", "WebBuilder", "CapBuilder", "CoreBuilder", "InsertBuilder"]
-    section = host("1C-CN", twist=0.3)
+        "SkinBuilder", "WebBuilder", "CapBuilder", "CoreBuilder", "InsertBuilder",
+        "BondlineBuilder",
+    ]
+    section = host("1C-CN-LC-0R", twist=0.3)
     sources = [c.source for c in (*section.structure.walls, *section.structure.regions)]
     assert all(isinstance(m, SectionMember) for m in sources)

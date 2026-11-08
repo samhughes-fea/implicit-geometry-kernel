@@ -31,7 +31,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     apply_presentation_style,
     demo_output_dir,
     save_figure,
@@ -50,9 +50,11 @@ if _erp.exists():
 
 import numpy as np
 
-from implicit_geometry_kernel.section.spec.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
@@ -105,7 +107,7 @@ def _run_bench(args, backend: str) -> dict:
         last_meta = _meta
 
         if args.plot and mesh is not None:
-            from plotting.plot import (
+            from implicit_geometry_kernel.plotting.plot import (
                 plot_section_from_mesh,
                 plot_section_hybrid,
             )
@@ -202,7 +204,7 @@ def _plot_throughput(
     matplotlib.use("Agg", force=False)
     import matplotlib.pyplot as plt
 
-    from plotting.palette import (
+    from implicit_geometry_kernel.plotting.palette import (
         INK,
         MUTED,
         NAVY,
@@ -298,7 +300,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--stations", type=int, default=20)
     ap.add_argument("--depth", type=int, default=7)
-    ap.add_argument("--system", default="2D-CN")
+    ap.add_argument("--system", default="2D-CN-LC-0R")
     ap.add_argument("--n-points", type=int, default=120)
     ap.add_argument("--backend", default="hybrid", choices=("hybrid", "quadtree", "grid"))
     ap.add_argument(

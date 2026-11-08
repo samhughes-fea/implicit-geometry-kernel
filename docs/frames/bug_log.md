@@ -1,5 +1,7 @@
 # bug_log — coordinate_frames
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 ↑ [`coordinate_frames`](README.md)
 
 ## Role

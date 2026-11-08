@@ -1,40 +1,55 @@
-"""Old sdf module paths stay importable as aliases of the new tree until 0.6.0."""
+"""Former sdf module paths are gone as of 0.6.0."""
 
+import ast
 import importlib
+from pathlib import Path
 
 import pytest
 
-MOVED = {
-    "field": "nodes.base",
-    "nodes": "nodes.tagged",
-    "span_nodes": "nodes.span",
-    "lofted": "nodes.lofted",
-    "primitives": "kernels.primitives",
-    "_polygon_numba": "kernels.polygon_numba",
-    "grid": "kernels.grid",
-    "csg": "kernels.csg",
-    "transforms": "kernels.transforms",
-    "airfoil": "shapes.airfoil",
-    "naca": "shapes.naca",
-}
+import implicit_geometry_kernel.sdf as sdf
 
-PKG = "implicit_geometry_kernel.sdf."
-
-
-@pytest.mark.parametrize("old,new", sorted(MOVED.items()))
-def test_old_path_is_new_module(old, new):
-    new_mod = importlib.import_module(PKG + new)
-    if old == "nodes":
-        # sdf.nodes is now the package; the tagged nodes are re-exported from it.
-        pkg = importlib.import_module(PKG + "nodes")
-        for name in getattr(new_mod, "__all__", []):
-            assert getattr(pkg, name) is getattr(new_mod, name)
-        return
-    assert importlib.import_module(PKG + old) is new_mod
+ROOT = Path(sdf.__file__).resolve().parent
+PACKAGE = ROOT.parent
+REMOVED = (
+    "field.py",
+    "ir.py",
+    "span_nodes.py",
+    "lofted.py",
+    "primitives.py",
+    "_polygon_numba.py",
+    "grid.py",
+    "csg.py",
+    "transforms.py",
+    "airfoil.py",
+    "naca.py",
+    "compile.py",
+)
+RETIRED_MODULES = tuple(
+    f"implicit_geometry_kernel.sdf.{Path(name).stem}" for name in REMOVED
+)
 
 
-def test_ir_reexports_shapes():
-    ir = importlib.import_module(PKG + "ir")
-    nodes = importlib.import_module(PKG + "nodes")
-    for name in ("Circle", "Union", "Offset", "eval_expr_batch", "expr_bbox"):
-        assert getattr(ir, name) is getattr(nodes, name)
+def test_old_sdf_modules_absent() -> None:
+    for name in REMOVED:
+        assert not (ROOT / name).exists(), name
+
+
+@pytest.mark.parametrize("mod", RETIRED_MODULES)
+def test_retired_sdf_modules_are_not_importable(mod: str) -> None:
+    with pytest.raises(ImportError):
+        importlib.import_module(mod)
+
+
+def test_live_code_does_not_import_retired_sdf_modules() -> None:
+    banned = set(RETIRED_MODULES)
+    for path in sorted(PACKAGE.rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module in banned:
+                rel = path.relative_to(PACKAGE)
+                raise AssertionError(f"{rel} still imports {node.module}")
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name in banned:
+                        rel = path.relative_to(PACKAGE)
+                        raise AssertionError(f"{rel} still imports {alias.name}")

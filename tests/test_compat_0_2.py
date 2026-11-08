@@ -7,10 +7,8 @@ from implicit_geometry_kernel import Airfoil
 
 
 def test_shear_web_names():
-    from implicit_geometry_kernel.blade import SpanWeb
     from implicit_geometry_kernel.section.walls.shear_web import ShearWebComponent
 
-    assert SpanWeb is k.ShearWeb
     assert k.ShearWeb is not ShearWebComponent
 
 

@@ -1,5 +1,7 @@
 # Refactor and exactness plan
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 This file is the working plan for restructuring the kernel and closing its exactness
 gaps. It is written so that anyone (a person or an automated workflow) can pick the work
 up from the **Status** section without other context. Update the status table in the
@@ -32,7 +34,7 @@ the same work; they are not extra steps.
 | 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **Done** — tagged `v0.5.0` |
 | 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | **Done.** Seams in this kernel; Gmsh and constitutive plies stay in consumers |
 | 7 | Completeness (Phase 5 list below) | **Done** (7.1–7.10). Mid-surface patches / optional STEP (`[cad]`) deferred until after step 6 |
-| 8 | Exactness (Phase 4 below). Tag 0.6.0 after mid-surface, plots extra, and alias removal | Nose, insert polygons, PCHIP loft scalars, and mid-surface field from `shell_graph` done |
+| 8 | Exactness (Phase 4 below). Tag 0.6.0 after mid-surface, plots extra, and alias removal | **Done.** Nose, insert polygons, PCHIP loft scalars, mid-surface field from `shell_graph`, plots extra, and 0.5.x alias removal |
 | 9 | Separate blade-model package | **Declined.** Consumers keep their own adapters |
 
 Step 5 breakdown (Phase 2 complete; tagged `v0.5.0`):
@@ -58,8 +60,8 @@ Decisions already made by the maintainer:
 - Spar caps stay a separate stacked wall layer under the skin, so geometry is unchanged.
   A merged cap and skin laminate (one wall on the combined midline) becomes an opt-in
   section option in step 6.
-- The public name for webs is `ShearWeb` (blade-anatomy term). `SpanWeb` is an alias
-  until 0.6.0.
+- The public name for webs is `ShearWeb` (blade-anatomy term). `SpanWeb` was
+  removed in 0.6.0.
 - `sdf/` stays self-contained: nothing in it imports `section/` or `blade/`.
 - `section/` stays one package, with subpackages in pipeline order (decided 6 Nov).
 - Release tags are made by the maintainer only.
@@ -70,7 +72,7 @@ Decisions already made by the maintainer:
   reference-blade catalogue. Constitutive plies, loads, solvers and Gmsh stay in
   consumers. `src/` names no consumer.
 - Plots live in `implicit_geometry_kernel.plotting` behind `[plots]`; root
-  `plotting/` is an alias until 0.6.0 (decision 1).
+  `plotting/` was removed in 0.6.0 (decision 1).
 - The mid-surface query field is a view of `shell_graph`, not `(oml + cavity) / 2`
   as the spec (decision 2).
 - Older demos under `examples/demos/` stay; port them onto `SectionSpec` /
@@ -82,8 +84,8 @@ Decisions already made by the maintainer:
   `docs/FORK.md` may name checkouts.
 - Optional extra `[mesh]` (`gmsh`) is not advertised. `[cad]` / STEP patches wait
   until after step 6.
-- 0.6.0 (maintainer tags it) closes the deprecation window: mid-surface exactness,
-  plots extra, alias removal. Step 6 may follow in 0.6.x / 0.7.0.
+- 0.6.0 closes the deprecation window: mid-surface exactness, plots extra,
+  alias removal. Maintainer tags it.
 
 ## How to work on a step
 
@@ -107,9 +109,9 @@ python scripts/check_consumer.py PATH/TO/CONSUMER  # each downstream checkout
   the kernel. It installs this checkout and runs that package's tests.
 - **One concern per PR.** Moves and renames go in their own PRs, apart from logic
   changes.
-- **Deprecate, then remove.** An old import path stays as an alias module for one minor
-  release (pattern: `import <new> as _moved; sys.modules[__name__] = _moved`) and is
-  listed in the changelog. Removal happens in 0.6.0.
+- **Deprecate, then remove.** An old import path stayed as an alias module for one minor
+  release (pattern: `import <new> as _moved; sys.modules[__name__] = _moved`) and was
+  listed in the changelog. Those 0.5.x aliases were removed in 0.6.0.
 - Add an entry under `## Unreleased` in `CHANGELOG.md` for every PR.
 - Never push to `main` directly.
 
@@ -126,9 +128,14 @@ constitutive thickness, and conformal shell FE.
 Layers, with imports pointing down only:
 
 ```
-contract  <-  sdf, integration, frames  <-  structure  <-  section  <-  blade  <-  extract
+contract  <-  sdf / integration / frames  <-  structure  <-  catalogue  <-  section  <-  blade  <-  extract
 ```
 
+Extras (`plotting` `[plots]`, `mesh` `[mesh]`, `blade.cad` `[cad]`, `profiling.py`)
+are not layers. Geometry modules must not import them. Consumers still own real
+Gmsh jobs; `mesh/gmsh_shell.py` is a convenience.
+
+- `catalogue/` holds WX-Y-Z-NR tokens; it imports only itself (and `contract`).
 - `structure/` defines what members exist (wall partitions, branches, regions,
   transverse members) in geometric terms only.
 - `section/` turns them into exact walls, midlines and properties at one station.
@@ -145,7 +152,7 @@ contract  <-  sdf, integration, frames  <-  structure  <-  section  <-  blade  <
 | Versioning | Semantic versions; removals only in a minor release (pre-1.0) after one release of deprecation warnings; tags never move | Changelog; tags by the maintainer |
 | Main branch | Every change through a PR with green CI (lint, tests on Python 3.11 to 3.13, examples, wheel build) | Branch protection on `main` |
 | Numbers | Results reproducible between releases unless the changelog says otherwise | Golden-number test |
-| Dependencies | Runtime: numpy, shapely, numba. Extras: scipy, matplotlib, pyyaml | Core-install CI job |
+| Dependencies | Runtime: numpy, shapely, numba. Extras: scipy, matplotlib, cadquery, gmsh, pyyaml | Core-install CI job |
 | Typing | Ships `py.typed`; public API annotated | mypy on `src/` in CI |
 | Data | No private reference-blade inputs in the repo; examples that need them skip without a local clone | Example 09 pattern |
 | Submodule use | `pip install -e path/to/kernel`, no build step or generated files | Wheel-build job |
@@ -161,12 +168,14 @@ implicit_geometry_kernel/
     nodes/           base, primitives, csg, bbox, tagged, span, lofted   (done)
     kernels/         numba kernels: primitives, polygon, grid, csg, transforms   (done)
     shapes/          airfoil and NACA fields   (done)
+    solve/           GeometrySolver
   integration/     shoelace sums; quadtree/ (tree, soa, marching, moments, quadrature)   (done)
   frames/          section frames; tensors/ (inertia, moments, forces, thickness)   (done)
   structure/       contributions, builders, assembler, span laws   (done)
+  catalogue/       WX-Y-Z-NR tokens (not inside section/layout)
   section/         in pipeline order:
-    spec/            SectionSpec, SectionOptions, validation (from api/worker, kwarg_aliases)
-    layout/          catalogue, layout resolution, through-thickness anchoring   (done)
+    spec/            SectionSpec, SectionOptions, validation
+    layout/          station layout, through-thickness anchoring   (done)
     walls/           one module per wall type, registered (skin, cap, web, core, insert)   (done)
     assembly/        plan, members, MultiCellSection
     boundary/        polygons, walls, cores, emitters, labels   (done)
@@ -174,13 +183,19 @@ implicit_geometry_kernel/
     junctions/
     cells/
     properties/      including polygons.py from constructive   (done)
-  blade/           loft, stations, cut, shell_graph, transverse members
-  extract/         curves and surfaces
+  blade/           loft façade, stations, cut, shell_graph, oml, concepts/, topology/
+  extract/         marching (zero loops), curves (feature curves)
+extras (not layers):
+  plotting/        [plots]
+  mesh/            [mesh] convenience helper
+  blade/cad.py     [cad] STEP writer
+  profiling.py     optional timers, not on root __all__
 ```
 
 Rules that keep it fixed:
 
-- At most three levels: package/subpackage/module.py.
+- At most three levels: package/subpackage/module.py. Exception: a former oversized
+  module may become a subpackage (`blade/topology/`, `sdf/kernels/`). No further nesting.
 - Modules are 400 lines or fewer; packages hold 12 modules or fewer. A file that grows
   past the limit splits within its own folder.
 - The import-boundary tests enforce the layer order.
@@ -197,6 +212,11 @@ Large modules and where they go:
 | `integration/quadrature.py` | Done: `quadtree/moments.py`, `quadtree/quadrature.py` |
 | `section/api/worker.py` | Done: `spec/build.py` (emit), `spec/prep.py` (cache key / sized assemble), `spec/worker.py` facade |
 | `blade/cut.py` | Done: `cut.py` (SectionCut, walls, cells) and `shell_graph.py` (graph, partitions, topology diff) |
+| `blade/loft.py` | Done: façade plus `loft_tables` / `loft_cut` / `loft_fields` |
+| `blade/topology/map.py` | Done: `map.py` plus `map_walk` / `map_loft` |
+| `blade/shell_graph.py` | Done: product plus `shell_graph_build` |
+| `section/assembly/build_spar_caps.py` | Done: peel into `build_spar_caps_pads` |
+| `plotting/plot_section.py` | Done: `plot_section_axes` / `plot_section` / `plot_section_hybrid` |
 
 ## Step 5 (continued): Phase 2 — one section input, no hidden settings
 
@@ -206,8 +226,7 @@ After 5c and 5d. This is still part of step 5, not a new status row.
   `airfoil`, `twist_rad`, `gauges` (a `Gauges` object for skin SS/PS, cap and web,
   replacing both the thickness arguments and `zone_gauges_m`) and `webs` (x positions in
   metres, optional y anchors). It validates once in `__post_init__`; keyword alias
-  rules live on `from_kwargs` / the helpers in `section_spec.py`. `kwarg_aliases.py`
-  re-exports them until 0.6.0.
+  rules live on `from_kwargs` / the helpers in `section_spec.py`.
 - **2b.** `SectionOptions` for computational choices: outputs, props backend, quadtree
   settings (depth, max cells, band scale), sample counts, retain_mesh. The
   `SECTION_GEOMETRY_*` environment variables become defaults on this class (profiling
@@ -222,8 +241,7 @@ Adding a member type should mean one module in `section/walls/` plus a registrat
 with no edits elsewhere. Today kinds are still found by string prefixes (`is_skin_label`,
 `startswith("shear_web_")`, `startswith("spar_cap")`) across `boundary/labels.py`,
 `boundary/walls.py`, `boundary/cores.py`, `boundary/emitters.py`, `assembly/multicell.py`,
-`midlines/export.py`, `properties/export_section_json.py` and `blade/cut.py` (old
-`constructive/` and `props/` paths remain aliases until 0.6.0).
+`midlines/export.py`, `properties/export_section_json.py` and `blade/cut.py`.
 
 Phase 2d **extends** the existing `structure` builders and `SECTION_BUILDERS`. Do not
 add a second, parallel registry.
@@ -269,13 +287,11 @@ Not a status-table step. 3d is already tracked as step 5.
   history still lives in `docs/section/bug_log.md`.
 - **3b.** Done: `Airfoil` is the shape; `AirfoilSDF` is its field via
   `Airfoil.to_sdf()`. NACA maths lives in `sdf.shapes.naca`.
-- **3c.** Done: one name per concept; the other warns until 0.6.0
-  (`CellPolygon`/`CellLoop`, `interpolate`/`station_at`,
-  `SectionGeometry`/`SectionGeometryRunner`, `web_offsets`/`web_x_positions_m`,
-  `ShearWeb`/`SpanWeb`).
+- **3c.** Done: one name per concept; dual names removed in 0.6.0
+  (`CellPolygon`, `interpolate`, `SectionGeometry`, `web_offsets`, `ShearWeb`).
 - **3d.** The tree moves (step 5). Moves only, no logic.
-- **3e.** Plots: `implicit_geometry_kernel.plotting` behind `[plots]`; alias root
-  `plotting/` until 0.6.0.
+- **3e.** Plots: `implicit_geometry_kernel.plotting` behind `[plots]`; root
+  `plotting/` removed in 0.6.0.
 - Also: Done: leftover downstream package names stripped from live `docs/`
   (fork history stays in `docs/FORK.md`).
 

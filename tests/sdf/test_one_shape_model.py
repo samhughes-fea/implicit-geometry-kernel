@@ -3,8 +3,6 @@
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.sdf import nodes
-from implicit_geometry_kernel.sdf.compile import compile_expr_to_node
 from implicit_geometry_kernel.sdf.nodes.base import SDFNode
 from implicit_geometry_kernel.sdf.nodes import (
     Box, Circle, Intersect, Offset, Polygon, Rotate, Shell, Slab, Subtract, Union, eval_expr_batch,
@@ -29,7 +27,6 @@ SHAPES = [
 @pytest.mark.parametrize("shape", SHAPES, ids=lambda s: type(s).__name__)
 def test_shape_is_a_node_and_matches_memoised_evaluation(shape):
     assert isinstance(shape, SDFNode)
-    assert compile_expr_to_node(shape) is shape
     rng = np.random.default_rng(3)
     xy = rng.uniform(-2.0, 2.0, size=(500, 2))
     direct = shape.evaluate(np.column_stack([xy, np.zeros(500)])).phi
@@ -52,5 +49,3 @@ def test_feature_ids_follow_the_combinator_rules():
     assert ExprSDF(Circle(0, 0, 1), 7).evaluate(pts).meta.tolist() == [7, 7]
 
 
-def test_old_node_names_are_the_shapes():
-    assert nodes.UnionNode is Union and nodes.OffsetNode is Offset and nodes.SlabNode is Slab

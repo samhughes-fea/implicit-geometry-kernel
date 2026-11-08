@@ -25,9 +25,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.section.api.factory import (
-    build_section_view,
+from implicit_geometry_kernel.section.spec import SectionOptions, SectionSpec
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.midlines.export import (
     build_shell_midline_strips,
@@ -37,7 +40,7 @@ from implicit_geometry_kernel.section.junctions.prepare import (
     prepare_shell_midline_junctions,
 )
 
-LAYOUTS = ["2D-F", "2D-CN", "3D-F", "3D-CN", "5D-F"]
+LAYOUTS = ["2D-F-LC-0R", "2D-CN-LC-0R", "3D-F-LC-0R", "3D-CN-LC-0R", "5D-F-LC-0R"]
 # Twist is the aggravating factor: it inclines the skin relative to a flapwise
 # web, so the perpendicular and axial directions diverge further.
 TWIST_DEG = [0.0, 15.0]
@@ -128,7 +131,7 @@ def test_tip_absolute_2a_f_loops_build_under_twist():
     web 4.42 mm, twist ≈ 0.41 deg). Fractional layouts already passed; this pins
     the absolute-web tip path that cap run-out steps into (TE web dropped → 1A-F).
     """
-    from implicit_geometry_kernel.section.api.worker import (
+    from implicit_geometry_kernel.section.spec.worker import (
         build_section_geometry,
     )
     from implicit_geometry_kernel.section.cells.builders import (
@@ -140,14 +143,16 @@ def test_tip_absolute_2a_f_loops_build_under_twist():
     af = AirfoilSDF.from_naca("2412", n_points=200, chord=chord)
     # Tip plan webs: LE kept, TE past tip chord dropped → 1A-F survivors.
     result = build_section_geometry(
-        layout=resolve_system_type("1A-F"),
-        airfoil=af,
-        skin_thickness=0.003536,
-        shear_web_thickness=0.00442,
-        spar_cap_thickness=0.0,
-        twist_rad=twist_rad,
-        web_x_positions_m=[0.036130035],
-        outputs=("midlines", "cell_wall_loops"),
+        SectionSpec.from_kwargs(
+            resolve_system_type("1A-F-LC-0R"),
+            af,
+            skin_thickness=0.003536,
+            shear_web_thickness=0.00442,
+            spar_cap_thickness=0.0,
+            twist_rad=twist_rad,
+            web_offsets=[0.036130035],
+        ),
+        options=SectionOptions(outputs=("midlines", "cell_wall_loops")),
     )
     strips = result.midline_strips or ()
     webs = [s for s in strips if s.kind == "web"]
@@ -158,7 +163,7 @@ def test_tip_absolute_2a_f_loops_build_under_twist():
 
 def test_tip_fractional_2a_f_loops_build_under_twist():
     """Tip-scale catalogue 2A-F (fractional webs) still builds loops under tip twist."""
-    from implicit_geometry_kernel.section.api.worker import (
+    from implicit_geometry_kernel.section.spec.worker import (
         build_section_geometry,
     )
 
@@ -166,13 +171,15 @@ def test_tip_fractional_2a_f_loops_build_under_twist():
     twist_rad = float(np.deg2rad(0.407709))
     af = AirfoilSDF.from_naca("2412", n_points=200, chord=chord)
     result = build_section_geometry(
-        layout=resolve_system_type("2A-F"),
-        airfoil=af,
-        skin_thickness=0.003536,
-        shear_web_thickness=0.00442,
-        spar_cap_thickness=0.0,
-        twist_rad=twist_rad,
-        outputs=("midlines", "cell_wall_loops"),
+        SectionSpec.from_kwargs(
+            resolve_system_type("2A-F-LC-0R"),
+            af,
+            skin_thickness=0.003536,
+            shear_web_thickness=0.00442,
+            spar_cap_thickness=0.0,
+            twist_rad=twist_rad,
+        ),
+        options=SectionOptions(outputs=("midlines", "cell_wall_loops")),
     )
     webs = [s for s in (result.midline_strips or ()) if s.kind == "web"]
     assert len(webs) == 2
@@ -190,7 +197,7 @@ def test_stale_frozen_web_y_under_twist_raises_infeasible_not_blind_foot_gap():
     from implicit_geometry_kernel.contract.errors import (
         InfeasibleSectionGeometry,
     )
-    from implicit_geometry_kernel.section.api.worker import (
+    from implicit_geometry_kernel.section.spec.worker import (
         build_section_geometry,
         resolve_station_layout,
     )
@@ -202,7 +209,7 @@ def test_stale_frozen_web_y_under_twist_raises_infeasible_not_blind_foot_gap():
     skin_mono = 0.007072
     web_x = [0.036130035]
     res = resolve_station_layout(
-        resolve_system_type("1A-F"),
+        resolve_system_type("1A-F-LC-0R"),
         af,
         skin_thickness=skin_cold,
         web_x_positions_m=web_x,
@@ -210,28 +217,32 @@ def test_stale_frozen_web_y_under_twist_raises_infeasible_not_blind_foot_gap():
     assert list(res.web_x_positions_m), "cold tip must host the LE web"
     # Matched gauges still build.
     ok = build_section_geometry(
-        layout=resolve_system_type("1A-F"),
-        airfoil=af,
-        skin_thickness=skin_cold,
-        shear_web_thickness=0.00442,
-        spar_cap_thickness=0.0,
-        twist_rad=twist_rad,
-        web_x_positions_m=list(res.web_x_positions_m),
-        web_y_coords=list(res.web_y_coords),
-        outputs=("midlines", "cell_wall_loops"),
+        SectionSpec.from_kwargs(
+            resolve_system_type("1A-F-LC-0R"),
+            af,
+            skin_thickness=skin_cold,
+            shear_web_thickness=0.00442,
+            spar_cap_thickness=0.0,
+            twist_rad=twist_rad,
+            web_offsets=list(res.web_x_positions_m),
+            web_y_coords=list(res.web_y_coords),
+        ),
+        options=SectionOptions(outputs=("midlines", "cell_wall_loops")),
     )
     assert ok.cell_wall_loops
     with pytest.raises(InfeasibleSectionGeometry, match="frozen web_y|re-anchor|inner skin"):
         build_section_geometry(
-            layout=resolve_system_type("1A-F"),
-            airfoil=af,
-            skin_thickness=skin_mono,
-            shear_web_thickness=0.00442,
-            spar_cap_thickness=0.0,
-            twist_rad=twist_rad,
-            web_x_positions_m=list(res.web_x_positions_m),
-            web_y_coords=list(res.web_y_coords),
-            outputs=("midlines", "cell_wall_loops"),
+            SectionSpec.from_kwargs(
+                resolve_system_type("1A-F-LC-0R"),
+                af,
+                skin_thickness=skin_mono,
+                shear_web_thickness=0.00442,
+                spar_cap_thickness=0.0,
+                twist_rad=twist_rad,
+                web_offsets=list(res.web_x_positions_m),
+                web_y_coords=list(res.web_y_coords),
+            ),
+            options=SectionOptions(outputs=("midlines", "cell_wall_loops")),
         )
 
 
@@ -240,27 +251,27 @@ def test_frozen_runner_resolution_does_not_retry_reanchor():
     from implicit_geometry_kernel.contract.errors import (
         InfeasibleSectionGeometry,
     )
-    from implicit_geometry_kernel.section.api.runner import SectionGeometryRunner
-    from implicit_geometry_kernel.section.api.worker import resolve_station_layout
+    from implicit_geometry_kernel.section.spec.runner import SectionGeometry
+    from implicit_geometry_kernel.section.spec.worker import resolve_station_layout
 
     chord = 0.08775168
     twist_rad = float(np.deg2rad(0.407709))
     af = AirfoilSDF.from_naca("2412", n_points=200, chord=chord)
     frozen = resolve_station_layout(
-        resolve_system_type("1A-F"),
+        resolve_system_type("1A-F-LC-0R"),
         af,
         skin_thickness=0.003536,
         web_x_positions_m=[0.036130035],
     )
     kwargs = dict(
-        layout=resolve_system_type("1A-F"),
+        layout=resolve_system_type("1A-F-LC-0R"),
         airfoil=af,
         skin_thickness=0.007072,
         shear_web_thickness=0.00442,
         spar_cap_thickness=0.0,
         twist_rad=twist_rad,
-        web_x_positions_m=list(frozen.web_x_positions_m),
+            web_offsets=list(frozen.web_x_positions_m),
         outputs=("midlines", "cell_wall_loops"),
     )
     with pytest.raises(InfeasibleSectionGeometry, match="re-anchor|frozen web_y"):
-        SectionGeometryRunner(**kwargs, resolution=frozen).execute()
+        SectionGeometry(**kwargs, resolution=frozen).execute()

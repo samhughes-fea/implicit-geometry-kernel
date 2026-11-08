@@ -94,7 +94,6 @@ _G_ROW_PUBLIC_ALL = frozenset(
         "SectionSpec",
         "SectionGeometry",
         "SectionGeometryResult",
-        "SectionGeometryRunner",
         "SectionPropertiesMeta",
         "StationLayoutResolution",
         "SectionLayout",
@@ -102,6 +101,7 @@ _G_ROW_PUBLIC_ALL = frozenset(
         "resolve_station_layout",
         "resolve_system_type",
         "SYSTEM_TYPE_KEYS",
+        "SYSTEM_TYPE_LAYOUT_KEYS",
         "SystemLayoutSpec",
     }
 )

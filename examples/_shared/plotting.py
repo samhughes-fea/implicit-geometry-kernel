@@ -12,6 +12,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 from shapely.geometry import LineString  # noqa: E402
 
 from implicit_geometry_kernel.plotting.palette import NAVY, RED, TEAL  # noqa: E402
@@ -20,6 +21,23 @@ TEXT_SECONDARY = "#52514e"
 REFERENCE = "#0b0b0b"  # closed-form references are drawn in ink, dashed
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#6250d6"]
 WALL_COLOURS = {"skin": NAVY, "cap": RED, "web": TEAL}
+# rust, mustard, olive, teal, burgundy, ochre, slate, terracotta,
+# forest, gold, brick, plum, cadet, sienna, pine, wine
+RETRO_PANELS = (
+    "#c45c26", "#d4a017", "#6b7f3a", "#2e6b6a",
+    "#8b2942", "#c4893c", "#4a6080", "#b85c38",
+    "#3d5c45", "#c9a227", "#9c3b2a", "#6e4a7a",
+    "#3d6e7a", "#a0673b", "#2f4f3e", "#7a3a4a",
+)
+
+
+def panel_colour(role: str) -> str:
+    """Stable loft colour for a region / web / rib role (not draw order)."""
+    key = str(role)
+    h = 0
+    for ch in key:
+        h = (h * 16777619) ^ ord(ch)
+    return RETRO_PANELS[h % len(RETRO_PANELS)]
 
 plt.rcParams.update({"font.size": 9, "axes.titlesize": 9, "axes.labelsize": 9, "legend.fontsize": 8,
                      "xtick.labelsize": 8, "ytick.labelsize": 8, "axes.grid": False})
@@ -34,6 +52,49 @@ def draw_cut(ax, cut, midlines: bool = True, alpha: float = 0.35) -> None:
             ax.fill(*poly.exterior.xy, color=colour, alpha=alpha, lw=0)
         if midlines:
             ax.plot(wall.xy[:, 0], wall.xy[:, 1], color=colour, lw=0.8)
+    ax.set_aspect("equal")
+
+
+_CAP_FILL_THICKNESS_OVER_CHORD = 0.04
+
+
+def draw_cap_solids(ax, cut, alpha: float = 0.35) -> None:
+    """Stacked cap walls as thickness bands (solid midline, not mesh).
+
+    Fill is skipped when ``t/chord`` is large (tiny tip sections) so OFFSET
+    midlines stay readable next to ``draw_shell``.
+    """
+    chord = max(float(getattr(cut, "chord", 0.0)), 1e-12)
+    for wall in cut.walls:
+        if wall.kind != "cap":
+            continue
+        colour = WALL_COLOURS["cap"]
+        if float(wall.thickness) / chord < _CAP_FILL_THICKNESS_OVER_CHORD:
+            band = LineString(wall.xy).buffer(0.5 * wall.thickness, cap_style=2, join_style=2)
+            for poly in getattr(band, "geoms", [band]):
+                ax.fill(*poly.exterior.xy, color=colour, alpha=alpha, lw=0)
+        ax.plot(wall.xy[:, 0], wall.xy[:, 1], color=colour, lw=0.8)
+    ax.set_aspect("equal")
+
+
+def draw_shell(ax, cut, alpha: float = 0.35) -> None:
+    """Conformal skin-mid loop: offset regions recoloured, no second cap polyline."""
+    graph = cut.shell_graph()
+    offset = {r.name for r in graph.offset_regions()}
+    for run in graph.loop:
+        xy = np.asarray(run.points[:, :2], float)
+        colour = WALL_COLOURS["cap"] if run.name in offset else WALL_COLOURS["skin"]
+        band = LineString(xy).buffer(0.5 * run.thickness, cap_style=2, join_style=2)
+        for poly in getattr(band, "geoms", [band]):
+            ax.fill(*poly.exterior.xy, color=colour, alpha=alpha, lw=0)
+        ax.plot(xy[:, 0], xy[:, 1], color=colour, lw=0.8)
+    for run in graph.webs:
+        xy = np.asarray(run.points[:, :2], float)
+        colour = WALL_COLOURS["web"]
+        band = LineString(xy).buffer(0.5 * run.thickness, cap_style=2, join_style=2)
+        for poly in getattr(band, "geoms", [band]):
+            ax.fill(*poly.exterior.xy, color=colour, alpha=alpha, lw=0)
+        ax.plot(xy[:, 0], xy[:, 1], color=colour, lw=0.8)
     ax.set_aspect("equal")
 
 

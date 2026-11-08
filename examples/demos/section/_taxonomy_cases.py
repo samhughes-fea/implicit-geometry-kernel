@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 
-from implicit_geometry_kernel.section.layout.system_layout import SystemLayoutSpec
+from implicit_geometry_kernel.catalogue.system_layout import SystemLayoutSpec
 
 
 def twist_deg_for_layout(

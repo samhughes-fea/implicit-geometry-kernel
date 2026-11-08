@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
-from implicit_geometry_kernel.section.api.runner import (
-    SectionGeometryRunner,
+from implicit_geometry_kernel.section.spec.runner import (
+    SectionGeometry,
 )
-from implicit_geometry_kernel.section.api.worker import (
+from implicit_geometry_kernel.section.spec import SectionOptions, SectionSpec
+from implicit_geometry_kernel.section.spec.worker import (
     build_section_geometry,
     resolve_station_layout,
 )
@@ -27,14 +29,22 @@ from implicit_geometry_kernel.section.assembly.from_layout import (
 
 
 def test_from_catalogue_key_2d_f_has_two_web_fracs():
-    layout = SectionLayout.from_catalogue_key("2D-F")
+    layout = SectionLayout.from_catalogue_key("2D-F-LC-0R")
     assert len(layout.web_chord_fracs) == 2
     assert layout.orientation == "flapwise"
-    assert layout.catalogue_key == "2D-F"
+    assert layout.catalogue_key == "2D-F-LC-0R"
     assert layout.cap_placement.kind == "continuous_box"
     spec = layout.to_system_layout_spec()
-    assert spec.key == "2D-F"
+    assert spec.key == "2D-F-LC-0R"
     assert spec.n_webs == 2
+
+
+def test_from_chord_windows_stores_published_interval():
+    rule = CapPlacementRule.from_chord_windows(((0.15, 0.45),))
+    assert rule.kind == "fixed_band"
+    assert rule.chord_window == (0.15, 0.45)
+    assert rule.half_width == pytest.approx(0.15)
+    assert rule.chord_window != (0.3 - 0.15, 0.3 + 0.15)
 
 
 def test_cap_placement_family_d_is_continuous_box():
@@ -69,7 +79,7 @@ def test_assemble_from_section_layout_without_catalogue_key():
 
 def test_multicell_from_layout_accepts_section_layout():
     airfoil = AirfoilSDF.from_naca("2412", n_points=80, chord=1.0)
-    layout = SectionLayout.from_catalogue_key("2D-F")
+    layout = SectionLayout.from_catalogue_key("2D-F-LC-0R")
     a = multicell_from_layout(
         airfoil,
         layout,
@@ -107,14 +117,16 @@ def test_resolve_and_build_accept_keyless_section_layout():
     assert res.stepped_down is False
 
     result = build_section_geometry(
-        res.layout,
-        airfoil,
-        skin_thickness=0.006,
-        spar_cap_thickness=0.012,
-        shear_web_thickness=0.005,
-        outputs=("midlines",),
-        web_x_positions_m=res.web_x_positions_m,
-        web_y_coords=res.web_y_coords,
+        SectionSpec.from_kwargs(
+            res.layout,
+            airfoil,
+            skin_thickness=0.006,
+            spar_cap_thickness=0.012,
+            shear_web_thickness=0.005,
+            web_offsets=res.web_x_positions_m,
+            web_y_coords=res.web_y_coords,
+        ),
+        options=SectionOptions(outputs=("midlines",)),
     )
     n_web_strips = sum(
         1 for s in (result.midline_strips or []) if str(s.kind) == "web"
@@ -127,7 +139,7 @@ def test_keyless_section_layout_steps_down_without_catalogue_key():
     # Same station geometry that steps catalogue 5D-F → 1C-F.
     root_chord = 0.2409
     airfoil = AirfoilSDF.from_naca("0012", n_points=200, chord=0.0878)
-    layout = SectionLayout.from_catalogue_key("5D-F")
+    layout = SectionLayout.from_catalogue_key("5D-F-LC-0R")
     layout = SectionLayout(
         web_chord_fracs=layout.web_chord_fracs,
         orientation=layout.orientation,
@@ -151,10 +163,34 @@ def test_keyless_section_layout_steps_down_without_catalogue_key():
     assert res.layout.structural_family == "C"
 
 
+def test_step_down_keeps_published_chord_window():
+    root_chord = 0.2409
+    airfoil = AirfoilSDF.from_naca("0012", n_points=200, chord=0.0878)
+    layout = SectionLayout.from_catalogue_key("5D-F-LC-0R")
+    cap = CapPlacementRule.from_chord_windows(((0.20, 0.45),))
+    layout = SectionLayout(
+        web_chord_fracs=layout.web_chord_fracs,
+        orientation=layout.orientation,
+        cap_placement=cap,
+        catalogue_key=None,
+        structural_family="D",
+    )
+    anchored = [float(f) * root_chord for f in layout.web_chord_fracs]
+    res = resolve_station_layout(
+        layout,
+        airfoil,
+        skin_thickness=0.001,
+        web_x_positions_m=anchored,
+    )
+    assert res.layout.n_webs == 1
+    assert res.layout.cap_placement.kind == "fixed_band"
+    assert res.layout.cap_placement.chord_window == (0.20, 0.45)
+
+
 def test_runner_accepts_section_layout():
     airfoil = AirfoilSDF.from_naca("2412", n_points=80, chord=1.0)
-    layout = SectionLayout.from_catalogue_key("2D-F")
-    runner = SectionGeometryRunner(
+    layout = SectionLayout.from_catalogue_key("2D-F-LC-0R")
+    runner = SectionGeometry(
         layout=layout,
         airfoil=airfoil,
         skin_thickness=0.006,
@@ -171,7 +207,7 @@ def test_runner_accepts_section_layout():
 def test_keyless_section_layout_matches_catalogue_2d_f_recipes():
     """Keyless CapPlacementRule layout equals catalogue preset for 2D-F."""
     airfoil = AirfoilSDF.from_naca("2412", n_points=80, chord=1.0)
-    catalog = SectionLayout.from_catalogue_key("2D-F")
+    catalog = SectionLayout.from_catalogue_key("2D-F-LC-0R")
     keyless = SectionLayout(
         web_chord_fracs=catalog.web_chord_fracs,
         orientation=catalog.orientation,

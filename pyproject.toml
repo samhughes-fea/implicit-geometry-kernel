@@ -28,8 +28,10 @@ classifiers = [
 [project.optional-dependencies]
 splines = ["scipy>=1.8"]
 plots = ["matplotlib>=3.5"]
+cad = ["cadquery>=2.4"]
 dev = ["scipy>=1.8", "matplotlib>=3.5", "pytest>=7", "build>=1.0", "ruff>=0.6", "mypy>=1.10"]
 reference = ["pyyaml>=6"]
+mesh = ["gmsh"]
 
 [project.urls]
 Homepage = "https://github.com/samhughes-fea/implicit-geometry-kernel"
@@ -40,8 +42,8 @@ Issues = "https://github.com/samhughes-fea/implicit-geometry-kernel/issues"
 version = { attr = "implicit_geometry_kernel.__version__" }
 
 [tool.setuptools.packages.find]
-where = ["src", "."]
-include = ["implicit_geometry_kernel*", "plotting", "plotting.*"]
+where = ["src"]
+include = ["implicit_geometry_kernel*"]
 exclude = ["tests*", "examples*", "docs*", "scripts*", "reference_blades*"]
 
 

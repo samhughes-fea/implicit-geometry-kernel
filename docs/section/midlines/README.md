@@ -1,10 +1,13 @@
 # midlines — centreline strip emit
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 ↑ [`section`](../README.md)
 
 Emits wall centrelines as `(N, 2)` polylines (`ShellMidlineStrip`: `skin` /
-`web` / `cap`) from component recipes, then applies geometric twist once into
-the blade frame ([`contract`](../../contract/README.md)).
+`web`) from component recipes, then applies geometric twist once into
+the blade frame ([`contract`](../../contract/README.md)). Cap solids stay
+on `cut.walls`; conformal partitions are `shell_strips_from_graph`.
 Mid-loci follow the recipe (aerofoil offset, web capsule axis, IML offset),
 not post-boolean SDF zero contours.
 

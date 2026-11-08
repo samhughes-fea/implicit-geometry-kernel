@@ -5,11 +5,8 @@ from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
     quadtree_spec_to_dict,
 )
-from implicit_geometry_kernel.section.spec.factory import (
-    SYSTEM_TYPE_KEYS,
-    build_section_view,
-    resolve_system_type,
-)
+from implicit_geometry_kernel.catalogue import SYSTEM_TYPE_KEYS, resolve_system_type
+from implicit_geometry_kernel.section.assembly import build_section_view
 from implicit_geometry_kernel.section.spec.options import SectionOptions
 from implicit_geometry_kernel.section.spec.runner import (
     SectionGeometry,
@@ -33,7 +30,6 @@ __all__ = [
     "SectionOptions",
     "SectionSpec",
     "SectionGeometry",
-    "SectionGeometryRunner",
     "SYSTEM_TYPE_KEYS",
     "build_section_view",
     "resolve_system_type",
@@ -51,16 +47,3 @@ __all__ = [
     "quadtree_spec_for_airfoil",
     "quadtree_spec_to_dict",
 ]
-
-
-def __getattr__(name: str):
-    if name == "SectionGeometryRunner":
-        import warnings
-
-        warnings.warn(
-            "SectionGeometryRunner is deprecated; use SectionGeometry. Removed in 0.6.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return SectionGeometry
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

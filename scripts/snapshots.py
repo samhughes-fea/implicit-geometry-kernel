@@ -83,10 +83,10 @@ def section_case(key: str, twist_deg: float) -> dict:
 
 
 def compute_sections() -> dict:
-    from implicit_geometry_kernel import SYSTEM_TYPE_KEYS
+    from implicit_geometry_kernel import SYSTEM_TYPE_LAYOUT_KEYS
 
     out = {}
-    for key in SYSTEM_TYPE_KEYS:
+    for key in SYSTEM_TYPE_LAYOUT_KEYS:
         for twist in TWISTS_DEG:
             out[f"{key}@{twist:g}"] = section_case(key, twist)
     return out
@@ -101,8 +101,8 @@ def compute_blade() -> dict:
         Station(3.0, 0.8, Airfoil.naca4("2418"), twist=5.0, pitch_axis=0.3),
         Station(6.0, 0.5, Airfoil.naca4("2412"), twist=-2.0, pitch_axis=0.3),
     ]
-    blade = BladeGeometry(stations, "2D-F", skin_thickness=0.004, spar_cap_thickness=0.012,
-                          shear_web_thickness=0.005)
+    blade = BladeGeometry(stations, "2D-F-LC-0R", skin_thickness=0.004, spar_cap_thickness=0.012,
+                          shear_web_thickness=0.005, pivot_fraction=0.3)
     out = {}
     for z in BLADE_CUTS:
         cut = blade.section_at(z)

@@ -39,7 +39,7 @@ def test_public_api_unchanged():
 
 
 def test_every_layout_is_covered():
-    from implicit_geometry_kernel import SYSTEM_TYPE_KEYS
+    from implicit_geometry_kernel import SYSTEM_TYPE_LAYOUT_KEYS
 
     covered = {case.split("@")[0] for case in SECTIONS}
-    assert covered == set(SYSTEM_TYPE_KEYS)
+    assert covered == set(SYSTEM_TYPE_LAYOUT_KEYS)

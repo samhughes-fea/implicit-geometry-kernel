@@ -28,6 +28,7 @@ from implicit_geometry_kernel.blade.topology.map_loft import (
     _resample_keys,
 )
 
+
 def place_station_keys(cut, graph: ShellGraph, region_graph: WallRegionGraph, z: float
                        ) -> dict[tuple[str, str], np.ndarray]:
     """Project authored anchors onto the TE-started skin-mid loop.

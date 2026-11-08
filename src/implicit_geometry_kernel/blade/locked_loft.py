@@ -115,7 +115,6 @@ class LockedLoftPlan:
     @classmethod
     def from_graph(cls, graph: ShellGraph, n_chord: int = 81) -> "LockedLoftPlan":
         runs = loftable_runs(graph)
-        names = tuple(r.name for r in runs)
         loop_names = tuple(r.name for r in graph.loop if r.surface in LOFTABLE_SURFACES)
         web_names = tuple(r.name for r in graph.webs if r.surface in LOFTABLE_SURFACES)
         solids = tuple(r.name for r in runs if r.name not in loop_names and r.name not in web_names)

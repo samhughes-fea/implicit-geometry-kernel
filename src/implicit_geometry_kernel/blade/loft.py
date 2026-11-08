@@ -43,7 +43,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from dataclasses import replace
-from typing import Callable, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 import numpy as np
 

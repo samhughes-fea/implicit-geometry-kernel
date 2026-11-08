@@ -1,7 +1,6 @@
 """Interpolate, OML polyline and section_at for BladeGeometry."""
 from __future__ import annotations
 
-from dataclasses import replace as _replace
 
 import numpy as np
 

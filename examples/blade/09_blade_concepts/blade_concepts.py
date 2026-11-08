@@ -168,7 +168,7 @@ def _finite_span_faces(
         xyz = _span_xyz(face)
         if xyz.size == 0 or xyz.ndim != 2 or xyz.shape[0] < 3 or xyz.shape[1] != 3:
             continue
-        if not np.all(np.isfinite(xyz)):
+        if not np.all(np.isfinite(xyz)) or float(np.max(np.abs(xyz))) > 1.0e6:
             continue
         shown.append(xyz)
         keep.append(kind)
@@ -232,11 +232,14 @@ def _draw_walls(ax, faces: list[np.ndarray], kinds: list[str], *,
         _finish_3d(ax, np.zeros((0, 3), float), elev=elev, azim=azim, zoom=zoom)
         return
     rgba = _face_rgba(kinds)
-    ax.add_collection3d(Poly3DCollection(
-        shown, facecolors=rgba, shade=True,
-        edgecolors=np.broadcast_to(to_rgba("#9ca3af", 0.45), (len(shown), 4)).copy(),
-        linewidths=0.12,
-    ))
+    try:
+        ax.add_collection3d(Poly3DCollection(
+            shown, facecolors=rgba, shade=True,
+            edgecolors=np.broadcast_to(to_rgba("#9ca3af", 0.45), (len(shown), 4)).copy(),
+            linewidths=0.12,
+        ))
+    except ValueError:
+        pass
     _finish_3d(ax, np.concatenate(shown), elev=elev, azim=azim, zoom=zoom)
 
 
@@ -364,6 +367,8 @@ def _elevation_polys(faces: list[np.ndarray], kinds: list[str], *, depth_sign: f
     for face, kind in zip(faces, kinds):
         arr = np.asarray(face, float)
         if arr.ndim != 2 or arr.shape[1] < 3 or not np.all(np.isfinite(arr)):
+            continue
+        if float(np.max(np.abs(arr))) > 1.0e6:
             continue
         kept.append((arr, kind))
     faces = [item[0] for item in kept]

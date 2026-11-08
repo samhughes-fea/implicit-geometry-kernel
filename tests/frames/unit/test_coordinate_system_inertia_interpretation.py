@@ -24,7 +24,7 @@ _workspace_root = Path(__file__).parent.parent.parent.parent.parent
 if str(_workspace_root) not in sys.path:
     sys.path.insert(0, str(_workspace_root))
 
-from shapely.geometry import Polygon as ShapelyPolygon
+from implicit_geometry_kernel.geos.geom import Polygon as ShapelyPolygon
 from implicit_geometry_kernel.integration.shoelace import section_properties_S
 from implicit_geometry_kernel.frames import CoordinateFrameTransforms
 

@@ -117,9 +117,19 @@ pip install "implicit-geometry-kernel @ git+https://github.com/samhughes-fea/imp
 pip install -e ".[dev]"
 ```
 
-Python 3.11 or newer. NumPy, Shapely and Numba are required: the signed-distance
-kernels are compiled with Numba. SciPy (`[splines]`) is used for spline-resampled
-airfoils, and Matplotlib (`[plots]`) for `implicit_geometry_kernel.plotting`.
+Python 3.11 or newer. NumPy and Numba are required: the signed-distance kernels
+are compiled with Numba. Polygon offset and overlay need GEOS (`libgeos_c`;
+install `libgeos-dev` or conda-forge `geos`, or set `GEOS_LIBRARY_PATH`).
+SciPy (`[splines]`) is used for spline-resampled airfoils, and Matplotlib
+(`[plots]`) for `implicit_geometry_kernel.plotting`.
+
+### GEOS
+
+- Ubuntu: `sudo apt-get install libgeos-dev` (CI installs this for pytest,
+  core-install, and examples).
+- Conda: `conda install -c conda-forge geos`, then `pip install`.
+- Any OS: set `GEOS_LIBRARY_PATH` to `geos_c.dll` (Windows) or `libgeos_c.so`
+  (Linux). The kernel does not vendor a DLL.
 
 ## Layout
 
@@ -133,6 +143,7 @@ src/implicit_geometry_kernel/
 ├── frames/         geometric coordinate frames (R, B, S, S′, C) and point transforms
 ├── integration/    quadtree and shoelace area and moment integrals
 ├── contract/       the hand-off types (ShellMidlineStrip, CellWallLoop)
+├── geos/           ctypes libgeos_c, WKB, kernel Polygon
 ├── extract/        in-plane zero loops and feature curves (not a mesh)
 ├── plotting/       Matplotlib figures (needs the [plots] extra)
 └── profiling.py    optional timers (SECTION_GEOMETRY_PROFILE=1)

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from implicit_geometry_kernel.section.boundary import MultiPolygon, Polygon
-from implicit_geometry_kernel.section.boundary import unary_union
+from implicit_geometry_kernel.section.boundary import OPS, unary_union
 
 from implicit_geometry_kernel.profiling import timed_stage
 
@@ -80,7 +80,7 @@ def emit_core_polygons(
             cavity = emit_inner_cavity_polygon(comp._af, float(comp.skin_thickness))
             open_region = cavity
             if exclusion is not None and not exclusion.is_empty:
-                open_region = cavity.difference(exclusion)
+                open_region = OPS.difference(cavity, exclusion)
         poly = _core_poly_via_recipe(
             section, key, comp, cavity=open_region, wall_exclusion_union=None
         )
@@ -218,7 +218,7 @@ def emit_constructive_polygons(
         webs_u = _web_union(web_polys)
         for key, cap in raw_caps.items():
             if webs_u is not None:
-                cap = cap.difference(webs_u)
+                cap = OPS.difference(cap, webs_u)
             if _keep_poly(cap):
                 wall_chord[key] = ensure_polygon(cap, allow_empty=True)
         exclusion_parts = [
@@ -228,7 +228,7 @@ def emit_constructive_polygons(
         # One cavity − wall solids difference shared by every bay.
         open_region = cavity
         if exclusion is not None and not exclusion.is_empty and not cavity.is_empty:
-            open_region = cavity.difference(exclusion)
+            open_region = OPS.difference(cavity, exclusion)
 
     cores: dict[str, Polygon | MultiPolygon] = {}
     if core_items:

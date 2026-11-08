@@ -31,12 +31,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import numpy as np  # noqa: E402
-from shapely.geometry import LineString, Point, Polygon  # noqa: E402
-from shapely.geometry.polygon import orient  # noqa: E402
-from shapely.ops import unary_union  # noqa: E402
-
 from _shared.plotting import SERIES, WALL_COLOURS, draw_cut, note, plt, save  # noqa: E402
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station  # noqa: E402
+from implicit_geometry_kernel.section.boundary import LineString, OPS, Point, Polygon  # noqa: E402
 
 CHORD, TWIST, PITCH = 2.0, 10.0, 0.3
 SKIN, CAP, WEB = 0.008, 0.03, 0.015
@@ -82,7 +79,7 @@ def check(cut, ms):
 
     # normals: z x d = (-dy, dx). Skins: compare with the outward normal of the nearest edge of
     # the region inside the skin midline (the union of the cells, oriented counter-clockwise).
-    outline = orient(unary_union([Polygon(c.points[:, :2]) for c in cut.cells]), 1.0)
+    outline = OPS.orient(OPS.union([Polygon(c.points[:, :2]) for c in cut.cells]), sign=1.0)
     ring = np.asarray(outline.exterior.coords)
     ra, rb = ring[:-1], ring[1:]
     rd = rb - ra

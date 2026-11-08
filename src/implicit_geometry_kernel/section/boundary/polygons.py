@@ -1,29 +1,18 @@
-"""The section's one gateway to Shapely: SDF-free polygon work lives here.
+"""Constructive polygon helpers; GEOS algorithms go through ``implicit_geometry_kernel.geos``.
 
-Every polygon offset, Boolean clean-up, rotation and clip that the section pipeline
-does goes through this module, and no other section module imports Shapely
-(``tests/section/test_offset_import_boundary.py`` enforces it). The Shapely types the
-rest of the section needs (``Polygon``, ``MultiPolygon``, ``LineString``, ``Point``)
-and ``unary_union`` are re-exported from here.
-
-Offsets use one operator, :func:`offset_polygon_inward`, whose mitre join settings
-are the package's parallelism contract (see ``docs/section/bug_log.md``).
+Callers use ``PolygonOps`` and kernel geometry types (not Shapely).
+Offsets use :func:`offset_polygon_inward` (mitre join; ``docs/section/bug_log.md``).
 """
 
 from __future__ import annotations
 
 import numpy as np
-from shapely.geometry import LineString, MultiPolygon, Point, Polygon
-from shapely.geometry import box as shapely_box
-
-from shapely import make_valid
-from shapely.affinity import rotate as _shapely_rotate
-from shapely.affinity import translate as _shapely_translate
-from shapely.geometry.polygon import orient
-from shapely.ops import unary_union as _shapely_unary_union
-from shapely.validation import explain_validity
 
 from implicit_geometry_kernel.contract.errors import InfeasibleSectionGeometry
+from implicit_geometry_kernel.geos import lib as geos_lib
+from implicit_geometry_kernel.geos.geom import LineString, MultiPolygon, Point, Polygon
+from implicit_geometry_kernel.geos.wkb import dumps as _dumps
+from implicit_geometry_kernel.geos.wkb import loads as _loads
 from implicit_geometry_kernel.section.boundary.polygon_ops import (
     OFFSET_JOIN_STYLE,
     OFFSET_MITRE_LIMIT,
@@ -33,83 +22,153 @@ from implicit_geometry_kernel.section.boundary.polygon_ops import (
 )
 
 
-class ShapelyPolygonOps:
-    """GEOS via Shapely. Overlay backend until a numpy offseter matches goldens."""
+def _wkb(geom) -> bytes:
+    wkb = getattr(geom, "wkb", None)
+    if wkb is not None:
+        return bytes(wkb)
+    return _dumps(geom)
+
+
+def _geom(wkb: bytes):
+    return _loads(bytes(wkb))
+
+
+def _map_xy(geom, fn):
+    if geom is None or geom.is_empty:
+        return geom
+    if isinstance(geom, Polygon):
+        holes = [fn(np.asarray(r.coords, float)) for r in geom.interiors]
+        return Polygon(fn(np.asarray(geom.exterior.coords, float)), holes)
+    if isinstance(geom, MultiPolygon):
+        return MultiPolygon([_map_xy(g, fn) for g in geom.geoms])
+    if isinstance(geom, LineString):
+        return LineString(fn(np.asarray(geom.coords, float)))
+    if isinstance(geom, Point):
+        xy = fn(np.array([[float(geom.x), float(geom.y)]], float))[0]
+        return Point(float(xy[0]), float(xy[1]))
+    return geom
+
+
+def _signed_area(xy: np.ndarray) -> float:
+    x, y = xy[:, 0], xy[:, 1]
+    return 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
+
+
+class GeosPolygonOps:
+    """GEOS buffer and overlay via :mod:`implicit_geometry_kernel.geos.lib`."""
+
+    def buffer(
+        self,
+        geom,
+        distance: float,
+        *,
+        quad_segs: int | None = None,
+        cap_style: int = 1,
+        join_style: int | None = None,
+        mitre_limit: float | None = None,
+    ):
+        return _geom(
+            geos_lib.buffer(
+                _wkb(geom),
+                float(distance),
+                quad_segs=OFFSET_QUAD_SEGS if quad_segs is None else int(quad_segs),
+                cap_style=int(cap_style),
+                join_style=OFFSET_JOIN_STYLE if join_style is None else int(join_style),
+                mitre_limit=OFFSET_MITRE_LIMIT if mitre_limit is None else float(mitre_limit),
+            )
+        )
 
     def offset_inward(self, poly, depth: float, *, quad_segs: int | None = None):
         d = float(depth)
         if not np.isfinite(d) or d < 0.0:
             raise ValueError(f"offset_inward requires a finite depth >= 0; got {depth!r}.")
-        return poly.buffer(
+        return self.buffer(
+            poly,
             -d,
-            quad_segs=OFFSET_QUAD_SEGS if quad_segs is None else int(quad_segs),
+            quad_segs=quad_segs,
             join_style=OFFSET_JOIN_STYLE,
             mitre_limit=OFFSET_MITRE_LIMIT,
         )
 
     def intersection(self, a, b):
-        return a.intersection(b)
+        return _geom(geos_lib.intersection(_wkb(a), _wkb(b)))
 
     def difference(self, a, b):
-        return a.difference(b)
+        return _geom(geos_lib.difference(_wkb(a), _wkb(b)))
 
     def union(self, geoms):
-        return _shapely_unary_union(geoms)
+        if geoms is None:
+            return Polygon()
+        if hasattr(geoms, "wkb") and not isinstance(geoms, (list, tuple)):
+            return _geom(geos_lib.unary_union(_wkb(geoms)))
+        seq = list(geoms)
+        if not seq:
+            return Polygon()
+        return _geom(geos_lib.unary_union([_wkb(g) for g in seq]))
 
     def make_valid(self, geom):
-        return make_valid(geom)
+        return _geom(geos_lib.make_valid(_wkb(geom)))
 
     def rotate(self, geom, angle_rad: float, *, cx: float = 0.0, cy: float = 0.0):
         if abs(float(angle_rad)) <= 1e-12:
             return geom
-        return _shapely_rotate(geom, float(np.degrees(angle_rad)), origin=(float(cx), float(cy)))
-
-    def envelope(self, minx, miny, maxx, maxy):
-        return shapely_box(minx, miny, maxx, maxy)
-
-    def orient(self, poly, *, sign: float = 1.0):
-        return orient(poly, sign=sign)
-
-    def translate(self, geom, xoff: float, yoff: float):
-        return _shapely_translate(geom, xoff=float(xoff), yoff=float(yoff))
-
-    def explain_validity(self, geom) -> str:
-        return explain_validity(geom)
-
-
-class KernelPolygonOps(ShapelyPolygonOps):
-    """In-repo ops. Affine methods are numpy; overlay still GEOS until oracles pass.
-
-    References: JTS/GEOS buffer with mitre joins; overlay (intersection /
-    difference / union). Do not copy Shapely's Python wrappers.
-    """
-
-    def rotate(self, geom, angle_rad: float, *, cx: float = 0.0, cy: float = 0.0):
-        if abs(float(angle_rad)) <= 1e-12:
-            return geom
-        if not isinstance(geom, Polygon) or geom.is_empty:
-            return ShapelyPolygonOps.rotate(self, geom, angle_rad, cx=cx, cy=cy)
         c, s = np.cos(angle_rad), np.sin(angle_rad)
         ox, oy = float(cx), float(cy)
 
-        def _rot(coords):
-            xy = np.asarray(coords, float)
+        def _rot(xy):
             x, y = xy[:, 0] - ox, xy[:, 1] - oy
             return np.column_stack([c * x - s * y + ox, s * x + c * y + oy])
 
-        holes = [_rot(r.coords) for r in geom.interiors]
-        return Polygon(_rot(geom.exterior.coords), holes)
+        return _map_xy(geom, _rot)
+
+    def envelope(self, minx, miny, maxx, maxy):
+        return Polygon(
+            [
+                (float(minx), float(miny)),
+                (float(maxx), float(miny)),
+                (float(maxx), float(maxy)),
+                (float(minx), float(maxy)),
+            ]
+        )
+
+    def orient(self, poly, *, sign: float = 1.0):
+        if not isinstance(poly, Polygon) or poly.is_empty:
+            return poly
+        want_ccw = float(sign) >= 0.0
+        ext = np.asarray(poly.exterior.coords, float)
+        if (_signed_area(ext) >= 0.0) != want_ccw:
+            ext = ext[::-1]
+        holes = []
+        for ring in poly.interiors:
+            xy = np.asarray(ring.coords, float)
+            if (_signed_area(xy) >= 0.0) == want_ccw:
+                xy = xy[::-1]
+            holes.append(xy)
+        return Polygon(ext, holes)
+
+    def translate(self, geom, xoff: float, yoff: float):
+        dx, dy = float(xoff), float(yoff)
+        if dx == 0.0 and dy == 0.0:
+            return geom
+        return _map_xy(geom, lambda xy: xy + np.array([dx, dy], float))
+
+    def explain_validity(self, geom) -> str:
+        return geos_lib.is_valid_reason(_wkb(geom))
 
 
-OPS = ShapelyPolygonOps()
+class KernelPolygonOps(GeosPolygonOps):
+    """Numpy affine maps; offset and overlay stay GEOS."""
+
+
+OPS = GeosPolygonOps()
+
+
+def envelope(minx, miny, maxx, maxy):
+    return OPS.envelope(minx, miny, maxx, maxy)
 
 
 def offset_polygon_inward(poly, depth: float, *, quad_segs: int | None = None):
-    """Inward normal offset of ``poly`` by ``depth``, the one offset operator.
-
-    Prefer this over ``poly.buffer(-d, ...)``: the join settings are the
-    package's parallelism contract (see ``docs/section/bug_log.md``).
-    """
+    """Inward normal offset of ``poly`` by ``depth``, the one offset operator."""
     d = float(depth)
     if not np.isfinite(d) or d < 0.0:
         raise ValueError(f"offset_polygon_inward requires a finite depth >= 0; got {depth!r}.")
@@ -163,9 +222,6 @@ def locus_at_depth(
     return airfoil_offset_ring(airfoil_sdf, float(depth), quad_segs=quad_segs)
 
 
-# Drop rings / parts below this absolute area (m^2). Thickened tip stations can
-# produce Boolean slivers whose Shapely area is tiny but non-zero while shoelace
-# reports A≈0 and previously crashed on Cx = Sx/(6A).
 _MIN_PART_AREA = 1e-16
 
 
@@ -177,11 +233,11 @@ def validate_and_orient_polygon(poly, allow_empty: bool = False):
         raise ValueError("Invalid polygon: empty or zero area")
     poly = OPS.orient(poly, sign=1.0)
     if not poly.is_valid:
-        poly = poly.buffer(0)
+        poly = OPS.buffer(poly, 0.0)
         if isinstance(poly, MultiPolygon):
             raise ValueError(
                 "Polygon repair via buffer(0) produced MultiPolygon. "
-                f"Original validity: {OPS.explain_validity(poly) if hasattr(OPS, 'explain_validity') else ''}"
+                f"Original validity: {OPS.explain_validity(poly)}"
             )
         if allow_empty and poly.is_empty:
             return poly
@@ -207,7 +263,6 @@ def ensure_polygon(geom, *, allow_empty: bool = False) -> Polygon | MultiPolygon
         if allow_empty:
             return Polygon()
         raise ValueError("Empty geometry after constructive Boolean.")
-    # Repair self-touches / bow-ties from offset+Boolean before orientation.
     try:
         if not geom.is_valid:
             geom = OPS.make_valid(geom)
@@ -235,7 +290,6 @@ def ensure_polygon(geom, *, allow_empty: bool = False) -> Polygon | MultiPolygon
         if len(parts) == 1:
             return parts[0]
         return MultiPolygon(parts)
-    # GeometryCollection / LineString / etc. — extract polygonal parts once.
     geoms = getattr(geom, "geoms", None)
     if geoms is not None:
         parts = []
@@ -267,148 +321,13 @@ def rotate_geom(geom, angle_rad: float, *, cx: float = 0.0, cy: float = 0.0):
     return OPS.rotate(geom, float(angle_rad), cx=float(cx), cy=float(cy))
 
 
-def stadium_polygon(
-    x0: float,
-    y0: float,
-    x1: float,
-    y1: float,
-    radius: float,
-    *,
-    resolution: int = 16,
-) -> Polygon:
-    """Capsule / stadium as a buffered line segment."""
-    r = float(radius)
-    if r <= 0:
-        raise ValueError("stadium radius must be positive.")
-    line = LineString([(float(x0), float(y0)), (float(x1), float(y1))])
-    return ensure_polygon(line.buffer(r, quad_segs=resolution, cap_style=1, join_style=1))
-
-
-def half_plane_clip(geom, *, surface: str):
-    """Clip to y>=0 (upper) or y<=0 (lower) in the chord frame."""
-    minx, miny, maxx, maxy = geom.bounds
-    pad = max(maxx - minx, maxy - miny, 1.0) + 1.0
-    if surface == "upper":
-        box = Polygon(
-            [
-                (minx - pad, 0.0),
-                (maxx + pad, 0.0),
-                (maxx + pad, maxy + pad),
-                (minx - pad, maxy + pad),
-            ]
-        )
-    elif surface == "lower":
-        box = Polygon(
-            [
-                (minx - pad, miny - pad),
-                (maxx + pad, miny - pad),
-                (maxx + pad, 0.0),
-                (minx - pad, 0.0),
-            ]
-        )
-    else:
-        raise ValueError(f"surface must be 'upper' or 'lower', got {surface!r}")
-    return ensure_polygon(geom.intersection(box), allow_empty=True)
-
-
-def chordwise_box(geom, x_start: float, x_end: float) -> Polygon:
-    minx, miny, maxx, maxy = geom.bounds
-    pad = max(maxy - miny, 1.0) + 1.0
-    return Polygon(
-        [
-            (float(x_start), miny - pad),
-            (float(x_end), miny - pad),
-            (float(x_end), maxy + pad),
-            (float(x_start), maxy + pad),
-        ]
-    )
-
-
-def _padded_world_box(geom, pad_scale: float = 2.0) -> Polygon:
-    minx, miny, maxx, maxy = geom.bounds
-    span = max(maxx - minx, maxy - miny, 1.0)
-    pad = pad_scale * span + 1.0
-    return Polygon(
-        [
-            (minx - pad, miny - pad),
-            (maxx + pad, miny - pad),
-            (maxx + pad, maxy + pad),
-            (minx - pad, maxy + pad),
-        ]
-    )
-
-
-def flapwise_bay_clip(
-    geom,
-    *,
-    nx: float,
-    ny: float,
-    clip_mode: str,
-    c_lo: float | None,
-    c_hi: float | None,
-) -> Polygon:
-    """Bay clip for flapwise webs: half_lt / half_gt / strip on n·p.
-
-    Matches ``_parallel_web_half_lt`` (n·p < c), ``_parallel_web_half_gt``
-    (n·p > c), and ``_parallel_web_strip_clip`` (lo ≤ n·p ≤ hi).
-    """
-    world = _padded_world_box(geom, pad_scale=4.0)
-    minx, miny, maxx, maxy = world.bounds
-    # Dense sample of candidate clip polygon via rotated rectangle approximation:
-    # build a large axis-aligned box in (n, t) coordinates then rotate.
-    n = np.array([float(nx), float(ny)], dtype=float)
-    n_norm = float(np.linalg.norm(n))
-    if n_norm < 1e-15:
-        raise ValueError("flapwise normal must be non-zero.")
-    n = n / n_norm
-    t = np.array([-n[1], n[0]], dtype=float)
-    # World extent along n and t
-    corners = np.array(
-        [[minx, miny], [maxx, miny], [maxx, maxy], [minx, maxy]], dtype=float
-    )
-    n_proj = corners @ n
-    t_proj = corners @ t
-    t0, t1 = float(np.min(t_proj)) - 1.0, float(np.max(t_proj)) + 1.0
-
-    if clip_mode == "half_lt":
-        if c_lo is None:
-            raise ValueError("half_lt requires flapwise_c_lo")
-        n0, n1 = float(np.min(n_proj)) - 1.0, float(c_lo)
-    elif clip_mode == "half_gt":
-        if c_lo is None:
-            raise ValueError("half_gt requires flapwise_c_lo (bound)")
-        n0, n1 = float(c_lo), float(np.max(n_proj)) + 1.0
-    elif clip_mode == "strip":
-        if c_lo is None or c_hi is None:
-            raise ValueError("strip requires flapwise_c_lo and flapwise_c_hi")
-        n0, n1 = float(min(c_lo, c_hi)), float(max(c_lo, c_hi))
-    else:
-        raise ValueError(f"Unknown flapwise_clip_mode {clip_mode!r}")
-
-    # Rectangle corners in (n, t) then map back to xy: p = n*n_coord + t*t_coord
-    nt_corners = [
-        (n0, t0),
-        (n1, t0),
-        (n1, t1),
-        (n0, t1),
-    ]
-    xy = [tuple(n * nc + t * tc) for nc, tc in nt_corners]
-    clip = Polygon(xy)
-    # Keep finite intersection with world (numerical safety)
-    return ensure_polygon(clip.intersection(OPS.envelope(minx, miny, maxx, maxy)), allow_empty=True)
-
-
-def cavity_polygon(
-    airfoil_sdf,
-    skin_thickness: float,
-    *,
-    airfoil_poly: Polygon | MultiPolygon | None = None,
-) -> Polygon | MultiPolygon:
-    """Inner-skin cavity: Offset(airfoil, -skin_thickness)."""
-    poly = airfoil_poly if airfoil_poly is not None else airfoil_polygon(airfoil_sdf)
-    cavity = offset_polygon_inward(poly, float(skin_thickness))
-    return ensure_polygon(cavity, allow_empty=True)
-
+from implicit_geometry_kernel.section.boundary.clip_geom import (  # noqa: E402
+    cavity_polygon,
+    chordwise_box,
+    flapwise_bay_clip,
+    half_plane_clip,
+    stadium_polygon,
+)
 
 __all__ = [
     "LineString",
@@ -419,14 +338,15 @@ __all__ = [
     "PolygonOps",
     "Point",
     "Polygon",
+    "GeosPolygonOps",
     "KernelPolygonOps",
     "OPS",
-    "ShapelyPolygonOps",
     "airfoil_offset_ring",
     "airfoil_polygon",
     "cavity_polygon",
     "chordwise_box",
     "ensure_polygon",
+    "envelope",
     "flapwise_bay_clip",
     "half_plane_clip",
     "locus_at_depth",
@@ -434,7 +354,6 @@ __all__ = [
     "oriented_rings",
     "rotate_geom",
     "validate_and_orient_polygon",
-    "shapely_box",
     "stadium_polygon",
     "unary_union",
 ]

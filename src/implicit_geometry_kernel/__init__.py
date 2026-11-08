@@ -31,10 +31,11 @@ contract      ShellMidlineStrip, CellWallLoop (public DTOs)
 extract       in-plane zero loops and feature curves (not a mesh)
 catalogue     WX-Y-Z-NR tokens
 
-Dependencies: numpy, shapely and numba; scipy (``[splines]``) for spline-resampled
-airfoils. Matplotlib (``[plots]``) is ``implicit_geometry_kernel.plotting``, not
-imported by geometry modules. Shapely is the constructive overlay backend
-(``section.boundary.PolygonOps``); public products are numpy.
+Dependencies: numpy and numba; system/conda GEOS (``libgeos_c``) for polygon
+offset and overlay; scipy (``[splines]``) for spline-resampled airfoils.
+Matplotlib (``[plots]``) is ``implicit_geometry_kernel.plotting``, not imported
+by geometry modules. Offset and overlay call GEOS through
+``implicit_geometry_kernel.geos``. Public products are numpy.
 """
 
 from implicit_geometry_kernel.blade import (

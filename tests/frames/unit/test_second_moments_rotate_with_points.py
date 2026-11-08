@@ -2,8 +2,7 @@
 
 import numpy as np
 import pytest
-from shapely.geometry import Polygon
-
+from implicit_geometry_kernel.geos.geom import Polygon
 from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.frames import naca_to_S, rotate_S_to_B
 from implicit_geometry_kernel.frames.tensors.inertia import (

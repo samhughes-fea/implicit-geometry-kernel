@@ -42,21 +42,20 @@ Modules ≤ 400 lines; packages ≤ 12 modules. Split inside the owning folder.
 
 ## Dependencies
 
-Runtime core: numpy, shapely, numba (numba pulls llvmlite).
+Runtime core: numpy, numba (numba pulls llvmlite). Offset and overlay need
+**GEOS** (`libgeos_c`): system/conda (`libgeos-dev`, conda-forge `geos`) or
+`GEOS_LIBRARY_PATH`. There is no Shapely dependency.
 
-Shapely is the C++-port risk: it wraps GEOS (`buffer`, overlay, `make_valid`).
-The only `import shapely` in `src/` is `section/boundary/polygons.py`. Callers use
-`PolygonOps` (`offset_inward`, overlay, `make_valid`, `rotate`, `envelope`).
-`KernelPolygonOps` supplies numpy affine maps; overlay still uses GEOS until a
-numpy offseter matches the oracle tests. Public products (`ShellMidlineStrip`,
-`CellWallLoop`, properties) are numpy; Shapely `Polygon` is constructive scratch,
-not a hand-off type. A C++ port copies SDF kernels and this protocol, not Shapely.
-Golden numbers may move if GEOS does — changelog that. Do not add Shapely imports
-outside the gateway (`tests/section/test_offset_import_boundary.py`).
+Constructive polygons go through `PolygonOps` (`offset_inward`, overlay,
+`make_valid`, `rotate`, `envelope`). Algorithms are GEOS (JTS C++) via
+`implicit_geometry_kernel.geos` (ctypes, WKB, kernel `Polygon`). Do not
+reimplement buffer or overlay in numpy. `tests/section/test_offset_import_boundary.py`
+forbids `import shapely`. Public products (`ShellMidlineStrip`, `CellWallLoop`,
+properties) are numpy. A C++ port of the kernel links the same GEOS C functions.
 
-Grey: `sdf.kernels.grid` may use **contourpy** for debug level-sets if installed.
-It is not a core dependency. There is no matplotlib fallback (geometry must not
-import matplotlib).
+Grey extra `[contours]`: `sdf.kernels.grid` may use **contourpy** for debug
+level-sets if installed. It is not a core dependency. There is no matplotlib
+fallback (geometry must not import matplotlib).
 
 Span `TableLaw` PCHIP is in-house numpy, not SciPy.
 

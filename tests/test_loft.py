@@ -180,7 +180,7 @@ def test_mid_surface_graph(cut):
 
 
 def test_oml_polyline_closed_and_contains_skin():
-    from shapely.geometry import LineString, Polygon
+    from implicit_geometry_kernel.section.boundary import LineString, OPS, Polygon
 
     geo = BladeGeometry(_prismatic(), "2D-F-LC-0R", 0.003, spar_cap_thickness=0.008, shear_web_thickness=0.002,
                         web_positions=(0.18, 0.48), pivot_fraction=0.3)
@@ -191,7 +191,7 @@ def test_oml_polyline_closed_and_contains_skin():
     assert np.allclose(oml[0], oml[-1])
     cut = geo.section_at(z)
     assert (cut.chord, cut.twist, cut.pitch_axis) == pytest.approx(geo.interpolate(z)[:3])
-    hull = Polygon(oml[:, :2]).buffer(1e-6)
+    hull = OPS.buffer(Polygon(oml[:, :2]), 1e-6, join_style=1)
     for wall in cut.walls_of("skin"):
         assert hull.contains(LineString(wall.xy))
 

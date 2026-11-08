@@ -1,9 +1,8 @@
 """PolygonOps protocol: constructive Booleans and offsets behind one seam.
 
-Shapely/GEOS remains the overlay engine until ``KernelPolygonOps`` offset and
-Boolean methods match the oracle tests. Affine helpers here are numpy. Do not
-copy Shapely's Python wrappers; the algorithms are JTS/GEOS buffer (mitre) and
-overlay. This module must not import Shapely (gateway is ``polygons.py``).
+Offset and overlay are GEOS (JTS C++), called through
+``implicit_geometry_kernel.geos`` (ctypes ``libgeos_c``, WKB). Affine helpers
+here are numpy.
 """
 
 from __future__ import annotations
@@ -20,6 +19,16 @@ OFFSET_MITRE_LIMIT = 5.0
 @runtime_checkable
 class PolygonOps(Protocol):
     def offset_inward(self, poly: Any, depth: float, *, quad_segs: int | None = None) -> Any: ...
+    def buffer(
+        self,
+        geom: Any,
+        distance: float,
+        *,
+        quad_segs: int | None = None,
+        cap_style: int = 1,
+        join_style: int | None = None,
+        mitre_limit: float | None = None,
+    ) -> Any: ...
     def intersection(self, a: Any, b: Any) -> Any: ...
     def difference(self, a: Any, b: Any) -> Any: ...
     def union(self, geoms) -> Any: ...

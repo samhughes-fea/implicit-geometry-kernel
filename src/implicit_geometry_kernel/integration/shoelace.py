@@ -65,6 +65,8 @@ def ring_sums_S(coords_S: np.ndarray) -> Tuple[float, ...]:
 
 
 def _orient_ccw(poly):
+    from implicit_geometry_kernel.geos.geom import Polygon as KernelPolygon
+
     ext = np.asarray(poly.exterior.coords, float)
     if ext.shape[0] < 3:
         return poly
@@ -73,17 +75,20 @@ def _orient_ccw(poly):
     if signed >= 0.0:
         return poly
     holes = [np.asarray(r.coords, float) for r in poly.interiors]
-    return type(poly)(ext[::-1], holes)
+    return KernelPolygon(ext[::-1], holes)
 
 
 def validate_and_orient_polygon(poly, allow_empty: bool = False):
-    """Validate and CCW-orient. Repair via buffer(0). Duck-typed (no Shapely import)."""
+    """Validate and CCW-orient. Repair via GEOS buffer(0) when needed."""
+    from implicit_geometry_kernel.geos import lib as geos_lib
+    from implicit_geometry_kernel.geos.wkb import dumps, loads
+
     if allow_empty and (poly.is_empty or poly.area <= 0.0):
         return poly
     if not allow_empty and (poly.is_empty or poly.area <= 0.0):
         raise ValueError("Invalid polygon: empty or zero area")
     if not poly.is_valid:
-        poly = poly.buffer(0)
+        poly = loads(geos_lib.buffer(dumps(poly), 0.0))
         if getattr(poly, "geom_type", "") == "MultiPolygon":
             raise ValueError(
                 f"Polygon repair via buffer(0) produced MultiPolygon with {len(poly.geoms)} disconnected pieces."

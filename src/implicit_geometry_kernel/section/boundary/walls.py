@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from implicit_geometry_kernel.section.boundary import MultiPolygon, Polygon
-from implicit_geometry_kernel.section.boundary import unary_union
+from implicit_geometry_kernel.section.boundary import OPS, unary_union
 
 from implicit_geometry_kernel.section.midlines.host import (
     resolve_section_host,
@@ -363,7 +363,7 @@ def emit_wall_solid_polygons(section: Any) -> dict[str, Polygon | MultiPolygon]:
         if cap is None:
             continue
         if webs_u is not None:
-            cap = cap.difference(webs_u)
+            cap = OPS.difference(cap, webs_u)
         if cap.is_empty or float(cap.area) <= 0.0:
             continue
         out[key] = ensure_polygon(cap, allow_empty=False)

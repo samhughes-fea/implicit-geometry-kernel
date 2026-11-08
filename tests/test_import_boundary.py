@@ -102,22 +102,23 @@ def test_structure_sits_between_sdf_and_section():
 # Down-only layers: contract <- sdf, integration, frames <- structure <- catalogue <- section <- blade <- extract
 _LAYER_ALLOWED = {
     "contract": {"contract", "profiling"},
+    "geos": {"geos", "profiling"},
     "sdf": {"sdf", "profiling"},
-    "integration": {"contract", "sdf", "integration", "profiling"},
+    "integration": {"contract", "sdf", "integration", "geos", "profiling"},
     "frames": {"contract", "sdf", "frames", "profiling"},
     "structure": {"contract", "sdf", "structure", "profiling"},
     "catalogue": {"contract", "catalogue", "profiling"},
     "section": {
         "contract", "sdf", "integration", "frames", "structure", "catalogue", "section",
-        "profiling",
+        "geos", "profiling",
     },
     "blade": {
         "contract", "sdf", "integration", "frames", "structure", "catalogue", "section", "blade",
-        "extract", "profiling",
+        "extract", "geos", "profiling",
     },
     "extract": {
         "contract", "sdf", "integration", "frames", "structure", "catalogue", "section", "blade",
-        "extract", "profiling",
+        "extract", "geos", "profiling",
     },
     "mesh": {"contract", "blade", "extract", "mesh", "profiling"},
 }

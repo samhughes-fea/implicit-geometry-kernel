@@ -13,9 +13,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-from shapely.geometry import LineString  # noqa: E402
-
 from implicit_geometry_kernel.plotting.palette import NAVY, RED, TEAL  # noqa: E402
+from implicit_geometry_kernel.section.boundary import LineString, OPS  # noqa: E402
 
 TEXT_SECONDARY = "#52514e"
 REFERENCE = "#0b0b0b"  # closed-form references are drawn in ink, dashed
@@ -43,12 +42,20 @@ plt.rcParams.update({"font.size": 9, "axes.titlesize": 9, "axes.labelsize": 9, "
                      "xtick.labelsize": 8, "ytick.labelsize": 8, "axes.grid": False})
 
 
+def _thickness_band(xy, thickness):
+    band = OPS.buffer(LineString(xy), 0.5 * float(thickness), cap_style=2, join_style=2)
+    if getattr(band, "geom_type", "") == "MultiPolygon":
+        return band.geoms
+    return (band,)
+
+
 def draw_cut(ax, cut, midlines: bool = True, alpha: float = 0.35) -> None:
     """Draw each wall of a ``SectionCut`` as a band of its thickness, with its midline."""
     for wall in cut.walls:
         colour = WALL_COLOURS[wall.kind]
-        band = LineString(wall.xy).buffer(0.5 * wall.thickness, cap_style=2, join_style=2)
-        for poly in getattr(band, "geoms", [band]):
+        for poly in _thickness_band(wall.xy, wall.thickness):
+            if poly.is_empty:
+                continue
             ax.fill(*poly.exterior.xy, color=colour, alpha=alpha, lw=0)
         if midlines:
             ax.plot(wall.xy[:, 0], wall.xy[:, 1], color=colour, lw=0.8)
@@ -70,8 +77,9 @@ def draw_cap_solids(ax, cut, alpha: float = 0.35) -> None:
             continue
         colour = WALL_COLOURS["cap"]
         if float(wall.thickness) / chord < _CAP_FILL_THICKNESS_OVER_CHORD:
-            band = LineString(wall.xy).buffer(0.5 * wall.thickness, cap_style=2, join_style=2)
-            for poly in getattr(band, "geoms", [band]):
+            for poly in _thickness_band(wall.xy, wall.thickness):
+                if poly.is_empty:
+                    continue
                 ax.fill(*poly.exterior.xy, color=colour, alpha=alpha, lw=0)
         ax.plot(wall.xy[:, 0], wall.xy[:, 1], color=colour, lw=0.8)
     ax.set_aspect("equal")
@@ -84,15 +92,17 @@ def draw_shell(ax, cut, alpha: float = 0.35) -> None:
     for run in graph.loop:
         xy = np.asarray(run.points[:, :2], float)
         colour = WALL_COLOURS["cap"] if run.name in offset else WALL_COLOURS["skin"]
-        band = LineString(xy).buffer(0.5 * run.thickness, cap_style=2, join_style=2)
-        for poly in getattr(band, "geoms", [band]):
+        for poly in _thickness_band(xy, run.thickness):
+            if poly.is_empty:
+                continue
             ax.fill(*poly.exterior.xy, color=colour, alpha=alpha, lw=0)
         ax.plot(xy[:, 0], xy[:, 1], color=colour, lw=0.8)
     for run in graph.webs:
         xy = np.asarray(run.points[:, :2], float)
         colour = WALL_COLOURS["web"]
-        band = LineString(xy).buffer(0.5 * run.thickness, cap_style=2, join_style=2)
-        for poly in getattr(band, "geoms", [band]):
+        for poly in _thickness_band(xy, run.thickness):
+            if poly.is_empty:
+                continue
             ax.fill(*poly.exterior.xy, color=colour, alpha=alpha, lw=0)
         ax.plot(xy[:, 0], xy[:, 1], color=colour, lw=0.8)
     ax.set_aspect("equal")

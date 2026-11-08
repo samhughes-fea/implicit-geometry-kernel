@@ -1,7 +1,6 @@
-"""Shapely has one gateway: ``section/boundary/polygons.py``.
+"""No Shapely in the repository. GEOS lives in ``implicit_geometry_kernel.geos``.
 
-Shoelace sums numpy rings and must not import Shapely. Plotting uses
-``oriented_rings``. Production code imports polygon helpers from ``boundary``.
+Shoelace sums numpy rings. Plotting uses ``oriented_rings``.
 """
 
 from __future__ import annotations
@@ -10,12 +9,13 @@ import ast
 import importlib
 from pathlib import Path
 
+ROOT = Path(importlib.import_module("implicit_geometry_kernel").__file__).resolve().parents[2]
 PACKAGE = Path(importlib.import_module("implicit_geometry_kernel").__file__).resolve().parent
-SHAPELY_HOMES = {"section/boundary/polygons.py"}
 REMOVED_ALIAS_FILES = {
     "section/constructive/helpers.py",
     "section/constructive/offset_locus.py",
     "section/midlines/offset_math.py",
+    "section/boundary/geos.py",
 }
 
 
@@ -27,20 +27,21 @@ def _imports(path: Path):
             yield from (a.name for a in node.names)
 
 
-def _files():
-    for path in sorted(PACKAGE.rglob("*.py")):
-        yield path, path.relative_to(PACKAGE).as_posix()
+def _py_files(*roots: Path):
+    for root in roots:
+        for path in sorted(root.rglob("*.py")):
+            yield path
 
 
-def test_only_the_gateway_imports_shapely():
+def test_repository_does_not_import_shapely():
+    roots = (PACKAGE, ROOT / "tests", ROOT / "examples")
     bad = [
-        (rel, m)
-        for path, rel in _files()
-        if rel not in SHAPELY_HOMES
+        (str(path.relative_to(ROOT)), m)
+        for path in _py_files(*roots)
         for m in _imports(path)
         if m.split(".")[0] == "shapely"
     ]
-    assert not bad, f"import Shapely through section.boundary: {bad}"
+    assert not bad, f"Shapely imports remain: {bad}"
 
 
 def test_offset_alias_modules_removed():

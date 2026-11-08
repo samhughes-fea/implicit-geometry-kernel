@@ -47,21 +47,16 @@ def fiber_extents_from_airfoil(
 
 
 def outer_polygon_from_airfoil(airfoil: Any):
-    """Shapely polygon of the airfoil OML in geometry/NACA frame (warping ``Jt``).
+    """Kernel polygon of the airfoil OML in geometry/NACA frame (warping ``Jt``)."""
+    from implicit_geometry_kernel.section.boundary import OPS, Polygon
 
-    Returns ``None`` when shapely is unavailable or the outline is invalid.
-    """
-    try:
-        from implicit_geometry_kernel.section.boundary import Polygon
-    except ImportError:
-        return None
     verts = np.asarray(getattr(airfoil, "vertices", None), dtype=float)
     if verts is None or verts.ndim != 2 or verts.shape[0] < 3:
         return None
     try:
         poly = Polygon(verts)
         if not poly.is_valid or poly.area <= 0.0:
-            poly = poly.buffer(0)
+            poly = OPS.buffer(poly, 0.0)
         return poly if poly.area > 0.0 else None
     except Exception:  # noqa: BLE001
         return None

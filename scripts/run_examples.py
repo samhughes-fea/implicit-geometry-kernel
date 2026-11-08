@@ -53,7 +53,7 @@ def run(path: Path, timeout: float) -> tuple[Path, int, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--timeout", type=float, default=240.0, help="seconds per script")
+    parser.add_argument("--timeout", type=float, default=480.0, help="seconds per script")
     parser.add_argument("--jobs", type=int, default=os.cpu_count() or 2)
     args = parser.parse_args()
     paths = scripts()

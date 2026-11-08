@@ -1,7 +1,7 @@
 """Sample authored regions at a station and map loft strips between stations."""
 from __future__ import annotations
 
-from typing import Mapping, Sequence
+from typing import Sequence
 
 import numpy as np
 
@@ -9,33 +9,20 @@ from implicit_geometry_kernel.blade.locked_loft import arc_resample_open
 from implicit_geometry_kernel.blade.shell_graph import ShellGraph, ShellRun
 from implicit_geometry_kernel.blade.topology.graph import (
     ShellVertexId,
-    TE_ARC,
     WallRegionGraph,
-    _cut_tc,
 )
 from implicit_geometry_kernel.blade.topology.template import (
-    LoopBranch,
     ShellTopologyTemplate,
-    WebBranch,
 )
 from implicit_geometry_kernel.blade.topology.map_walk import (
     _as_xyz,
     _chord_fracs,
-    _oml_te_xyz,
-    _orient_loop_te,
     _side_arcs,
     _skin_mid_loop,
     _te_corner_indices,
     _te_frac_drop,
     _te_wrap_arc,
-    _walk_arc,
     _xyz_at_frac,
-)
-from implicit_geometry_kernel.blade.topology.map_loft import (
-    _append_ring,
-    _quad_bowtie,
-    _web_pts_from_su,
-    loft_mapped_strips,
 )
 
 def place_station_keys(cut, graph: ShellGraph, region_graph: WallRegionGraph, z: float

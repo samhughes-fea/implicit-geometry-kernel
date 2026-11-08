@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import numpy as np
 from shapely.geometry import Polygon
 
 from implicit_geometry_kernel.section.boundary.polygons import KernelPolygonOps, ShapelyPolygonOps

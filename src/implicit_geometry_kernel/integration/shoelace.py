@@ -64,6 +64,18 @@ def ring_sums_S(coords_S: np.ndarray) -> Tuple[float, ...]:
     return result
 
 
+def _orient_ccw(poly):
+    ext = np.asarray(poly.exterior.coords, float)
+    if ext.shape[0] < 3:
+        return poly
+    x, y = ext[:, 0], ext[:, 1]
+    signed = 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
+    if signed >= 0.0:
+        return poly
+    holes = [np.asarray(r.coords, float) for r in poly.interiors]
+    return type(poly)(ext[::-1], holes)
+
+
 def validate_and_orient_polygon(poly, allow_empty: bool = False):
     """Validate and CCW-orient. Repair via buffer(0). Duck-typed (no Shapely import)."""
     if allow_empty and (poly.is_empty or poly.area <= 0.0):
@@ -80,7 +92,7 @@ def validate_and_orient_polygon(poly, allow_empty: bool = False):
             return poly
     if not poly.is_valid or (not allow_empty and poly.is_empty):
         raise ValueError("Invalid polygon after repair")
-    return poly
+    return _orient_ccw(poly)
 
 
 def section_properties_S(

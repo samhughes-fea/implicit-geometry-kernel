@@ -91,7 +91,7 @@ def _sweep_cascade(
             spar_cap_thickness=0.0,
             shear_web_thickness=0.004,
             twist_rad=0.0,
-            web_x_positions_m=web_x,
+            web_offsets=web_x,
             outputs=(),
         )
         try:

@@ -59,7 +59,6 @@ class LoftFieldsMixin:
 
     def named_edges(self, z: float):
         """Partition edges and ply-drop ``s`` bounds at ``z`` (mesher feature curves)."""
-        from implicit_geometry_kernel.blade.shell_graph import PartitionEdge
 
         z = float(z)
         edges = list(self.section_at(z).shell_graph().partition_edges())

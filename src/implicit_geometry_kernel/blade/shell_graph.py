@@ -7,12 +7,12 @@ branches.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Dict, Tuple
+from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
 
 if TYPE_CHECKING:
-    from implicit_geometry_kernel.blade.cut import SectionCut, SectionWall
+    from implicit_geometry_kernel.blade.cut import SectionCut
 
 
 @dataclass(frozen=True)
@@ -155,7 +155,6 @@ class ShellGraph:
         2D-F already shares those vertices (gap 0). This is the flush contract
         on the graph, not a solids recipe change.
         """
-        from dataclasses import replace
 
         if not self.loop or not self.webs:
             return self
@@ -316,7 +315,6 @@ def _chain(strips, tol):
 
 
 from implicit_geometry_kernel.blade.shell_graph_build import (  # noqa: E402
-    _mid_surface,
     _rib_faces,
     _runs_of,
     _solid_runs,
@@ -330,7 +328,6 @@ def shell_graph(cut: SectionCut, include_solids: bool = False) -> ShellGraph:
     ``include_solids`` (default off) adds core and insert runs from polygon
     boundaries so loft can see them without changing default 2D-F run names.
     """
-    from dataclasses import replace
 
     ms = cut.mid_surface()
     skins = tuple(s for s in ms.segments if s.kind == "skin")

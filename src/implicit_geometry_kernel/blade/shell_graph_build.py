@@ -1,9 +1,12 @@
 """Build mid-surface runs, rib faces and solid runs for ShellGraph."""
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import TYPE_CHECKING, Dict, Tuple
 
 import numpy as np
+
+from implicit_geometry_kernel.blade.cut import SectionWall
 
 if TYPE_CHECKING:
     from implicit_geometry_kernel.blade.cut import SectionCut

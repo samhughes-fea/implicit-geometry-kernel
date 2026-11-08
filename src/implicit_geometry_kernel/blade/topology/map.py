@@ -31,6 +31,10 @@ from implicit_geometry_kernel.blade.topology.map_walk import (
     _te_wrap_arc as _te_wrap_arc,
     _xyz_at_frac,
 )
+from implicit_geometry_kernel.blade.topology.map_loft import (
+    _resample_keys,
+)
+
 
 def place_station_keys(cut, graph: ShellGraph, region_graph: WallRegionGraph, z: float
                        ) -> dict[tuple[str, str], np.ndarray]:
@@ -60,53 +64,6 @@ def place_station_keys(cut, graph: ShellGraph, region_graph: WallRegionGraph, z:
                 continue
             keys[(name, side)] = _xyz_at_frac(arc, fr, frac)
     return keys
-
-
-def _resample_keys(p0: np.ndarray, p1: np.ndarray, arc: np.ndarray, n: int,
-                   *, bunch_end: bool = False) -> np.ndarray:
-    """Arc-length resample between two keys that already lie on ``arc`` (TE→LE)."""
-    n = max(int(n), 2)
-    if len(arc) < 2:
-        out = np.repeat(np.asarray(p0, float).reshape(1, -1), n, axis=0)
-        out[-1] = p1
-        return out
-    i0 = int(np.argmin(np.linalg.norm(arc - p0, axis=1)))
-    i1 = int(np.argmin(np.linalg.norm(arc - p1, axis=1)))
-    if i0 == i1:
-        sub = np.vstack([p0, p1])
-    elif i0 < i1:
-        sub = np.vstack([p0, arc[i0 + 1 : i1], p1])
-    else:
-        sub = np.vstack([p0, arc[i0 - 1 : i1 : -1], p1])
-    if bunch_end and n > 2:
-        sampled = _arc_resample_bunched(sub, n)
-    else:
-        sampled = arc_resample_open(sub, n)
-    sampled[0] = np.asarray(p0, float)
-    sampled[-1] = np.asarray(p1, float)
-    return sampled
-
-
-def _arc_resample_bunched(pts: np.ndarray, n: int) -> np.ndarray:
-    """Arc-length resample clustered toward the last vertex (TE)."""
-    pts = np.asarray(pts, float)
-    n = max(int(n), 2)
-    if len(pts) < 2:
-        return arc_resample_open(pts, n)
-    seg = np.linalg.norm(np.diff(pts, axis=0), axis=1)
-    s = np.concatenate([[0.0], np.cumsum(seg)])
-    if s[-1] <= 1e-15:
-        return arc_resample_open(pts, n)
-    u = np.sin(np.linspace(0.0, 0.5 * np.pi, n)) ** 2
-    t = u * s[-1]
-    out = np.empty((n, pts.shape[1]))
-    for j, tj in enumerate(t):
-        k = int(np.searchsorted(s, tj, side="right") - 1)
-        k = min(max(k, 0), len(seg) - 1)
-        span = seg[k] if seg[k] > 1e-15 else 1.0
-        w = (tj - s[k]) / span
-        out[j] = pts[k] + w * (pts[k + 1] - pts[k])
-    return out
 
 
 def _key_name(vid: ShellVertexId) -> str:

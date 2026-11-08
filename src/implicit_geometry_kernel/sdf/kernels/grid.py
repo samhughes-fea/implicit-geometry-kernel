@@ -113,7 +113,7 @@ class SDFGrid:
         """Extract an arbitrary level-set contour."""
         if not _HAS_CONTOURPY:
             raise ImportError(
-                "SDFGrid.level_set needs contourpy (optional; not a core dependency). "
+                "SDFGrid.level_set needs contourpy (extra [contours]; not a core dependency). "
                 "Geometry modules must not import matplotlib."
             )
         x = np.asarray(self.X[0, :], dtype=float)

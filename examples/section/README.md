@@ -23,6 +23,7 @@ python examples/section/teaching/01_first_station.py
 3. [03_resolve_then_size.py](teaching/03_resolve_then_size.py) — resolve once, two thickness trials
 4. [04_spanwise_web_anchors.py](teaching/04_spanwise_web_anchors.py) — anchored webs vs local fractions
 5. [05_midline_handoff.py](teaching/05_midline_handoff.py) — print `ShellMidlineStrip` fields (no mesher)
+6. [06_consumer_seams.py](teaching/06_consumer_seams.py) — `ThicknessLaw`, named edges, size fields, merged cap+skin
 
 Guides: [quickstart](../../docs/section/guides/quickstart.md),
 [geometry_to_mesh](../../docs/section/guides/geometry_to_mesh.md).

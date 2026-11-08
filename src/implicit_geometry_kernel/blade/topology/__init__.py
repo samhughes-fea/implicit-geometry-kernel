@@ -19,14 +19,18 @@ from implicit_geometry_kernel.blade.topology.template import (
     zone_region_graphs,
 )
 from implicit_geometry_kernel.blade.topology.map import (
-    _chord_fracs,
     _key_name,
-    _oml_te_xyz,
-    _quad_bowtie,
-    _te_wrap_arc,
-    loft_mapped_strips,
     place_station_keys,
     sample_region_polylines,
+)
+from implicit_geometry_kernel.blade.topology.map_loft import (
+    _quad_bowtie,
+    loft_mapped_strips,
+)
+from implicit_geometry_kernel.blade.topology.map_walk import (
+    _chord_fracs,
+    _oml_te_xyz,
+    _te_wrap_arc,
 )
 from implicit_geometry_kernel.blade.topology.ribs import (
     rib_cell_polygons_from_samples,

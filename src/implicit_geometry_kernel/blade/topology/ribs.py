@@ -9,12 +9,14 @@ import numpy as np
 from implicit_geometry_kernel.blade.stations import TransverseMember
 from implicit_geometry_kernel.blade.topology.graph import WallRegionGraph, _cut_tc
 from implicit_geometry_kernel.blade.topology.map import (
-    _append_ring,
-    _chord_fracs,
     _key_name,
-    _web_pts_from_su,
     sample_region_polylines,
 )
+from implicit_geometry_kernel.blade.topology.map_loft import (
+    _append_ring,
+    _web_pts_from_su,
+)
+from implicit_geometry_kernel.blade.topology.map_walk import _chord_fracs
 from implicit_geometry_kernel.blade.topology.template import ShellTopologyTemplate
 
 def rib_cell_polygons_from_samples(

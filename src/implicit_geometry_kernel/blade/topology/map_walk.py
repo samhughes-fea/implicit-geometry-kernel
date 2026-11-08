@@ -1,7 +1,6 @@
 """Station walks and TE wrap for mapped loft."""
 from __future__ import annotations
 
-
 import numpy as np
 
 from implicit_geometry_kernel.blade.shell_graph import ShellGraph

@@ -34,12 +34,13 @@ def write_mid_surface_step(path, patches) -> str:
             pts = [cq.Vector(float(p[0]), float(p[1]), float(p[2])) for p in ring]
             pts.append(pts[0])
             wires.append(cq.Wire.makePolygon(pts))
-        solids.append(cq.Solid.makeLoft(wires))
+        solid = cq.Solid.makeLoft(wires)
+        if hasattr(solid, "label"):
+            solid.label = str(name)
+        solids.append(solid)
     if not solids:
         raise ValueError("no mid-surface patches to export")
-    compound = solids[0]
-    for extra in solids[1:]:
-        compound = compound.fuse(extra)
+    compound = cq.Compound.makeCompound(solids) if len(solids) > 1 else solids[0]
     cq.exporters.export(compound, str(path))
     return str(path)
 

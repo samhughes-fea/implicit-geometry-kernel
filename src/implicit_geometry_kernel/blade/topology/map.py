@@ -1,7 +1,7 @@
 """Sample authored regions at a station and map loft strips between stations."""
 from __future__ import annotations
 
-from typing import Mapping, Sequence
+from typing import Sequence
 
 import numpy as np
 
@@ -9,33 +9,23 @@ from implicit_geometry_kernel.blade.locked_loft import arc_resample_open
 from implicit_geometry_kernel.blade.shell_graph import ShellGraph, ShellRun
 from implicit_geometry_kernel.blade.topology.graph import (
     ShellVertexId,
-    TE_ARC,
     WallRegionGraph,
-    _cut_tc,
 )
 from implicit_geometry_kernel.blade.topology.template import (
-    LoopBranch,
     ShellTopologyTemplate,
-    WebBranch,
 )
 from implicit_geometry_kernel.blade.topology.map_walk import (
     _as_xyz,
     _chord_fracs,
-    _oml_te_xyz,
-    _orient_loop_te,
     _side_arcs,
     _skin_mid_loop,
     _te_corner_indices,
     _te_frac_drop,
     _te_wrap_arc,
-    _walk_arc,
     _xyz_at_frac,
 )
 from implicit_geometry_kernel.blade.topology.map_loft import (
-    _append_ring,
-    _quad_bowtie,
-    _web_pts_from_su,
-    loft_mapped_strips,
+    _resample_keys,
 )
 
 def place_station_keys(cut, graph: ShellGraph, region_graph: WallRegionGraph, z: float
@@ -66,53 +56,6 @@ def place_station_keys(cut, graph: ShellGraph, region_graph: WallRegionGraph, z:
                 continue
             keys[(name, side)] = _xyz_at_frac(arc, fr, frac)
     return keys
-
-
-def _resample_keys(p0: np.ndarray, p1: np.ndarray, arc: np.ndarray, n: int,
-                   *, bunch_end: bool = False) -> np.ndarray:
-    """Arc-length resample between two keys that already lie on ``arc`` (TE→LE)."""
-    n = max(int(n), 2)
-    if len(arc) < 2:
-        out = np.repeat(np.asarray(p0, float).reshape(1, -1), n, axis=0)
-        out[-1] = p1
-        return out
-    i0 = int(np.argmin(np.linalg.norm(arc - p0, axis=1)))
-    i1 = int(np.argmin(np.linalg.norm(arc - p1, axis=1)))
-    if i0 == i1:
-        sub = np.vstack([p0, p1])
-    elif i0 < i1:
-        sub = np.vstack([p0, arc[i0 + 1 : i1], p1])
-    else:
-        sub = np.vstack([p0, arc[i0 - 1 : i1 : -1], p1])
-    if bunch_end and n > 2:
-        sampled = _arc_resample_bunched(sub, n)
-    else:
-        sampled = arc_resample_open(sub, n)
-    sampled[0] = np.asarray(p0, float)
-    sampled[-1] = np.asarray(p1, float)
-    return sampled
-
-
-def _arc_resample_bunched(pts: np.ndarray, n: int) -> np.ndarray:
-    """Arc-length resample clustered toward the last vertex (TE)."""
-    pts = np.asarray(pts, float)
-    n = max(int(n), 2)
-    if len(pts) < 2:
-        return arc_resample_open(pts, n)
-    seg = np.linalg.norm(np.diff(pts, axis=0), axis=1)
-    s = np.concatenate([[0.0], np.cumsum(seg)])
-    if s[-1] <= 1e-15:
-        return arc_resample_open(pts, n)
-    u = np.sin(np.linspace(0.0, 0.5 * np.pi, n)) ** 2
-    t = u * s[-1]
-    out = np.empty((n, pts.shape[1]))
-    for j, tj in enumerate(t):
-        k = int(np.searchsorted(s, tj, side="right") - 1)
-        k = min(max(k, 0), len(seg) - 1)
-        span = seg[k] if seg[k] > 1e-15 else 1.0
-        w = (tj - s[k]) / span
-        out[j] = pts[k] + w * (pts[k + 1] - pts[k])
-    return out
 
 
 def _key_name(vid: ShellVertexId) -> str:

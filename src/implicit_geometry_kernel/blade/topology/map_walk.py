@@ -1,22 +1,12 @@
 """Station walks and TE wrap for mapped loft."""
 from __future__ import annotations
 
-from typing import Mapping, Sequence
-
 import numpy as np
 
-from implicit_geometry_kernel.blade.locked_loft import arc_resample_open
-from implicit_geometry_kernel.blade.shell_graph import ShellGraph, ShellRun
+from implicit_geometry_kernel.blade.shell_graph import ShellGraph
 from implicit_geometry_kernel.blade.topology.graph import (
-    ShellVertexId,
     TE_ARC,
-    WallRegionGraph,
     _cut_tc,
-)
-from implicit_geometry_kernel.blade.topology.template import (
-    LoopBranch,
-    ShellTopologyTemplate,
-    WebBranch,
 )
 
 

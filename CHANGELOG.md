@@ -10,6 +10,10 @@
   ``apply_clip``. Catalogue section goldens follow the kernel WKB ``Polygon``
   (same GEOS as Shapely 2 on this machine; previous JSON was slightly off).
 
+- Mid-surface patches: STL/OBJ per authored member; STEP via extra ``[cad]``
+  (cadquery compound, no fuse). ``members=`` filters patches. Debug SDF contours
+  declare extra ``[contours]`` (contourpy).
+
 - Architecture programme closed at the target tree: ``catalogue/`` is a layer;
   ``plotting``, ``mesh``, ``blade.cad``, and ``profiling`` are extras. House-rule
   splits: loft façade, topology map, shell-graph build, spar-cap pads, section

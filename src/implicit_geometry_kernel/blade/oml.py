@@ -83,9 +83,28 @@ def write_mid_surfaces(
         sample_region_polylines,
         section_cut_near,
     )
-    from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
 
     path = Path(path)
+    if path.suffix.lower() in {".step", ".stp"}:
+        from implicit_geometry_kernel.blade.cad import write_mid_surface_step
+        from implicit_geometry_kernel.blade.locked_loft import locked_mid_surface_patches
+        from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
+
+        z0, z1 = float(geo.stations[0].z), float(geo.stations[-1].z)
+        zs = list(np.linspace(z0, z1, int(n_span)))
+        for z in geo.forced_stations():
+            if z0 - 1e-12 <= float(z) <= z1 + 1e-12:
+                zs.append(float(z))
+        zs = sorted(set(round(float(z), 9) for z in zs))
+        graphs = []
+        for z in zs:
+            try:
+                graphs.append(geo.shell_graph(float(z), include_solids=include_solids))
+            except InfeasibleSectionGeometry:
+                continue
+        patches = locked_mid_surface_patches(graphs, n_chord=int(n_chord), members=members)
+        return write_mid_surface_step(path, [(name, rings) for name, rings, _surface in patches])
+
     want = None if members is None else set(members)
     z0, z1 = float(geo.stations[0].z), float(geo.stations[-1].z)
     zs = list(np.linspace(z0, z1, int(n_span)))
@@ -107,18 +126,6 @@ def write_mid_surfaces(
             if want is not None and name not in want:
                 continue
             groups.setdefault(name, []).append((face, collapsing))
-    if path.suffix.lower() in {".step", ".stp"}:
-        from implicit_geometry_kernel.blade.cad import write_mid_surface_step
-        from implicit_geometry_kernel.blade.locked_loft import locked_mid_surface_patches
-
-        graphs = []
-        for z in zs:
-            try:
-                graphs.append(geo.shell_graph(float(z), include_solids=include_solids))
-            except InfeasibleSectionGeometry:
-                continue
-        patches = locked_mid_surface_patches(graphs, n_chord=int(n_chord), members=members)
-        return write_mid_surface_step(path, [(name, rings) for name, rings, _surface in patches])
     chunks: list[tuple[str, np.ndarray, list]] = []
     for name, faces in groups.items():
         verts: list[np.ndarray] = []

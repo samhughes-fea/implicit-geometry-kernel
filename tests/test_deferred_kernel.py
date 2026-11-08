@@ -77,6 +77,18 @@ def test_write_mid_surfaces_obj_and_stl(tmp_path: Path):
     assert "solid" in Path(stl).read_text(encoding="utf-8")
 
 
+def test_write_mid_surfaces_member_filter(tmp_path: Path):
+    geo = _geo()
+    full = Path(geo.write_mid_surfaces(tmp_path / "all.obj", n_span=4, n_chord=10)).read_text(encoding="utf-8")
+    groups = [ln[2:] for ln in full.splitlines() if ln.startswith("g ")]
+    assert len(groups) >= 2
+    keep, other = groups[0], groups[1]
+    path = geo.write_mid_surfaces(tmp_path / "one.obj", n_span=4, n_chord=10, members=(keep,))
+    text = Path(path).read_text(encoding="utf-8")
+    assert f"g {keep}" in text
+    assert f"g {other}" not in text
+
+
 def test_write_mid_surfaces_step_skips_without_cadquery(tmp_path: Path):
     from implicit_geometry_kernel.blade.cad import cadquery_available
 

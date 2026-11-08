@@ -7,7 +7,7 @@
   ``PolygonOps.distance`` is GEOS ``GEOSDistance_r`` (tests use ``OPS``, not
   methods on kernel ``Polygon``); C-family hybrid vs quadtree area is
   documented as per-web pads, not circular disks; ``09_blade_concepts``
-  ignores empty/non-finite 3-D bounds. Public API snapshot records the
+  ignores empty/non-finite 3-D faces and degenerate axis limits. Public API snapshot records the
   GEOS / ``apply_clip`` names; ``apply_shapely`` remains a deprecated alias.
 
 - Shapely is gone. Constructive offset and overlay stay **GEOS** (JTS C++)

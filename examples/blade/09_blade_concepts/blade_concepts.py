@@ -160,6 +160,21 @@ def _span_xyz(points: np.ndarray) -> np.ndarray:
     return np.column_stack([p[..., 2], p[..., 0], p[..., 1]])
 
 
+def _finite_span_faces(
+    faces: list[np.ndarray], kinds: list[str]
+) -> tuple[list[np.ndarray], list[str]]:
+    shown, keep = [], []
+    for face, kind in zip(faces, kinds):
+        xyz = _span_xyz(face)
+        if xyz.size == 0 or xyz.ndim != 2 or xyz.shape[1] != 3:
+            continue
+        if not np.all(np.isfinite(xyz)):
+            continue
+        shown.append(xyz)
+        keep.append(kind)
+    return shown, keep
+
+
 def _face_rgba(kinds: list[str], alpha: float = 0.88) -> np.ndarray:
     return np.array([to_rgba(panel_colour(k), alpha) for k in kinds])
 
@@ -185,7 +200,10 @@ def _finish_3d(ax, pts: np.ndarray, *, elev: float, azim: float, zoom: float = 1
         lo = pts.min(axis=0)
         hi = pts.max(axis=0)
     box = hi - lo
-    box[box == 0.0] = 1.0
+    pad = np.where(box == 0.0, 1.0, 0.0)
+    lo = lo - 0.5 * pad
+    hi = hi + 0.5 * pad
+    box = hi - lo
     ax.set_xlim(float(lo[0]), float(hi[0]))
     ax.set_ylim(float(lo[1]), float(hi[1]))
     ax.set_zlim(float(lo[2]), float(hi[2]))
@@ -202,7 +220,7 @@ def _finish_3d(ax, pts: np.ndarray, *, elev: float, azim: float, zoom: float = 1
 def _draw_walls(ax, faces: list[np.ndarray], kinds: list[str], *,
                 elev: float = VIEW_LE[0], azim: float = VIEW_LE[1],
                 zoom: float = 1.0) -> None:
-    shown = [_span_xyz(f) for f in faces]
+    shown, kinds = _finite_span_faces(faces, kinds)
     if not shown:
         _finish_3d(ax, np.zeros((0, 3), float), elev=elev, azim=azim, zoom=zoom)
         return
@@ -339,6 +357,14 @@ def figure_cutaways(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
 
 
 def _elevation_polys(faces: list[np.ndarray], kinds: list[str], *, depth_sign: float = 1.0):
+    kept = []
+    for face, kind in zip(faces, kinds):
+        arr = np.asarray(face, float)
+        if arr.ndim != 2 or arr.shape[1] < 3 or not np.all(np.isfinite(arr)):
+            continue
+        kept.append((arr, kind))
+    faces = [item[0] for item in kept]
+    kinds = [item[1] for item in kept]
     polys = [np.column_stack([np.asarray(f, float)[:, 2], np.asarray(f, float)[:, 1]]) for f in faces]
     depth = depth_sign * np.array([float(np.mean(np.asarray(f, float)[:, 0])) for f in faces])
     all_uv = np.vstack(polys) if polys else np.zeros((0, 2))
@@ -349,7 +375,7 @@ def _elevation_polys(faces: list[np.ndarray], kinds: list[str], *, depth_sign: f
     uv = [p.copy() for p in polys]
     for p in uv:
         p[:, 1] = mid + (p[:, 1] - mid) * factor
-    return uv, np.argsort(depth), factor, span
+    return uv, np.argsort(depth), factor, span, kinds
 
 
 def _save_elevation(key: str, name: str, faces: list[np.ndarray], kinds: list[str], *,
@@ -357,9 +383,15 @@ def _save_elevation(key: str, name: str, faces: list[np.ndarray], kinds: list[st
                     legend: bool = True) -> None:
     if not faces:
         return
-    uv, order, factor, span = _elevation_polys(faces, kinds, depth_sign=depth_sign)
+    uv, order, factor, span, kinds = _elevation_polys(faces, kinds, depth_sign=depth_sign)
+    if not uv:
+        return
     stretched = np.vstack(uv)
+    if stretched.size == 0 or not np.all(np.isfinite(stretched)):
+        return
     fig_h = 13.0 * float(np.ptp(stretched[:, 1])) / max(span, 1e-6) + (1.35 if legend else 0.55)
+    if not np.isfinite(fig_h):
+        return
     fig, ax = plt.subplots(figsize=(13.0, max(3.2, fig_h)))
     ax.add_collection(PolyCollection(
         [uv[i] for i in order], facecolors=_face_rgba(kinds, 0.92)[order],
@@ -395,7 +427,7 @@ def _save_corner_cutaway(key: str, name: str, faces: list[np.ndarray], kinds: li
     if not faces:
         return
     right, up, toward = _camera_basis(elev, azim)
-    shown = [_span_xyz(f) for f in faces]
+    shown, kinds = _finite_span_faces(faces, kinds)
     if not shown:
         return
     raw, depth = [], np.empty(len(shown), float)
@@ -455,7 +487,7 @@ def figure_full_cutaway(key: str, faces: list[np.ndarray], kinds: list[str]) -> 
 
 
 def figure_elevation(key: str, title: str, faces: list[np.ndarray], kinds: list[str]) -> None:
-    _, _, factor, _ = _elevation_polys(faces, kinds)
+    _, _, factor, _, _ = _elevation_polys(faces, kinds)
     note_txt = "true scale" if factor < 1.05 else f"flapwise drawn at {factor:.0f}×"
     _save_elevation(
         key, "elevation", faces, kinds,

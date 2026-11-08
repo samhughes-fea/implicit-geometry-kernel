@@ -6,21 +6,12 @@ from implicit_geometry_kernel.sdf.nodes.base import FeatureTable, SDFNode
 from implicit_geometry_kernel.sdf.nodes.tagged import CallableSDF, ExprSDF, TagNode
 from implicit_geometry_kernel.section.walls.base import SectionComponent
 
-_KIND = (
-    ("cap", "cap"),
-    ("spar_cap", "cap"),
-    ("web", "web"),
-    ("shear_web", "web"),
-    ("skin", "skin"),
-    ("outer_skin", "skin"),
-)
-
-
 def kind_from_label(label: str) -> str:
-    key = str(label).lower()
-    for needle, kind in _KIND:
-        if needle in key:
-            return kind
+    from implicit_geometry_kernel.section.assembly.members import wall_type_for_label
+
+    wt = wall_type_for_label(label)
+    if wt is not None:
+        return wt.kind
     return "skin"
 
 

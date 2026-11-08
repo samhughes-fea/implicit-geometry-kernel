@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from implicit_geometry_kernel.frames import PIVOT_FRACTION_DEFAULT, naca_to_twisted_pitch_axis_blade_frame, naca_to_zero_twist_pitch_axis_station_frame, twisted_pitch_axis_blade_frame_to_naca
-from plotting.frames import section_plot_axes, setup_section_axes
+from implicit_geometry_kernel.plotting.frames import section_plot_axes, setup_section_axes
 
 
 def test_naca_to_station_leading_edge_at_negative_y():

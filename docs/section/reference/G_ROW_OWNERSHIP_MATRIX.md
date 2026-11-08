@@ -1,8 +1,11 @@
-﻿# G-row ownership matrix — `section`
+# G-row ownership matrix — `section`
 
-Internal analogue of the section_selection PHASE7A layer matrix. Domain row
-IDs, not software layers. `api` is the only sequencer; skip-layer imports are
-defects.
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
+Domain row IDs, not software layers. The gated sequencer is `spec/`
+(`SectionGeometry` / `build_section_geometry`). Host assemble
+(`MultiCellSection` / `build_section_view`) lives in `assembly/` and does not
+package products. Skip-layer imports are defects.
 
 ↑ [`docs index`](../docs_index.md) · [`section`](../docs_index.md) ·
 outer contract:
@@ -26,22 +29,22 @@ Do not reopen these worker boundaries:
 
 | | |
 |---|---|
-| **Product** | `SectionGeometryResult` via `SectionGeometry` from L4-EVAL only |
+| **Product** | `SectionGeometryResult` via `SectionGeometry` / `build_section_geometry` |
+| **Host** | `MultiCellSection` via `assembly.build_section_view` / `multicell_from_layout` (plots, hybrid/quadtree debug) |
 | **Owns** | SDF/CSG, midlines in frame **B**, gated `properties_map`, `cell_wall_loops` |
-| **Must not own** | Mesh density / Q4 / +x3; true laminates / layup (`section_bind` / `section_layup` / `section_schedule`); SFV; FI; campaign Sets / `StationTask` |
+| **Must not own** | Mesh density / Q4 / +x3; true laminates / layup; SFV; FI; campaign Sets / `StationTask` |
 | **DTO sibling** | `contract` stays types-only |
-| **Banned top-level homes** | `engine/`, `interface/`, `core/`, and any new `projections/` mega-home |
+| **Banned top-level homes** | `engine/`, `interface/`, `core/`, `api/`, `recipes/`, `constructive/`, `props/`, and any new `projections/` mega-home |
 
 Dual-rep carve-out: SDF defines the solid; constructive polygons are the mature
-integration path. Unify the **description they share** (recipes), not the
-representations themselves.
+integration path. Unify the **description they share** (wall recipes in
+`walls/`), not the representations themselves.
 
-Public barrel symbols stay: `SectionGeometry` (`SectionGeometryRunner` is an
-alias), `SectionGeometryResult`, `MultiCellSection`, `resolve_system_type` /
-`SYSTEM_TYPE_KEYS`, `SectionLayout`. Prefer `Airfoil.to_sdf()` for implicit
-airfoils; `AirfoilSDF` is the adapter (deep import from `sdf.airfoil`).
-Callers of the station object never need `SDFNode`; extract / solver callers
-never need `Expr` (`sdf.compile.compile_expr_to_node` is the bridge).
+Public barrel symbols stay: `SectionGeometry`, `SectionGeometryResult`,
+`MultiCellSection`, `resolve_system_type` / `SYSTEM_TYPE_KEYS`, `SectionLayout`.
+Prefer `Airfoil.to_sdf()` for implicit airfoils; `AirfoilSDF` is the adapter
+(deep import from `sdf.shapes.airfoil`). Callers of the station object never
+need `SDFNode`; extract / solver callers never need `Expr`.
 
 ## 2. Target model
 
@@ -51,14 +54,15 @@ A station is not a catalogue letter. It is:
    `CapPlacementRule`).
 2. **DVs** — geometric thicknesses + twist + airfoil.
 3. **Walls** — labeled map of frozen recipes (`SkinWall`, `WebWall`, `CapWall`,
-   `CoreWall`, `InsertWall`).
+   `CoreWall`, `InsertWall`, `StiffenerWall`).
 4. **Projections** — each recipe yields SDF IR, boundary polygon, and midline
    (cores/inserts skip midline).
 5. **Graph** — junction preparation and cell-wall loops on the strip set; `N`
-   webs including `N = 0`. Mesh density remains in `section_mesh`.
+   webs including `N = 0`. Mesh density remains downstream.
 
-`SYSTEM_TYPE_KEYS` / `SystemLayoutSpec` are **named presets** that construct a
-`SectionLayout`. Family A–D is a `CapPlacementRule`, not an assemble switch.
+`SYSTEM_TYPE_KEYS` / `SystemLayoutSpec` live in `catalogue` and are **named
+presets** that construct a `SectionLayout`. Family A–D is a
+`CapPlacementRule`, not an assemble switch.
 `0A`/`0B` are `n_webs = 0` plus cap rule, not a second host
 ([`ADR_ZERO_WEB_SHELL_MESH.md`](ADR_ZERO_WEB_SHELL_MESH.md)).
 
@@ -87,23 +91,22 @@ flowchart TB
 
 | Row | Home | Owns | May call | Forbidden imports | Primary output |
 |-----|------|------|----------|-------------------|----------------|
-| `G-API` | [`spec/`](../spec/README.md) (`api/` alias until 0.6.0) | `SectionGeometry` lifecycle, validation, gated packaging | `G-LAYOUT`, `G-ASSEMBLE`, emit homes | SDF algebra, mesh, bind, FE | `SectionGeometryResult` |
-| `G-LAYOUT` | [`layout/`](../layout/README.md) | `SectionLayout` SoT, catalogue presets, drop cascade, `CapPlacementRule` (chordwise / plan-form policy) | `AirfoilSDF` cavity queries | recipes, constructive, junctions | effective `SectionLayout` / `StationLayoutResolution` |
-| `G-PLACE` | [`layout/anchoring.py`](../layout/README.md) (and `collision.py`, `handoff.py`; `placement/` is an alias until 0.6.0) | Through-thickness anchoring: face offsets, midsurface depth, `AnchoredWallGeometry`. Construction tokens stay strings; no laminate imports | layout policy, airfoil cavity | recipes as authors, junctions, props, mesh, laminates | anchored wall geometry |
-| `G-RECIPE` | [`recipes/`](../recipes/README.md) | Frozen wall parameters; the three projection methods | `G-SDF` kernel, `G-POLY` emitters, `G-MID` helpers | layout cascade, junctions, props, api | `SkinWall` / `WebWall` / `CapWall` / `CoreWall` / `InsertWall` |
-| `G-ASSEMBLE` | [`assembly/`](../assembly/README.md) | Host: layout + DVs → labeled recipe map + SDF eval cache | layout, recipes, sdf | junctions, cells, props, mesh | `MultiCellSection` |
-| `G-SDF` | [`../../src/implicit_geometry_kernel/sdf/`](../../../src/implicit_geometry_kernel/sdf) (`implicit_geometry_kernel.sdf`) | CSG primitives, IR, `AirfoilSDF` | nothing blade-specific | recipes, assembly, layout | `φ`, `Expr` |
-| `G-POLY` | [`constructive/`](../constructive/README.md) | Polygon projection of recipes; offset_locus / shoelace | recipes, G-MID offset math | junctions, layout | region polygons |
-| `G-MID` | [`midlines/`](../midlines/README.md) | Centreline projection of recipes; shared offset locus; contract strips in **B** | recipes, `contract` | constructive, sdf, props, mesh density | `ShellMidlineStrip` |
-| `G-TOPO` | [`junctions/`](../junctions/README.md) | Junction preparation on strips; `N ≥ 0` | midlines | sdf, constructive, recipes, layout | prepared strips |
-| `G-LOOP` | [`cells/`](../cells/README.md) | Closed loops from prepared strips | junctions output | sdf, constructive, recipes | `CellWallLoop` |
-| `G-PROPS` | [`props/`](../props/README.md) | Gated `properties_map` (hybrid) | constructive, sdf residual | junctions, midlines, bind, beam math | `properties_map` |
+| `G-API` | `spec/` | `SectionGeometry` lifecycle, validation, gated packaging | `G-LAYOUT`, `G-ASSEMBLE`, emit homes | SDF algebra, mesh, bind, FE | `SectionGeometryResult` |
+| `G-LAYOUT` | `layout/` | `SectionLayout` SoT, drop cascade, `CapPlacementRule`. Catalogue tokens re-exported from `catalogue` | `AirfoilSDF` cavity queries | walls as authors, junctions | effective `SectionLayout` / `StationLayoutResolution` |
+| `G-PLACE` | `layout/` (`anchoring.py`, `collision.py`, `handoff.py`) | Through-thickness anchoring: face offsets, midsurface depth, `AnchoredWallGeometry` | layout policy, airfoil cavity | walls as authors, junctions, properties, mesh, laminates | anchored wall geometry |
+| `G-RECIPE` | `walls/` | Frozen wall parameters; the three projection methods | `G-SDF` kernel, `G-POLY` emitters, `G-MID` helpers | layout cascade, junctions, properties, spec | `SkinWall` / `WebWall` / `CapWall` / `CoreWall` / `InsertWall` / `StiffenerWall` |
+| `G-ASSEMBLE` | `assembly/` | Host: layout + DVs → labeled recipe map. `build_section_view` is the default-thickness host helper | layout, walls, sdf | junctions, cells, properties, mesh | `MultiCellSection` |
+| `G-SDF` | [`sdf/`](../../sdf/README.md) | CSG primitives, nodes, `AirfoilSDF` | nothing blade-specific | walls, assembly, layout | `φ`, `Expr` |
+| `G-POLY` | `boundary/` | Polygon projection of recipes; offset locus / shoelace | walls, G-MID offset math | junctions, layout | region polygons |
+| `G-MID` | `midlines/` | Centreline projection of recipes; shared offset locus; contract strips in **B** | walls, `contract` | boundary, sdf, properties, mesh density | `ShellMidlineStrip` |
+| `G-TOPO` | `junctions/` | Junction preparation on strips; `N ≥ 0` | midlines | sdf, boundary, walls, layout | prepared strips |
+| `G-LOOP` | `cells/` | Closed loops from prepared strips | junctions output | sdf, boundary, walls | `CellWallLoop` |
+| `G-PROPS` | `properties/` | Gated `properties_map` (hybrid) | boundary, sdf residual | junctions, midlines, bind, beam math | `properties_map` |
 
-Consumers (including L4-EVAL) import the **barrel / runner**; deep homes are
-maintainer-internal.
+Consumers import the **barrel / runner**; deep homes are maintainer-internal.
 
 G-POLY may import `midlines.offset_math` for the shared inward-offset operator.
-G-MID must not import `constructive`.
+G-MID must not import `boundary`.
 
 ## 4. Forbidden internal leaks
 
@@ -114,15 +117,15 @@ G-MID must not import `constructive`.
   recipes.
 - No web-assuming junction preparation. Empty web set is valid.
 - No mesh product on the geometry result. `retain_mesh` / quadtree artefacts are
-  **G-PROPS debug** (hybrid/quadtree occupancy), not `section_mesh`. Import QT
-  helpers from `section.props`, not the package barrel.
+  **G-PROPS debug** (hybrid/quadtree occupancy), not a shell mesh. Import QT
+  helpers from `section.properties`, not the package barrel.
 - No layup vocabulary for wall solids (`emit_wall_solid_*`, `is_wall_solid_label`;
   no `emit_laminate_*` / `is_laminate_label` / `laminates_for_core`).
 - No `void_cell_*` public names; implementation matches the `cell_wall_loops`
   product.
-- No skip-layer: junctions does not import sdf; constructive does not
+- No skip-layer: junctions does not import sdf; boundary does not
   rebuild from host component attrs; layout does not import assembly.
-- `compute_section_properties` is not an L4 executable seam — properties are a
+- `compute_section_properties` is not an executable seam — properties are a
   gated runner output.
 
 Frames: solids authored untwisted; emit midlines/loops in **B**;
@@ -133,27 +136,28 @@ orchestration.
 
 ```text
 implicit_geometry_kernel/
+  catalogue/           # WX-Y-Z-NR tokens (below section)
   sdf/                 # G-SDF kernel
   profiling.py         # cross-cutting timers (not under sdf/)
   section/
-    spec/              # SectionSpec, runner, resolve, result packaging (`api/` alias until 0.6.0)
-    layout/            # SectionLayout SoT, presets, drop, CapPlacementRule, anchoring
-    recipes/           # wall params + projection dispatch (IR classes next to walls.py)
-    assembly/          # assemble + host only (no public component types)
-    constructive/      # polygon projection
+    spec/              # SectionSpec, runner, resolve, result packaging
+    layout/            # SectionLayout SoT, drop, CapPlacementRule, anchoring
+    walls/             # wall params + projection dispatch
+    assembly/          # assemble + host only (`build_section_view`)
+    boundary/          # polygon projection
     midlines/          # centreline projection + offset_math
     junctions/         # strip junctions, N≥0
     cells/             # from prepared strips
-    props/             # hybrid properties_map
+    properties/        # hybrid properties_map
 ```
 
-`constructive/` and `midlines/` stay separate domain homes (area vs mesh
+`boundary/` and `midlines/` stay separate domain homes (area vs mesh
 products). Unification is shared **input** (recipes), not a collapsed folder.
 `MultiCellSection` remains the host name (`N ≥ 0`).
 
 ## 6. See also
 
 - [`ADR_ZERO_WEB_SHELL_MESH.md`](ADR_ZERO_WEB_SHELL_MESH.md) — zero-web shell handoff
-- [`system_type_xyz_taxonomy.md`](system_type_xyz_taxonomy.md) — catalogue decode
+- [blade-concept taxonomy](../../blade/concepts/taxonomy.md) — catalogue decode
 - [`../reports/DUAL_REP_ACCEPTANCE.md`](../reports/DUAL_REP_ACCEPTANCE.md) — polygon vs SDF
 - Module READMEs under [`../README.md`](../docs_index.md) module pages

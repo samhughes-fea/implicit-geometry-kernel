@@ -17,8 +17,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.section.api.factory import (
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
     build_section_view,
 )
 # Import the real home, not the deprecated ``engine`` shim: that shim is a
@@ -34,14 +36,14 @@ from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 # Representative subset: every family (A/B/C/D), both orientations (CN/F),
 # a range of web counts, plus the two skin-only layouts.
 REPRESENTATIVE = [
-    "0A", "0B",
-    "1A-CN", "1B-F", "1C-CN",
-    "2B-CN", "2C-F", "2D-CN", "2D-F",
-    "3A-F", "3C-CN",
-    "5A-CN", "5D-F",
+    "0A-LC-0R", "0B-LC-0R",
+    "1A-CN-LC-0R", "1B-F-LC-0R", "1C-CN-LC-0R",
+    "2B-CN-LC-0R", "2C-F-LC-0R", "2D-CN-LC-0R", "2D-F-LC-0R",
+    "3A-F-LC-0R", "3C-CN-LC-0R",
+    "5A-CN-LC-0R", "5D-F-LC-0R",
 ]
-MULTICELL = [k for k in REPRESENTATIVE if k not in ("0A", "0B")]
-PARITY = ["0A", "0B", "2D-CN", "2C-F", "3A-F"]
+MULTICELL = [k for k in REPRESENTATIVE if k not in ("0A-LC-0R", "0B-LC-0R")]
+PARITY = ["0A-LC-0R", "0B-LC-0R", "2D-CN-LC-0R", "2C-F-LC-0R", "3A-F-LC-0R"]
 
 
 @pytest.fixture(scope="module")

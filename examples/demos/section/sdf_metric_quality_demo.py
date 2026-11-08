@@ -39,7 +39,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     DEFAULT_DPI,
     save_figure,
 )
@@ -49,7 +49,7 @@ from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )
-from plotting.plot_sdf import (
+from implicit_geometry_kernel.plotting.plot_sdf import (
     plot_sdf_field,
 )
 from implicit_geometry_kernel.sdf.kernels.csg import union_all
@@ -151,7 +151,7 @@ def main(argv: list[str] | None = None) -> Path:
     stats: dict[str, dict] = {}
     ridge_store: dict[str, np.ndarray] = {}
 
-    from plotting.plot_section import (
+    from implicit_geometry_kernel.plotting.plot_section import (
         apply_structural_section_axes,
         rotated_naca_grid_to_section_plot_axes,
     )

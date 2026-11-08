@@ -1,6 +1,10 @@
-# `section`
+# Station geometry
 
-Build a 2-D structural cross-section of a wind-turbine blade.
+↑ [docs](../README.md) · [src](../../src/implicit_geometry_kernel/section/README.md) ·
+[examples](../../examples/section/README.md) · [tests](../../tests/section/README.md)
+
+This package constructs a two-dimensional structural cross-section (one station)
+of a wind-turbine blade from an aerofoil, a layout token, and wall gauges.
 
 **Import:** `implicit_geometry_kernel.section`
 
@@ -30,24 +34,29 @@ Build a 2-D structural cross-section of a wind-turbine blade.
 12. [Notes](#notes)
 13. [See also](#see-also)
 
-Docs index: [`docs/README.md`](docs_index.md).
+Docs index: [`docs_index.md`](docs_index.md). Hub: [`docs/README.md`](../README.md).
+Names: [glossary](../glossary.md).
 
 ---
 
 ## Overview
 
-Construct a 2-D structural **section** (station cut) from an aerofoil outline, a
-layout id such as `"2D-F"`, and **wall thicknesses** for the outer **skin**,
-**shear webs**, and **spar caps**. The in-memory product is a set of named
-planar solids; optional gates emit wall centrelines, cell-wall loops, and
-per-region area / second moments.
+A station is assembled from an aerofoil outline, a layout identifier such as
+`"2D-F-LC-0R"`, and wall thicknesses for the outer skin, shear webs, and spar
+caps. The in-memory product is a set of named planar solids. Optional gates
+emit wall centrelines, cell-wall loops, and per-region area and second moments.
 
-Thicknesses are geometric only: this package is **material-bind agnostic**
-(no layup, ply, or constitutive assignment). Materials enter later via
-`section_bind`.
+Thicknesses are geometric only. The kernel does not assign materials, plies, or
+constitutive laws. Downstream tools bind those data to the three products.
 
-Downstream: mesh → bind → loads → FEA (`section_mesh` …); beam constitutives
-in parallel via `section_properties`.
+```mermaid
+flowchart LR
+  In[Aerofoil_layout_gauges] --> SG[SectionGeometry]
+  SG --> Solids[NamedSolids]
+  SG --> Props[properties_map]
+  SG --> Mid[ShellMidlineStrip]
+  SG --> Loops[CellWallLoop]
+```
 
 ## Quick start
 
@@ -59,7 +68,7 @@ from implicit_geometry_kernel.section import (
 )
 from implicit_geometry_kernel.plotting import plot_section
 
-layout = resolve_system_type("2D-F")
+layout = resolve_system_type("2D-F-LC-0R")
 airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)
 
 result = SectionGeometry(
@@ -73,13 +82,12 @@ result = SectionGeometry(
 ).execute().get_results()
 ```
 
-`SectionGeometry` is the public call path (`SectionGeometryRunner` is an
-alias). `build_section_geometry` is a deep import (`section.spec`; `section.api`
-is an alias until 0.6.0) for tests.
+`SectionGeometry` is the public call path. `build_section_geometry` is a deep
+import (`section.spec`) for tests.
 Returns `SectionGeometryResult` or raises (e.g. `InfeasibleSectionGeometry`).
 
 Guided paths: [`docs/guides/quickstart.md`](guides/quickstart.md).
-Runnable twins: `examples/`.
+Runnable twins: [`examples/section/teaching/`](../../examples/section/teaching/).
 
 ### Using the result
 
@@ -94,7 +102,7 @@ for strip in result.midline_strips or ():
 # Draw the assembled section
 plot_section(result.section)
 
-# Mesh hand-off is the midline strips (requires the midlines gate).
+# Mesh hand-off: skin+web strips here; lofted partitions via shell_graph (teaching 05).
 for strip in result.midline_strips or ():
     _ = strip.label, strip.thickness_m, strip.midline_twisted_pitch_axis_blade_frame
 ```
@@ -114,16 +122,17 @@ resolution = SectionGeometry(
 
 | Step | Where |
 |------|--------|
-| First station (`01`–`05`) | `examples/` |
+| Teaching `01`–`05` | [`examples/section/teaching/`](../../examples/section/teaching/) |
+| Numbered section examples | [`examples/section/`](../../examples/section/) |
 | Progressive recipes | [`docs/guides/quickstart.md`](guides/quickstart.md) |
 | All 40 layout figures | [`docs/reference/structural_systems_gallery.md`](reference/structural_systems_gallery.md) |
-| Labels on a `"2D-F"` figure | [`docs/guides/anatomy_on_a_figure.md`](guides/anatomy_on_a_figure.md) |
+| Labels on a `"2D-F-LC-0R"` figure | [`docs/guides/anatomy_on_a_figure.md`](guides/anatomy_on_a_figure.md) |
 | Drops / infeasible / `0A`/`0B` | [`docs/guides/feasibility_and_drops.md`](guides/feasibility_and_drops.md) |
 | Midlines → mesh | [`docs/guides/geometry_to_mesh.md`](guides/geometry_to_mesh.md) |
 
 ## Example figure
 
-A twin-web family-D section (layout `"2D-F"`):
+A twin-web family-D section (layout `"2D-F-LC-0R"`):
 
 ![2D-F structural family grid](../../examples/demos/figures/structural_family_grids/2D-F.png)
 
@@ -138,7 +147,7 @@ python examples/demos/section/anatomy_2d_f_demo.py
 
 ## Structural systems
 
-Layout keys in `SYSTEM_TYPE_KEYS` (40 entries). Pass any key to
+Layout keys in `SYSTEM_TYPE_KEYS` (120 tokens, 40 cores × LC/LE/PA × `0R`). Pass any key to
 `resolve_system_type(...)`. Pattern `{X}{Y}-{Z}` = web count · spar-cap family ·
 orientation. Teasers by web count **X** (≠ spar-cap family **Y**):
 
@@ -152,7 +161,7 @@ orientation. Teasers by web count **X** (≠ spar-cap family **Y**):
 
 Full catalogue with every key:
 [`docs/reference/structural_systems_gallery.md`](reference/structural_systems_gallery.md).
-Id decode: [`docs/reference/system_type_xyz_taxonomy.md`](reference/system_type_xyz_taxonomy.md).
+Id decode: [blade-concept taxonomy](../blade/concepts/taxonomy.md).
 
 ## Pipeline position
 
@@ -186,19 +195,19 @@ Internal ownership matrix:
 
 ```mermaid
 flowchart TB
-  Api[spec] --> Layout[layout]
-  Api --> Assembly[assembly]
+  Spec[spec] --> Layout[layout]
+  Spec --> Assembly[assembly]
   Layout --> Assembly
-  Recipes[recipes] --> Assembly
-  Sdf[sdf] --> Recipes
-  Assembly --> Constructive[constructive]
+  Walls[walls] --> Assembly
+  Sdf[sdf] --> Walls
+  Assembly --> Boundary[boundary]
   Assembly --> Mid[midlines]
   Mid --> Topo[junctions]
   Topo --> CellWall[cells]
-  Assembly --> Props[props]
-  Mid --> Mesh[section_mesh]
-  CellWall --> Loads[section_loads]
-  Props --> SecProps[section_properties]
+  Assembly --> Properties[properties]
+  Mid --> Contract[contract_strips]
+  CellWall --> Contract
+  Properties --> PropsMap[properties_map]
 ```
 
 Build flow (same package, finer grain):
@@ -221,14 +230,13 @@ flowchart TB
 
 | Extend | How |
 |--------|-----|
-| New layout id | Register in [`layout/system_layout.py`](../../src/implicit_geometry_kernel/section/layout/system_layout.py) as a `SectionLayout` preset |
+| New layout id | Register in [`catalogue/system_layout.py`](../../src/implicit_geometry_kernel/catalogue/system_layout.py) |
 | New cap/web recipe | [`recipes/`](recipes/README.md) + assemble in `MultiCellSection` |
 | New optional product | Gate in `normalize_output_gates` + field on `SectionGeometryResult` + home module |
 | Shape primitives | [`sdf/`](sdf/README.md) (recipe-agnostic) |
 
 Preferred call: `SectionGeometry`. Assemble-only and `build_section_geometry`
-are `section.spec` (tests; `section.api` is an alias until 0.6.0). Demo view:
-`build_section_view`.
+are `section.spec` (tests). Demo view: `build_section_view`.
 
 ## Concepts
 
@@ -251,16 +259,16 @@ Spine vocabulary: `../../docs/CASCADE_GLOSSARY.md`.
 
 Each region is an SDF `φ(x, y)` (negative inside). CSG uses `min` / `max` for
 union, intersection, difference, and offsets. The station outline is an
-`AirfoilSDF` from `Airfoil.to_sdf()` (or `sdf.airfoil`).
+`AirfoilSDF` from `Airfoil.to_sdf()` (the field lives in `sdf.shapes.airfoil`).
 
 ### Layout identifiers
 
-A **layout** (SystemType) such as `"2D-F"` encodes **X** = web count, **Y** =
+A **layout** (SystemType) such as `"2D-F-LC-0R"` encodes **X** = web count, **Y** =
 spar-cap family (`StructuralFamily` A–D), **Z** = web orientation.
 `resolve_system_type` returns a frozen `SystemLayoutSpec`. On taper, webs that
 do not fit the local cavity are **dropped**, not shifted
 ([`layout/`](layout/README.md),
-[`docs/reference/system_type_xyz_taxonomy.md`](reference/system_type_xyz_taxonomy.md)).
+[taxonomy](../blade/concepts/taxonomy.md)).
 
 **CN** = chord-normal in the untwisted section; **F** = flapwise (vertical in
 the twisted blade frame). Compare
@@ -301,13 +309,13 @@ midlines. Detail: [`coordinate_frames`](../frames/README.md) ·
 
 ```text
 section/
-├── spec/           # SectionSpec, runner, and build entrypoints (`api/` alias until 0.6.0)
+├── spec/           # SectionSpec, runner, and build entrypoints
 ├── layout/         # layout id → SystemLayoutSpec / SectionLayout; through-thickness anchoring
 ├── assembly/       # MultiCellSection host
-├── recipes/        # dual-emission wall recipes (SDF / polygon / midline)
-├── constructive/   # polygons for area / inertia
-├── props/          # gated properties_map
-├── midlines/       # centreline strip emit + offset_math
+├── walls/          # dual-emission wall recipes (SDF / polygon / midline)
+├── boundary/       # polygons for area / inertia
+├── properties/     # gated properties_map
+├── midlines/       # centreline strip emit
 ├── junctions/      # junction snap for meshing
 ├── cells/          # cell-wall loops
 ```
@@ -319,13 +327,13 @@ section/
 | [`layout/`](layout/README.md) | Catalogue ids, parametric `SectionLayout`, web-drop rules |
 | `implicit_geometry_kernel.sdf` | Domain-agnostic shape kernel (not under `section/`) |
 | [`assembly/`](assembly/README.md) | Blade recipes → `MultiCellSection` |
-| [`recipes/`](recipes/README.md) | One wall description → SDF / polygon / midline projections |
-| [`constructive/`](constructive/README.md) | Polygon path for mature regions |
-| [`props/`](props/README.md) | Orchestrates `properties_map` |
+| [`recipes/`](recipes/README.md) | One wall description → SDF / polygon / midline projections (`section.walls`) |
+| [`constructive/`](constructive/README.md) | Historical pointer to the polygon path (`section.boundary`) |
+| [`props/`](props/README.md) | Orchestrates `properties_map` (`section.properties`) |
 | [`midlines/`](midlines/README.md) | Wall → centreline polyline |
 | [`junctions/`](junctions/README.md) | Snap strip endpoints for meshing |
 | [`cells/`](cells/README.md) | Closed loops around empty cells |
-| sibling `plotting/` | Matplotlib (`[plots]`); not a section module |
+| `implicit_geometry_kernel.plotting` | Matplotlib (`[plots]`); not a section module |
 
 ## Public API
 
@@ -345,17 +353,21 @@ Also exported from the barrel (secondary):
 
 | Name | Role |
 |------|------|
-| `SectionGeometryRunner` | Alias of `SectionGeometry` (kept for one release) |
 | `resolve_station_layout` | Cheap web-drop / catalogue step-down |
 | `SYSTEM_TYPE_KEYS` | All registered layout ids |
 | `SystemLayoutSpec` | Frozen catalogue layout |
 | `SectionPropertiesMeta` | Backend metadata on a properties result |
 
 Deep imports (not on the barrel): `section.spec.build_section_geometry`,
-`section.spec.build_section_view` (`section.api` until 0.6.0), clamps in `section.layout.thickness_limits`,
-plots from sibling `plotting`.
+`section.spec.build_section_view`, clamps in `section.layout.thickness_limits`,
+plots from `implicit_geometry_kernel.plotting`.
 
 ## Results
+
+Loft callers read a `SectionCut` from `BladeGeometry.section_at(z)`. The tables
+below describe `SectionGeometryResult` from `SectionGeometry.execute()`.
+Comparison: [loft cut versus station result](../blade/README.md#loft-cut-versus-station-result).
+Names: [glossary](../glossary.md).
 
 <a id="result-sectiongeometryresult"></a>
 ### `SectionGeometryResult`
@@ -444,6 +456,9 @@ This is per-region 2-D geometry, not beam `EA` / `EI` / `GJ`
 
 ## See also
 
+- Names: [glossary](../glossary.md)
+- Tokens: [catalogue](../catalogue/README.md) · [taxonomy](../blade/concepts/taxonomy.md)
+- Loft wrap: [blade](../blade/README.md#loft-cut-versus-station-result)
 - Module pages linked under [Package structure](#package-structure)
 - `examples/` — runnable teaching scripts `01`–`05`
 - [`docs/guides/quickstart.md`](guides/quickstart.md) — progressive guided paths

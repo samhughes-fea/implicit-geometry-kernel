@@ -18,7 +18,7 @@ Two independent savings, measured rather than asserted:
 
 Note on scope: the culling figure reports what ``expr_bbox`` *makes available*.
 ``eval_expr_batch`` itself does not prune - it evaluates the grid it is handed.
-Bbox culling is applied by the adaptive area mesh in ``props_emit/area_mesh.py``.
+Bbox culling is applied by the adaptive area mesh in ``section/properties/area_mesh.py``.
 
 Writes under ``examples/demos/figures/evaluation_cost_pruning/``:
 
@@ -51,12 +51,12 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     INK,
     MUTED,
     NAVY,
@@ -71,7 +71,7 @@ from implicit_geometry_kernel.sdf.nodes import (
     eval_expr_batch,
     expr_bbox,
 )
-from plotting.plot_section import (
+from implicit_geometry_kernel.plotting.plot_section import (
     _component_color,
 )
 
@@ -147,7 +147,7 @@ def timed_median(function, repeats: int) -> float:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--key", default="2D-F")
+    parser.add_argument("--key", default="2D-F-LC-0R")
     parser.add_argument("--naca", default="2412")
     parser.add_argument("--chord", type=float, default=1.0)
     parser.add_argument("--twist-deg", type=float, default=0.0)
@@ -157,7 +157,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--scaling-keys",
         nargs="+",
-        default=["0A", "1C-F", "2C-F", "3C-F", "4C-F", "5C-F"],
+        default=["0A-LC-0R", "1C-F-LC-0R", "2C-F-LC-0R", "3C-F-LC-0R", "4C-F-LC-0R", "5C-F-LC-0R"],
         help=(
             "Layout keys for the web-count scaling panel. Family C is used "
             "because it spans 1-5 webs; family D has no single-web key."
@@ -432,7 +432,7 @@ def main(argv: list[str] | None = None) -> int:
         "naive_node_visits": naive_visits,
         "note": (
             "expr_bbox culling is reported as available work reduction; "
-            "eval_expr_batch does not prune, props_emit/area_mesh.py applies it."
+            "eval_expr_batch does not prune; section/properties/area_mesh.py applies it."
         ),
     }
     json_path = out_dir / "evaluation_cost_pruning.json"

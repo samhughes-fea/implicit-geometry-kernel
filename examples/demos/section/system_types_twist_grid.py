@@ -48,7 +48,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     save_figure,
 )
 
@@ -64,7 +64,7 @@ from implicit_geometry_kernel.section.properties.export import (
 from implicit_geometry_kernel.section.properties.compute import (
     compute_section_properties,
 )
-from plotting.plot import (
+from implicit_geometry_kernel.plotting.plot import (
     _component_color,
     plot_section,
 )

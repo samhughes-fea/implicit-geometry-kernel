@@ -9,18 +9,14 @@ and from ``implicit_geometry_kernel.section``, but must **never** import a mesh
 or FE package.
 
 **Strip order:** ``build_shell_midline_strips`` yields skins and webs in
-``components_unrotated`` dict-insertion order, then spar caps in
-``spar_cap_components_unrotated`` dict-insertion order.  Any consumer that
-cares about a canonical ordering (e.g. ``skin → caps → webs`` as required by
-``bind_shell_material_zones``) must sort or reorder independently.
+``components_unrotated`` dict-insertion order. Caps are partitions on the
+skin-mid loop (``shell_strips_from_graph`` / ``offset_regions``), not a
+second polyline.
 """
 
 from __future__ import annotations
 
-from dataclasses import replace
 from typing import Any
-
-import numpy as np
 
 from implicit_geometry_kernel.contract.shell_midline_strip import ShellMidlineStrip
 from implicit_geometry_kernel.section.midlines.host import (
@@ -28,6 +24,13 @@ from implicit_geometry_kernel.section.midlines.host import (
     SkinShellComponentLike,
     WebShellComponentLike,
 )
+
+def _label_key(label: object) -> str:
+    """Stable string id; prefer Enum.value over ``ComponentLabel.NAME`` repr."""
+    value = getattr(label, "value", None)
+    if isinstance(value, str) and value:
+        return value
+    return str(label)
 
 
 def _skin_side_from_label(label: object) -> str | None:
@@ -54,8 +57,7 @@ def build_shell_midline_strips(
 ) -> tuple[ShellMidlineStrip, ...]:
     """Extract per-subcomponent midline strips from a :class:`SectionMidlineHost`.
 
-    Iterates ``components_unrotated`` (skin + webs) then
-    ``spar_cap_components_unrotated`` (caps), calls ``midline_polyline()``
+    Iterates ``components_unrotated`` (skin + webs), calls ``midline_polyline()``
     on each subcomponent in its chord frame, and maps each polyline into the
     canonical **B frame** via
     :func:`coordinate_frames.naca_to_twisted_pitch_axis_blade_frame`
@@ -80,9 +82,11 @@ def build_shell_midline_strips(
         Section implementing :class:`SectionMidlineHost`.
     twist_rad
         Section twist in radians applied to every chord-frame midline.
-    n_web_samples, n_cap_samples
-        Number of sample points for web / cap polylines.  Skin midline
-        resolution is set by the underlying airfoil tessellation.
+    n_web_samples
+        Number of sample points for web polylines. Skin midline resolution
+        is set by the underlying airfoil tessellation.
+    n_cap_samples
+        Ignored. Cap footprints are offset regions on the skin mid, not strips.
     chord_m
         Section chord [m] for the pivot shift. Defaults to
         ``section.airfoil.chord``.
@@ -93,7 +97,7 @@ def build_shell_midline_strips(
     Returns
     -------
     tuple[ShellMidlineStrip, ...]
-        Strips in dict-insertion order: skins + webs first, then caps.
+        Skin and web strips (web before skin). No extra cap polyline.
     """
     from implicit_geometry_kernel.frames import (
         PIVOT_FRACTION_DEFAULT,
@@ -124,17 +128,10 @@ def build_shell_midline_strips(
         )
 
     # Web before skin: webs also satisfy SkinShellComponentLike (thickness + midline).
-    def _label_key(label: object) -> str:
-        """Stable string id; prefer Enum.value over ``ComponentLabel.NAME`` repr."""
-        value = getattr(label, "value", None)
-        if isinstance(value, str) and value:
-            return value
-        return str(label)
-
     strips: list[ShellMidlineStrip] = []
 
+    _ = n_cap_samples
     recipes = dict(getattr(section, "wall_recipes", None) or {})
-    cap_recipes = dict(getattr(section, "spar_cap_wall_recipes", None) or {})
     airfoil = getattr(section, "airfoil", None)
     if airfoil is None:
         raise ValueError("section must expose airfoil for recipe midline projection.")
@@ -146,7 +143,7 @@ def build_shell_midline_strips(
     skin_web_items: list[tuple[str, Any, str]] = []
     for key, wall in recipes.items():
         wt = wall_type_for_label(key)
-        if wt is None or not wt.has_midline or wt.kind == "cap":
+        if wt is None or not wt.has_midline or not wt.on_shell_product:
             continue
         role = wt.cell_face_kind or wt.kind
         skin_web_items.append((key, wall, role))
@@ -155,7 +152,7 @@ def build_shell_midline_strips(
         for label, _comp in components_S.items():
             key = _label_key(label)
             wt = wall_type_for_label(key)
-            if wt is None or not wt.has_midline or wt.kind == "cap":
+            if wt is None or not wt.has_midline or not wt.on_shell_product:
                 continue
             skin_web_items.append((key, None, wt.cell_face_kind or wt.kind))
 
@@ -194,11 +191,49 @@ def build_shell_midline_strips(
                 )
             )
 
-    cap_items: list[tuple[str, Any]] = []
+    return tuple(strips)
+
+
+def build_solid_cap_strips(
+    section: SectionMidlineHost,
+    *,
+    twist_rad: float,
+    n_cap_samples: int = 80,
+    chord_m: float | None = None,
+    pivot_fraction: float | None = None,
+) -> tuple[ShellMidlineStrip, ...]:
+    """Cap recipe midlines for stacked **solids** on ``cut.walls``.
+
+    Not the conformal mesh product. ``result.midline_strips`` stays skin+web;
+    eccentricity for constitutives is ``offset_regions()``, not this polyline.
+    """
+    from implicit_geometry_kernel.frames import (
+        PIVOT_FRACTION_DEFAULT,
+        naca_to_twisted_pitch_axis_blade_frame,
+    )
+
+    if chord_m is None:
+        airfoil = getattr(section, "airfoil", None)
+        chord_m = float(getattr(airfoil, "chord", 0.0) or 0.0)
+    chord_m = float(chord_m)
+    if chord_m <= 0.0:
+        raise ValueError(
+            "chord_m is required for the chord→B pivot shift and could not be read "
+            "from section.airfoil.chord; pass chord_m explicitly."
+        )
+    f_pivot = (
+        PIVOT_FRACTION_DEFAULT if pivot_fraction is None else float(pivot_fraction)
+    )
+    airfoil = getattr(section, "airfoil", None)
+    if airfoil is None:
+        raise ValueError("section must expose airfoil for recipe midline projection.")
+    recipes = dict(getattr(section, "wall_recipes", None) or {})
+    cap_recipes = dict(getattr(section, "spar_cap_wall_recipes", None) or {})
     try:
         cap_components = dict(section.spar_cap_components_unrotated or {})
     except AttributeError:
         cap_components = {}
+    strips: list[ShellMidlineStrip] = []
     for label in cap_components:
         key = _label_key(label)
         wall = cap_recipes.get(key) or recipes.get(key)
@@ -207,151 +242,25 @@ def build_shell_midline_strips(
                 f"No cap wall recipe for {key!r}; "
                 "MultiCellSection must author CapWall recipes at assemble."
             )
-        cap_items.append((key, wall))
-
-    for key, wall in cap_items:
         mid_S = wall.to_midline(airfoil, n=n_cap_samples)
         strips.append(
             ShellMidlineStrip(
                 label=key,
                 kind="cap",
-                midline_twisted_pitch_axis_blade_frame=_to_twisted_pitch_axis_blade_frame(mid_S),
+                midline_twisted_pitch_axis_blade_frame=naca_to_twisted_pitch_axis_blade_frame(
+                    mid_S, twist_rad, chord_m, f_pivot
+                ),
                 thickness_m=float(wall.cap_height),
                 closed=False,
                 surface=str(wall.surface),
             )
         )
-
-    return tuple(_insert_web_cap_junction_nodes(strips))
-
-
-def _insert_web_cap_junction_nodes(
-    strips: list[ShellMidlineStrip],
-) -> list[ShellMidlineStrip]:
-    """Put a node on **both** strips wherever a web crosses a cap.
-
-    Webs and caps are sampled independently, so a junction between them lands
-    part-way along a segment of one or both and no shared node exists. Before
-    this pass the mesh held together only because ``section_mesh`` clusters
-    endpoints within ``ENDPOINT_TOL_FRAC`` — 0.6 % of chord, 6 mm at 1 m —
-    with measured gaps of 1.88 mm at cap ends and 1.95 mm at interior
-    crossings. That is a tolerance scaled by *chord*, not by mesh density, so
-    refining the mesh erodes the margin instead of improving it.
-
-    Both junction kinds are the same computation: intersect the web's axis with
-    the cap polyline. Nothing is relocated and no membership tolerance is
-    needed — the crossing is solved for rather than searched for.
-
-    Only the **web** is given nodes here. The cap's interior is rebuilt later by
-    ``resample_cap_interiors_from_skin_rays``, which would discard anything
-    inserted at this stage; the cap side is closed afterwards by
-    ``insert_cap_web_interior_junctions``, once its polyline is final.
-    Inserting into the web is exact because a web midline is straight.
-    """
-    from implicit_geometry_kernel.section.assembly.members import wall_cell_face
-
-    web_indices = [i for i, s in enumerate(strips) if wall_cell_face(s.label) == "web"]
-    cap_indices = [i for i, s in enumerate(strips) if wall_cell_face(s.label) == "cap"]
-    if not web_indices or not cap_indices:
-        return strips
-
-    points_along_web: dict[int, list[float]] = {}
-
-    for web_index in web_indices:
-        web_points = np.asarray(
-            strips[web_index].midline_twisted_pitch_axis_blade_frame, dtype=float
-        )
-        if web_points.shape[0] < 2:
-            continue
-        start = web_points[0]
-        axis = web_points[-1] - start
-        axis_length = float(np.linalg.norm(axis))
-        if axis_length <= 1e-12:
-            continue
-        direction = axis / axis_length
-
-        for cap_index in cap_indices:
-            cap_points = np.asarray(
-                strips[cap_index].midline_twisted_pitch_axis_blade_frame, dtype=float
-            )
-            if cap_points.shape[0] < 2:
-                continue
-            segment_start = cap_points[:-1]
-            segment = cap_points[1:] - segment_start
-
-            denominator = (
-                segment[:, 0] * direction[1] - segment[:, 1] * direction[0]
-            )
-            usable = np.abs(denominator) > 1e-14
-            if not np.any(usable):
-                continue
-            safe = np.where(usable, denominator, 1.0)
-            offset = start - segment_start
-            along_segment = (
-                offset[:, 0] * direction[1] - offset[:, 1] * direction[0]
-            ) / safe
-            crossing = segment_start + along_segment[:, None] * segment
-            along_axis = (crossing - start) @ direction
-
-            hit = (
-                usable
-                & (along_segment >= -1e-12)
-                & (along_segment <= 1.0 + 1e-12)
-                & (along_axis >= -1e-12)
-                & (along_axis <= axis_length + 1e-12)
-            )
-            for segment_index in np.flatnonzero(hit):
-                t_axis = float(along_axis[segment_index])
-                u_segment = float(np.clip(along_segment[segment_index], 0.0, 1.0))
-                crossing_point = (
-                    segment_start[segment_index]
-                    + u_segment * segment[segment_index]
-                )
-                # Only junctions at a cap **end** are handled here. Interior
-                # crossings must not be: inserting a web vertex exactly on the
-                # cap makes the two polylines touch rather than cross, and
-                # `insert_cap_web_interior_junctions` — which finds interior
-                # junctions by polyline-polyline intersection after the cap has
-                # been resampled — then stops finding them. Measured: doing it
-                # here moved the web gap to 0 but pushed the cap gap from 0 to
-                # 1056 um on 4D-F. See docs/bug_log.md.
-                at_cap_end = (
-                    min(
-                        float(np.linalg.norm(crossing_point - cap_points[0])),
-                        float(np.linalg.norm(crossing_point - cap_points[-1])),
-                    )
-                    <= 1e-9
-                )
-                if at_cap_end and 1e-9 < t_axis < axis_length - 1e-9:
-                    points_along_web.setdefault(web_index, []).append(t_axis)
-
-    if not points_along_web:
-        return strips
-
-    out = list(strips)
-
-    for web_index, parameters in points_along_web.items():
-        web_points = np.asarray(
-            strips[web_index].midline_twisted_pitch_axis_blade_frame, dtype=float
-        )
-        start = web_points[0]
-        direction = web_points[-1] - start
-        direction = direction / float(np.linalg.norm(direction))
-        existing = (web_points - start) @ direction
-        merged = np.unique(
-            np.round(np.concatenate([existing, np.asarray(parameters)]), 12)
-        )
-        out[web_index] = replace(
-            out[web_index],
-            midline_twisted_pitch_axis_blade_frame=start
-            + merged[:, None] * direction,
-        )
-
-    return out
+    return tuple(strips)
 
 
 __all__ = [
     "build_shell_midline_strips",
+    "build_solid_cap_strips",
     "SectionMidlineHost",
     "SkinShellComponentLike",
     "WebShellComponentLike",

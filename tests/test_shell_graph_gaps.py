@@ -24,15 +24,25 @@ def _geo():
         Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
         Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3),
     ]
-    return BladeGeometry(stations, "2D-F", 0.003, spar_cap_thickness=0.008,
-                         shear_web_thickness=0.002, web_positions=(0.18, 0.48))
+    return BladeGeometry(stations, "2D-F-LC-0R", 0.003, spar_cap_thickness=0.008,
+                         shear_web_thickness=0.002, web_positions=(0.18, 0.48), pivot_fraction=0.3)
 
 
 def _catalogue():
     for path in (ROOT / "reference_blades", ROOT.parent / "reference-blades"):
-        if (path / "iea3.4_iea10" / "IEA-10-198-RWT.yaml").is_file():
+        if (path / "wind" / "iea3.4_iea10" / "IEA-10-198-RWT.yaml").is_file() or (
+            path / "iea3.4_iea10" / "IEA-10-198-RWT.yaml"
+        ).is_file():
             return path
     return None
+
+
+def _catalogue_yaml(rel: str):
+    root = _catalogue()
+    wind = root / "wind" / rel
+    if wind.is_file():
+        return wind
+    return root / rel
 
 
 def _max_abs_phi(field, pts):
@@ -148,7 +158,7 @@ def test_g6_web_foot_vs_stacked_loop():
             skins = np.vstack([w.xy for w in cut.walls if w.kind == "skin"])
             skin_gaps.append(float(np.min(np.linalg.norm(skins - foot, axis=1))))
     assert max(gaps) == pytest.approx(0.0)
-    assert min(skin_gaps) == pytest.approx(0.004, rel=0.02)
+    assert min(skin_gaps) == pytest.approx(0.0, abs=1e-9)
     assert len(gaps) == 4
 
 
@@ -156,8 +166,8 @@ def test_g6_web_foot_vs_stacked_loop():
 def test_g6_iea10_tip_section_at_builds_or_drops_web():
     import runpy
 
-    ns = runpy.run_path(str(ROOT / "examples" / "09_reference_blades" / "reference_blades.py"))
-    _name, geo, _ = ns["load_windio"](_catalogue() / "iea3.4_iea10" / "IEA-10-198-RWT.yaml")
+    ns = runpy.run_path(str(ROOT / "examples" / "blade" / "08_reference_blades" / "reference_blades.py"))
+    _name, geo, _ = ns["load_windio"](_catalogue_yaml("iea3.4_iea10/IEA-10-198-RWT.yaml"))
     z_tip = float(geo.stations[-1].z)
     cut = geo.section_at(z_tip)
     assert cut.walls
@@ -187,9 +197,10 @@ def test_g7_section_at_lru_no_bvh():
 # --- G8 ----------------------------------------------------------------------
 
 def test_g8_example09_reads_windio_web_positions():
-    src = (ROOT / "examples" / "09_reference_blades" / "reference_blades.py").read_text(encoding="utf-8")
+    src = (ROOT / "examples" / "blade" / "08_reference_blades" / "reference_blades.py").read_text(encoding="utf-8")
     assert "web_positions=(0.22, 0.50)" not in src
-    assert "web_positions_from_windio_structure" in src
+    assert "web_positions_fn_from_windio_structure" in src
+    assert "cap_windows=(cap_windows if not web_positions else None)" not in src
 
 
 @pytest.mark.skipif(_catalogue() is None, reason="reference-blades catalogue not cloned")
@@ -198,7 +209,7 @@ def test_g8_iea10_web_positions_from_yaml_anchors():
 
     from implicit_geometry_kernel.blade.windio import web_positions_from_windio_structure
 
-    path = _catalogue() / "iea3.4_iea10" / "IEA-10-198-RWT.yaml"
+    path = _catalogue_yaml("iea3.4_iea10/IEA-10-198-RWT.yaml")
     structure = yaml.safe_load(path.read_text(encoding="utf-8"))["components"]["blade"]["structure"]
     pos = web_positions_from_windio_structure(structure)
     assert pos is not None
@@ -217,6 +228,17 @@ def test_g9_cores_and_inserts_are_solids_not_loop_runs():
     assert "core" not in names
     assert "insert" not in names
     assert {r.surface for r in g.runs()} <= {"skin", "web"}
+
+
+def test_g9_opt_in_core_runs_from_polygon_boundaries():
+    geo = _geo()
+    g = geo.shell_graph(4.0, include_solids=True)
+    cores = [r for r in g.solids if r.surface == "core"]
+    assert cores
+    assert all(len(r.points) >= 4 for r in cores)
+    default = geo.shell_graph(4.0)
+    assert default.solids == ()
+    assert {r.surface for r in default.runs()} <= {"skin", "web"}
 
 
 # --- G10 / G11 ----------------------------------------------------------------
@@ -244,9 +266,7 @@ def test_wp6_te_classifier_is_oml_not_merged_loop():
     ring = geo.oml_polyline(4.0)
     oml = classify_trailing_edge(ring)
     g = geo.section_at(4.0).shell_graph()
-    loop = np.vstack([r.points for r in g.loop])
-    merged = classify_trailing_edge(loop)
+    stacked = classify_trailing_edge(g)
     assert oml in {"sharp", "blunt"}
-    assert merged in {"sharp", "blunt"}
-    # inventory: both happen to classify; the API still takes an OML ring by contract
+    assert stacked in {"sharp", "blunt"}
     assert oml == "sharp"

@@ -1,5 +1,7 @@
 # Merged shell graph — Pass 2 gap inventory
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 Evidence for G1–G11 and the parked extract/TE/BVH work. Waves 0–7 are shipped; G10/G11 stay parked.
 Characterization: [`tests/test_shell_graph_gaps.py`](../../../tests/test_shell_graph_gaps.py).
 
@@ -22,7 +24,7 @@ Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm,
 | **G9** | Wave 7 shipped | Cores / TE inserts stay constructive solids; not on `shell_graph` |
 | **G10** | consumer-only | `ThinWalledSection.from_geometry` is not in this repo |
 | **G11** | kernel-out-of-scope | No PCOMP / ply stagger in `src/implicit_geometry_kernel` |
-| **WP6** | open | `classify_trailing_edge` is an OML helper; `feature_curve` unkeyed; no BVH |
+| **WP6** | parked | named `feature_curve(geo, name_a, name_b, zs)` exists; TE classifier stays an OML helper; no BVH |
 
 Implementation sequence is [Waves](#waves) below. **G4 is locked:** keep the `T` step; document Newton limits at partition vertices (no geometric taper).
 
@@ -34,11 +36,11 @@ Oracles (Wave 0): **loft strips** from `shell_graph` polylines; **in-plane snap*
 
 **Status:** Wave 3 shipped.
 
-**Today:** [`build_shell_midline_strips`](../../../src/implicit_geometry_kernel/section/midlines/shell_midline_export.py) still appends `kind="cap"` strips for **solids**. [`shell_strips_from_graph`](../../../src/implicit_geometry_kernel/blade/cut.py) is the shell producer: one `ShellMidlineStrip` per graph run (combined `T`, cap as partition `kind`). [`ShellMidlineStrip`](../../../src/implicit_geometry_kernel/contract/shell_midline_strip.py) is **not** versioned. `cut.walls` still lists solid caps.
+**Today:** [`build_shell_midline_strips`](../../../src/implicit_geometry_kernel/section/midlines/export.py) is skin+web (conformal mesh). Cap solids stay on [`cut.walls`](../../../src/implicit_geometry_kernel/blade/cut.py) with bonds; they are not a second mesh polyline. [`shell_strips_from_graph`](../../../src/implicit_geometry_kernel/blade/shell_graph.py) is the shell producer: one `ShellMidlineStrip` per graph run (`T = t_skin` on the loop, cap as partition `kind`, OFFSET on `offset_regions()`). [`ShellMidlineStrip`](../../../src/implicit_geometry_kernel/contract/shell_midline_strip.py) is **not** versioned.
 
 **Evidence (2D-F, z=4):** 10 `SectionWall` rows vs 8 shell strips / `ShellRun`s.
 
-**Out of repo:** `shell_mesh_inputs_from_geometry_result` still consumes the solids emit unless a downstream adapter is pointed at `shell_strips_from_graph`.
+**Out of repo:** adapters that counted cap rows on `result.midline_strips` should use `cut.walls` (solids) or `shell_strips_from_graph` (mesh).
 
 **Non-goals:** do not version `ShellMidlineStrip`; do not delete caps from `cut.walls`.
 
@@ -63,7 +65,7 @@ stays `0.0`.
 
 **Status:** Wave 2 shipped.
 
-**Today:** example 09 [`_wall_faces`](../../../examples/09_reference_blades/reference_blades.py) lofts `a.keys() & b.keys()`. Missing names are omitted. No kernel `TopologyEvent`. Fixture `dropped_webs` at z=4 is empty. Cap runout / bay split would lerp silently if someone interpolated by index instead of name; the example does not lerp.
+**Today:** example 09 [`_wall_faces`](../../../examples/blade/08_reference_blades/reference_blades.py) lofts `a.keys() & b.keys()`. Missing names are omitted. No kernel `TopologyEvent`. Fixture `dropped_webs` at z=4 is empty. Cap runout / bay split would lerp silently if someone interpolated by index instead of name; the example does not lerp.
 
 **API:** `topology_diff(a, b)` emits `cap_runout` / `dropped_web` / `bay_split`
 (and onset / added_web / bay_merge). `shared_loft_names` is the loft rule.
@@ -91,20 +93,9 @@ Example 09 uses it. No silent label lerp.
 
 **Status:** Wave 0 shipped (Pass 1 only checked midpoints).
 
-**Today:** two oracles — discrete `shell_graph` polylines vs `wall_mid_sdf` (OML polygon + stack `T`). Example 05 discrete stack pairing is **20.5 µm** (cap vs skin vertices along the bond, not this SDF).
+**Today:** both oracles sit on the **skin mid**. `shell_graph` no longer moves cap-footprint vertices toward the stack NA. Cap-end `|φ|` matches run interiors. Constitutive eccentricity is `offset_regions()` (`t_cap/2` inward), not a geometric kink.
 
-**Evidence (2D-F, z=4):**
-
-| Sample | max \|φ\| of `wall_mid_sdf` |
-|---|---|
-| Cap-run **midpoint** | ~0 (1e-17) |
-| All **cap** vertices | **4.000 mm** (one partition end) |
-| All **skin** vertices | **4.000 mm** |
-| After `snap_wall_mid` on cap vertices | 4.35×10⁻⁷ m; 98.6 % converged |
-
-The 4 mm spike is `t_cap/2` at the cap/skin joint — the polyline sits on the stacked mid, the SDF offset is still the skin mid (or the reverse) at that vertex. Pass 1 `|φ| < 5e-4` holds only away from the joint.
-
-**Policy (Wave 0):** loft / conformal strips use `shell_graph` polylines; in-plane snap uses `wall_mid_sdf` + `GeometrySolver`. Joint vertices are **out of** the Pass 1 `|φ| < 5e-4` check. Do not treat 5e-4 as a joint-vertex spec. Characterization stays in [`tests/test_shell_graph_gaps.py`](../../../tests/test_shell_graph_gaps.py) — do not fail midpoints at 4 mm.
+**Policy:** loft / conformal strips use `shell_graph` polylines; in-plane snap uses `wall_mid_sdf` + `GeometrySolver`. Characterization stays in [`tests/test_shell_graph_gaps.py`](../../../tests/test_shell_graph_gaps.py).
 
 ---
 
@@ -138,11 +129,13 @@ Gauge tables still come from layer names.
 
 ## G9 — Cores / TE inserts / sandwich
 
-**Status:** Wave 7 shipped (solids-only).
+**Status:** opt-in graph runs.
 
-**Today:** sandwich cores and `trailing_edge_insert` are **constructive solids** (`CoreWall.to_midline` is not implemented). `_mid_surface` merges caps into skins + webs only. 2D-F `shell_graph` run names contain neither `core` nor `insert`; `surface` is only `skin` / `web`. `cut.walls` kinds are `skin` / `cap` / `web`.
+**Today:** sandwich cores and inserts remain **constructive solids** (`CoreWall.to_midline` / `InsertWall.to_midline` raise). `_mid_surface` still merges caps into skins + webs only. Default 2D-F `shell_graph` run names contain neither `core` nor `insert`; `surface` is `skin` / `web` (plus `rib` / `stringer` on faces and branches). `cut.walls` kinds stay `skin` / `cap` / `web`.
 
-**Decision:** keep them off the loop. Area/inertia use the polygon path; shell loft uses the stacked skin+web graph. Put them on the graph only if a later consumer WP needs those runs.
+**Opt-in:** `shell_graph(cut, include_solids=True)` (also `BladeGeometry.shell_graph(z, include_solids=True)` and `SectionCut.shell_graph(include_solids=True)`) builds `ShellRun`s with `surface` `"core"` / `"insert"` from `to_boundary_polygon` rings, stored on `ShellGraph.solids` and included in `runs()`. Off by default so goldens and 2D-F run-name tests stay put.
+
+**Decision:** keep them off the loop unless a loft consumer asks. Area/inertia keep the polygon path.
 
 ---
 
@@ -166,9 +159,13 @@ Gauge tables still come from layer names.
 
 ## Former WP6 — feature-curve keys, TE on merged loop, BVH, IEA 10 tip
 
+Parked, not a new wave. Named `feature_curve(geo, name_a, name_b, zs)` already
+delegates to `partition_edge_curve`. The TE classifier remaining as an OML helper
+is parked.
+
 | Item | Evidence |
 |---|---|
-| Feature-curve keys | `feature_curve` has no partition names (G2) |
+| Feature-curve keys | named form exists; Newton form stays two SDFs + a guess |
 | TE on merged loop | `classify_trailing_edge(oml)` and on the stacked loop are both `sharp` on this NACA; the helper is still an **OML-ring** API |
 | BVH on `LoftedPolygonSDF` | no `bvh` attribute (G7) |
 | IEA 10 tip | G6: loft re-resolves / drops webs (Wave 4) |
@@ -215,6 +212,8 @@ Depends on named runs (Wave 1).
 - **D2.1** Event type: cap runout, dropped web, bay split. No silent label lerp.
 - **D2.2** Loft rule: missing name → omit strip (already example 09 `keys() ∩ keys()`); promote that to a kernel helper.
 - **D2.3** Tests with a dropped web / missing run. The 2D-F z=4 fixture has empty `dropped_webs`; use a dedicated station.
+
+**Locked resampling (post-Wave 2, not G10):** `LockedLoftPlan` holds the same chord count on every run so a surviving name can loft through a topology event. `resample_locked` writes partition-edge vertices once so adjacent skin/cap strips share a seam. `shell_loft_zones` still records Wave 2 name-signature bands. Figure loft and `write_mid_surfaces` now join with `WallRegionGraph` / `map_vertex` / `loft_mapped_strips` (TE wrap and 1-station paint flicker are transition bands, not holes). A conformal mesher stays out of this repo.
 
 ### Wave 3 — One shell hand-off (G1) (shipped)
 

@@ -9,14 +9,15 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon, Rectangle
 
-from implicit_geometry_kernel.section.api.factory import build_section_view, resolve_system_type
+from implicit_geometry_kernel.catalogue import resolve_system_type
+from implicit_geometry_kernel.section.assembly import build_section_view
 from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.properties.export import SectionPropertiesReport
-from plotting.plot import plot_section_with_quadtree
+from implicit_geometry_kernel.plotting.plot import plot_section_with_quadtree
 
 
-def _report(key: str = "2D-CN"):
+def _report(key: str = "2D-CN-LC-0R"):
     airfoil = AirfoilSDF.from_naca("2412", n_points=100, chord=1.0)
     layout = resolve_system_type(key)
     section = build_section_view(airfoil, layout, twist_angle_rad=0.0)

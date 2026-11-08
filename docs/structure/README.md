@@ -1,12 +1,29 @@
-# structure
+# Structure
 
-`implicit_geometry_kernel.structure` describes what a thin-walled structure is made of
-and combines the parts into signed-distance fields. It is geometry only: thicknesses are
-span laws in metres. Constitutive plies and meshers belong to consuming tools;
-this package supplies the geometry seams (`ThicknessLaw` in metres, named edges).
+↑ [docs](../README.md) · [src](../../src/implicit_geometry_kernel/structure/README.md) ·
+[examples](../../examples/structure/README.md) · [tests](../../tests/structure/README.md)
 
-It sits between `sdf` and `section` and imports only `sdf` (enforced by
-`tests/test_import_boundary.py`).
+This package describes the members of a thin-walled structure and combines them
+into signed-distance fields. Thicknesses are span laws in metres. Constitutive
+plies and meshers belong to consuming tools.
+
+It sits between `sdf` and `section` and imports only `sdf`
+(`tests/test_import_boundary.py`).
+
+Let \(\phi_{\mathrm{OML}}\) be the outer-mould signed distance and \(T(x,y,z)\)
+the wall thickness (base law, replaced by the highest-priority partition inside
+its footprint, plus stacked layers). Then
+
+$$
+\phi_{\mathrm{mid}} = \phi_{\mathrm{OML}} + T/2,
+\qquad
+\phi_{\mathrm{cavity}} = \phi_{\mathrm{OML}} + T.
+\tag{1}
+$$
+
+The mid-surface \(\phi_{\mathrm{mid}}=0\) is the wall reference. The cavity is
+negative in the hollow interior. The material field is negative inside any
+member; overlapping members resolve by `FeatureSpec.priority`.
 
 ## The four contribution kinds
 
@@ -19,18 +36,15 @@ It sits between `sdf` and `section` and imports only `sdf` (enforced by
 
 ## Fields of an assembled `Structure`
 
-With `T(x, y, z)` the wall thickness (the base law, replaced by the highest-priority
-partition inside its footprint, plus any stacked layers):
+- `wall_mid`: \(\phi_{\mathrm{mid}}\) in \((1)\);
+- `cavity`: \(\phi_{\mathrm{cavity}}\) in \((1)\);
+- `material`: negative inside any member; `meta` is the owning feature id.
+  Default priorities: core \(0\), skin \(1\), web and stringer \(2\), cap \(3\),
+  transverse \(4\), bond \(5\). The field is clipped to the OML.
 
-- `wall_mid = phi_OML + T / 2`: zero on the wall reference surface;
-- `cavity = phi_OML + T`: negative in the hollow inside the wall;
-- `material`: negative inside any member, `meta` = the owning member's feature id. Where
-  members overlap the higher `FeatureSpec.priority` wins (core 0, skin 1, web and
-  stringer 2, cap 3, transverse 4, bond 5 by default). It is clipped to the OML.
-
-`events` are the stations where a branch starts or ends inside the span;
-`forced_stations()` adds the transverse members. A spanwise mesh should contain all of
-them so its topology changes only at a station.
+`events` are stations where a branch starts or ends; `forced_stations()` adds
+transverse members. A spanwise mesh should contain all of them so that topology
+changes only at a station.
 
 ## Adding a member type
 
@@ -56,11 +70,24 @@ knots), `ScaledLaw`, `SumLaw`, `ProductLaw`. They are picklable objects, not lam
 | shear webs | branches whose mid-surface is the web axis |
 | sandwich cores, edge inserts | regions |
 
-The builders live in `section/assembly/members.py`; `plan.py` resolves the inputs
-first. Each contribution carries the section component it made as its `source`, and the
-section's labelled components are those, in build order. `MultiCellSection.structure`
-returns the assembled structure; pass `registry=` to add builders.
+Two hosts remain, and they are not merged. `structure.MemberBuilder.build` is the
+SDF host. `SECTION_BUILDERS` in `section/assembly/members.py` is the constructive
+host: each builder is a `MemberBuilder` that also carries `WallTypeMixin` flags so
+later stages (boundary, midlines, cells, properties) dispatch without name prefixes.
+`plan.py` resolves inputs first. Each contribution carries the section component it
+made as its `source`. `MultiCellSection.structure` returns the assembled structure;
+pass `registry=` to add builders.
 
-Caps are a separate layer under the skin, so the geometry matches the section's
-existing walls. A merged cap-and-skin laminate (one mid-surface) is planned as an
-opt-in section option.
+Caps are a separate stacked layer under the skin by default (`merge_cap_and_skin=False`),
+so golden numbers stay put. With the flag on, `BladeGeometry.section_at` replaces the
+stacked walls with one laminate per `shell_graph` run (combined thickness).
+
+## Seams for consumers (geometry only)
+
+These live on `BladeGeometry` / `shell_graph`. Constitutive plies and Gmsh stay out.
+
+| Seam | What the kernel hands off |
+|------|---------------------------|
+| Thickness | `ThicknessLaw`: \(T(z,s)\) in metres (`structure.laws`; `BladeGeometry.thickness_law`) |
+| Edges | named partition and ply-drop curves (`shell_graph.partition_edges`, `named_edges`) plus `forced_stations` |
+| Size | `size_fields`: distance, thickness, curvature, member id at sample points |

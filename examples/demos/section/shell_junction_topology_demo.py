@@ -36,7 +36,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     DEFAULT_DPI,
     add_output_and_presentation_args,
     apply_presentation_style,
@@ -47,7 +47,7 @@ from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     MultiCellSection,
 )
-from plotting.plot import (
+from implicit_geometry_kernel.plotting.plot import (
     plot_shell_midline_strip_topology,
 )
 from implicit_geometry_kernel.section.midlines.export import (
@@ -59,7 +59,7 @@ from implicit_geometry_kernel.section.midlines.ring_geometry import (
 from implicit_geometry_kernel.section.junctions.prepare import (
     prepare_shell_midline_junctions,
 )
-from plotting.frames import section_plot_axes
+from implicit_geometry_kernel.plotting.frames import section_plot_axes
 
 _DPI = DEFAULT_DPI
 _FIGSIZE_FULL = (14.0, 5.5)
@@ -166,7 +166,7 @@ def _cap_web_shared_vertices(strips, *, tol_m: float = 5e-4) -> list[dict]:
 
 
 def _zoom_axes(ax, centre: np.ndarray, half_span: float) -> None:
-    from plotting.plot_section import (
+    from implicit_geometry_kernel.plotting.plot_section import (
         apply_structural_section_axes,
     )
 

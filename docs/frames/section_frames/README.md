@@ -61,7 +61,7 @@ flowchart LR
 
 | Frame | Origin | Twist | Typical use |
 |-------|--------|-------|-------------|
-| **S** | Pitch pivot (\(\approx 0.333\,c\) from LE) | Zero-twist outline | Authoring / IR / constructive midlines before handoff |
+| **S** | Pitch pivot (required `BladeGeometry.pivot_fraction` when lofting; standalone section default \(0.333\,c\)) | Zero-twist outline | Authoring / IR / constructive midlines before handoff |
 | **S′** | Section **centroid** (axes parallel to S) | Zero-twist | Fibre depth, parallel-axis / beam stress in S′ |
 | **B** | Pitch pivot in blade-installed attitude | Outline = S rotated by geometric twist about \(Z\) | Shell midlines, FE mesh, B beam resultants |
 
@@ -78,14 +78,15 @@ Stiffness naming in B (reminder): \(\mathrm{EI}_{\mathrm{flap}} = E\,I_{yy,B}\) 
 
 ## NACA adapter (not a frame)
 
-Raw airfoil storage is NACA-like \((x_{\mathrm{chord}},\, y_{\mathrm{thickness}})\) with LE at \(x=0\). That pair is **not** S and **not** B.
+Raw aerofoil storage is NACA-like \((x_{\mathrm{chord}},\, y_{\mathrm{thickness}})\) with the leading edge at \(x=0\). That pair is neither \(\mathrm{S}\) nor \(\mathrm{B}\).
 
-\[
+$$
 X_S = y_{\mathrm{thickness}},\qquad
 Y_S = x_{\mathrm{chord}} - f_{\mathrm{pivot}}\, c
-\]
+\tag{1}
+$$
 
-with \(f_{\mathrm{pivot}} \approx 0.333\). Both the **component swap** and the **pivot shift** are required: swap puts chord-normal first (\(X\)); shift places the origin on the pitch axis so \(Y_{\mathrm{LE}} < 0 < Y_{\mathrm{TE}}\).
+with \(f_{\mathrm{pivot}} \approx 1/3\). Both the component swap and the pivot shift are required: the swap places chord-normal first (\(X\)); the shift places the origin on the pitch axis so that \(Y_{\mathrm{LE}} < 0 < Y_{\mathrm{TE}}\).
 
 Do **not** plot raw NACA with the B/S recipe without
 `naca_to_zero_twist_pitch_axis_station_frame` (or
@@ -96,21 +97,23 @@ Do **not** plot raw NACA with the B/S recipe without
 
 ## S ↔ B rotation
 
-On **canonical** \((X,Y)\) arrays, geometric twist \(\theta\) (radians) maps S → B as \(R(-\theta)\):
+On **canonical** \((X,Y)\) arrays, geometric twist \(\theta\) (radians) maps \(\mathrm{S}\to\mathrm{B}\) as
 
-\[
+$$
 X_B = \cos\theta\, X_S + \sin\theta\, Y_S,\qquad
 Y_B = -\sin\theta\, X_S + \cos\theta\, Y_S.
-\]
+\tag{2}
+$$
 
 **Warning:** a legacy **swapped** \((Y,X)\) array needs the opposite matrix polarity for the same physical rotation (\(P R(+t) P = R(-t)\)). Passing swapped points into `rotate_S_to_B` rotates them the wrong way. Prefer remapping to canonical order; `rotate_S_to_B_swapped_order` exists only as a quarantine bridge.
 
-Full geometry handoff NACA → B:
+The composite NACA\(\to\mathrm{B}\) hand-off is
 
-\[
+$$
 \texttt{chord\_to\_blade}
 = \texttt{rotate\_S\_to\_B}\circ\texttt{naca\_to\_S}.
-\]
+\tag{3}
+$$
 
 `rotate_S_to_B` alone on NACA vertices is **not** sufficient — it leaves a chordwise-first, LE-origin array.
 

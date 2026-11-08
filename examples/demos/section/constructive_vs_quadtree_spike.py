@@ -24,9 +24,11 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.section.spec.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.boundary.cores import emit_constructive_polygons
 from implicit_geometry_kernel.section.boundary.labels import is_constructive_label
@@ -42,7 +44,7 @@ from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
 def main() -> None:
     airfoil = AirfoilSDF.from_naca("2412", n_points=120, chord=1.0)
-    section = build_section_view(airfoil, resolve_system_type("2D-CN"), twist_angle_rad=0.0)
+    section = build_section_view(airfoil, resolve_system_type("2D-CN-LC-0R"), twist_angle_rad=0.0)
     spec = quadtree_spec_for_airfoil(airfoil, chord=1.0, max_depth=7, max_cells=150000)
 
     t0 = time.perf_counter()

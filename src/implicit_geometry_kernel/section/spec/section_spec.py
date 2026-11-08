@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, TypeAlias
@@ -201,9 +200,11 @@ class SectionSpec:
     twist_rad: float
     gauges: Gauges
     webs: tuple[float, ...] | None = None
+    web_indices: tuple[int, ...] | None = None
     web_y_anchors: tuple[tuple[float, float], ...] | None = None
     spar_cap_ply_pitch_m: float | None = None
     zone_gauges_m: tuple[tuple[str, float], ...] | None = None
+    pivot_fraction: float | None = None
 
     def __post_init__(self) -> None:
         if self.layout is None:
@@ -213,6 +214,8 @@ class SectionSpec:
         object.__setattr__(self, "twist_rad", float(self.twist_rad))
         if self.webs is not None:
             object.__setattr__(self, "webs", tuple(float(x) for x in self.webs))
+        if self.web_indices is not None:
+            object.__setattr__(self, "web_indices", tuple(int(i) for i in self.web_indices))
         if self.web_y_anchors is not None:
             object.__setattr__(
                 self,
@@ -221,6 +224,11 @@ class SectionSpec:
             )
         if self.spar_cap_ply_pitch_m is not None:
             object.__setattr__(self, "spar_cap_ply_pitch_m", float(self.spar_cap_ply_pitch_m))
+        if self.pivot_fraction is not None:
+            f = float(self.pivot_fraction)
+            if not 0.0 < f < 1.0:
+                raise ValueError("pivot_fraction must be a chord fraction in (0, 1)")
+            object.__setattr__(self, "pivot_fraction", f)
         g = self.gauges
         if min(g.skin_ss, g.skin_ps, g.cap) < 0.0:
             raise ValueError("gauges must be non-negative")
@@ -245,11 +253,12 @@ class SectionSpec:
         twist_rad: float | None = None,
         twist_angle_rad: float | None = None,
         twist_angle: float | None = None,
-        web_x_positions_m: Sequence[float] | None = None,
         web_offsets: Sequence[float] | None = None,
+        web_indices: Sequence[int] | None = None,
         web_y_coords: Sequence[tuple[float, float]] | None = None,
         spar_cap_ply_pitch_m: float | None = None,
         zone_gauges_m: Mapping[str, float] | None = None,
+        pivot_fraction: float | None = None,
         **_ignored: Any,
     ) -> SectionSpec:
         """Build a spec from the historical keyword form.
@@ -290,15 +299,9 @@ class SectionSpec:
             twist_angle_rad=twist_angle_rad,
             twist_angle=twist_angle,
         )
-        if web_offsets is not None and web_x_positions_m is not None:
-            raise ValueError("pass web_offsets or web_x_positions_m, not both")
-        if web_x_positions_m is not None:
-            warnings.warn(
-                "web_x_positions_m is deprecated; use web_offsets. Removed in 0.6.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        xs = web_offsets if web_offsets is not None else web_x_positions_m
+        if "web_x_positions_m" in _ignored:
+            raise TypeError("web_x_positions_m was removed in 0.6.0; use web_offsets")
+        xs = web_offsets
         web_t: float | tuple[float, ...]
         if isinstance(web, list):
             web_t = tuple(float(v) for v in web)
@@ -310,7 +313,9 @@ class SectionSpec:
             twist_rad=twist,
             gauges=Gauges(skin_ss=ss, skin_ps=ps, cap=float(cap), web=web_t),
             webs=None if xs is None else tuple(float(x) for x in xs),
+            web_indices=None if web_indices is None else tuple(int(i) for i in web_indices),
             web_y_anchors=None if web_y_coords is None else tuple((float(a), float(b)) for a, b in web_y_coords),
             spar_cap_ply_pitch_m=spar_cap_ply_pitch_m,
             zone_gauges_m=zone_items,
+            pivot_fraction=pivot_fraction,
         )

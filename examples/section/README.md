@@ -1,50 +1,29 @@
-# examples
+# section examples
 
-Short, runnable teaching scripts for `section`. Plot-heavy figure
-generation lives under `../demos/section/`.
+Numbered worked examples plus print-first teaching scripts.
 
-↑ `section_geometry` · `docs index`
+↑ [examples](../README.md) · [docs/section](../../docs/section/README.md)
 
-## Table of contents
+## Numbered
 
-1. [Run from repo root](#run-from-repo-root)
-2. [Newcomer path](#newcomer-path)
-3. [Scripts](#scripts)
-4. [See also](#see-also)
+| # | Folder | API |
+|---|---|---|
+| 01 | [01_layout_catalogue](01_layout_catalogue/) | `SYSTEM_TYPE_KEYS` |
+| 02 | [02_section_properties](02_section_properties/) | gated `"properties"` |
+| 03 | [03_mid_surface_and_cells](03_mid_surface_and_cells/) | walls, cells, `mid_surface()` |
 
----
-
-## Run from repo root
+## Teaching
 
 ```bash
-python examples/section/<script>.py
+python examples/section/teaching/01_first_station.py
 ```
 
-Or install editable (`pip install -e .`) and run the same path.
+1. [01_first_station.py](teaching/01_first_station.py) — one twin-web station, all gates
+2. [02_read_properties.py](teaching/02_read_properties.py) — `properties_map` table
+3. [03_resolve_then_size.py](teaching/03_resolve_then_size.py) — resolve once, two thickness trials
+4. [04_spanwise_web_anchors.py](teaching/04_spanwise_web_anchors.py) — anchored webs vs local fractions
+5. [05_midline_handoff.py](teaching/05_midline_handoff.py) — print `ShellMidlineStrip` fields (no mesher)
 
-## Newcomer path
-
-1. [`01_first_station.py`](01_first_station.py) — one twin-web station, all gates
-2. [`02_read_properties.py`](02_read_properties.py) — `properties_map` table
-3. [`03_resolve_then_size.py`](03_resolve_then_size.py) — resolve once, two thickness trials
-4. [`04_spanwise_web_anchors.py`](04_spanwise_web_anchors.py) — anchored webs vs local fractions
-5. `05_handoff_to_mesh.py` — midlines → `ShellMeshInputs`
-
-## Scripts
-
-| Script | Intent |
-|--------|--------|
-| [`01_first_station.py`](01_first_station.py) | NACA 2412 + `"2D-F"`; print labels / strips / loops (`--plot` optional) |
-| [`02_read_properties.py`](02_read_properties.py) | Area / centroid table from `"properties"` |
-| [`03_resolve_then_size.py`](03_resolve_then_size.py) | `resolve()` once, rebuild with `resolution=` |
-| [`04_spanwise_web_anchors.py`](04_spanwise_web_anchors.py) | Tip station: local fractions vs root-anchored drops |
-| `05_handoff_to_mesh.py` | `shell_mesh_inputs_from_geometry_result` (`--mesh` optional) |
-
-## See also
-
-- Progressive guide: `../docs/guides/quickstart.md`
-- Call recipes: `../docs/guides/caller_patterns.md`
-- Anatomy on a figure: `../docs/guides/anatomy_on_a_figure.md`
-- Feasibility / drops: `../docs/guides/feasibility_and_drops.md`
-- Geometry → mesh: `../docs/guides/geometry_to_mesh.md`
-- Figure demos: `../demos/section/`
+Guides: [quickstart](../../docs/section/guides/quickstart.md),
+[geometry_to_mesh](../../docs/section/guides/geometry_to_mesh.md).
+Gallery: [../demos/section/](../demos/section/).

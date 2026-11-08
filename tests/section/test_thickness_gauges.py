@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from implicit_geometry_kernel.section.api.kwarg_aliases import (
+from implicit_geometry_kernel.section.spec.section_spec import (
     resolve_shear_web_thickness,
     resolve_skin_gauges,
 )
@@ -49,10 +49,10 @@ def test_multicell_asymmetric_skin_recipes():
 
 
 def test_zone_gauges_m_preserve_independent_webs(airfoil=None):
-    from implicit_geometry_kernel.section.api.runner import (
-        SectionGeometryRunner,
+    from implicit_geometry_kernel.section.spec.runner import (
+        SectionGeometry,
     )
-    from implicit_geometry_kernel.section.layout.system_layout import (
+    from implicit_geometry_kernel.catalogue.system_layout import (
         resolve_system_type,
     )
     from implicit_geometry_kernel.sdf.shapes.airfoil import (
@@ -61,8 +61,8 @@ def test_zone_gauges_m_preserve_independent_webs(airfoil=None):
 
     af = airfoil or AirfoilSDF.from_naca("2412", n_points=80, chord=1.0)
     result = (
-        SectionGeometryRunner(
-            layout=resolve_system_type("2D-F"),
+        SectionGeometry(
+            layout=resolve_system_type("2D-F-LC-0R"),
             airfoil=af,
             zone_gauges_m={
                 "skin:suction": 0.004,
@@ -89,10 +89,10 @@ def test_zone_gauges_m_preserve_independent_webs(airfoil=None):
 
 
 def test_prep_key_distinguishes_unequal_zone_maps():
-    from implicit_geometry_kernel.section.api.worker import (
+    from implicit_geometry_kernel.section.spec.worker import (
         section_geometry_prep_key,
     )
-    from implicit_geometry_kernel.section.layout.system_layout import (
+    from implicit_geometry_kernel.catalogue.system_layout import (
         resolve_system_type,
     )
     from implicit_geometry_kernel.sdf.shapes.airfoil import (
@@ -100,7 +100,7 @@ def test_prep_key_distinguishes_unequal_zone_maps():
     )
 
     af = AirfoilSDF.from_naca("2412", n_points=40, chord=1.0)
-    layout = resolve_system_type("2D-F")
+    layout = resolve_system_type("2D-F-LC-0R")
     common = {
         "skin:suction": 0.004,
         "skin:pressure": 0.004,

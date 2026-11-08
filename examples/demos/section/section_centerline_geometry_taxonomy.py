@@ -32,22 +32,22 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     save_figure,
 )
 
 
 def _all_layout_keys() -> tuple[str, ...]:
-    from implicit_geometry_kernel.section.layout.system_layout import (
-        SYSTEM_TYPE_KEYS,
+    from implicit_geometry_kernel.catalogue.system_layout import (
+        SYSTEM_TYPE_LAYOUT_KEYS,
     )
 
-    return SYSTEM_TYPE_KEYS
+    return SYSTEM_TYPE_LAYOUT_KEYS
 
 
 def _expected_registry_keys() -> set[str]:
-    return {"0A", "0B"} | {
-        f"{x}{y}-{z}"
+    return {"0A-LC-0R", "0B-LC-0R"} | {
+        f"{x}{y}-{z}-LC-0R"
         for x in range(1, 6)
         for y in ("A", "B", "C", "D")
         for z in ("CN", "F")
@@ -76,12 +76,12 @@ def _save_subcomponent_figure(
     import numpy as np
 
     from implicit_geometry_kernel.frames import naca_to_twisted_pitch_axis_blade_frame
-    from plotting.frames import section_plot_axes
-    from plotting.plot_section import (
+    from implicit_geometry_kernel.plotting.frames import section_plot_axes
+    from implicit_geometry_kernel.plotting.plot_section import (
         apply_structural_section_axes,
         fit_square_section_axes,
     )
-    from plotting.plot_subcomponents import (
+    from implicit_geometry_kernel.plotting.plot_subcomponents import (
         draw_section_sdf_panel,
         taxonomy_plot_caption,
     )
@@ -145,9 +145,9 @@ def _run_single_layout(
     twist_deg: float,
     out_dir: Path,
 ) -> None:
-    from implicit_geometry_kernel.section.spec.factory import (
+    from implicit_geometry_kernel.catalogue import resolve_system_type
+    from implicit_geometry_kernel.section.assembly import (
         build_section_view,
-        resolve_system_type,
     )
     from implicit_geometry_kernel.section.midlines.export import (
         build_shell_midline_strips,
@@ -177,9 +177,7 @@ def _run_single_layout(
 def main(argv: list[str] | None = None) -> None:
     import numpy as np
 
-    from implicit_geometry_kernel.section.spec.factory import (
-        resolve_system_type,
-    )
+    from implicit_geometry_kernel.catalogue import resolve_system_type
     from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
     argv = list(sys.argv[1:] if argv is None else argv)

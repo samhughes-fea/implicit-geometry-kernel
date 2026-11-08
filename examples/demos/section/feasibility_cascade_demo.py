@@ -49,12 +49,12 @@ from implicit_geometry_kernel.section import (
     SectionGeometry,
     resolve_system_type,
 )
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     INK,
     NAVY,
     RED,
@@ -91,7 +91,7 @@ def _sweep_cascade(
             spar_cap_thickness=0.0,
             shear_web_thickness=0.004,
             twist_rad=0.0,
-            web_x_positions_m=web_x,
+            web_offsets=web_x,
             outputs=(),
         )
         try:
@@ -286,7 +286,7 @@ def _plot_cascade(payload: dict, *, presentation: bool) -> plt.Figure:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     add_output_and_presentation_args(parser, default_stem="feasibility_cascade", root=Path(__file__).resolve().parents[1])
-    parser.add_argument("--layout", default="5D-F")
+    parser.add_argument("--layout", default="5D-F-LC-0R")
     parser.add_argument("--root-chord", type=float, default=1.0)
     parser.add_argument("--skin-thickness", type=float, default=0.006)
     parser.add_argument("--chord-min", type=float, default=0.08)

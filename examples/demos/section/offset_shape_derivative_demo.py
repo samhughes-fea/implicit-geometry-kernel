@@ -66,12 +66,12 @@ from implicit_geometry_kernel.section.properties.backend import (
 from implicit_geometry_kernel.section.properties.compute import (
     compute_section_properties,
 )
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     INK,
     MUTED,
     NAVY,
@@ -132,7 +132,7 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     airfoil = AirfoilSDF.from_naca("2412", chord=1.0, n_points=240)
-    layout = resolve_system_type("0A")
+    layout = resolve_system_type("0A-LC-0R")
     spec = quadtree_spec_for_airfoil(airfoil, chord=1.0, max_depth=7, max_cells=120000)
     grid = SDFGrid.from_airfoil(airfoil, nx=3000, ny=1300, padding=0.02)
     phi = np.asarray(grid.eval(airfoil), dtype=float)

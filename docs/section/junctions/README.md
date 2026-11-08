@@ -1,5 +1,7 @@
 # junctions — index strip junctions for meshing.
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 ↑ [`section`](../README.md)
 
 Indexes already-emitted twisted strips so web–skin and cap–web junctions share

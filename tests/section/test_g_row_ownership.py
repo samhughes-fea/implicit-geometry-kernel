@@ -16,7 +16,6 @@ BANNED_TOP_LEVEL = ("engine", "interface", "core")
 FORBIDDEN_IMPORT_PREFIXES: dict[str, tuple[str, ...]] = {
     "layout": (
         "implicit_geometry_kernel.section.walls",
-        "implicit_geometry_kernel.section.constructive",
         "implicit_geometry_kernel.section.boundary.walls",
         "implicit_geometry_kernel.section.boundary.cores",
         "implicit_geometry_kernel.section.boundary.emitters",
@@ -27,7 +26,6 @@ FORBIDDEN_IMPORT_PREFIXES: dict[str, tuple[str, ...]] = {
     ),
     "junctions": (
         "implicit_geometry_kernel.sdf",
-        "implicit_geometry_kernel.section.constructive",
         "implicit_geometry_kernel.section.boundary.walls",
         "implicit_geometry_kernel.section.boundary.cores",
         "implicit_geometry_kernel.section.boundary.emitters",
@@ -38,7 +36,6 @@ FORBIDDEN_IMPORT_PREFIXES: dict[str, tuple[str, ...]] = {
     ),
     "cells": (
         "implicit_geometry_kernel.sdf",
-        "implicit_geometry_kernel.section.constructive",
         "implicit_geometry_kernel.section.boundary.walls",
         "implicit_geometry_kernel.section.boundary.cores",
         "implicit_geometry_kernel.section.boundary.emitters",
@@ -47,7 +44,6 @@ FORBIDDEN_IMPORT_PREFIXES: dict[str, tuple[str, ...]] = {
         "implicit_geometry_kernel.section.walls",
     ),
     "midlines": (
-        "implicit_geometry_kernel.section.constructive",
         "implicit_geometry_kernel.section.boundary.walls",
         "implicit_geometry_kernel.section.boundary.cores",
         "implicit_geometry_kernel.section.boundary.emitters",
@@ -66,7 +62,6 @@ def test_banned_software_layer_homes_absent() -> None:
 
 def test_api_and_recipe_homes_exist() -> None:
     assert (ROOT / "spec").is_dir()
-    assert (ROOT / "api").is_dir()
     assert (ROOT / "walls").is_dir()
     assert (ROOT / "assembly").is_dir()
     assert (ROOT / "junctions").is_dir()
@@ -100,6 +95,11 @@ _REMOVED_SHIM_PACKAGES = (
     "junction_preparation",
     "cell_wall_loops",
     "props_emit",
+    "api",
+    "placement",
+    "constructive",
+    "props",
+    "recipes",
 )
 
 

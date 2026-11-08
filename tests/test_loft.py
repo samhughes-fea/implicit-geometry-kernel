@@ -14,8 +14,13 @@ def _prismatic(twist=0.0, offset=(0.0, 0.0)):
             Station(4.0, 1.0, AIRFOIL, twist=twist, pitch_axis=0.3, offset=offset)]
 
 
-def _cut(stations=None, z=1.0, layout="2D-F", **kw):
-    options = dict(spar_cap_thickness=0.008, shear_web_thickness=0.002, web_positions=(0.18, 0.48))
+def _cut(stations=None, z=1.0, layout="2D-F-LC-0R", **kw):
+    options = dict(
+        pivot_fraction=0.3,
+        spar_cap_thickness=0.008,
+        shear_web_thickness=0.002,
+        web_positions=(0.18, 0.48),
+    )
     options.update(kw)
     return BladeGeometry(stations or _prismatic(), layout, 0.003, **options).section_at(z)
 
@@ -40,7 +45,7 @@ def test_walls_labels_and_thicknesses(cut):
     for cap in cut.walls_of("cap"):
         assert cap.bonds and all(host.startswith("skin_") for host in cap.bonds)
         assert cap.xy[:, 0].min() == pytest.approx(-0.12) and cap.xy[:, 0].max() == pytest.approx(0.18)
-    assert cut.layout == "2D-F" and cut.dropped_webs == ()
+    assert cut.layout == "2D-F-LC-0R" and cut.dropped_webs == ()
 
 
 def test_cell_areas(cut):
@@ -54,8 +59,8 @@ def test_cell_areas(cut):
 
 
 def test_twist_and_offset_place_the_untwisted_section():
-    cut = _cut(layout="2D-CN")
-    placed = _cut(_prismatic(twist=15.0, offset=(0.1, -0.05)), layout="2D-CN")
+    cut = _cut(layout="2D-CN-LC-0R")
+    placed = _cut(_prismatic(twist=15.0, offset=(0.1, -0.05)), layout="2D-CN-LC-0R")
     for wall in cut.walls:
         assert np.allclose(placed.to_blade(wall.xy[:, 0], wall.xy[:, 1]), placed.wall(wall.label).xy, atol=1e-9)
     # nose up: the leading edge moves to +y
@@ -63,7 +68,7 @@ def test_twist_and_offset_place_the_untwisted_section():
     assert le[1] > -0.05
 
 
-@pytest.mark.parametrize("layout, tilt", [("2D-F", 0.0), ("2D-CN", 12.0)])
+@pytest.mark.parametrize("layout, tilt", [("2D-F-LC-0R", 0.0), ("2D-CN-LC-0R", 12.0)])
 def test_flapwise_webs_stay_normal_to_the_rotor_plane(layout, tilt):
     twisted = _cut(_prismatic(twist=12.0), layout=layout)
     for web in twisted.walls_of("web"):
@@ -72,10 +77,60 @@ def test_flapwise_webs_stay_normal_to_the_rotor_plane(layout, tilt):
     assert len(twisted.cells) == 3
 
 
+def test_ellipse_to_naca_morph_follows_smoothstep_blend():
+    ellipse, naca = Airfoil.ellipse(1.0), Airfoil.naca4("0012")
+    stations = [
+        Station(0.0, 2.0, ellipse, pitch_axis=0.5),
+        Station(10.0, 1.0, naca, pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004, pivot_fraction=0.3)
+    x = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, geo.n_airfoil_points)))
+    *_, (_x, upper, lower) = geo.interpolate(2.5)
+    w = 0.25
+    s = w * w * (3.0 - 2.0 * w)
+    blended = Airfoil.blend(ellipse, naca, s)
+    lerp_u = 0.75 * ellipse.surface("upper", x) + 0.25 * naca.surface("upper", x)
+    d_morph = float(np.max(np.abs(upper - blended.surface("upper", x))))
+    d_lerp = float(np.max(np.abs(upper - lerp_u)))
+    assert d_morph < d_lerp
+    assert d_morph < 0.05
+
+
+def test_naca_to_naca_hits_station_thickness():
+    a, b = Airfoil.naca4("0024"), Airfoil.naca4("0012")
+    stations = [Station(0.0, 2.0, a, pitch_axis=0.3), Station(10.0, 1.0, b, pitch_axis=0.3)]
+    geo = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004, pivot_fraction=0.3)
+    *_, (_x, u0, l0) = geo.interpolate(0.0)
+    *_, (_x, u1, l1) = geo.interpolate(10.0)
+    assert float(np.max(u0 - l0)) == pytest.approx(a.max_thickness, rel=0.05)
+    assert float(np.max(u1 - l1)) == pytest.approx(b.max_thickness, rel=0.05)
+
+
+def test_interpolate_keeps_sharp_te_a_point():
+    stations = [
+        Station(0.0, 2.0, Airfoil.ellipse(1.0), pitch_axis=0.5),
+        Station(10.0, 1.0, Airfoil.naca4("0012"), pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004, pivot_fraction=0.3)
+    *_, (_x, upper, lower) = geo.interpolate(5.0)
+    assert abs(float(upper[-1]) - float(lower[-1])) < 1e-6
+
+
+def test_interpolate_preserves_blunt_te_gap():
+    blunt = Airfoil.naca4("0018").with_te_thickness(0.04)
+    stations = [
+        Station(0.0, 2.0, blunt, pitch_axis=0.3),
+        Station(10.0, 1.0, blunt, pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004, pivot_fraction=0.3)
+    *_, (_x, upper, lower) = geo.interpolate(5.0)
+    assert abs(float(upper[-1]) - float(lower[-1])) == pytest.approx(0.04, rel=0.15)
+
+
 def test_taper_interpolates_chord_twist_and_offset():
     stations = [Station(0.0, 2.0, AIRFOIL, pitch_axis=0.3),
                 Station(10.0, 1.0, AIRFOIL, twist=10.0, pitch_axis=0.3, offset=(0.0, 0.2))]
-    geo = BladeGeometry(stations, "2D-F", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004)
+    geo = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004, pivot_fraction=0.3)
     mid = geo.section_at(5.0)
     assert (mid.chord, mid.twist, *mid.offset) == pytest.approx((1.5, 5.0, 0.0, 0.1))
     root, tip = geo.section_at(0.0), geo.section_at(10.0)
@@ -88,8 +143,8 @@ def test_taper_interpolates_chord_twist_and_offset():
 
 def test_fixed_web_offsets_drop_a_web_that_no_longer_fits():
     stations = [Station(0.0, 2.0, AIRFOIL, pitch_axis=0.3), Station(10.0, 1.0, AIRFOIL, pitch_axis=0.3)]
-    geo = BladeGeometry(stations, "2D-F", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
-                        web_offsets=(0.4, 1.2))
+    geo = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
+                        web_offsets=(0.4, 1.2), pivot_fraction=0.3)
     root, tip = geo.section_at(0.0), geo.section_at(10.0)
     assert len(root.walls_of("web")) == 2 and root.dropped_webs == ()
     assert len(tip.walls_of("web")) == 1 and len(tip.dropped_webs) == 1
@@ -100,16 +155,16 @@ def test_fixed_web_offsets_drop_a_web_that_no_longer_fits():
 
 def test_thickness_as_a_function_of_span():
     stations = _prismatic()
-    cut = section_at(stations, 3.0, "2D-F", lambda z: 0.002 + 0.001 * z, spar_cap_thickness=0.008,
-                     shear_web_thickness=0.004)
+    cut = section_at(stations, 3.0, "2D-F-LC-0R", lambda z: 0.002 + 0.001 * z, pivot_fraction=0.3,
+                     spar_cap_thickness=0.008, shear_web_thickness=0.004)
     assert [w.thickness for w in cut.walls_of("skin")] == pytest.approx([0.005] * 6)
 
 
 def test_bad_options():
     with pytest.raises(ValueError):
-        BladeGeometry(_prismatic(), "2D-F", 0.003, web_positions=(0.2, 0.5), web_offsets=(0.2, 0.5))
+        BladeGeometry(_prismatic(), "2D-F-LC-0R", 0.003, web_positions=(0.2, 0.5), web_offsets=(0.2, 0.5), pivot_fraction=0.3)
     with pytest.raises(ValueError):
-        BladeGeometry(_prismatic(), "2D-F", 0.003, web_offsets=(0.2,))
+        BladeGeometry(_prismatic(), "2D-F-LC-0R", 0.003, web_offsets=(0.2,), pivot_fraction=0.3)
 
 
 def test_mid_surface_graph(cut):
@@ -127,15 +182,15 @@ def test_mid_surface_graph(cut):
 def test_oml_polyline_closed_and_contains_skin():
     from shapely.geometry import LineString, Polygon
 
-    geo = BladeGeometry(_prismatic(), "2D-F", 0.003, spar_cap_thickness=0.008, shear_web_thickness=0.002,
-                        web_positions=(0.18, 0.48))
+    geo = BladeGeometry(_prismatic(), "2D-F-LC-0R", 0.003, spar_cap_thickness=0.008, shear_web_thickness=0.002,
+                        web_positions=(0.18, 0.48), pivot_fraction=0.3)
     z = 1.0
     oml = geo.oml_polyline(z)
     assert oml.shape[1] == 3
     assert np.allclose(oml[:, 2], z)
     assert np.allclose(oml[0], oml[-1])
     cut = geo.section_at(z)
-    assert (cut.chord, cut.twist, cut.pitch_axis) == pytest.approx(geo.station_at(z)[:3])
+    assert (cut.chord, cut.twist, cut.pitch_axis) == pytest.approx(geo.interpolate(z)[:3])
     hull = Polygon(oml[:, :2]).buffer(1e-6)
     for wall in cut.walls_of("skin"):
         assert hull.contains(LineString(wall.xy))
@@ -146,16 +201,15 @@ def test_span_tables_override_station_scalars_not_airfoils():
                 Station(10.0, 1.0, AIRFOIL, twist=10.0, pitch_axis=0.3, offset=(0.0, 0.2))]
     z = np.array([0.0, 5.0, 10.0])
     geo = BladeGeometry(
-        stations, "2D-F", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
+        stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
         chord=(z, np.array([2.0, 2.0, 1.0])),
         twist=(z, np.array([0.0, 0.0, 10.0])),
-        offset=(z, np.array([[0.0, 0.0], [0.4, 0.0], [0.0, 0.2]])),
-    )
-    chord, twist, pitch, offset, _ = geo.station_at(5.0)
+        offset=(z, np.array([[0.0, 0.0], [0.4, 0.0], [0.0, 0.2]])), pivot_fraction=0.3)
+    chord, twist, pitch, offset, _ = geo.interpolate(5.0)
     assert (chord, twist, *offset) == pytest.approx((2.0, 0.0, 0.4, 0.0))
     assert pitch == pytest.approx(0.3)
-    plain = BladeGeometry(stations, "2D-F", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004)
-    assert plain.station_at(5.0)[0] == pytest.approx(1.5)
+    plain = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004, pivot_fraction=0.3)
+    assert plain.interpolate(5.0)[0] == pytest.approx(1.5)
     cut = geo.section_at(5.0)
     assert cut.chord == pytest.approx(2.0)
     assert np.allclose(geo.oml_polyline(5.0)[:, 2], 5.0)
@@ -163,7 +217,7 @@ def test_span_tables_override_station_scalars_not_airfoils():
 
 def test_bad_span_table():
     with pytest.raises(ValueError, match="chord"):
-        BladeGeometry(_prismatic(), "2D-F", 0.003, chord=([0.0], [1.0]))
+        BladeGeometry(_prismatic(), "2D-F-LC-0R", 0.003, chord=([0.0], [1.0]), pivot_fraction=0.3)
 
 
 def test_pchip_span_hits_knots_and_is_smoother_than_linear():
@@ -172,9 +226,9 @@ def test_pchip_span_hits_knots_and_is_smoother_than_linear():
         Station(5.0, 1.2, AIRFOIL, pitch_axis=0.3),
         Station(10.0, 1.0, AIRFOIL, pitch_axis=0.3),
     ]
-    linear = BladeGeometry(stations, "2D-F", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004)
-    pchip = BladeGeometry(stations, "2D-F", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
-                          span_kind="pchip")
+    linear = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004, pivot_fraction=0.3)
+    pchip = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
+                          span_kind="pchip", pivot_fraction=0.3)
     for z, c in ((0.0, 2.0), (5.0, 1.2), (10.0, 1.0)):
         assert pchip.interpolate(z)[0] == pytest.approx(c)
     chords = [pchip.interpolate(z)[0] for z in np.linspace(0.0, 10.0, 21)]
@@ -188,3 +242,38 @@ def test_pchip_span_hits_knots_and_is_smoother_than_linear():
     right_p = (pchip.interpolate(5.0 + h)[0] - pchip.interpolate(5.0)[0]) / h
     assert abs(right_lin - left_lin) > abs(right_p - left_p)
     assert d_pchip != pytest.approx(d_lin, abs=1e-6)
+
+
+def test_pivot_fraction_is_s_frame_origin():
+    """BladeGeometry.pivot_fraction is the XY stacking point and the S origin."""
+    stations = _prismatic(twist=0.0)
+    geo = BladeGeometry(stations, "0A-LC-0R", 0.003, pivot_fraction=0.40)
+    assert geo.interpolate(1.0)[2] == pytest.approx(0.40)
+    oml = geo.oml_polyline(1.0)
+    assert float(oml[:, 0].min()) == pytest.approx(-0.40, abs=2e-3)
+    skin_x = np.concatenate([w.xy[:, 0] for w in geo.section_at(1.0).walls_of("skin")])
+    assert float(skin_x.min()) == pytest.approx(float(oml[:, 0].min()), abs=2e-3)
+
+
+def test_pivot_fraction_moves_the_twist_axis():
+    stations = _prismatic(twist=20.0)
+    kw = dict(spar_cap_thickness=0.008, shear_web_thickness=0.002)
+    a = BladeGeometry(stations, "2D-F-LC-0R", 0.003, pivot_fraction=0.25, **kw)
+    b = BladeGeometry(stations, "2D-F-LC-0R", 0.003, pivot_fraction=0.333, **kw)
+    assert not np.allclose(a.oml_polyline(2.0), b.oml_polyline(2.0), atol=1e-6)
+
+
+def test_pivot_fraction_conflicts_with_pitch_axis_table():
+    with pytest.raises(ValueError, match="pitch_axis or pivot_fraction"):
+        BladeGeometry(
+            _prismatic(),
+            "0A-LC-0R",
+            0.003,
+            pitch_axis=lambda z: 0.3,
+            pivot_fraction=0.25,
+        )
+
+
+def test_missing_pivot_fraction_raises():
+    with pytest.raises(TypeError, match="pivot_fraction is required"):
+        BladeGeometry(_prismatic(), "0A-LC-0R", 0.003)

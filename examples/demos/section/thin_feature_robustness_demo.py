@@ -43,12 +43,12 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     strip_axes_chrome,
 )
 
@@ -63,12 +63,14 @@ from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_poly
 from implicit_geometry_kernel.section.properties.backend import (
     quadtree_spec_for_airfoil,
 )
-from plotting.plot import (
+from implicit_geometry_kernel.plotting.plot import (
     plot_section_hybrid,
 )
-from plotting.plot_section import (
-    _naca_xy_to_plot_hv,
+from implicit_geometry_kernel.plotting.plot_section import (
     apply_structural_section_axes,
+)
+from implicit_geometry_kernel.plotting.plot_section_axes import (
+    _naca_xy_to_plot_hv,
 )
 from implicit_geometry_kernel.section.properties.compute import (
     compute_section_properties,

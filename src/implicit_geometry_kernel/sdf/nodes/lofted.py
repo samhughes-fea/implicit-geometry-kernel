@@ -7,8 +7,9 @@ from collections.abc import Callable
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.nodes.base import NO_FEATURE, LeafNode
+from implicit_geometry_kernel.sdf.kernels.polygon_bvh import build_polygon_accel, sdf_polygon_bvh
 from implicit_geometry_kernel.sdf.kernels.primitives import sdf_polygon
+from implicit_geometry_kernel.sdf.nodes.base import NO_FEATURE, LeafNode
 
 SectionPolygon = Callable[[float], np.ndarray]
 
@@ -18,12 +19,23 @@ class LoftedPolygonSDF(LeafNode):
 
     Points are grouped by distinct ``z``. Distances are **not** interpolated between
     stations (interpolated distances are not distances; twist misplaces a thin TE).
+
+    ``accelerate=True`` (default) caches a uniform-grid BVH / AABB of the station
+    polygon for batched queries. ``phi`` matches the unaccelerated edge loop.
     """
 
-    def __init__(self, provider: SectionPolygon, meta: int = NO_FEATURE, cache_size: int = 4096) -> None:
+    def __init__(
+        self,
+        provider: SectionPolygon,
+        meta: int = NO_FEATURE,
+        cache_size: int = 4096,
+        accelerate: bool = True,
+    ) -> None:
         super().__init__(meta)
         self.provider = provider
+        self.accelerate = bool(accelerate)
         self._cache: OrderedDict[float, np.ndarray] = OrderedDict()
+        self._accel: OrderedDict[float, dict] = OrderedDict()
         self._cache_size = int(cache_size)
 
     def polygon_at(self, z: float) -> np.ndarray:
@@ -36,8 +48,12 @@ class LoftedPolygonSDF(LeafNode):
         if poly.ndim != 2 or poly.shape[1] < 2:
             raise ValueError(f"section polygon at z={key} must be (N, 2)")
         self._cache[key] = poly
+        if self.accelerate:
+            self._accel[key] = build_polygon_accel(poly)
+            self._accel.move_to_end(key)
         while len(self._cache) > self._cache_size:
-            self._cache.popitem(last=False)
+            old, _ = self._cache.popitem(last=False)
+            self._accel.pop(old, None)
         return poly
 
     def _phi(self, points: np.ndarray) -> np.ndarray:
@@ -50,9 +66,14 @@ class LoftedPolygonSDF(LeafNode):
         groups = np.split(order, cuts)
         out = np.empty(points.shape[0])
         for group in groups:
-            poly = self.polygon_at(float(z[group[0]]))
+            z0 = float(z[group[0]])
+            poly = self.polygon_at(z0)
             xy = points[group]
-            out[group] = sdf_polygon(xy[:, 0], xy[:, 1], poly)
+            if self.accelerate:
+                accel = self._accel[round(z0, 9)]
+                out[group] = sdf_polygon_bvh(xy[:, 0], xy[:, 1], accel)
+            else:
+                out[group] = sdf_polygon(xy[:, 0], xy[:, 1], poly)
         return out
 
 

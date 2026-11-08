@@ -19,14 +19,16 @@ import numpy as np
 import pytest
 from matplotlib.collections import LineCollection, PolyCollection
 
-from implicit_geometry_kernel.section.api.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section.properties.export import SectionPropertiesReport
-from plotting.plot import plot_section_from_mesh
+from implicit_geometry_kernel.plotting.plot import plot_section_from_mesh
 from implicit_geometry_kernel.integration.quadtree.quadrature import (
     label_boundary_segments,
     label_fill_polygons,
@@ -50,7 +52,7 @@ def _report(key: str, twist_deg: float = 0.0):
     )
 
 
-@pytest.mark.parametrize("key,twist", [("2D-CN", 0.0), ("3C-F", 12.0), ("0B", 0.0)])
+@pytest.mark.parametrize("key,twist", [("2D-CN-LC-0R", 0.0), ("3C-F-LC-0R", 12.0), ("0B-LC-0R", 0.0)])
 def test_fill_polygon_area_matches_property_area(key, twist):
     rep = _report(key, twist)
     mesh = rep.mesh
@@ -65,7 +67,7 @@ def test_fill_polygon_area_matches_property_area(key, twist):
 
 
 def test_renderer_emits_fill_and_boundary_collections():
-    rep = _report("2D-CN")
+    rep = _report("2D-CN-LC-0R")
     mesh = rep.mesh
     fig, ax = plot_section_from_mesh(mesh, title="t", chord_m=1.0)
     try:
@@ -86,7 +88,7 @@ def test_renderer_emits_fill_and_boundary_collections():
 
 
 def test_boundary_segments_are_pairs():
-    rep = _report("2D-CN")
+    rep = _report("2D-CN-LC-0R")
     mesh = rep.mesh
     for label in mesh.phi_by_label:
         segs = label_boundary_segments(mesh, label)

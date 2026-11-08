@@ -38,7 +38,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     save_figure,
 )
 
@@ -124,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
     from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
     from implicit_geometry_kernel.section import MultiCellSection
     from implicit_geometry_kernel.section.properties.export import export_section_json
-    from plotting import plot_section
+    from implicit_geometry_kernel.plotting import plot_section
     from implicit_geometry_kernel.section.properties.export import (
         SectionPropertiesReport,
     )

@@ -57,6 +57,7 @@ class SectionPlan(BuildContext):
     skin_thickness: float
     phi_inner_ref: Any
     xs: list[float]
+    web_indices: tuple[int, ...]
     anchors: list[tuple[float, float]]
     explicit_endpoints: list[tuple[float, float, float, float]] | None
     web_thicknesses: list[float]
@@ -151,15 +152,22 @@ def plan_section(
     twist_angle, web_y_coords, trailing_edge_insert_x_m, leading_edge_insert_x_m, le_radius,
     core_enabled, y_search, structural_family, fixed_cap_anchor, pitch_fraction_of_chord_from_le,
     fixed_cap_chord_half_width, discrete_cap_chord_half_width, *, cap_placement, web_endpoints,
-    stage_sink, spar_cap_ply_pitch_m,
+    stage_sink, spar_cap_ply_pitch_m, web_indices=None,
 ) -> SectionPlan:
     """Validate and resolve the inputs of :class:`MultiCellSection` (same arguments)."""
     explicit = None
     if web_endpoints is not None:
         explicit = [(float(xt), float(yt), float(xb), float(yb)) for xt, yt, xb, yb in web_endpoints]
         xs_requested = [0.5 * (e[0] + e[2]) for e in explicit]
+        idx_requested = list(range(len(xs_requested))) if web_indices is None else list(web_indices)
     else:
-        xs_requested = sorted(float(x) for x in web_x_positions)
+        xs_requested = [float(x) for x in web_x_positions]
+        idx_requested = list(range(len(xs_requested))) if web_indices is None else [int(i) for i in web_indices]
+        if len(idx_requested) != len(xs_requested):
+            idx_requested = list(range(len(xs_requested)))
+        order = sorted(range(len(xs_requested)), key=lambda i: xs_requested[i])
+        xs_requested = [xs_requested[i] for i in order]
+        idx_requested = [idx_requested[i] for i in order]
     family, rule = _cap_rule(structural_family, cap_placement, fixed_cap_anchor)
     if len(xs_requested) < 1 and rule.kind not in ("none", "fixed_band"):
         raise ValueError(
@@ -222,6 +230,7 @@ def plan_section(
         skin_thickness=float(t_skin),
         phi_inner_ref=phi_inner_ref,
         xs=xs,
+        web_indices=tuple(idx_requested[: len(xs)]),
         anchors=anchors,
         explicit_endpoints=explicit,
         web_thicknesses=web_t,

@@ -24,8 +24,9 @@ from implicit_geometry_kernel.blade.airfoil import Airfoil
 class Station:
     """A spanwise station: position ``z``, chord, twist (degrees, nose up about +z) and airfoil.
 
-    ``pitch_axis`` is the chord fraction that lies on the blade axis (x = 0), and
-    ``offset`` an (x, y) shift of that point (prebend, sweep).
+    ``pitch_axis`` is stored for CSV / windIO round-trip. Loft stacking and the
+    S-frame origin use required ``BladeGeometry.pivot_fraction``, not this default.
+    ``offset`` is an (x, y) shift of that piercing point (prebend, sweep).
     """
 
     z: float
@@ -161,16 +162,3 @@ def _ramp(x: float, lo: float, hi: float, taper: float) -> float:
     if x > hi:
         return 0.0 if taper <= 0.0 else ((hi + taper) - x) / taper
     return 1.0
-
-
-def __getattr__(name: str):
-    if name == "SpanWeb":
-        import warnings
-
-        warnings.warn(
-            "SpanWeb is deprecated; use ShearWeb. Removed in 0.6.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return ShearWeb
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

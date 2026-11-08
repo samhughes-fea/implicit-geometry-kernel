@@ -1,20 +1,41 @@
-# area_2d
+# Integration
 
-`implicit_geometry_kernel.integration` holds the kernel's area and moment workers
-(quadtree and shoelace).
+↑ [docs](../README.md) · [src](../../src/implicit_geometry_kernel/integration/README.md) ·
+[tests](../../tests/integration/README.md)
 
-## Purpose
+Area and second-moment integrals of planar regions. Two backends share the same
+products: Green’s theorem (shoelace) on closed polygons, and adaptive quadtree
+quadrature on signed-distance solids.
 
-- Provide reusable domain logic behind a stable package boundary.
-- Keep cross-package imports routed through canonical worker paths.
+**Import:** `implicit_geometry_kernel.integration`
 
-## Public Interface
+There is no numbered example folder of its own.
+[Section properties](../../examples/section/02_section_properties/) and
+[signed-distance CSG](../../examples/sdf/01_signed_distance_csg/) exercise the
+package.
 
-- Canonical imports use `implicit_geometry_kernel.integration`.
-- API barrel lives at `implicit_geometry_kernel.integration.api`.
-- Type/DTO barrel lives at `implicit_geometry_kernel.integration.types`.
+## Paths
 
-## Notes
+| Path | Domain |
+|---|---|
+| `section_properties_S` / `ring_sums_S` | Closed polygons (Green / shoelace) |
+| `build_root_quadtree`, `section_properties_from_quadtree` | SDF solids, adaptive mesh |
+| `build_area_mesh_2d` | Debug and visualisation meshes (`retain_mesh`) |
 
-- This README records the worker's canonical API/types surface and import-boundary contract.
-- Expand this file with domain equations, ownership tables, and examples as work proceeds.
+The gated section product `"properties"` uses these backends. `quadtree_mesh` is
+not a shell-mesh product; wall strips are `ShellMidlineStrip`.
+
+Formulae: [shoelace.md](shoelace.md).
+
+```mermaid
+flowchart LR
+  Poly[ClosedPolygon] --> Shoe[ring_sums_S]
+  SDF[SignedDistance] --> QT[QuadtreeQuadrature]
+  Shoe --> Props[area_centroid_I]
+  QT --> Props
+```
+
+## See also
+
+- [sdf](../sdf/README.md) — fields being integrated (`SDFGrid` is not this product)
+- [section](../section/README.md) — gated `properties_map`

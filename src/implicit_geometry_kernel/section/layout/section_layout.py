@@ -8,7 +8,7 @@ from typing import Literal
 from implicit_geometry_kernel.section.layout.cap_placement import (
     CapPlacementRule,
 )
-from implicit_geometry_kernel.section.layout.system_layout import (
+from implicit_geometry_kernel.catalogue.system_layout import (
     SystemLayoutSpec,
     WebOrientation,
     resolve_system_type,

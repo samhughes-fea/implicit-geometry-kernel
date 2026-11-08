@@ -7,7 +7,7 @@ from shapely.geometry import box
 from implicit_geometry_kernel.sdf.nodes import Intersect
 from implicit_geometry_kernel.section.assembly.clip_algebra import (
     ChordBand,
-    apply_shapely,
+    apply_clip,
     to_ir,
 )
 
@@ -18,7 +18,7 @@ def test_chord_band_ir_and_shapely_reduces_x_extent():
     assert isinstance(ir, Intersect)
 
     poly = box(0.0, -0.1, 1.0, 0.1)
-    clipped = apply_shapely(clip, poly)
+    clipped = apply_clip(clip, poly)
     assert not clipped.is_empty
     minx, _miny, maxx, _maxy = clipped.bounds
     assert minx >= 0.2 - 1e-9

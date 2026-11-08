@@ -131,6 +131,10 @@ class WebWall:
         ).expr
 
 
+@dataclass(frozen=True)
+class StiffenerWall(WebWall):
+    """Branch stiffener recipe. Same constructive stadium as a shear web."""
+
 
 @dataclass(frozen=True)
 class CapWall:
@@ -364,5 +368,6 @@ __all__ = [
     "FlapwiseClipMode",
     "InsertWall",
     "SkinWall",
+    "StiffenerWall",
     "WebWall",
 ]

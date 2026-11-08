@@ -21,7 +21,15 @@ class InfeasibleSectionGeometry(ValueError):
     catch this and score a failed trial so the search can back off, rather than
     letting it kill the worker. Subclasses ``ValueError`` so pre-existing
     ``except ValueError`` handlers keep working.
+
+    ``web_index`` / ``web_x`` name the authored web that failed (flapwise
+    re-anchor), when the caller knows it.
     """
+
+    def __init__(self, *args, web_index: int | None = None, web_x: float | None = None):
+        super().__init__(*args)
+        self.web_index = web_index
+        self.web_x = web_x
 
 
 __all__ = ["InfeasibleSectionGeometry"]

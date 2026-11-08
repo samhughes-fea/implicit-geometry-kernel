@@ -1,5 +1,7 @@
 # SG-009 — junction primitives design spike
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 Design spike + migration note. The production rewrite landed 2026-08-30:
 `insert_cap_web_interior_junctions` now uses post-resample web-axis x final-cap
 solves (`intersect_web_axis_open_polyline_2d`). Bug status: **Fixed**

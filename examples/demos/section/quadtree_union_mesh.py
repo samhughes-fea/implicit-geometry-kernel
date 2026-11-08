@@ -52,7 +52,7 @@ def _load_sibling_module(name: str, filename: str):
 _ensure_mod = _load_sibling_module("_ensure_repo_path", "_ensure_repo_path.py")
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     apply_presentation_style,
     save_figure,
 )
@@ -62,16 +62,18 @@ system_type_display_name = _taxonomy.system_type_display_name
 twist_deg_for_layout = _taxonomy.twist_deg_for_layout
 twist_rad_for_layout = _taxonomy.twist_rad_for_layout
 
-from implicit_geometry_kernel.section.spec.factory import (
+from implicit_geometry_kernel.catalogue import (
     SYSTEM_TYPE_KEYS,
-    build_section_view,
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.properties.area_mesh import build_shared_section_quadtree
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
-from plotting.plot import (
+from implicit_geometry_kernel.plotting.plot import (
     _component_color,
     plot_section,
 )
@@ -155,13 +157,13 @@ def render_case(
             f"Square union-refined quadtree — {display_name} "
             f"(depth<={max_depth}, leaves={len(leaves)})"
         )
-    from plotting.plot_section import (
+    from implicit_geometry_kernel.plotting.plot_section import (
         apply_structural_section_axes,
     )
 
     apply_structural_section_axes(axq)
     if presentation:
-        from plotting.palette import (
+        from implicit_geometry_kernel.plotting.palette import (
             strip_axes_chrome,
         )
 

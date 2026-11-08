@@ -34,7 +34,7 @@ from implicit_geometry_kernel.section import (
 from implicit_geometry_kernel.contract.errors import (
     InfeasibleSectionGeometry,
 )
-from implicit_geometry_kernel.section.layout.system_layout import (
+from implicit_geometry_kernel.catalogue.system_layout import (
     effective_layout_for_web_count,
     family_min_webs,
     step_down_cascade,
@@ -57,16 +57,16 @@ def test_family_floors_match_the_catalogue():
 @pytest.mark.parametrize(
     "start, expected",
     [
-        ("5A-F", ("5A-F", "4A-F", "3A-F", "2A-F", "1A-F")),
-        ("5B-F", ("5B-F", "4B-F", "3B-F", "2B-F", "1B-F")),
-        ("5C-F", ("5C-F", "4C-F", "3C-F", "2C-F", "1C-F")),
-        ("5D-F", ("5D-F", "4D-F", "3D-F", "2D-F", "1C-F")),
-        ("5D-CN", ("5D-CN", "4D-CN", "3D-CN", "2D-CN", "1C-CN")),
-        ("3D-F", ("3D-F", "2D-F", "1C-F")),
-        ("2D-CN", ("2D-CN", "1C-CN")),
-        ("1C-F", ("1C-F",)),
-        ("0B", ("0B",)),
-        ("0A", ("0A",)),
+        ("5A-F-LC-0R", ("5A-F-LC-0R", "4A-F-LC-0R", "3A-F-LC-0R", "2A-F-LC-0R", "1A-F-LC-0R")),
+        ("5B-F-LC-0R", ("5B-F-LC-0R", "4B-F-LC-0R", "3B-F-LC-0R", "2B-F-LC-0R", "1B-F-LC-0R")),
+        ("5C-F-LC-0R", ("5C-F-LC-0R", "4C-F-LC-0R", "3C-F-LC-0R", "2C-F-LC-0R", "1C-F-LC-0R")),
+        ("5D-F-LC-0R", ("5D-F-LC-0R", "4D-F-LC-0R", "3D-F-LC-0R", "2D-F-LC-0R", "1C-F-LC-0R")),
+        ("5D-CN-LC-0R", ("5D-CN-LC-0R", "4D-CN-LC-0R", "3D-CN-LC-0R", "2D-CN-LC-0R", "1C-CN-LC-0R")),
+        ("3D-F-LC-0R", ("3D-F-LC-0R", "2D-F-LC-0R", "1C-F-LC-0R")),
+        ("2D-CN-LC-0R", ("2D-CN-LC-0R", "1C-CN-LC-0R")),
+        ("1C-F-LC-0R", ("1C-F-LC-0R",)),
+        ("0B-LC-0R", ("0B-LC-0R",)),
+        ("0A-LC-0R", ("0A-LC-0R",)),
     ],
 )
 def test_cascades_are_as_specified(start, expected):
@@ -82,9 +82,9 @@ def test_family_d_crosses_to_c_at_one_web():
     assert "1D-F" not in SYSTEM_TYPE_KEYS
     assert "1D-CN" not in SYSTEM_TYPE_KEYS
 
-    stepped = effective_layout_for_web_count(resolve_system_type("5D-F"), 1)
+    stepped = effective_layout_for_web_count(resolve_system_type("5D-F-LC-0R"), 1)
 
-    assert stepped.key == "1C-F"
+    assert stepped.key == "1C-F-LC-0R"
     assert stepped.n_webs == 1
     assert stepped.has_spar_caps is True
 
@@ -141,13 +141,13 @@ def test_orientation_is_preserved_until_there_are_no_webs(key):
 
 
 def test_asking_for_the_same_count_returns_the_same_layout():
-    layout = resolve_system_type("3C-CN")
+    layout = resolve_system_type("3C-CN-LC-0R")
     assert effective_layout_for_web_count(layout, 3) is layout
 
 
 def test_stepping_up_is_rejected():
     """The cascade is one-way; a section cannot regain a web outboard."""
-    layout = resolve_system_type("2D-F")
+    layout = resolve_system_type("2D-F-LC-0R")
 
     with pytest.raises(ValueError, match="step-down only"):
         effective_layout_for_web_count(layout, 3)
@@ -155,10 +155,10 @@ def test_stepping_up_is_rejected():
 
 def test_negative_web_count_is_rejected():
     with pytest.raises(ValueError):
-        effective_layout_for_web_count(resolve_system_type("2D-F"), -1)
+        effective_layout_for_web_count(resolve_system_type("2D-F-LC-0R"), -1)
 
 
-@pytest.mark.parametrize("key", ["5D-F", "5C-CN", "5B-F", "5A-F", "1C-F", "1A-CN"])
+@pytest.mark.parametrize("key", ["5D-F-LC-0R", "5C-CN-LC-0R", "5B-F-LC-0R", "5A-F-LC-0R", "1C-F-LC-0R", "1A-CN-LC-0R"])
 def test_losing_the_last_web_is_infeasible_not_a_rung(key):
     """0A/0B are selectable layouts, not degradation targets.
 
@@ -170,7 +170,7 @@ def test_losing_the_last_web_is_infeasible_not_a_rung(key):
         effective_layout_for_web_count(resolve_system_type(key), 0)
 
 
-@pytest.mark.parametrize("key", ["0A", "0B"])
+@pytest.mark.parametrize("key", ["0A-LC-0R", "0B-LC-0R"])
 def test_an_explicitly_selected_zero_web_layout_is_its_own_terminal_rung(key):
     """Selecting 0A/0B is a design choice and must still work."""
     layout = resolve_system_type(key)

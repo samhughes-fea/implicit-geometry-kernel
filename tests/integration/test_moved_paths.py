@@ -1,6 +1,10 @@
-"""The former integration.quadtree and integration.quadrature paths keep working."""
+"""The integration.quadtree package keeps its split-module names."""
+
+from pathlib import Path
 
 import importlib
+
+import implicit_geometry_kernel.integration as integration
 
 PKG = "implicit_geometry_kernel.integration."
 
@@ -14,10 +18,6 @@ def test_quadtree_package_keeps_old_names():
             assert getattr(qt, name) is getattr(mod, name), name
 
 
-def test_quadrature_alias():
-    old = importlib.import_module(PKG + "quadrature")
-    for sub in ("moments", "quadrature"):
-        mod = importlib.import_module(PKG + "quadtree." + sub)
-        for name in ("section_properties_from_quadtree", "label_fill_polygons", "_rectangle_moments"):
-            if hasattr(mod, name) and getattr(mod, name).__module__ == mod.__name__:
-                assert getattr(old, name) is getattr(mod, name)
+def test_quadrature_alias_removed():
+    root = Path(integration.__file__).resolve().parent
+    assert not (root / "quadrature.py").exists()

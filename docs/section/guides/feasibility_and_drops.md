@@ -1,8 +1,8 @@
 # Feasibility and dropped webs
 
-When resolve drops webs, steps the catalogue, or raises. Overview:
-[`../README.md`](../docs_index.md). API table:
-[`../api/README.md`](../api/README.md#errors-and-feasibility).
+How `resolve()` omits webs, steps the catalogue, or raises. A requested web that
+does not intercept the inner skin is **omitted**, not slid. Overview:
+[`../README.md`](../README.md).
 
 ↑ [`section_geometry`](../docs_index.md) · [`docs index`](../docs_index.md)
 
@@ -38,7 +38,7 @@ still returns a `SectionGeometryResult`.
 Resolve once at minimum skin (caps/webs often zero), then pass
 `resolution=` so later thickness trials keep the same web set:
 
-Runnable: `../examples/03_resolve_then_size.py`.
+Runnable: `../../../examples/section/teaching/03_resolve_then_size.py`.
 Recipe: [`caller_patterns.md`](caller_patterns.md#2-resolve-once-then-rebuild-sizing-loop).
 
 ---
@@ -52,7 +52,7 @@ Omit `web_x_positions_m` for the legacy `frac × local_chord` form — webs scal
 with the station and are not dropped for taper.
 
 Runnable comparison:
-`../examples/04_spanwise_web_anchors.py`
+`../../../examples/section/teaching/04_spanwise_web_anchors.py`
 (`5D-F` tip vs root-anchored positions).
 
 ---
@@ -77,5 +77,5 @@ implementation gap, not the product rule. See
 ## See also
 
 - Layout cascade: [`../layout/`](../layout/README.md)
-- Taxonomy / step-down: [`../reference/system_type_xyz_taxonomy.md`](../reference/system_type_xyz_taxonomy.md)
+- Taxonomy / step-down: [blade-concept taxonomy](../../blade/concepts/taxonomy.md)
 - Quickstart sizing / spanwise: [`quickstart.md`](quickstart.md)

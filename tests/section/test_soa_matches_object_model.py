@@ -5,9 +5,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.section.api.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.properties import area_mesh as am
 from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
@@ -26,7 +28,7 @@ def _sorted_bounds(arr):
 def test_soa_leaf_set_is_deterministic(twist_deg):
     airfoil = AirfoilSDF.from_naca("2412", n_points=80, chord=1.0)
     section = build_section_view(
-        airfoil, resolve_system_type("2D-CN"), twist_angle_rad=np.deg2rad(twist_deg)
+        airfoil, resolve_system_type("2D-CN-LC-0R"), twist_angle_rad=np.deg2rad(twist_deg)
     )
     spec = quadtree_spec_for_airfoil(airfoil, chord=1.0, max_depth=6, max_cells=150000)
 

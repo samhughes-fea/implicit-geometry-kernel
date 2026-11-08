@@ -226,32 +226,35 @@ def resolve_web_anchors(
 
     # Common path: no LE-ward walk — batch all intercept probes in one φ eval.
     if not allow_le_ward_migration:
+        order = sorted(range(len(xs_in)), key=lambda i: xs_in[i])
         probes = inner_y_at_xs(
             airfoil_sdf,
             skin_thickness,
-            sorted(xs_in),
+            [xs_in[i] for i in order],
             y_search=y_search,
             phi_inner=phi_inner,
             raise_on_miss=False,
         )
-        for x0, anchors_yb in zip(sorted(xs_in), probes):
+        for i, anchors_yb in zip(order, probes):
+            x0 = xs_in[i]
             if anchors_yb is None:
-                dropped.append(DroppedWeb(x_m=float(x0), reason="no_inner_skin_intercept"))
+                dropped.append(DroppedWeb(x_m=float(x0), reason="no_inner_skin_intercept", index=i))
                 continue
             y_top, y_bot = anchors_yb
             if float(y_top) - float(y_bot) < min_depth:
-                dropped.append(DroppedWeb(x_m=float(x0), reason="cavity_too_shallow"))
+                dropped.append(DroppedWeb(x_m=float(x0), reason="cavity_too_shallow", index=i))
                 continue
             anchors = (float(x0), float(y_top), float(y_bot))
             if resolved and abs(anchors[0] - resolved[-1][0]) < min_gap:
-                dropped.append(DroppedWeb(x_m=float(x0), reason="merged_into_previous_web"))
+                dropped.append(DroppedWeb(x_m=float(x0), reason="merged_into_previous_web", index=i))
                 continue
             resolved.append(anchors)
         if return_dropped:
             return resolved, dropped
         return resolved
 
-    for x0 in sorted(xs_in):
+    for i in sorted(range(len(xs_in)), key=lambda j: xs_in[j]):
+        x0 = xs_in[i]
         x_try = float(x0)
         anchors = None  # type: ignore
         n_steps = 12
@@ -273,17 +276,17 @@ def resolve_web_anchors(
                 if x_try <= x_floor + 1e-12:
                     x_try = x_floor
         if anchors is None:
-            dropped.append(DroppedWeb(x_m=float(x0), reason="no_inner_skin_intercept"))
+            dropped.append(DroppedWeb(x_m=float(x0), reason="no_inner_skin_intercept", index=i))
             continue
         if anchors[1] - anchors[2] < min_depth:
             # Applied after the LE-ward walk, not during it: the walk exists to
             # find *an* intercept, and stopping it early at a shallow station
             # would drop webs this path is meant to rescue.
-            dropped.append(DroppedWeb(x_m=float(x0), reason="cavity_too_shallow"))
+            dropped.append(DroppedWeb(x_m=float(x0), reason="cavity_too_shallow", index=i))
             continue
         if resolved and abs(anchors[0] - resolved[-1][0]) < min_gap:
             # Collapse onto previous web rather than stacking duplicates.
-            dropped.append(DroppedWeb(x_m=float(x0), reason="merged_into_previous_web"))
+            dropped.append(DroppedWeb(x_m=float(x0), reason="merged_into_previous_web", index=i))
             continue
         resolved.append(anchors)
 

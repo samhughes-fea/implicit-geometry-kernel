@@ -5,9 +5,10 @@ SDFGrid wraps a 2-D Cartesian grid and provides:
   - Vectorised SDF evaluation for any callable
   - Gradient computation (∇φ via central finite differences)
   - Gradient magnitude |∇φ|
-  - Zero-level-set extraction as a polyline
+  - Zero-level-set extraction as a polyline (debug contour)
   - Masked interior / exterior arrays
-  - 2-D quadrature (area, centroid, moments of inertia) for phi < 0
+  - Coarse 2-D quadrature for phi < 0 (debug only; product integrals live in
+    ``implicit_geometry_kernel.integration``)
 """
 
 import numpy as np
@@ -110,19 +111,17 @@ class SDFGrid:
 
     def level_set(self, phi, level=0.0):
         """Extract an arbitrary level-set contour."""
-        if _HAS_CONTOURPY:
-            x = np.asarray(self.X[0, :], dtype=float)
-            y = np.asarray(self.Y[:, 0], dtype=float)
-            z = np.asarray(phi, dtype=float)
-            cg = contourpy.contour_generator(x=x, y=y, z=z, name="serial")
-            raw_segments = cg.lines(float(level))
-            return [np.asarray(seg, dtype=float).copy() for seg in raw_segments if len(seg) >= 2]
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots()
-        cs = ax.contour(self.X, self.Y, phi, levels=[level])
-        segments = [path.vertices.copy() for path in cs.get_paths()]
-        plt.close(fig)
-        return segments
+        if not _HAS_CONTOURPY:
+            raise ImportError(
+                "SDFGrid.level_set needs contourpy (optional; not a core dependency). "
+                "Geometry modules must not import matplotlib."
+            )
+        x = np.asarray(self.X[0, :], dtype=float)
+        y = np.asarray(self.Y[:, 0], dtype=float)
+        z = np.asarray(phi, dtype=float)
+        cg = contourpy.contour_generator(x=x, y=y, z=z, name="serial")
+        raw_segments = cg.lines(float(level))
+        return [np.asarray(seg, dtype=float).copy() for seg in raw_segments if len(seg) >= 2]
 
     def interior_mask(self, phi):
         """Boolean mask: True where phi < 0 (inside the shape)."""
@@ -134,7 +133,7 @@ class SDFGrid:
         return np.abs(phi) < tol
 
     def area(self, phi):
-        """Enclosed area (phi < 0) by cell-counting quadrature."""
+        """Enclosed area (phi < 0) by cell-counting quadrature (debug)."""
         return float(self.section_properties_fused(phi)["area"])
 
     def centroid(self, phi):
@@ -148,7 +147,10 @@ class SDFGrid:
         return float(props["Ixx"]), float(props["Iyy"]), float(props["Ixy"])
 
     def section_properties_fused(self, phi):
-        """Return section properties for ``phi < 0`` in a single pass.
+        """Return coarse section properties for ``phi < 0`` in a single pass.
+
+        Debug only — same policy as ``quadtree_mesh``. Area and moments of
+        solids belong to ``implicit_geometry_kernel.integration``.
 
         Keys: area, cx, cy, Ixx, Iyy, Ixy, r_gyr_x, r_gyr_y
         """

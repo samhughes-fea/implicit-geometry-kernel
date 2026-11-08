@@ -5,12 +5,20 @@ Authoring surface is ``SkinWall`` / ``WebWall`` / ``CapWall`` / ``CoreWall`` /
 ``walls.py`` and are imported from those modules, not this barrel.
 """
 
-from implicit_geometry_kernel.section.walls.walls import CapWall, CoreWall, InsertWall, SkinWall, WebWall
+from implicit_geometry_kernel.section.walls.walls import (
+    CapWall,
+    CoreWall,
+    InsertWall,
+    SkinWall,
+    StiffenerWall,
+    WebWall,
+)
 
 __all__ = [
     "CapWall",
     "CoreWall",
     "InsertWall",
     "SkinWall",
+    "StiffenerWall",
     "WebWall",
 ]

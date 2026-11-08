@@ -48,12 +48,12 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     INK,
     MUTED,
     NAVY,
@@ -78,10 +78,10 @@ from implicit_geometry_kernel.sdf.nodes import (
     eval_expr_batch,
     expr_bbox,
 )
-from plotting.plot import (
+from implicit_geometry_kernel.plotting.plot import (
     plot_section,
 )
-from plotting.plot_section import (
+from implicit_geometry_kernel.plotting.plot_section import (
     rotated_naca_grid_to_section_plot_axes,
 )
 
@@ -704,7 +704,7 @@ def _annotate_target(axis, x_plot, y_plot, target_phi, label: str) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--key", default="2D-F")
+    parser.add_argument("--key", default="2D-F-LC-0R")
     parser.add_argument("--naca", default="2412")
     parser.add_argument("--chord", type=float, default=1.0)
     parser.add_argument("--twist-deg", type=float, default=0.0)

@@ -10,7 +10,7 @@ from implicit_geometry_kernel.contract.cell_wall_loop import CellWallLoop
 from implicit_geometry_kernel.contract.shell_midline_strip import ShellMidlineStrip
 from implicit_geometry_kernel.integration.quadtree.tree import QuadTreeMesh
 from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
-from implicit_geometry_kernel.section.layout.system_layout import SystemLayoutSpec
+from implicit_geometry_kernel.catalogue.system_layout import SystemLayoutSpec
 from implicit_geometry_kernel.section.midlines.host import SectionMidlineHost
 
 LayoutInput = SystemLayoutSpec | SectionLayout
@@ -39,6 +39,7 @@ class DroppedWeb:
 
     x_m: float
     reason: str
+    index: int | None = None
 
 
 @dataclass(frozen=True)

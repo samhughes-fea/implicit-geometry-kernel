@@ -16,7 +16,10 @@ from implicit_geometry_kernel.section.boundary.emitters import (
     emit_outer_skin_polygon,
 )
 from implicit_geometry_kernel.section.boundary import airfoil_polygon, ensure_polygon, offset_polygon_inward, rotate_geom
-from implicit_geometry_kernel.section.assembly.members import wall_type_for_label
+from implicit_geometry_kernel.section.assembly.members import (
+    CapBuilder,
+    wall_type_for_label,
+)
 from implicit_geometry_kernel.section.boundary.labels import (
     is_insert_label,
     is_wall_solid_label,
@@ -55,14 +58,17 @@ def _union_discrete_caps(
     inner_cavity: Polygon | MultiPolygon | None = None,
     deeper_cavity: Polygon | MultiPolygon | None = None,
 ) -> Polygon | MultiPolygon | None:
-    long_prefix = f"{_spar_cap_label_for_surface(surface)}_"
-    legacy_prefix = f"spar_cap_{surface}_"
     parts = []
     # One deeper offset for all discrete bands on this surface (same skin+cap_h).
+    # Indexed pads only; the canonical surface label is the continuous-box recipe.
     shared_deeper = deeper_cavity
+    canon = CapBuilder.canonical_surface_label(surface)
+    legacy = f"spar_cap_{surface}"
     for key, comp in discrete.items():
         lk = str(_label_key(key))
-        if not (lk.startswith(long_prefix) or lk.startswith(legacy_prefix)):
+        if lk in (canon, legacy):
+            continue
+        if not CapBuilder.matches_surface(lk, surface):
             continue
         if shared_deeper is None and airfoil_poly is not None:
             depth = float(comp.skin_thickness) + float(comp.cap_height)
@@ -93,8 +99,7 @@ def _cap_from_recipes(
     deeper_cavity: Polygon | MultiPolygon | None = None,
 ) -> Polygon | MultiPolygon | None:
     """Emit a surface spar-cap polygon from assemble-time CapWall recipes."""
-    key = _spar_cap_label_for_surface(surface)
-    legacy = f"spar_cap_{surface}"
+    key = CapBuilder.canonical_surface_label(surface)
     merged = _union_discrete_caps(
         section,
         discrete,
@@ -108,7 +113,7 @@ def _cap_from_recipes(
     # Prefer recipe keys on the host; component maps only supply airfoil refs.
     for lbl, wall in _host_cap_recipes(section).items():
         lk = _label_key(lbl)
-        if lk in (key, legacy) or str(lk).startswith(f"{key}_") or str(lk).startswith(f"{legacy}_"):
+        if CapBuilder.matches_surface(lk, surface) or lk == key:
             af = getattr(_resolve_host(section), "airfoil", None)
             if af is None:
                 for src in (discrete, comps):
@@ -139,24 +144,17 @@ def _shared_deeper_by_surface(
         return {"upper": None, "lower": None}
 
     def _height_for(surface: str) -> tuple[float, float] | None:
-        key = _spar_cap_label_for_surface(surface)
-        legacy = f"spar_cap_{surface}"
-        prefix = f"{key}_"
-        legacy_prefix = f"{legacy}_"
         for lbl, wall in _host_cap_recipes(section).items():
-            lk = _label_key(lbl)
-            if lk in (key, legacy) or str(lk).startswith(prefix) or str(lk).startswith(legacy_prefix):
+            if CapBuilder.matches_surface(_label_key(lbl), surface):
                 return float(wall.skin_thickness), float(wall.cap_height)
         for lbl, wall in _host_recipes(section).items():
-            lk = _label_key(lbl)
-            if lk in (key, legacy) or str(lk).startswith(prefix) or str(lk).startswith(legacy_prefix):
+            if CapBuilder.matches_surface(_label_key(lbl), surface):
                 return float(wall.skin_thickness), float(wall.cap_height)
         for lbl, comp in discrete.items():
-            lk = _label_key(lbl)
-            if lk in (key, legacy) or str(lk).startswith(prefix) or str(lk).startswith(legacy_prefix):
+            if CapBuilder.matches_surface(_label_key(lbl), surface):
                 return float(comp.skin_thickness), float(comp.cap_height)
         for lbl, comp in comps.items():
-            if _label_key(lbl) in (key, legacy):
+            if CapBuilder.matches_surface(_label_key(lbl), surface):
                 return float(comp.skin_thickness), float(comp.cap_height)
         return None
 
@@ -183,11 +181,7 @@ def _web_union(web_polys: list[Polygon | MultiPolygon]) -> Polygon | MultiPolygo
 
 def _spar_cap_label_for_surface(surface: str) -> str:
     """Map camber ``upper``/``lower`` to canonical spar-cap label."""
-    if surface in ("upper", "suction_surface"):
-        return "spar_cap_suction_surface"
-    if surface in ("lower", "pressure_surface"):
-        return "spar_cap_pressure_surface"
-    return f"spar_cap_{surface}"
+    return CapBuilder.canonical_surface_label(surface)
 
 
 def _host_recipes(section: Any) -> dict[str, Any]:
@@ -212,12 +206,15 @@ def _recipe_for(section: Any, key: str, *, kind: str):
     recipes = _host_recipes(section)
     if key in recipes:
         return recipes[key]
-    if kind == "cap":
+    wt = wall_type_for_label(key)
+    if wt is not None and wt.polygon_by_surface:
         cap_recipes = _host_cap_recipes(section)
         if key in cap_recipes:
             return cap_recipes[key]
         for rk, wall in cap_recipes.items():
-            if rk.startswith(f"{key}_") or key.startswith(f"{rk}_"):
+            if CapBuilder.matches_label(rk) and (
+                rk == key or key in rk or rk in key
+            ):
                 return wall
     raise KeyError(
         f"No {kind} wall recipe for {key!r} on section host; "
@@ -336,7 +333,7 @@ def emit_wall_solid_polygons(section: Any) -> dict[str, Polygon | MultiPolygon]:
             )
         else:
             wt = wall_type_for_label(key)
-            if wt is None or wt.kind == "cap":
+            if wt is None or wt.polygon_by_surface:
                 continue
             recipes = dict(getattr(section, "wall_recipes", None) or {})
             wall = recipes.get(key)
@@ -348,13 +345,12 @@ def emit_wall_solid_polygons(section: Any) -> dict[str, Polygon | MultiPolygon]:
         section, comps, discrete, airfoil_poly=af_poly
     )
     for surface in ("upper", "lower"):
-        key = _spar_cap_label_for_surface(surface)
+        key = CapBuilder.canonical_surface_label(surface)
         keys = {_label_key(k) for k in comps}
-        if key not in keys and f"spar_cap_{surface}" not in keys:
-            # Also accept recipes-only hosts.
-            recipe_keys = set(_host_recipes(section)) | set(_host_cap_recipes(section))
-            if key not in recipe_keys and f"spar_cap_{surface}" not in recipe_keys:
-                continue
+        recipe_keys = set(_host_recipes(section)) | set(_host_cap_recipes(section))
+        present = any(CapBuilder.matches_surface(k, surface) for k in keys | recipe_keys)
+        if not present:
+            continue
         cap = _cap_from_recipes(
             section,
             comps,

@@ -61,6 +61,7 @@ class MultiCellSection:
         web_endpoints=None,
         stage_sink: dict[str, float] | None = None,
         spar_cap_ply_pitch_m: float | None = None,
+        web_indices=None,
         registry: BuilderRegistry | None = None,
     ):
         """Assemble a multi-cell section.
@@ -85,7 +86,7 @@ class MultiCellSection:
             fixed_cap_anchor, pitch_fraction_of_chord_from_le, fixed_cap_chord_half_width,
             discrete_cap_chord_half_width, cap_placement=cap_placement,
             web_endpoints=web_endpoints, stage_sink=stage_sink,
-            spar_cap_ply_pitch_m=spar_cap_ply_pitch_m,
+            spar_cap_ply_pitch_m=spar_cap_ply_pitch_m, web_indices=web_indices,
         )
         contributions = (registry or section_registry()).run(plan)
         self._structure = assemble(plan, contributions)
@@ -240,11 +241,14 @@ class MultiCellSection:
 
     @property
     def n_webs(self):
-        return sum(
-            1
-            for k in self._components
-            if str(getattr(k, "value", k)).startswith(("shear_web_", "web_"))
-        )
+        from implicit_geometry_kernel.section.assembly.members import wall_type_for_label
+
+        n = 0
+        for k in self._components:
+            wt = wall_type_for_label(k)
+            if wt is not None and wt.cell_face_kind == "web":
+                n += 1
+        return n
 
     @property
     def n_cells(self):

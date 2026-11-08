@@ -2,6 +2,190 @@
 
 ## Unreleased
 
+- Architecture programme closed at the target tree: ``catalogue/`` is a layer;
+  ``plotting``, ``mesh``, ``blade.cad``, and ``profiling`` are extras. House-rule
+  splits: loft façade, topology map, shell-graph build, spar-cap pads, section
+  plotters. ``StiffenerWall`` is a registered constructive kind; ``build`` is the
+  only ``WallType`` pipeline hook. Extract tests live under ``tests/extract/``.
+
+- Constructive GEOS calls go through ``PolygonOps`` (gateway
+  ``section/boundary/polygons.py``). ``apply_clip`` replaces ``apply_shapely``.
+  Shoelace and plotting do not import Shapely. ``KernelPolygonOps`` implements
+  numpy affine maps and is compared to Shapely in
+  ``tests/section/test_polygon_ops_oracle.py``. Production ``OPS`` remains
+  ``ShapelyPolygonOps`` (GEOS overlay and mitre offset) so catalogue goldens
+  do not move. Shapely stays a runtime dependency until a numpy overlay matches
+  those goldens.
+
+- Target tree lists ``catalogue/`` as a layer; ``plotting``, ``mesh``, ``blade.cad``,
+  and ``profiling`` are extras. Import-boundary tests cover ``mesh``. ``SDFGrid``
+  debug contours use contourpy only (no matplotlib fallback).
+
+- Station wall kinds dispatch on ``SECTION_BUILDERS`` flags (``on_shell_product``,
+  ``polygon_by_surface``). ``build_section_view`` is the assemble host helper in
+  ``section.assembly``; gated products stay on ``build_section_geometry``.
+  Catalogue and concept shims (``section.layout.system_layout``, ``blade.concept``)
+  are gone. ``blade.topology`` is a package; OML writers live in ``blade.oml``.
+
+- ``sdf`` is one tree: ``kernels``, ``nodes``, ``shapes``, ``solve``. Retired
+  top-level ``sdf/{ir,airfoil,csg,grid,primitives,naca,transforms,_polygon_numba}``.
+  One ``AirfoilSDF`` (``sdf.shapes``); author via ``Airfoil.to_sdf()``.
+  ``SDFGrid`` is an evaluation grid; product integrals stay in ``integration``.
+  ``GeometrySolver`` stays in ``sdf.solve``; ``extract`` traces zero-set polylines.
+
+- Catalogue tokens live in ``implicit_geometry_kernel.catalogue`` (below
+  ``section``). ``blade.concepts`` authors a full blade (``BladeConcept.from_key``,
+  R-letter ribs). Taxonomy: ``docs/blade/concepts/taxonomy.md``.
+
+- Documentation is split into a **manual** (package READMEs, guides, frames,
+  taxonomy, numbered equations) and **internal** pages (bug logs, ADRs,
+  reports). House style: ``docs/conventions/DOCUMENTATION_STANDARDS.md``.
+  Completeness: ``docs/glossary.md`` lists every kernel ``__all__`` name.
+  Hub data flow is ``BladeGeometry`` → ``SectionCut`` → ``SectionGeometry``.
+  ``docs/contract/README.md`` describes live DTOs only (loads remain in
+  ``docs/FORK.md``). Sphinx/autodoc is deferred.
+
+- Mapped loft and geometry-to-mesh handoff are frozen (consume table in
+  ``docs/section/guides/geometry_to_mesh.md``; loft rules and closed bugs in
+  ``docs/blade/bug_log.md``).
+
+- Loft keep-set equals intercept ``DroppedWeb.index`` when that set is passed:
+  no 0.08 cluster or extra TE-plug omit. ``_regularise_anchors`` keeps a
+  ``web_*`` over a nearby ``cap_*``. TE wrap walks include the OML ridge;
+  TE metrics use nearest-ridge / max chord-frac, not blade-x.
+
+- TE wrap corners interpolate along the OML-TE ridge at a t/c-scaled chord
+  drop, so the cap width follows the section instead of switching on a y-span
+  threshold (that switch wrinkled IEA 15). Blunt roots still close; sharp TE
+  keeps a short wrap.
+
+- Loft VTK writes PNG ``panel_colour`` RGB as ``COLOR_SCALARS`` so ParaView
+  shows the same patches; cell field ``role`` keeps the region name.
+
+- Skin loft at a PA web onset/drop rules each t1 panel from the t0 mould walk
+  between its mapped ends (not a cavity chord or a collapsed TE point). Dropped
+  web anchors leave the loop.
+
+- PA/LE loft anchors follow the metre freeze, not catalogue LC fractions, so
+  ``web_0`` / ``web_3`` walk to the LE/TE with the live intercept instead of
+  vanishing mid-chord.
+
+- Cylinder loft clustering no longer uses a 0.20 chord radius, so a 4-web PA
+  lattice (0.2 / 0.4 / 0.6 / 0.8) keeps ``web_2`` through the root. TE-named
+  plugs are still omitted on a cylinder.
+
+- Loft templates keep authored web indices from ``DroppedWeb.index`` (order-
+  preserving match only as fallback). TE corners track the OML TE so cylinder–
+  foil stations do not jump. Example 09 tip chord is 0.75 m so 3D-F still
+  anchors one web at the tip.
+
+- Example loft dumps write OBJ, VTK POLYDATA, and NPZ (`polygons` includes rib
+  n-gons). Example 09 also writes a suction-omitted `cutaway.obj` / `cutaway.vtk`.
+
+- Ribs (and tip closure) are n-gons whose vertices are the mapped-loft skin
+  and web nodes at the member station. Skins and webs stay span quads. OBJ
+  keeps those n-gons; STL fans from the first loft vertex. TE keys are the
+  start of each TE→LE side arc.
+
+- Breaking: PA web freeze is hard-coded blade-x from the pitch axis, not a
+  ``k·c_root/n`` lattice and not the two-web ``(0.15, 0.50)`` pair. Primary
+  slots sit in the root ``[x_LE, x_TE]`` band about PA; secondary slots sit in
+  the TE shelf ``[x_TE(root), x_TE(max_chord)]``. LC/LE remain authored chord
+  fractions / metres from LE. ``BladeConcept`` lives in
+  ``blade.concepts`` (``blade.concept`` is a shim). Web labels keep authored
+  indices through drop/onset. Example 09 adds ``4D-F-PA-10R``.
+
+- Breaking: `BladeGeometry` requires `pivot_fraction` (float or span table) —
+  the S-frame origin and XY stacking point. There is no 0.25 / 0.333 fallback.
+  `pitch_axis=` remains an alias for the same table; do not pass both.
+
+- Authored loft topology: `WallRegionGraph` (concept `from_section_layout` and
+  windIO `from_windio_structure`), `ShellTopologyTemplate.map_vertex`,
+  `zone_region_graphs`, and `loft_mapped_strips`. Figure loft and
+  `write_mid_surfaces` join by region id, not run-name intersection. windIO
+  compile adds a `tip_closure` `TransverseMember` at last span (plus YAML
+  `ribs` / `bulkheads`). Example 08 colours loft faces with `RETRO_PANELS` by
+  role and draws rib faces. Cores stay solids. `shared_loft_names` is unchanged
+  (Wave 2). No Gmsh / PCOMP.
+
+- Locked loft: `shell_loft_zones`, `LockedLoftPlan`, and `resample_locked` keep
+  held chord counts and shared partition vertices. Surviving names loft through
+  topology events; only missing names are omitted. `write_mid_surfaces` and
+  example 08 use that rule instead of a whole-blade name intersection.
+
+- Conformal loop: cap paint on two web-bounded panels stays two runs
+  (no jump-join). Published `chord_window` survives a web drop instead of
+  renaming caps to `per_web_pads` `*_0`.
+
+- windIO `cap_windows`: `CapPlacementRule.from_chord_windows` stores the
+  published `(lo, hi)` chord interval (`chord_window`). Assemble uses that
+  band, not a pitch-centred half-width pad.
+
+- Shell mesh: conformal **skin mid** (no stack-NA kink at cap ends). Cap
+  footprints are `LaminateOffsetRegion`s (`ShellGraph.offset_regions()`) for
+  downstream constitutive OFFSET. `wall_mid_sdf` follows the skin mid; stack
+  `T` stays a thickness oracle.
+
+- Breaking: `result.midline_strips` / `build_shell_midline_strips` are
+  skin+web only. Cap solids stay on `cut.walls` (and properties); they are
+  not a second mesh polyline. Anyone counting cap rows on the midlines
+  product must use `cut.walls` or `shell_graph` partitions.
+
+- windIO: span-varying `web_position_table_from_windio_structure` /
+  `cap_window_table_from_windio_structure`. Example 08 compiles published
+  `nd_arc` tables instead of overlaying a 2D-F layout.
+
+- Docs: layered `README.md` files from the repository root through `docs/`,
+  `src/`, `tests/`, and `examples/`. New hub at `docs/README.md` with a
+  capability map and mermaid package / data-flow trees. Package pages for
+  `blade` and `sdf`; restored `docs/conventions/` (documentation, API runner,
+  module layers).
+
+- Breaking for scripts and bookmarks: numbered examples now live under
+  `examples/<package>/NN_*` (blade, section, structure, sdf, frames). Teaching
+  scripts moved to `examples/section/teaching/` including
+  `05_midline_handoff.py` (replaces the deleted mesh-driver twin).
+
+## 0.7.0
+
+- WallType: leftover label tests go through `wall_type_for_label` / `kind`
+  (cut key-points, zone gauges, web counts, property wall-solid keys). A
+  `BondlineBuilder` is registered on `SECTION_BUILDERS` with an empty `build`
+  so catalogue layouts stay at 40 letters; tests may override it.
+
+- G9: `shell_graph(..., include_solids=True)` adds core and insert `ShellRun`s
+  from polygon boundaries (`surface` `"core"` / `"insert"`). Default remains
+  off; 2D-F run-name goldens unchanged.
+
+- WP6: named `feature_curve(geo, name_a, name_b, zs)` delegates to
+  `partition_edge_curve`. `classify_trailing_edge` accepts a stacked skin loop
+  (`ShellGraph`) as well as an OML ring. `LoftedPolygonSDF` caches an AABB /
+  uniform-grid BVH for batched queries; `phi` is unchanged.
+
+- `BladeGeometry.write_mid_surfaces` writes one STL/OBJ patch per loftable
+  run. Optional extra `[cad]` (cadquery) exports those patches as STEP from
+  `blade.cad` only.
+
+- Additive `SpanwiseScheme` and `BladeConcept` compile to existing
+  `BladeGeometry` kwargs (`from_concept` / `concept`). Catalogue keys stay
+  presets of `SectionLayout`.
+
+- `sdf` remains `implicit_geometry_kernel.sdf`. Import tests enforce
+  down-only layers (`contract` ← `sdf` / `integration` / `frames` ←
+  `structure` ← `section` ← `blade` ← `extract`).
+
+## 0.6.0
+
+- Breaking: 0.5.x deprecation aliases are gone. Removed dual names
+  (`CellLoop`, `SpanWeb`, `SectionGeometryRunner`, `station_at`,
+  `web_x_positions_m`), shim packages (`section.api`, `section.placement`,
+  `section.constructive`, `section.props`, `section.recipes`, root `plotting`,
+  flat `sdf.*` redirects, `integration.quadrature`), the keyword form of
+  `build_section_geometry`, `compile_expr_to_node` / `eval_via_nodes`, silent
+  `*Node` CSG aliases, and `blade.cut` re-exports of `shell_graph`. Import
+  `implicit_geometry_kernel.plotting`, `section.spec`, and
+  `blade.shell_graph`. Geometry goldens unchanged.
+
 - Architecture: this kernel is the source of truth for blade geometry
   parameterisation. Plots go behind `[plots]`; mid-surface field from
   `shell_graph`; demos stay and will be ported; seams for thickness/edges/size
@@ -9,16 +193,16 @@
   package. Optional `[cad]` waits until after those seams.
 
 - Plots live in `implicit_geometry_kernel.plotting` behind extra `[plots]`.
-  Root `import plotting` is an alias until 0.6.0. Geometry modules still do not
-  import matplotlib.
+  Geometry modules still do not import matplotlib.
 
 - Exactness: `wall_mid_sdf` is the signed polygon SDF of the `shell_graph`
   skin loop at each `z` (run interiors and partition vertices on `phi = 0`).
   Webs remain branches. Section and blade goldens unchanged. Worst `|phi|` at
   loop-run interiors on all 40 layouts is below 5e-4.
 
-- Demos under `examples/demos/` import `section.spec` (not the `section.api`
-  alias). Anatomy demo also prints a `BladeGeometry.shell_graph()` inventory.
+- Demos under `examples/demos/` import `section.spec` and
+  `implicit_geometry_kernel.plotting`. Anatomy demo also prints a
+  `BladeGeometry.shell_graph()` inventory.
 
 - Seams for meshing and thickness: `ThicknessLaw` is `T(z, s)` in metres
   (`from_span` wraps a span law). `BladeGeometry` exposes `thickness_law()`,
@@ -56,9 +240,7 @@
 - Live `docs/` no longer import or path into downstream packages; fork history
   stays in `docs/FORK.md`.
 
-- Dual names warn until 0.6.0: `CellLoop` → `CellPolygon`, `station_at` →
-  `interpolate`, `SectionGeometryRunner` → `SectionGeometry`,
-  `web_x_positions_m` → `web_offsets`, `SpanWeb` → `ShearWeb`.
+- Dual names from 0.5.x are removed (see Breaking above).
 
 - `Airfoil` is the shape; `AirfoilSDF` is the implicit field via `Airfoil.to_sdf()`.
   NACA 4/5/6 vertex maths lives only in `sdf.shapes.naca`.

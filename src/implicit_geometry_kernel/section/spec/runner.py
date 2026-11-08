@@ -13,7 +13,6 @@ product; ``get_results()`` returns the built geometry.
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
@@ -36,6 +35,9 @@ class SectionGeometry:
         Design-variable thicknesses [m].
     twist_rad:
         Geometric twist [rad] for the S→B map.
+    pivot_fraction:
+        Pitch-axis chord fraction from the LE (S-frame origin). Default: the
+        standalone frame fallback ``0.333``.
     outputs:
         Compute-cost gates — ``properties`` / ``midlines`` / ``cell_wall_loops``.
     min_cavity_depth_m:
@@ -61,7 +63,6 @@ class SectionGeometry:
         twist_angle_rad: float | None = None,
         twist_angle: float | None = None,
         outputs: Iterable[str] = ("properties", "midlines", "cell_wall_loops"),
-        web_x_positions_m: Sequence[float] | None = None,
         web_offsets: Sequence[float] | None = None,
         min_cavity_depth_m: float = 0.0,
         n_web_samples: int = 20,
@@ -73,8 +74,9 @@ class SectionGeometry:
         resolution: StationLayoutResolution | None = None,
         spar_cap_ply_pitch_m: float | None = None,
         zone_gauges_m: Mapping[str, float] | None = None,
+        pivot_fraction: float | None = None,
     ) -> None:
-        from implicit_geometry_kernel.section.spec.kwarg_aliases import resolve_shear_web_thickness, resolve_skin_gauges, resolve_spar_cap_thickness, resolve_twist_rad
+        from implicit_geometry_kernel.section.spec.section_spec import resolve_shear_web_thickness, resolve_skin_gauges, resolve_spar_cap_thickness, resolve_twist_rad
 
         if layout is None:
             raise ValueError("layout is required")
@@ -115,17 +117,7 @@ class SectionGeometry:
             twist_angle=twist_angle,
         )
         self._outputs = tuple(outputs)
-        if web_offsets is not None and web_x_positions_m is not None:
-            raise ValueError("pass web_offsets or web_x_positions_m, not both")
-        if web_x_positions_m is not None:
-            warnings.warn(
-                "web_x_positions_m is deprecated; use web_offsets. Removed in 0.6.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        self._web_x_positions_m = (
-            web_offsets if web_offsets is not None else web_x_positions_m
-        )
+        self._web_x_positions_m = web_offsets
         self._min_cavity_depth_m = float(min_cavity_depth_m)
         self._n_web_samples = int(n_web_samples)
         self._n_cap_samples = int(n_cap_samples)
@@ -156,6 +148,9 @@ class SectionGeometry:
             float(spar_cap_ply_pitch_m)
             if spar_cap_ply_pitch_m is not None
             else None
+        )
+        self._pivot_fraction = (
+            float(pivot_fraction) if pivot_fraction is not None else None
         )
 
     def resolve(self) -> "SectionGeometry":
@@ -204,8 +199,10 @@ class SectionGeometry:
             **thickness,
             twist_rad=self._twist_rad,
             web_offsets=resolution.web_x_positions_m,
+            web_indices=resolution.web_indices or None,
             web_y_coords=y,
             spar_cap_ply_pitch_m=self._spar_cap_ply_pitch_m,
+            pivot_fraction=self._pivot_fraction,
         )
         opts = SectionOptions.from_kwargs(
             outputs=self._outputs,
@@ -229,16 +226,33 @@ class SectionGeometry:
         from implicit_geometry_kernel.section.spec.results import DroppedWeb
 
         xs = list(resolution.web_x_positions_m)
+        idx = list(resolution.web_indices or range(len(xs)))
         dropped = list(resolution.dropped)
         while len(xs) > 1:
-            lost = float(xs.pop())
+            fail_i = getattr(last_exc, "web_index", None)
+            fail_x = getattr(last_exc, "web_x", None)
+            if fail_i is not None and fail_i in idx:
+                pos = idx.index(fail_i)
+            elif fail_x is not None:
+                pos = min(range(len(xs)), key=lambda j: abs(xs[j] - float(fail_x)))
+            else:
+                pos = 0
+            lost = float(xs.pop(pos))
+            lost_i = int(idx.pop(pos))
             dropped.append(
-                DroppedWeb(lost, "flapwise web cannot re-anchor under twist; dropped at this station")
+                DroppedWeb(
+                    lost,
+                    "flapwise web cannot re-anchor under twist; dropped at this station",
+                    index=lost_i,
+                )
             )
-            sl = _step_down_section_layout(resolution.nominal_layout, len(xs))
-            sl = _reattach_catalogue_preset(sl)
+            sl = _step_down_section_layout(
+                resolution.nominal_layout, len(xs), indices=idx,
+            )
+            sl = _reattach_catalogue_preset(sl, resolution.nominal_layout)
             new_res = StationLayoutResolution(
-                sl, tuple(xs), tuple(dropped), resolution.nominal_layout, web_y_coords=()
+                sl, tuple(xs), tuple(dropped), resolution.nominal_layout,
+                web_y_coords=(), web_indices=tuple(idx),
             )
             try:
                 result = self._assemble(new_res, live_y=True)
@@ -320,15 +334,4 @@ class SectionGeometry:
         )
 
 
-def __getattr__(name: str):
-    if name == "SectionGeometryRunner":
-        warnings.warn(
-            "SectionGeometryRunner is deprecated; use SectionGeometry. Removed in 0.6.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return SectionGeometry
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
-__all__ = ["SectionGeometry", "SectionGeometryRunner"]  # noqa: F822
+__all__ = ["SectionGeometry"]

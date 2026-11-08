@@ -17,6 +17,8 @@ def read_planform_csv(path, airfoil: Airfoil | None = None, **blade_kw) -> Blade
 
     ``airfoil`` is used when the file has no airfoil column (NACA 4-digit codes
     or ellipse). Layout and thicknesses come from ``blade_kw``.
+    ``pivot_fraction`` is required on ``blade_kw`` unless a pitch-axis column
+    is present (then that column is passed through as ``pivot_fraction``).
     """
     text = Path(path).read_text(encoding="utf-8")
     rows = []
@@ -30,6 +32,7 @@ def read_planform_csv(path, airfoil: Airfoil | None = None, **blade_kw) -> Blade
         rows.append(parts)
     if len(rows) < 2:
         raise ValueError("planform CSV needs at least two stations")
+    has_pitch_col = all(len(parts) > 3 for parts in rows)
     stations = []
     for parts in rows:
         z, chord = float(parts[0]), float(parts[1])
@@ -48,8 +51,15 @@ def read_planform_csv(path, airfoil: Airfoil | None = None, **blade_kw) -> Blade
         if foil is None:
             raise ValueError("give an airfoil column or the airfoil= argument")
         stations.append(Station(z, chord, foil, twist=twist, pitch_axis=pitch, offset=(ox, oy)))
-    layout = blade_kw.pop("layout", "2D-F")
+    layout = blade_kw.pop("layout", "2D-F-LC-0R")
     skin = blade_kw.pop("skin_thickness", 0.004)
+    if "pivot_fraction" not in blade_kw and "pitch_axis" not in blade_kw:
+        if not has_pitch_col:
+            raise TypeError("pivot_fraction is required (or a pitch-axis CSV column)")
+        blade_kw["pivot_fraction"] = (
+            [s.z for s in stations],
+            [s.pitch_axis for s in stations],
+        )
     return BladeGeometry(stations, layout, skin, **blade_kw)
 
 

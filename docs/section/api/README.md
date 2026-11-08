@@ -1,7 +1,8 @@
 # api — former path of `spec/`
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 ↑ [`section`](../README.md)
 
-Moved (aliases until 0.6.0). `SectionSpec`, `SectionOptions`, the geometry
+Removed in 0.6.0. `SectionSpec`, `SectionOptions`, the geometry
 runner, and `build_section_geometry` live in [`../spec/`](../spec/README.md).
-The `section.api` import path still works.

@@ -56,18 +56,18 @@ from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import resolve_system_type
 from implicit_geometry_kernel.section.spec import build_section_view
 from implicit_geometry_kernel.sdf.nodes import Expr
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     INK,
     MUTED,
     RED,
     strip_axes_chrome,
 )
-from plotting.plot import (
+from implicit_geometry_kernel.plotting.plot import (
     plot_section_hybrid,
 )
 
@@ -224,7 +224,7 @@ def _draw_section(axis, section, changed_regions: set[str], label: str, title: s
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     add_output_and_presentation_args(parser, default_stem="csg_tree_diff", root=Path(__file__).resolve().parents[1])
-    parser.add_argument("--layout", default="2D-F")
+    parser.add_argument("--layout", default="2D-F-LC-0R")
     parser.add_argument("--label", default="shear_web_0")
     parser.add_argument("--skin-a", type=float, default=0.004)
     parser.add_argument("--skin-b", type=float, default=0.004)

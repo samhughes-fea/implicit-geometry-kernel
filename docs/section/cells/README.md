@@ -1,5 +1,7 @@
 # cells — cell-wall loops
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 ↑ [`section`](../README.md)
 
 Builds closed wall loops around each inter-web cell from topology-prepared

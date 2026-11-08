@@ -77,7 +77,8 @@ class StackThickness:
             for run in loop:
                 d = _polyline_distance(xy, run.points[:, :2])
                 closer = d < best
-                T[closer] = run.thickness
+                stack_t = float(sum(run.layer_thicknesses_m)) if run.layer_thicknesses_m else float(run.thickness)
+                T[closer] = stack_t
                 best[closer] = d[closer]
             out[group] = T
         return out

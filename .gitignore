@@ -11,3 +11,10 @@ dist/
 examples/demos/figures/**/*.json
 examples/demos/figures/**/*.csv
 examples/09_reference_blades/figures/**/*.msh
+examples/blade/08_reference_blades/figures/**/*.obj
+examples/blade/08_reference_blades/figures/**/*.npz
+examples/blade/08_reference_blades/figures/**/*.vtk
+examples/blade/08_reference_blades/figures/**/*.msh
+examples/blade/09_blade_concepts/figures/**/*.obj
+examples/blade/09_blade_concepts/figures/**/*.npz
+examples/blade/09_blade_concepts/figures/**/*.vtk

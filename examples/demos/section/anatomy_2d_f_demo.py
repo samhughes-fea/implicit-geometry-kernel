@@ -35,33 +35,35 @@ _ensure_mod.ensure_repo_path()
 from implicit_geometry_kernel.section import (
     SectionGeometry,
 )
-from implicit_geometry_kernel.section.spec.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
 )
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
+)
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     region_color,
     strip_axes_chrome,
 )
-from plotting.plot import (
+from implicit_geometry_kernel.plotting.plot import (
     plot_section_hybrid,
 )
 from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
-from plotting.plot_section import (
+from implicit_geometry_kernel.plotting.plot_section import (
     apply_structural_section_axes,
 )
 from implicit_geometry_kernel.frames import naca_to_twisted_pitch_axis_blade_frame
-from plotting.frames import section_plot_axes
+from implicit_geometry_kernel.plotting.frames import section_plot_axes
 
 _FIGSIZE = (12.0, 5.0)
 _FIGSIZE_ANNOTATED = (13.5, 6.6)
-_LAYOUT_KEY = "2D-F"
+_LAYOUT_KEY = "2D-F-LC-0R"
 _SKIN_THICKNESS_M = 0.006
 _SPAR_CAP_THICKNESS_M = 0.014
 _SHEAR_WEB_THICKNESS_M = 0.006
@@ -313,6 +315,7 @@ def main(argv: list[str] | None = None) -> int:
             Station(1.0, float(args.chord), Airfoil.naca4(args.naca), pitch_axis=0.3),
         ],
         _LAYOUT_KEY,
+        pivot_fraction=0.3,
         skin_thickness=_SKIN_THICKNESS_M,
         spar_cap_thickness=_SPAR_CAP_THICKNESS_M,
         shear_web_thickness=_SHEAR_WEB_THICKNESS_M,

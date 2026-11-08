@@ -32,9 +32,11 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from implicit_geometry_kernel.section.spec.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.midlines.ring_geometry import (
     intersect_web_axis_open_polyline_2d,
@@ -47,7 +49,7 @@ from implicit_geometry_kernel.section.junctions.prepare import (
     prepare_shell_midline_junctions,
 )
 
-LAYOUTS = ("4D-F", "5C-CN")
+LAYOUTS = ("4D-F-LC-0R", "5C-CN-LC-0R")
 CHORD_M = 1.0
 TWIST_DEG = 0.0
 

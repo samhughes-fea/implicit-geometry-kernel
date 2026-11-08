@@ -47,12 +47,12 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     INK,
     MUTED,
     NAVY,
@@ -70,7 +70,7 @@ def run_quickstart():
         resolve_system_type,
     )
 
-    layout = resolve_system_type("2D-F")
+    layout = resolve_system_type("2D-F-LC-0R")
     airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)
 
     result = (
@@ -122,7 +122,7 @@ def main(argv: list[str] | None = None) -> int:
 
     from implicit_geometry_kernel import Airfoil
     from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
-    from plotting import plot_section
+    from implicit_geometry_kernel.plotting import plot_section
 
     # Stacked, not side by side: this sits in a half-width slide panel of about
     # 1.5:1, and a wide two-column figure letterboxes down to a thin strip there.

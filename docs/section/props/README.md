@@ -1,5 +1,7 @@
 # props — per-region geometric properties
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 ↑ [`section`](../README.md)
 
 When `outputs` includes `"properties"`, builds `properties_map`: per-region

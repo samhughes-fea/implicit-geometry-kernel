@@ -1,21 +1,27 @@
-# extract
+# Extract
 
-In-plane geometry extractors. This is a **subpackage** of
-`implicit_geometry_kernel`, not a kernel-barrel export: import
-`implicit_geometry_kernel.extract`, not `from implicit_geometry_kernel import ...`.
+↑ [docs](../README.md) · [src](../../src/implicit_geometry_kernel/extract/README.md) ·
+[tests](../../tests/README.md)
 
-It returns **polylines**, not meshes. A 3-D FEM mesh stays downstream.
+In-plane geometry extractors. Import `implicit_geometry_kernel.extract`; the
+symbols are not on the kernel barrel. The package returns **polylines**, not
+meshes. A three-dimensional finite-element mesh remains downstream.
 
-## Public names
+## Zero set
 
-| Symbol | Role |
-| --- | --- |
-| `extract_zero_loops` | Closed (or open) zero-level polylines of a 2-D SDF |
-| `feature_curve` | Tagged feature curve from the 2.5-D field |
-| `classify_trailing_edge` | Trailing-edge classification helper |
+For a planar field \(d(\mathbf{x})\), a zero loop is a polyline approximating
 
-Callers speak `SDFNode` / the feature field, not section `Expr`. Station geometry
-callers never need this package.
+$$
+\{\mathbf{x}\in\mathbb{R}^2: d(\mathbf{x})=0\}.
+\tag{1}
+$$
+
+Function: `extract_zero_loops`. Tagged curves from the two-and-a-half-dimensional
+feature field use `feature_curve`. `classify_trailing_edge` is a trailing-edge
+helper. Callers speak `SDFNode` and the feature field, not section `Expr`.
+In-plane Newton projection is `GeometrySolver` in `sdf.solve`; this package
+traces polylines, it is not a second solver. Station geometry callers do not
+need this package. Not on the kernel barrel; see [glossary](../glossary.md).
 
 ```python
 from implicit_geometry_kernel.extract import extract_zero_loops, feature_curve

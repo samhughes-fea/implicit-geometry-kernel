@@ -1,8 +1,14 @@
-"""WindIO nd_arc anchors → span-constant web chord fractions (G8)."""
+"""WindIO nd_arc anchors → web chord fractions (G8 median + span tables)."""
+
+import numpy as np
+import pytest
 
 from implicit_geometry_kernel.blade.windio import (
     cap_chord_windows_from_windio_structure,
+    cap_window_table_from_windio_structure,
     nd_arc_to_chord_frac,
+    web_position_table_from_windio_structure,
+    web_positions_fn_from_windio_structure,
     web_positions_from_windio_structure,
 )
 
@@ -74,3 +80,59 @@ def test_cap_window_from_layer_nd_arc():
     }
     windows = cap_chord_windows_from_windio_structure(structure)
     assert windows == ((0.20, 0.40),)
+
+
+def test_web_position_table_varies_with_nd_arc():
+    structure = {
+        "webs": [{"name": "fore_web"}, {"name": "rear_web"}],
+        "anchors": [
+            {
+                "name": "fore_web",
+                "start_nd_arc": {"grid": [0.0, 1.0], "values": [0.39, 0.42]},
+                "end_nd_arc": {"grid": [0.0, 1.0], "values": [0.61, 0.58]},
+            },
+            {
+                "name": "rear_web",
+                "start_nd_arc": {"grid": [0.0, 1.0], "values": [0.25, 0.25]},
+                "end_nd_arc": {"grid": [0.0, 1.0], "values": [0.75, 0.75]},
+            },
+        ],
+    }
+    z_of_s = np.column_stack([[0.0, 1.0], [0.0, 10.0]])
+    table = web_position_table_from_windio_structure(structure, z_of_s)
+    assert table is not None
+    z, vals = table
+    assert vals.shape[1] == 2
+    root = tuple(float(np.interp(0.0, z, vals[:, j])) for j in range(2))
+    tip = tuple(float(np.interp(10.0, z, vals[:, j])) for j in range(2))
+    assert root[0] == pytest.approx(0.22)
+    assert root[1] == pytest.approx(0.50)
+    assert tip[0] == pytest.approx(0.16)
+    assert tip[1] == pytest.approx(0.50)
+    assert web_positions_from_windio_structure(structure) == (0.19, 0.50)
+    fn = web_positions_fn_from_windio_structure(structure, z_of_s)
+    assert fn is not None
+    assert fn(0.0) == root
+
+
+def test_cap_window_table_varies_with_nd_arc():
+    structure = {
+        "layers": [
+            {
+                "name": "spar_cap_ss",
+                "start_nd_arc": {"grid": [0.0, 1.0], "values": [0.40, 0.38]},
+                "end_nd_arc": {"grid": [0.0, 1.0], "values": [0.30, 0.28]},
+            }
+        ],
+    }
+    z_of_s = np.column_stack([[0.0, 1.0], [0.0, 20.0]])
+    table = cap_window_table_from_windio_structure(structure, z_of_s)
+    assert table is not None
+    z, vals = table
+    root = tuple(float(np.interp(0.0, z, vals[:, j])) for j in range(2))
+    tip = tuple(float(np.interp(20.0, z, vals[:, j])) for j in range(2))
+    assert root[0] == pytest.approx(0.20)
+    assert root[1] == pytest.approx(0.40)
+    assert tip[0] == pytest.approx(0.24)
+    assert tip[1] == pytest.approx(0.44)
+

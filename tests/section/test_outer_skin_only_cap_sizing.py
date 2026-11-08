@@ -21,7 +21,9 @@ import pytest
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import MultiCellSection, resolve_system_type
-from implicit_geometry_kernel.section.api import (
+from implicit_geometry_kernel.section.spec import (
+    SectionOptions,
+    SectionSpec,
     build_section_geometry,
     build_section_with_thicknesses,
 )
@@ -32,15 +34,17 @@ T_SKIN = 0.001
 
 
 def _cap_area(chord: float, spar_cap_thickness: float) -> float:
-    layout = resolve_system_type("0B")
+    layout = resolve_system_type("0B-LC-0R")
     airfoil = AirfoilSDF.from_naca("0012", n_points=200, chord=chord)
     result = build_section_geometry(
-        layout,
-        airfoil,
-        skin_thickness=T_SKIN,
-        spar_cap_thickness=spar_cap_thickness,
-        shear_web_thickness=0.0015,
-        outputs=("properties",),
+        SectionSpec.from_kwargs(
+            layout,
+            airfoil,
+            skin_thickness=T_SKIN,
+            spar_cap_thickness=spar_cap_thickness,
+            shear_web_thickness=0.0015,
+        ),
+        options=SectionOptions(outputs=("properties",)),
     )
     props = result.properties_map or {}
     return sum(
@@ -72,7 +76,7 @@ def test_cap_is_contained_by_a_shallow_section():
 
 def test_zero_web_layout_still_has_caps():
     """0B keeps its spar caps — it is 0 *webs*, not 0 structure."""
-    layout = resolve_system_type("0B")
+    layout = resolve_system_type("0B-LC-0R")
     assert layout.n_webs == 0
     assert layout.has_spar_caps is True
 
@@ -80,7 +84,7 @@ def test_zero_web_layout_still_has_caps():
 
 
 def test_0B_sized_build_is_multicell():
-    layout = resolve_system_type("0B")
+    layout = resolve_system_type("0B-LC-0R")
     airfoil = AirfoilSDF.from_naca("0012", n_points=200, chord=ROOT_CHORD)
     section = build_section_with_thicknesses(
         airfoil,

@@ -1,18 +1,18 @@
 """Loftable shell graph, mid-surface partitions and topology events.
 
 Built from a ``SectionCut``: caps are partitions on the skin loop, webs are
-branches. ``blade.cut`` re-exports these names until 0.6.0.
+branches.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Tuple
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
 
 if TYPE_CHECKING:
-    from implicit_geometry_kernel.blade.cut import SectionCut, SectionWall
+    from implicit_geometry_kernel.blade.cut import SectionCut
 
 
 @dataclass(frozen=True)
@@ -44,9 +44,9 @@ class MidSurface:
 class ShellRun:
     """One loftable run of the shell graph (a partition on the wall, or a web).
 
-    ``surface`` is ``skin``, ``web`` or ``rib``. ``kind`` is the colour / feature
-    class: ``cap`` on a stacked skin partition, the member name on a rib face,
-    otherwise ``surface``.
+    ``surface`` is ``skin``, ``web``, ``rib``, or opt-in ``core`` / ``insert``.
+    ``kind`` is the colour / feature class: ``cap`` on a stacked skin partition,
+    the member name on a rib face, otherwise ``surface``.
     """
 
     name: str
@@ -55,6 +55,11 @@ class ShellRun:
     layers: Tuple[str, ...]
     points: np.ndarray
     thickness: float
+    requires_eccentricity: bool = False
+    eccentricity_m: float = 0.0
+    layer_thicknesses_m: Tuple[float, ...] = ()
+    skin_side: str | None = None
+    reference_surface: str = "skin_mid"
 
 
 @dataclass(frozen=True)
@@ -84,9 +89,10 @@ class ShellGraph:
     webs: Tuple[ShellRun, ...]
     faces: Tuple[ShellRun, ...] = ()
     branches: Tuple[ShellRun, ...] = ()
+    solids: Tuple[ShellRun, ...] = ()
 
     def runs(self) -> Tuple[ShellRun, ...]:
-        return self.loop + self.webs
+        return self.loop + self.webs + self.solids
 
     def partition_edges(self) -> Tuple[PartitionEdge, ...]:
         """``(z, name_a, name_b) → xy`` where two loop runs share an endpoint."""
@@ -121,13 +127,20 @@ class ShellGraph:
                 return e
         return None
 
+    def closed_loop_chain(self, *, rel_tol: float = 1e-6):
+        """Ordered ``(name, xy, reversed)`` ring, or ``None`` if partitions do not meet."""
+        strips = [(r.name, np.asarray(r.points[:, :2], float)) for r in self.loop if len(r.points) >= 2]
+        if not strips:
+            return None
+        scale = max(1.0, max(float(np.max(np.abs(xy))) for _, xy in strips))
+        return _chain(strips, rel_tol * scale)
+
     def loop_polygon(self) -> np.ndarray:
         """Closed ``(N, 2)`` mid-loop from ordered partitions (the snap/query contour)."""
         strips = [(r.name, np.asarray(r.points[:, :2], float)) for r in self.loop if len(r.points) >= 2]
         if not strips:
             raise ValueError("shell graph has no loop runs")
-        scale = max(1.0, max(float(np.max(np.abs(xy))) for _, xy in strips))
-        chain = _chain(strips, 1e-9 * scale)
+        chain = self.closed_loop_chain(rel_tol=1e-9)
         if chain is None:
             ring = np.vstack([xy for _, xy in strips])
         else:
@@ -137,12 +150,11 @@ class ShellGraph:
         return ring
 
     def with_web_feet_on_loop(self) -> "ShellGraph":
-        """Snap web endpoints onto the nearest stacked-loop vertex (shell re-host).
+        """Shared nodes: web-midline ends lie on the skin-mid loop (not T-joint feet).
 
-        2D-F feet already share those vertices (gap 0); this is the explicit
-        Family D / flush contract on the graph, not a solids recipe change.
+        2D-F already shares those vertices (gap 0). This is the flush contract
+        on the graph, not a solids recipe change.
         """
-        from dataclasses import replace
 
         if not self.loop or not self.webs:
             return self
@@ -155,6 +167,24 @@ class ShellGraph:
                 pts[i] = loop_xy[j]
             webs.append(replace(web, points=pts))
         return replace(self, webs=tuple(webs))
+
+    def offset_regions(self) -> Tuple:
+        """Loop partitions that need constitutive eccentricity (cap footprints)."""
+        from implicit_geometry_kernel.contract.laminate_offset_region import LaminateOffsetRegion
+
+        return tuple(
+            LaminateOffsetRegion(
+                name=run.name,
+                requires_eccentricity=True,
+                eccentricity_m=float(run.eccentricity_m),
+                layers=run.layers,
+                layer_thicknesses_m=run.layer_thicknesses_m,
+                skin_side=run.skin_side,
+                reference_surface=run.reference_surface,
+            )
+            for run in self.loop
+            if run.requires_eccentricity
+        )
 
 
 @dataclass(frozen=True)
@@ -231,8 +261,8 @@ def shell_strips_from_graph(cut: SectionCut):
     """Shell hand-off: one ``ShellMidlineStrip`` per graph run (caps as partitions).
 
     Does not emit a second cap surface. ``cut.walls`` still lists solid caps.
-    The strip type is unchanged (Wave 3); only the producer set differs from
-    ``build_shell_midline_strips``.
+    The strip type is unchanged (Wave 3); ``build_shell_midline_strips`` is
+    the station skin+web emit, not a second cap surface.
     """
     from implicit_geometry_kernel.contract.shell_midline_strip import ShellMidlineStrip
 
@@ -247,7 +277,12 @@ def shell_strips_from_graph(cut: SectionCut):
                 thickness_m=float(run.thickness),
                 closed=False,
                 surface=side if run.kind == "cap" else None,
-                skin_side=side if run.kind == "skin" else None,
+                skin_side=run.skin_side or (side if run.kind == "skin" else None),
+                reference_face=run.reference_surface,
+                layers=run.layers,
+                layer_thicknesses_m=run.layer_thicknesses_m,
+                requires_eccentricity=bool(run.requires_eccentricity),
+                eccentricity_m=float(run.eccentricity_m),
             )
         )
     return tuple(strips)
@@ -279,233 +314,29 @@ def _chain(strips, tol):
     return out
 
 
-def _mid_surface(cut: SectionCut) -> MidSurface:
-    tol = 1e-9 * max(1.0, max(float(np.abs(w.xy).max()) for w in cut.walls))
-    pts = []  # type: ignore
-    lookup: Dict[Tuple[int, int], list] = {}
-
-    def index(p):
-        key = (int(round(p[0] / (100 * tol))), int(round(p[1] / (100 * tol))))
-        for dk in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)):
-            for k in lookup.get((key[0] + dk[0], key[1] + dk[1]), ()):
-                if np.linalg.norm(pts[k] - p) <= tol:
-                    return k
-        pts.append(np.array(p, float))
-        lookup.setdefault(key, []).append(len(pts) - 1)
-        return len(pts) - 1
-
-    skins, webs, caps = cut.walls_of("skin"), cut.walls_of("web"), cut.walls_of("cap")
-    # G9: cores / TE inserts are not SectionWalls; CoreWall.to_midline is not implemented.
-    # skins: orient every skin so that z x s points out of the section
-    flip = {w.label: False for w in skins}
-    loop = _chain([(w.label, w.xy) for w in skins], tol)
-    if loop is not None:
-        ring = np.vstack([xy[::-1] if rev else xy for _, xy, rev in loop])
-        area = 0.5 * np.sum(ring[:, 0] * np.roll(ring[:, 1], -1) - np.roll(ring[:, 0], -1) * ring[:, 1])
-        for label, _, rev in loop:
-            flip[label] = rev != (area > 0.0)  # counter-clockwise: z x s points in
-    # caps: which skin vertices carry which cap, and where the stack's mid-surface lies
-    capped: Dict[Tuple[str, int], str] = {}
-    moved: Dict[Tuple[str, int], np.ndarray] = {}
-    skin_of = {w.label: w for w in skins}
-    for cap in caps:
-        for host_label, (ic, ih) in cap.bonds.items():
-            host = skin_of.get(host_label)
-            if host is None:
-                continue
-            if len(ih) < 2 or np.sum(np.linalg.norm(np.diff(host.xy[ih], axis=0), axis=1)) < cap.thickness:
-                # the cap's edge reaching just past a web onto the next skin: whether that
-                # sliver holds a vertex depends on sampling, so it is left to the skin
-                continue
-            f = cap.thickness / (cap.thickness + host.thickness)
-            for a, b in zip(ic, ih):
-                capped[(host_label, int(b))] = cap.label
-                moved[(host_label, int(b))] = host.xy[b] + f * (cap.xy[a] - host.xy[b])
-            # likewise a sliver of bare skin between the cap's edge and the end of its skin
-            arc = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(host.xy, axis=0), axis=1))])
-            lo, hi = int(np.min(ih)), int(np.max(ih))
-            for edge, rest, gap in ((lo, range(0, lo), arc[lo]), (hi, range(hi + 1, len(host.xy)), arc[-1] - arc[hi])):
-                if len(rest) and gap < cap.thickness:
-                    step = moved[(host_label, edge)] - host.xy[edge]
-                    for v in rest:
-                        capped[(host_label, v)] = cap.label
-                        moved[(host_label, v)] = host.xy[v] + step
-    segments = []  # type: ignore
-    shift: Dict[int, np.ndarray] = {}
-    for w in skins:
-        ids = [index(p) for p in w.xy]
-        for v, k in enumerate(ids):
-            if (w.label, v) in moved:
-                shift[k] = moved[(w.label, v)]
-        run = []
-        for v in range(len(ids) - 1):
-            i, j = ids[v], ids[v + 1]
-            if i == j:
-                continue
-            ca, cb = capped.get((w.label, v)), capped.get((w.label, v + 1))
-            if ca is not None and ca == cb:
-                seg = (i, j, ca, (ca, w.label))
-            else:
-                seg = (i, j, w.label, (w.label,))  # type: ignore
-            run.append(seg)
-        if flip[w.label]:
-            run = [(j, i, name, layers) for i, j, name, layers in reversed(run)]
-        segments.extend(MidSegment(i, j, name, "skin", layers) for i, j, name, layers in run)
-    t = np.radians(cut.twist)
-    chord_dir = np.array([np.cos(t), -np.sin(t)])
-    for w in webs:
-        ids = [index(p) for p in w.xy]
-        run = [(i, j) for i, j in zip(ids[:-1], ids[1:]) if i != j]  # type: ignore
-        if run:
-            d = pts[run[-1][1]] - pts[run[0][0]]
-            if np.array([-d[1], d[0]]) @ chord_dir < 0.0:
-                run = [(j, i) for i, j in reversed(run)]  # type: ignore
-        segments.extend(MidSegment(i, j, w.label, "web", (w.label,)) for i, j in run)  # type: ignore
-    P = np.array(pts)
-    for k, p in shift.items():
-        P[k] = p
-    return MidSurface(P, tuple(segments), cut.z)
+from implicit_geometry_kernel.blade.shell_graph_build import (  # noqa: E402
+    _mid_surface as _mid_surface,
+    _rib_faces,
+    _runs_of,
+    _solid_runs,
+    _stringer_branches,
+)
 
 
-def _colour_kind(surface: str, layers: Tuple[str, ...], walls: Dict[str, SectionWall]) -> str:
-    if surface == "web":
-        return "web"
-    for label in layers:
-        w = walls.get(label)
-        if w is not None and w.kind == "cap":
-            return "cap"
-    return "skin"
+def shell_graph(cut: SectionCut, include_solids: bool = False) -> ShellGraph:
+    """Loftable shell graph: skin partitions, web branches, rib faces and stringers.
 
-
-def _runs_of(ms: MidSurface, segs, cut: SectionCut, surface: str) -> Tuple[ShellRun, ...]:
-    if not segs:
-        return ()
-    by_label = {w.label: w for w in cut.walls}
-    z = float(cut.z)
-
-    def xyz(i: int) -> np.ndarray:
-        p = ms.points[int(i)]
-        return np.array([p[0], p[1], z], dtype=float)
-
-    def pack(name, layers, pts) -> ShellRun:
-        t = sum(by_label[lb].thickness for lb in layers if lb in by_label)
-        return ShellRun(name, surface, _colour_kind(surface, layers, by_label), layers,
-                        np.vstack(pts), float(t))
-
-    runs = []
-    name, layers = segs[0].name, segs[0].layers
-    pts = [xyz(segs[0].start), xyz(segs[0].end)]
-    for s in segs[1:]:
-        if s.name == name and s.layers == layers:
-            pts.append(xyz(s.end))
-            continue
-        runs.append(pack(name, layers, pts))
-        name, layers = s.name, s.layers
-        pts = [xyz(s.start), xyz(s.end)]
-    runs.append(pack(name, layers, pts))
-    return tuple(runs)
-
-
-def _closed_polyline(points: np.ndarray) -> np.ndarray:
-    pts = np.asarray(points, float)
-    if len(pts) == 0:
-        return pts.reshape(0, pts.shape[1] if pts.ndim == 2 else 3)
-    if not np.allclose(pts[0], pts[-1]):
-        pts = np.vstack([pts, pts[0]])
-    return pts
-
-
-def _skin_loop_polyline(graph: ShellGraph) -> np.ndarray:
-    if not graph.loop:
-        return np.zeros((0, 3))
-    chunks = [np.asarray(graph.loop[0].points, float)]
-    for run in graph.loop[1:]:
-        pts = np.asarray(run.points, float)
-        if np.allclose(chunks[-1][-1], pts[0]):
-            chunks.append(pts[1:])
-        else:
-            chunks.append(pts)
-    return _closed_polyline(np.vstack(chunks))
-
-
-def _rib_faces(cut: SectionCut, graph: ShellGraph) -> Tuple[ShellRun, ...]:
-    members = tuple(getattr(cut, "transverse", ()) or ())
-    if not members:
-        return ()
-    loops: list[tuple[str | None, np.ndarray]] = []
-    if cut.cells:
-        for cell in cut.cells:
-            loops.append((str(cell.id), _closed_polyline(cell.points)))
-    else:
-        pts = _skin_loop_polyline(graph)
-        if len(pts):
-            loops.append((None, pts))
-    faces = []
-    for member in members:
-        for cell_id, pts in loops:
-            name = member.name if len(loops) == 1 else f"{member.name}:cell_{cell_id}"
-            faces.append(ShellRun(name, "rib", member.name, (name,), pts, float(member.thickness)))
-    return tuple(faces)
-
-
-def _chord_fractions(cut: SectionCut, xy: np.ndarray) -> np.ndarray:
-    t = np.radians(float(cut.twist))
-    c, s = np.cos(t), np.sin(t)
-    x = xy[:, 0] - float(cut.offset[0])
-    y = xy[:, 1] - float(cut.offset[1])
-    local_x = c * x - s * y
-    return (local_x + float(cut.pitch_axis) * float(cut.chord)) / float(cut.chord)
-
-
-def _stringer_branches(cut: SectionCut) -> Tuple[ShellRun, ...]:
-    members = tuple(getattr(cut, "stringers", ()) or ())
-    if not members:
-        return ()
-    out = []
-    for member in members:
-        walls = [w for w in cut.walls if w.kind == "skin" and (w.side == member.side or w.side is None)]
-        if not walls:
-            continue
-        pts = np.vstack([w.points for w in walls])
-        frac = _chord_fractions(cut, pts[:, :2])
-        i = int(np.argmin(np.abs(frac - member.position)))
-        foot = np.asarray(pts[i], float)
-        if member.free_end:
-            j0, j1 = max(0, i - 1), min(len(pts) - 1, i + 1)
-            tangent = pts[j1, :2] - pts[j0, :2]
-            nrm = float(np.linalg.norm(tangent))
-            if nrm < 1e-15:
-                continue
-            tangent = tangent / nrm
-            normal = np.array([-tangent[1], tangent[0]])
-            if cut.cells:
-                centroid = np.mean(np.vstack([c.points[:, :2] for c in cut.cells]), axis=0)
-                if float(np.dot(centroid - foot[:2], normal)) < 0.0:
-                    normal = -normal
-            tip_xy = foot[:2] + normal * float(member.depth)
-            tip = np.array([tip_xy[0], tip_xy[1], foot[2]])
-        else:
-            opp = [w for w in cut.walls if w.kind == "skin" and w.side and w.side != member.side]
-            if not opp:
-                continue
-            opts = np.vstack([w.points for w in opp])
-            k = int(np.argmin(np.abs(_chord_fractions(cut, opts[:, :2]) - member.position)))
-            tip = np.asarray(opts[k], float)
-        out.append(ShellRun(member.name, "stringer", member.name, (member.name,),
-                            np.vstack([foot, tip]), float(member.thickness)))
-    return tuple(out)
-
-
-def shell_graph(cut: SectionCut) -> ShellGraph:
-    """Loftable shell graph: skin partitions, web branches, rib faces and stringers."""
-    from dataclasses import replace
+    ``include_solids`` (default off) adds core and insert runs from polygon
+    boundaries so loft can see them without changing default 2D-F run names.
+    """
 
     ms = cut.mid_surface()
     skins = tuple(s for s in ms.segments if s.kind == "skin")
     webs = tuple(s for s in ms.segments if s.kind == "web")
     graph = ShellGraph(float(cut.z), _runs_of(ms, skins, cut, "skin"),
                        _runs_of(ms, webs, cut, "web")).with_web_feet_on_loop()
-    return replace(graph, faces=_rib_faces(cut, graph), branches=_stringer_branches(cut))
+    solids = _solid_runs(cut) if include_solids else ()
+    return replace(graph, faces=_rib_faces(cut, graph), branches=_stringer_branches(cut), solids=solids)
 
 
 def partition_edge_curve(geo, name_a: str, name_b: str, zs) -> np.ndarray:

@@ -25,7 +25,7 @@ from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     resolve_system_type,
 )
-from implicit_geometry_kernel.section.api.worker import (
+from implicit_geometry_kernel.section.spec.worker import (
     resolve_web_x_positions,
     section_geometry_prep_key,
 )
@@ -49,7 +49,7 @@ def _root_anchored(layout, root_chord: float = ROOT_CHORD) -> list[float]:
 
 def test_anchored_positions_do_not_scale_with_local_chord():
     """The whole point: the same offsets, whatever the local chord."""
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
     anchored = _root_anchored(layout)
 
     root = resolve_web_x_positions(layout, _airfoil(ROOT_CHORD), anchored)
@@ -61,7 +61,7 @@ def test_anchored_positions_do_not_scale_with_local_chord():
 
 def test_omitting_anchored_positions_keeps_the_legacy_per_station_form():
     """Callers that pass nothing must be unaffected."""
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
 
     tip = resolve_web_x_positions(layout, _airfoil(TIP_CHORD), None)
 
@@ -78,7 +78,7 @@ def test_a_web_that_does_not_fit_is_dropped_not_moved():
     200.7 mm, which on an 87.8 mm tip section are outside the buildable cavity.
     They must disappear, and the survivors must stay exactly where they were.
     """
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
     anchored = _root_anchored(layout)
     airfoil = _airfoil(TIP_CHORD)
 
@@ -94,6 +94,9 @@ def test_a_web_that_does_not_fit_is_dropped_not_moved():
         assert min(abs(x - a) for a in anchored) == pytest.approx(0.0, abs=1e-12)
     for d in dropped:
         assert d.reason in {"no_inner_skin_intercept", "merged_into_previous_web"}
+        assert d.index is not None
+    survivor_idx = sorted({i for i in range(len(anchored)) if i not in {d.index for d in dropped}})
+    assert [anchored[i] for i in survivor_idx] == pytest.approx(xs)
 
 
 def test_legacy_migration_is_still_reachable_and_moves_webs():
@@ -103,7 +106,7 @@ def test_legacy_migration_is_still_reachable_and_moves_webs():
     anchor is relocated rather than lost, so more webs survive and at least one
     sits away from its requested position.
     """
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
     anchored = _root_anchored(layout)
     airfoil = _airfoil(TIP_CHORD)
 
@@ -122,7 +125,7 @@ def test_legacy_migration_is_still_reachable_and_moves_webs():
 
 def test_anchored_webs_survive_where_the_section_is_deep():
     """No spurious drops: at the root every anchored web must be buildable."""
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
     anchored = _root_anchored(layout)
 
     resolved, dropped = resolve_web_anchors(
@@ -135,7 +138,7 @@ def test_anchored_webs_survive_where_the_section_is_deep():
 
 def test_survivor_count_is_non_increasing_outboard():
     """The layout may only step down along the span, never back up."""
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
     anchored = _root_anchored(layout)
 
     counts = [
@@ -153,7 +156,7 @@ def test_prep_key_separates_sections_that_differ_only_in_web_positions():
     Leaving them out of the cache key would let two different sections collide
     on one entry, which is a silently wrong result rather than a slow one.
     """
-    layout = resolve_system_type("5D-F")
+    layout = resolve_system_type("5D-F-LC-0R")
     airfoil = _airfoil(TIP_CHORD)
     common = dict(skin_thickness=T_SKIN, spar_cap_thickness=0.004, shear_web_thickness=0.0015, twist_rad=0.0)
 

@@ -11,9 +11,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from implicit_geometry_kernel.section.spec.kwarg_aliases import (
+from implicit_geometry_kernel.section.spec.section_spec import (
     resolve_shear_web_thickness,
     resolve_skin_gauges,
+    resolve_skin_thickness,
     resolve_spar_cap_thickness,
     resolve_twist_rad,
 )
@@ -23,7 +24,7 @@ from implicit_geometry_kernel.section.layout.cap_placement import (
 from implicit_geometry_kernel.section.layout.section_layout import (
     SectionLayout,
 )
-from implicit_geometry_kernel.section.layout.system_layout import (
+from implicit_geometry_kernel.catalogue.system_layout import (
     SystemLayoutSpec,
 )
 from implicit_geometry_kernel.section.midlines.host import (
@@ -38,6 +39,57 @@ _ZERO_WEB_CAP_HALF_BAND_FRAC = 0.10
 
 LayoutInput = SystemLayoutSpec | SectionLayout
 """Public entry may accept a catalogue preset; assemble normalises to SectionLayout."""
+
+# Nominal skin thickness passed to section views (pre-clamp).
+_DEFAULT_SECTION_SKIN_THICKNESS_M = 0.003
+
+
+def build_section_view(
+    airfoil_sdf: AirfoilSDF,
+    layout: LayoutInput,
+    *,
+    twist_rad: float | None = None,
+    twist_angle_rad: float | None = None,
+    twist_angle: float | None = None,
+    skin_thickness: float | None = None,
+    spar_cap_thickness: float | None = None,
+    shear_web_thickness: float | None = None,
+    web_thickness: float | None = None,
+    cap_height: float | None = None,
+) -> SectionMidlineHost:
+    """Assemble a :class:`MultiCellSection` for property reporting and plots.
+
+    Gated products (``properties_map``, midlines, cell loops) go through
+    :func:`~implicit_geometry_kernel.section.spec.build.build_section_geometry`.
+    This helper only builds the host.
+    """
+    skin = resolve_skin_thickness(
+        skin_thickness=skin_thickness,
+        default=_DEFAULT_SECTION_SKIN_THICKNESS_M,
+    )
+    web = resolve_shear_web_thickness(
+        shear_web_thickness=shear_web_thickness,
+        web_thickness=web_thickness,
+        default=0.004,
+    )
+    spar = resolve_spar_cap_thickness(
+        spar_cap_thickness=spar_cap_thickness,
+        cap_height=cap_height,
+        default=0.012,
+    )
+    twist = resolve_twist_rad(
+        twist_rad=twist_rad,
+        twist_angle_rad=twist_angle_rad,
+        twist_angle=twist_angle,
+    )
+    return multicell_from_layout(
+        airfoil_sdf,
+        layout,
+        twist_rad=twist,
+        skin_thickness=skin,
+        spar_cap_thickness=spar,
+        shear_web_thickness=web,  # type: ignore[arg-type]
+    )
 
 
 def fixed_cap_anchor_from_layout(layout: LayoutInput) -> str:
@@ -89,6 +141,7 @@ def multicell_from_section_layout(
     web_y_coords: Sequence[tuple[float, float]] | None = None,
     stage_sink: dict[str, float] | None = None,
     spar_cap_ply_pitch_m: float | None = None,
+    web_indices: Sequence[int] | None = None,
 ) -> SectionMidlineHost:
     """Assemble from parametric :class:`SectionLayout` (catalogue key optional)."""
     from implicit_geometry_kernel.section.assembly.multicell import (
@@ -164,6 +217,7 @@ def multicell_from_section_layout(
         cap_placement=cap_rule,
         web_endpoints=web_endpoints,
         spar_cap_ply_pitch_m=spar_cap_ply_pitch_m,
+        web_indices=None if web_indices is None else tuple(int(i) for i in web_indices),
     )
 
 
@@ -183,6 +237,7 @@ def multicell_from_layout(
     web_y_coords: Sequence[tuple[float, float]] | None = None,
     stage_sink: dict[str, float] | None = None,
     spar_cap_ply_pitch_m: float | None = None,
+    web_indices: Sequence[int] | None = None,
 ) -> SectionMidlineHost:
     """Assemble a sized :class:`MultiCellSection`.
 
@@ -204,11 +259,13 @@ def multicell_from_layout(
         web_y_coords=web_y_coords,
         stage_sink=stage_sink,
         spar_cap_ply_pitch_m=spar_cap_ply_pitch_m,
+        web_indices=web_indices,
     )
 
 
 __all__ = [
     "as_section_layout",
+    "build_section_view",
     "fixed_cap_anchor_from_layout",
     "multicell_from_layout",
     "multicell_from_section_layout",

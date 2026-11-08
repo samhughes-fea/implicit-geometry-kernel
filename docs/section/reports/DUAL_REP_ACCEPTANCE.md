@@ -1,5 +1,7 @@
 # Dual-rep acceptance — polygon vs SDF area
 
+**Audience: internal.** Maintainer notes; not part of the library manual.
+
 Two integration paths for region area / second moments:
 
 | Path | Method |

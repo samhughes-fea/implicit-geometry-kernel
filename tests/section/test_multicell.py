@@ -21,7 +21,7 @@ from implicit_geometry_kernel.section.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M,
     MIN_REALISTIC_SPAR_WALL_THICKNESS_M,
 )
-from plotting.plot import _DEFAULT_COLOR, _component_color
+from implicit_geometry_kernel.plotting.plot import _DEFAULT_COLOR, _component_color
 
 
 # ---------------------------------------------------------------------------

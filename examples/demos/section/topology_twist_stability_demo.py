@@ -38,7 +38,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
@@ -57,7 +57,7 @@ from implicit_geometry_kernel.section.midlines.export import (
 from implicit_geometry_kernel.section.junctions.prepare import (
     prepare_shell_midline_junctions,
 )
-from plotting.frames import section_plot_axes
+from implicit_geometry_kernel.plotting.frames import section_plot_axes
 
 _DPI = DEFAULT_DPI
 _TWIST_DEG = (0.0, 5.0, 10.0, 15.0, 30.0)
@@ -171,11 +171,11 @@ def _worst_raw_foot(strips) -> tuple[str, int, np.ndarray]:
 
 
 def _draw_junction_zoom(ax, strips, centre: np.ndarray, *, half: float, show_nodes: bool) -> None:
-    from plotting.palette import (
+    from implicit_geometry_kernel.plotting.palette import (
         region_color,
         strip_axes_chrome,
     )
-    from plotting.plot_section import (
+    from implicit_geometry_kernel.plotting.plot_section import (
         apply_structural_section_axes,
     )
 
@@ -203,7 +203,7 @@ def _draw_junction_zoom(ax, strips, centre: np.ndarray, *, half: float, show_nod
 
 def _draw_junction_story(rows, raw_by_twist, topo_by_twist, out_path: Path, *, presentation: bool) -> None:
     """Before / after at the worst web foot, then the gap across the twist sweep."""
-    from plotting.palette import (
+    from implicit_geometry_kernel.plotting.palette import (
         INK,
         MUTED,
         RED,
@@ -395,7 +395,7 @@ def main(argv: list[str] | None = None) -> Path:
         ax.set_ylim(float(v_c[0]) - half, float(v_c[0]) + half)
         ax.grid(True, alpha=0.3)
         ax.set_title(title, fontsize=9)
-        from plotting.plot_section import (
+        from implicit_geometry_kernel.plotting.plot_section import (
             apply_structural_section_axes,
         )
 

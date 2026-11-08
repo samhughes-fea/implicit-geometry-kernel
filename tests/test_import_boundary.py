@@ -45,12 +45,23 @@ def test_no_imports_of_the_models_built_on_it():
 def test_kernel_does_not_import_matplotlib_or_plotting():
     for path, rel in _library_files(exclude=("plotting",)):
         for module in _imports(path):
-            if rel.as_posix() == "sdf/kernels/grid.py" and module.startswith("matplotlib"):
-                continue  # contour fallback inside a function when contourpy is missing
             assert not module.startswith("matplotlib"), (rel, module)
             assert module.split(".")[0] != "plotting", (rel, module)
             if module.startswith("implicit_geometry_kernel."):
                 assert module.split(".")[1] != "plotting", (rel, module)
+
+
+def test_geometry_does_not_import_mesh_or_cad_extra():
+    """``mesh/`` and ``blade.cad`` are extras. ``blade/oml.py`` may lazy-import cad."""
+    for path, rel in _library_files(exclude=("mesh", "plotting")):
+        posix = rel.as_posix()
+        for module in _imports(path):
+            if module.startswith("implicit_geometry_kernel.mesh") or module == "gmsh":
+                raise AssertionError((rel, module))
+            if posix in {"blade/oml.py", "blade/cad.py"}:
+                continue
+            if module in {"implicit_geometry_kernel.blade.cad", "cadquery"}:
+                raise AssertionError((rel, module))
 
 
 def test_sdf_stands_alone():
@@ -67,6 +78,9 @@ def test_sdf_stands_alone():
     "blade_geometry.py",
     "section_geometry",
     "frames/section_frames",
+    "section/layout/system_layout.py",
+    "blade/concept.py",
+    "section/spec/factory.py",
 ])
 def test_deprecated_top_level_aliases_removed(rel):
     assert not (PACKAGE / rel).exists(), f"0.3.0 removed path still present: {rel}"
@@ -80,6 +94,43 @@ def test_structure_sits_between_sdf_and_section():
                 continue
             top = module.split(".")[1]
             if rel.parts[0] == "structure":
-                assert top in {"sdf", "structure"}, (rel, module)
+                assert top in {"sdf", "structure", "contract", "profiling"}, (rel, module)
             if rel.parts[0] == "sdf":
                 assert top != "structure", (rel, module)
+
+
+# Down-only layers: contract <- sdf, integration, frames <- structure <- catalogue <- section <- blade <- extract
+_LAYER_ALLOWED = {
+    "contract": {"contract", "profiling"},
+    "sdf": {"sdf", "profiling"},
+    "integration": {"contract", "sdf", "integration", "profiling"},
+    "frames": {"contract", "sdf", "frames", "profiling"},
+    "structure": {"contract", "sdf", "structure", "profiling"},
+    "catalogue": {"contract", "catalogue", "profiling"},
+    "section": {
+        "contract", "sdf", "integration", "frames", "structure", "catalogue", "section",
+        "profiling",
+    },
+    "blade": {
+        "contract", "sdf", "integration", "frames", "structure", "catalogue", "section", "blade",
+        "extract", "profiling",
+    },
+    "extract": {
+        "contract", "sdf", "integration", "frames", "structure", "catalogue", "section", "blade",
+        "extract", "profiling",
+    },
+    "mesh": {"contract", "blade", "extract", "mesh", "profiling"},
+}
+
+
+def test_package_layers_import_down_only():
+    for path, rel in _library_files(exclude=("plotting",)):
+        layer = rel.parts[0]
+        allowed = _LAYER_ALLOWED.get(layer)
+        if allowed is None:
+            continue
+        for module in _imports(path):
+            if not module.startswith("implicit_geometry_kernel."):
+                continue
+            top = module.split(".")[1]
+            assert top in allowed, (rel, module, allowed)

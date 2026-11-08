@@ -64,12 +64,12 @@ _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     add_output_and_presentation_args,
     apply_presentation_style,
     save_figure,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     INK,
     MUTED,
     NAVY,

@@ -1,9 +1,9 @@
 # Anatomy on a figure
 
-Map a twin-web `"2D-F"` plot to `SectionGeometryResult` labels. Overview:
-[`../README.md`](../docs_index.md). Runnable twins:
-`../examples/01_first_station.py`,
-`../examples/02_read_properties.py`.
+Map a twin-web `"2D-F-LC-0R"` figure onto `SectionGeometryResult` labels.
+Overview: [`../README.md`](../README.md). Runnable twins:
+`../../../examples/section/teaching/01_first_station.py`,
+`../../../examples/section/teaching/02_read_properties.py`.
 
 ↑ [`section_geometry`](../docs_index.md) · [`docs index`](../docs_index.md)
 
@@ -19,7 +19,7 @@ Map a twin-web `"2D-F"` plot to `SectionGeometryResult` labels. Overview:
 
 ## Figure
 
-Layout `"2D-F"`: two shear webs, family-D continuous box caps, flapwise webs.
+Layout `"2D-F-LC-0R"`: two shear webs, family-D continuous box caps, flapwise webs.
 Demo thicknesses (NACA 2412, chord 1 m). Legend names the wall solids listed
 below.
 
@@ -35,9 +35,8 @@ Legend-less gallery tiles (all 40 keys) still come from
 `structural_family_grids_demo.py`;
 see `ARTIFACTS.md`.
 
-Chord runs roughly horizontal in the section plot; LE is toward the right in
-the structural plot contract (see
-`coordinate_frames`).
+Chord runs roughly horizontal in the section plot. The leading edge appears on
+the right under the structural plot contract ([frames](../../frames/README.md)).
 
 ---
 
@@ -45,7 +44,7 @@ the structural plot contract (see
 ## Wall solids (`properties_map` / section labels)
 
 Thicknesses are geometric wall gauges only (material-bind agnostic). Typical
-`"2D-F"` keys:
+`"2D-F-LC-0R"` keys:
 
 | Label | What you see on the figure |
 |-------|----------------------------|
@@ -84,7 +83,7 @@ Coordinates live in the twisted blade frame
 
 Gate `"cell_wall_loops"`. Closed loops of the structural cavities, LE → TE:
 
-| `id` | Role on `"2D-F"` |
+| `id` | Role on `"2D-F-LC-0R"` |
 |------|------------------|
 | `0` | Leading-edge cell (ahead of the first web) |
 | `1` | Box cell between the two webs |
@@ -97,6 +96,6 @@ Gate `"cell_wall_loops"`. Closed loops of the structural cavities, LE → TE:
 ## See also
 
 - Gallery of all keys: [`../reference/structural_systems_gallery.md`](../reference/structural_systems_gallery.md)
-- Taxonomy decode: [`../reference/system_type_xyz_taxonomy.md`](../reference/system_type_xyz_taxonomy.md)
+- Taxonomy decode: [blade-concept taxonomy](../../blade/concepts/taxonomy.md)
 - Midlines module: [`../midlines/`](../midlines/README.md)
 - Cell-wall loops module: [`../cells/`](../cells/README.md)

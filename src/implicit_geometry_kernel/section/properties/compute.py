@@ -10,7 +10,7 @@ import numpy as np
 from implicit_geometry_kernel.section.properties.area_mesh import (
     section_properties_via_quadtree,
 )
-from implicit_geometry_kernel.section.boundary.labels import classify_property_labels
+from implicit_geometry_kernel.section.boundary.labels import classify_property_labels, is_core_label
 from implicit_geometry_kernel.section.boundary.cores import emit_constructive_polygons
 from implicit_geometry_kernel.section.properties.polygons import section_properties_from_polygons
 from implicit_geometry_kernel.section.properties.backend import (
@@ -64,7 +64,7 @@ def _compute_hybrid(
     constructive_labels, residual_labels = classify_property_labels(labels)
     meta_extra: dict[str, Any] = {
         "constructive_labels": list(constructive_labels),
-        "wall_solid_labels": [k for k in constructive_labels if not k.startswith("core")],
+        "wall_solid_labels": [k for k in constructive_labels if not is_core_label(k)],
         "residual_labels": list(residual_labels),
         "residual_maturity": {
             "core": "constructive polygon path (cavity - wall solids + bay clip)",

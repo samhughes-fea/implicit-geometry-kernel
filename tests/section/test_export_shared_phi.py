@@ -12,9 +12,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.section.api.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.section.properties.export import (
@@ -29,7 +31,7 @@ from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 def test_shared_grid_phi_matches_grid_eval(twist_deg):
     airfoil = AirfoilSDF.from_naca("2412", n_points=80, chord=1.0)
     section = build_section_view(
-        airfoil, resolve_system_type("2D-CN"), twist_angle_rad=np.deg2rad(twist_deg)
+        airfoil, resolve_system_type("2D-CN-LC-0R"), twist_angle_rad=np.deg2rad(twist_deg)
     )
     spec = quadtree_spec_for_airfoil(airfoil, chord=1.0, max_depth=5, max_cells=50000)
     grid = SDFGrid.from_bbox(spec.x_min, spec.x_max, spec.y_min, spec.y_max, 96, 48)

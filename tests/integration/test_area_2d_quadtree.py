@@ -58,10 +58,10 @@ def test_build_area_meshes_2d_multiple_fields():
 @pytest.mark.parametrize("code", ["0012"])
 def test_airfoil_component_quadtree_contour(code: str):
     from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
-    from implicit_geometry_kernel.section.api.factory import (
+    from implicit_geometry_kernel.section.assembly import (
         build_section_view,
     )
-    from implicit_geometry_kernel.section.layout.system_layout import (
+    from implicit_geometry_kernel.catalogue.system_layout import (
         resolve_system_type,
     )
     from implicit_geometry_kernel.section.properties.area_mesh import (
@@ -69,7 +69,7 @@ def test_airfoil_component_quadtree_contour(code: str):
     )
 
     airfoil = AirfoilSDF.from_naca(code, n_points=80, chord=1.0)
-    section = build_section_view(airfoil, resolve_system_type("2D-F"), twist_angle_rad=0.0)
+    section = build_section_view(airfoil, resolve_system_type("2D-F-LC-0R"), twist_angle_rad=0.0)
     verts = np.asarray(airfoil.vertices, dtype=float)
     spec = QuadtreeSpec.from_points(verts, padding=0.08, min_cell_size=0.012, max_depth=6)
 

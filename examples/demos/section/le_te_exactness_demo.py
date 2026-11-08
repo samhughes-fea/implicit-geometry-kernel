@@ -35,12 +35,12 @@ assert _spec.loader is not None
 _spec.loader.exec_module(_ensure_mod)
 _ensure_mod.ensure_repo_path()
 
-from plotting.figure_io import (
+from implicit_geometry_kernel.plotting.figure_io import (
     DEFAULT_DPI,
     apply_presentation_style,
     save_figure,
 )
-from plotting.palette import (
+from implicit_geometry_kernel.plotting.palette import (
     NAVY,
     RED,
     TEAL,
@@ -49,14 +49,14 @@ from plotting.palette import (
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section import MultiCellSection, resolve_system_type
-from implicit_geometry_kernel.section.spec import build_section_geometry
-from plotting.plot import (
+from implicit_geometry_kernel.section.spec import SectionOptions, SectionSpec, build_section_geometry
+from implicit_geometry_kernel.plotting.plot import (
     plot_section,
     plot_section_hybrid,
     plot_sdf_field,
 )
 from implicit_geometry_kernel.frames import naca_to_twisted_pitch_axis_blade_frame
-from plotting.frames import section_plot_axes
+from implicit_geometry_kernel.plotting.frames import section_plot_axes
 
 _DPI = DEFAULT_DPI
 
@@ -214,7 +214,7 @@ def main(argv: list[str] | None = None) -> Path:
         show_legend=False,
     )
     te = np.asarray(af.trailing_edge, dtype=float)
-    from plotting.plot_section import (
+    from implicit_geometry_kernel.plotting.plot_section import (
         apply_structural_section_axes,
     )
 
@@ -409,13 +409,15 @@ def main(argv: list[str] | None = None) -> Path:
     # --- 4. Twist case: B-frame LE/TE ---
     twist = float(np.radians(15.0))
     geom = build_section_geometry(
-        resolve_system_type("2D-F"),
-        af,
-        skin_thickness=0.005,
-        spar_cap_thickness=0.014,
-        shear_web_thickness=0.006,
-        twist_rad=twist,
-        outputs=("midlines",),
+        SectionSpec.from_kwargs(
+            resolve_system_type("2D-F-LC-0R"),
+            af,
+            skin_thickness=0.005,
+            spar_cap_thickness=0.014,
+            shear_web_thickness=0.006,
+            twist_rad=twist,
+        ),
+        options=SectionOptions(outputs=("midlines",)),
     )
     section_tw = geom.section
     grid_tw = SDFGrid.from_airfoil(af, padding=0.06, nx=400, ny=180)

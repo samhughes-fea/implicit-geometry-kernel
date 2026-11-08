@@ -1,11 +1,13 @@
 # constructive — polygon path for area and inertia
 
-↑ [`section_geometry`](../README.md)
+**Audience: internal.** Maintainer notes; not part of the library manual.
 
-Moved (aliases until 0.6.0). Wall and core polygons live in
+↑ [`section`](../README.md)
+
+Moved. Wall and core polygons live in
 `section/boundary/` (`walls.py`, `cores.py`, `emitters.py`, `labels.py`);
 shoelace from polygons is `section/properties/polygons.py`. The
-`section.constructive` import path still works.
+`section.constructive` import path was removed in 0.6.0.
 
 For mature labels (skin, webs, caps, cores, LE/TE inserts), builds explicit
 boundary polygons from the same recipes and integrates area / second moments

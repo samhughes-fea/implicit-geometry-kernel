@@ -6,7 +6,7 @@ import pytest
 
 from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.section import Gauges, SectionGeometry, SectionOptions, SectionSpec, resolve_system_type
-from implicit_geometry_kernel.section.api.worker import build_section_geometry
+from implicit_geometry_kernel.section.spec.worker import build_section_geometry
 
 
 def _airfoil():
@@ -15,7 +15,7 @@ def _airfoil():
 
 def test_section_spec_validates_and_normalises():
     spec = SectionSpec(
-        layout=resolve_system_type("2D-F"),
+        layout=resolve_system_type("2D-F-LC-0R"),
         airfoil=_airfoil(),
         twist_rad=0.1,
         gauges=Gauges(skin_ss=0.004, skin_ps=0.004, cap=0.012, web=0.005),
@@ -36,7 +36,7 @@ def test_section_spec_rejects_missing_layout():
 
 
 def test_build_from_spec_matches_runner():
-    layout = resolve_system_type("2D-F")
+    layout = resolve_system_type("2D-F-LC-0R")
     airfoil = _airfoil()
     runner = SectionGeometry(
         layout=layout,
@@ -60,7 +60,7 @@ def test_build_from_spec_matches_runner():
 
 
 def test_from_kwargs_rejects_conflicting_aliases():
-    layout = resolve_system_type("2D-F")
+    layout = resolve_system_type("2D-F-LC-0R")
     airfoil = _airfoil()
     with pytest.raises(ValueError, match="Conflicting"):
         SectionSpec.from_kwargs(
@@ -83,13 +83,6 @@ def test_from_kwargs_rejects_conflicting_aliases():
         )
 
 
-def test_keyword_form_warns():
-    with pytest.warns(DeprecationWarning, match="SectionSpec"):
-        build_section_geometry(
-            resolve_system_type("2D-F"),
-            _airfoil(),
-            skin_thickness=0.004,
-            spar_cap_thickness=0.012,
-            shear_web_thickness=0.005,
-            outputs=("properties",),
-        )
+def test_keyword_form_removed():
+    with pytest.raises(TypeError, match="SectionSpec"):
+        build_section_geometry(resolve_system_type("2D-F-LC-0R"))

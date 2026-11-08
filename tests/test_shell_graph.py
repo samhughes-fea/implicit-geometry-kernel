@@ -8,7 +8,7 @@ from implicit_geometry_kernel import (
     BladeGeometry,
     Station,
     Stringer,
-    SYSTEM_TYPE_KEYS,
+    SYSTEM_TYPE_LAYOUT_KEYS,
     TransverseMember,
     partition_edge_curve,
     shared_loft_names,
@@ -16,7 +16,7 @@ from implicit_geometry_kernel import (
     topology_diff,
     wall_meta_from_cut,
 )
-from implicit_geometry_kernel.blade.cut import ShellGraph, ShellRun
+from implicit_geometry_kernel.blade.shell_graph import ShellGraph, ShellRun
 from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
 from implicit_geometry_kernel.sdf import FeatureTable
 
@@ -26,8 +26,46 @@ def _geo():
         Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
         Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3),
     ]
-    return BladeGeometry(stations, "2D-F", 0.003, spar_cap_thickness=0.008,
-                         shear_web_thickness=0.002, web_positions=(0.18, 0.48))
+    return BladeGeometry(stations, "2D-F-LC-0R", 0.003, spar_cap_thickness=0.008,
+                         shear_web_thickness=0.002, web_positions=(0.18, 0.48), pivot_fraction=0.3)
+
+
+def assert_closed_conformal_loop(cut, *, cap_on_loop: bool = True):
+    g = cut.shell_graph()
+    names = [r.name for r in g.loop]
+    assert names, "empty skin loop"
+    assert len(names) == len(set(names)), names
+    web_names = [r.name for r in g.webs]
+    assert len(web_names) == len(set(web_names)), web_names
+    all_names = [r.name for r in g.runs()]
+    assert len(all_names) == len(set(all_names)), all_names
+    chain = g.closed_loop_chain()
+    assert chain is not None, names
+    if not g.loop:
+        return
+    scale = max(1.0, max(float(np.max(np.abs(r.points[:, :2]))) for r in g.loop))
+    tol = 1e-6 * scale
+    loop_xy = np.vstack([np.asarray(r.points[:, :2], float) for r in g.loop])
+    for web in g.webs:
+        for i in (0, -1):
+            d = float(np.min(np.linalg.norm(loop_xy - web.points[i, :2], axis=1)))
+            assert d <= tol, (web.name, i, d)
+    skins = list(cut.walls_of("skin"))
+    if skins:
+        skin_xy = np.vstack([w.xy for w in skins])
+        for run in g.loop:
+            if run.kind != "cap":
+                continue
+            d = np.linalg.norm(
+                run.points[:, None, :2] - skin_xy[None, :, :], axis=2
+            ).min(axis=1)
+            assert float(np.max(d)) <= max(tol, 1e-4), (run.name, float(np.max(d)))
+    if cap_on_loop:
+        assert any(r.kind == "cap" for r in g.loop)
+
+
+def _assert_unique_closed_loop(cut, *, cap_on_loop: bool = True):
+    assert_closed_conformal_loop(cut, cap_on_loop=cap_on_loop)
 
 
 def test_walls_keep_caps_mid_surface_does_not():
@@ -36,6 +74,67 @@ def test_walls_keep_caps_mid_surface_does_not():
     ms = cut.mid_surface()
     assert {s.kind for s in ms.segments} <= {"skin", "web"}
     assert "cap" not in {s.kind for s in ms.segments}
+
+
+def test_two_web_loop_run_names_unique_and_closed():
+    _assert_unique_closed_loop(_geo().section_at(4.0))
+
+
+def test_cap_windows_span_published_chord_interval():
+    """Published (lo, hi) is the cap band, not a pitch-centred pad of half the width."""
+    stations = [
+        Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
+        Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(
+        stations, "2D-F-LC-0R", 0.003, spar_cap_thickness=0.008,
+        shear_web_thickness=0.002, web_positions=(0.18, 0.48),
+        cap_windows=((0.20, 0.50),), pivot_fraction=0.3)
+    cut = geo.section_at(0.0)
+    _assert_unique_closed_loop(cut)
+    caps = [r for r in cut.shell_graph().loop if r.kind == "cap"]
+    assert caps
+    window = 0.30 * cut.chord
+    for run in caps:
+        span = float(np.ptp(np.asarray(run.points[:, :2], float)[:, 0]))
+        assert span >= 0.5 * window, (run.name, span, window)
+    solids = list(cut.walls_of("cap"))
+    assert solids
+    for wall in solids:
+        span = float(np.ptp(wall.xy[:, 0]))
+        assert span >= 0.5 * window, (wall.label, span, window)
+
+
+def test_one_web_loop_run_names_unique_and_closed():
+    """Cap inside :leading_edge must not emit two loop runs with one name."""
+    stations = [
+        Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
+        Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(
+        stations, "1C-F-LC-0R", 0.003, spar_cap_thickness=0.008,
+        shear_web_thickness=0.002, web_positions=(0.30,), pivot_fraction=0.3)
+    cut = geo.section_at(4.0)
+    assert sum(1 for w in cut.walls if w.kind == "web") == 1
+    _assert_unique_closed_loop(cut)
+
+
+def test_one_web_chord_window_keeps_unindexed_cap_name():
+    stations = [
+        Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
+        Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(
+        stations, "1C-F-LC-0R", 0.003, spar_cap_thickness=0.008,
+        shear_web_thickness=0.002, web_positions=(0.30,),
+        cap_windows=((0.20, 0.50),), pivot_fraction=0.3)
+    cut = geo.section_at(4.0)
+    assert_closed_conformal_loop(cut)
+    names = [r.name for r in cut.shell_graph().loop]
+    cap_names = [n for n in names if n.startswith("spar_cap_")]
+    assert cap_names
+    assert not any(n.startswith("spar_cap_suction_surface_0") or n.startswith("spar_cap_pressure_surface_0")
+                   for n in cap_names)
 
 
 def test_shell_graph_loop_partitions_and_combined_thickness():
@@ -48,10 +147,16 @@ def test_shell_graph_loop_partitions_and_combined_thickness():
     assert all(r.surface == "web" for r in g.webs)
     cap = next(r for r in g.loop if r.kind == "cap")
     host = next(lb for lb in cap.layers if lb.startswith("skin"))
-    t_cap = cut.wall(cap.name).thickness
+    cap_label = next(lb for lb in cap.layers if not lb.startswith("skin"))
+    t_cap = cut.wall(cap_label).thickness
     t_skin = cut.wall(host).thickness
-    assert cap.thickness == t_cap + t_skin
-    assert cap.layers == (cap.name, host)
+    assert cap.thickness == t_skin
+    assert cap.requires_eccentricity
+    assert cap.eccentricity_m == pytest.approx(0.5 * t_cap)
+    assert cap.layers == (cap_label, host)
+    regions = g.offset_regions()
+    assert {r.name for r in regions} == {r.name for r in g.loop if r.kind == "cap"}
+    assert all(r.requires_eccentricity for r in regions)
     skin = next(r for r in g.loop if r.kind == "skin")
     assert skin.layers == (skin.name,)
     assert skin.thickness == cut.wall(skin.name).thickness
@@ -110,7 +215,8 @@ def test_wall_mid_near_stacked_cap_and_bare_skin():
     cavity = geo.cavity_sdf().evaluate(p_cap.reshape(1, 3)).phi[0]
     oml = geo.oml_sdf().evaluate(p_cap.reshape(1, 3)).phi[0]
     assert oml < 0.0
-    assert abs(cavity + oml) < 1e-3
+    # Mesh sits on the skin mid; cavity uses stack T, so cavity + oml is t_cap.
+    assert cavity + oml == pytest.approx(2.0 * cap.eccentricity_m, abs=1e-3)
     hit = geo.snap_wall_mid((p_cap + np.array([0.0, 0.001, 0.0])).reshape(1, 3))
     assert hit.converged[0]
     np.testing.assert_allclose(hit.points[0, 2], cut.z, atol=1e-12)
@@ -164,8 +270,8 @@ def test_topology_diff_cap_runout_dropped_web_bay_split():
 def test_topology_diff_dropped_web_on_tapering_blade():
     stations = [Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
                 Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3)]
-    geo = BladeGeometry(stations, "2D-F", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
-                        web_offsets=(0.4, 1.2))
+    geo = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
+                        web_offsets=(0.4, 1.2), pivot_fraction=0.3)
     root, tip = geo.section_at(0.0).shell_graph(), geo.section_at(10.0).shell_graph()
     diff = topology_diff(root, tip)
     assert any(e.kind == "dropped_web" and e.side == "lost" for e in diff.events)
@@ -197,6 +303,8 @@ def test_shell_strips_from_graph_no_extra_cap_surface():
     cap = next(s for s in strips if s.kind == "cap")
     run = next(r for r in g.loop if r.name == cap.label)
     assert cap.thickness_m == run.thickness
+    assert cap.requires_eccentricity
+    assert cap.eccentricity_m == run.eccentricity_m
     assert cap.midline_twisted_pitch_axis_blade_frame.shape[1] == 2
     assert any(w.kind == "cap" for w in cut.walls)
 
@@ -207,9 +315,9 @@ def test_rib_face_at_member_z_only():
         Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
         Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3),
     ]
-    geo = BladeGeometry(stations, "2D-F", 0.003, spar_cap_thickness=0.008,
+    geo = BladeGeometry(stations, "2D-F-LC-0R", 0.003, spar_cap_thickness=0.008,
                         shear_web_thickness=0.002, web_positions=(0.18, 0.48),
-                        transverse=(rib,))
+                        transverse=(rib,), pivot_fraction=0.3)
     assert geo.forced_stations() == (5.0,)
     at_rib = geo.section_at(5.0)
     assert at_rib.transverse == (rib,)
@@ -241,9 +349,9 @@ def test_partial_span_stringer_branch_and_topology():
         Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
         Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3),
     ]
-    geo = BladeGeometry(stations, "2D-F", 0.003, spar_cap_thickness=0.008,
+    geo = BladeGeometry(stations, "2D-F-LC-0R", 0.003, spar_cap_thickness=0.008,
                         shear_web_thickness=0.002, web_positions=(0.18, 0.48),
-                        stringers=(stringer,))
+                        stringers=(stringer,), pivot_fraction=0.3)
     assert geo.forced_stations() == (2.0, 6.0)
     inside = geo.section_at(4.0).shell_graph()
     assert len(inside.branches) == 1
@@ -259,7 +367,7 @@ def test_partial_span_stringer_branch_and_topology():
     assert "str_le" not in diff.shared
 
 
-@pytest.mark.parametrize("key", SYSTEM_TYPE_KEYS)
+@pytest.mark.parametrize("key", SYSTEM_TYPE_LAYOUT_KEYS)
 def test_wall_mid_matches_graph_run_interiors(key):
     """Exactness: ``wall_mid_sdf`` is a view of ``shell_graph`` (all 40 layouts)."""
     stations = [
@@ -271,8 +379,7 @@ def test_wall_mid_matches_graph_run_interiors(key):
         key,
         skin_thickness=0.004,
         spar_cap_thickness=0.012,
-        shear_web_thickness=0.005,
-    )
+        shear_web_thickness=0.005, pivot_fraction=0.3)
     try:
         cut = geo.section_at(1.5)
     except InfeasibleSectionGeometry:

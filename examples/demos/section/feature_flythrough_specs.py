@@ -90,7 +90,7 @@ SCENARIOS: dict[str, ScenarioSpec] = {
         panel_layout="tri",
         description="Spanwise comparison of 5B-F, 5C-CN, and 5D-F section systems.",
         frame_count=64,
-        sweep_params={"driver": "station_index", "keys": ["5B-F", "5C-CN", "5D-F"]},
+        sweep_params={"driver": "station_index", "keys": ["5B-F-LC-0R", "5C-CN-LC-0R", "5D-F-LC-0R"]},
         metric_overlays=("station", "zL", "root_survivors", "cap_allowance_mm"),
     ),
     "topology_twist": ScenarioSpec(
@@ -112,7 +112,7 @@ SCENARIOS: dict[str, ScenarioSpec] = {
         panel_layout="dual",
         description="Matched station fly-through for chord-normal vs flapwise webs.",
         frame_count=64,
-        sweep_params={"driver": "station_index", "pair": ["3D-CN", "3D-F"]},
+        sweep_params={"driver": "station_index", "pair": ["3D-CN-LC-0R", "3D-F-LC-0R"]},
         metric_overlays=("station", "zL", "orientation_pair"),
     ),
     "insert_dynamics": ScenarioSpec(

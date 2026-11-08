@@ -9,10 +9,11 @@ from __future__ import annotations
 import numpy as np
 
 PIVOT_FRACTION_DEFAULT = 0.333
-"""Pitch-axis chordline as a fraction of chord, measured from the LE.
+"""Fallback pitch-axis chordline as a fraction of chord, measured from the LE.
 
-Matches ``blade_geometry.pivot_fraction``. Prefer passing the configured value
-through; this default exists so the transform is usable standalone.
+Lofted blades must pass ``BladeGeometry.pivot_fraction`` through as
+``pivot_fraction``. This default exists so the transform is usable standalone
+(section-only workers).
 """
 
 

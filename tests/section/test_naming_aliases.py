@@ -14,8 +14,8 @@ from implicit_geometry_kernel.frames import (
 )
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import resolve_system_type
-from implicit_geometry_kernel.section.api import build_section_with_thicknesses
-from implicit_geometry_kernel.section.api.kwarg_aliases import (
+from implicit_geometry_kernel.section.spec import build_section_with_thicknesses
+from implicit_geometry_kernel.section.spec.section_spec import (
     resolve_shear_web_thickness,
     resolve_spar_cap_thickness,
     resolve_twist_rad,
@@ -46,7 +46,7 @@ def test_thickness_alias_conflict():
 
 def test_build_prefers_long_thickness_names():
     af = AirfoilSDF.from_naca("2412", n_points=60, chord=1.0)
-    layout = resolve_system_type("1B-CN")
+    layout = resolve_system_type("1B-CN-LC-0R")
     section = build_section_with_thicknesses(
         af,
         layout,
@@ -60,7 +60,7 @@ def test_build_prefers_long_thickness_names():
 
 def test_t_star_aliases_raise_type_error():
     af = AirfoilSDF.from_naca("2412", n_points=60, chord=1.0)
-    layout = resolve_system_type("1B-CN")
+    layout = resolve_system_type("1B-CN-LC-0R")
     with pytest.raises(TypeError):
         build_section_with_thicknesses(
             af, layout, twist_rad=0.0, t_skin=0.005, t_spar=0.008, t_web=0.006

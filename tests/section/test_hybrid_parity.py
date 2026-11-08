@@ -5,9 +5,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.section.api.factory import (
-    build_section_view,
+from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
+)
+from implicit_geometry_kernel.section.assembly import (
+    build_section_view,
 )
 from implicit_geometry_kernel.section.boundary.labels import (
     classify_property_labels,
@@ -52,12 +54,12 @@ def _assert_props_close(hy, qt, *, wall_solid: bool, le_te: bool = False):
 @pytest.mark.parametrize(
     "layout_key,twist_deg",
     [
-        ("2D-CN", 0.0),
-        ("2D-F", 0.0),
-        ("2C-CN", 0.0),
-        ("1B-CN", 0.0),
-        ("2D-CN", 15.0),
-        ("0A", 0.0),
+        ("2D-CN-LC-0R", 0.0),
+        ("2D-F-LC-0R", 0.0),
+        ("2C-CN-LC-0R", 0.0),
+        ("1B-CN-LC-0R", 0.0),
+        ("2D-CN-LC-0R", 15.0),
+        ("0A-LC-0R", 0.0),
     ],
 )
 def test_hybrid_vs_quadtree_taxonomy(layout_key: str, twist_deg: float):
@@ -102,7 +104,7 @@ def test_hybrid_vs_quadtree_taxonomy(layout_key: str, twist_deg: float):
 def test_overlap_policy_independent_label_moments():
     """Hybrid must not unique-partition skin∩cap; per-label areas stay independent."""
     airfoil = AirfoilSDF.from_naca("2412", n_points=100, chord=1.0)
-    section = build_section_view(airfoil, resolve_system_type("2D-CN"), twist_angle_rad=0.0)
+    section = build_section_view(airfoil, resolve_system_type("2D-CN-LC-0R"), twist_angle_rad=0.0)
     spec = quadtree_spec_for_airfoil(airfoil, chord=1.0, max_depth=7, max_cells=120000)
     hy, _ = compute_section_properties(
         section, backend="hybrid", quadtree_spec=spec, airfoil_for_spec=airfoil

@@ -7,7 +7,6 @@ from collections.abc import Callable, Sequence
 import numpy as np
 
 from implicit_geometry_kernel.sdf.nodes.base import EvalCache, FieldSample, LeafNode, NO_FEATURE, SDFNode
-from implicit_geometry_kernel.sdf.nodes.csg import Intersect, Offset, Rotate, Shell, Slab, Subtract, Union
 from implicit_geometry_kernel.sdf.kernels.primitives import sdf_circle, sdf_polygon, sdf_segment
 
 
@@ -183,17 +182,8 @@ class MidSurfaceNode(SDFNode):
         return self.cavity.evaluate(cache.points, cache).phi - self.outer.evaluate(cache.points, cache).phi
 
 
-# The CSG combinators are the shapes in ``sdf.ir``; these names remain for old imports.
-UnionNode = Union
-IntersectNode = Intersect
-SubtractNode = Subtract
-OffsetNode = Offset
-RotateNode = Rotate
-ShellNode = Shell
-SlabNode = Slab
-
 __all__ = [
-    "CallableSDF", "CircleSDF", "ExprSDF", "FieldOffsetNode", "IntersectNode", "MidSurfaceNode",
-    "OffsetNode", "PolygonSDF", "PolylineBandSDF", "PriorityUnionNode", "RotateNode", "ShellNode",
-    "SlabNode", "SubtractNode", "TagNode", "TrimNode", "UnionNode", "as_node",
+    "CallableSDF", "CircleSDF", "ExprSDF", "FieldOffsetNode", "MidSurfaceNode",
+    "PolygonSDF", "PolylineBandSDF", "PriorityUnionNode",
+    "TagNode", "TrimNode", "as_node",
 ]

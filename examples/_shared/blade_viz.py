@@ -81,7 +81,10 @@ def save_fig(fig, root: Path, stem: str, category: str, name: str, *,
     out = Path(root) / stem / category
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"{name}.png"
-    fig.savefig(path, dpi=dpi, bbox_inches="tight")
+    try:
+        fig.savefig(path, dpi=dpi, bbox_inches="tight")
+    except ValueError:
+        fig.savefig(path, dpi=dpi)
     plt.close(fig)
     if repo is not None:
         print(f"wrote {path.relative_to(repo)}")

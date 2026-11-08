@@ -166,7 +166,7 @@ def _finite_span_faces(
     shown, keep = [], []
     for face, kind in zip(faces, kinds):
         xyz = _span_xyz(face)
-        if xyz.size == 0 or xyz.ndim != 2 or xyz.shape[1] != 3:
+        if xyz.size == 0 or xyz.ndim != 2 or xyz.shape[0] < 3 or xyz.shape[1] != 3:
             continue
         if not np.all(np.isfinite(xyz)):
             continue
@@ -282,9 +282,8 @@ def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         crop = _strip_window(walls, zc)
         faces, kinds = _wall_faces(crop, geo=geo)
         z0, z1 = crop[0][0], crop[-1][0]
-        if faces:
-            _draw_walls(ax, faces, kinds, elev=VIEW_LE[0], azim=VIEW_LE[1])
-            panel_kinds.extend(kinds)
+        _draw_walls(ax, faces, kinds, elev=VIEW_LE[0], azim=VIEW_LE[1])
+        panel_kinds.extend(kinds)
         ax.set_title(f"{label}\nz={z0:.1f}–{z1:.1f} m", fontsize=8)
     fig.suptitle(f"{key} — mapped loft close-ups (true scale)", fontsize=10)
     _legend_kinds(fig, panel_kinds)
@@ -298,9 +297,8 @@ def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         crop = _strip_window(walls, zc)
         faces, kinds = _wall_faces(crop, geo=geo)
         z0, z1 = crop[0][0], crop[-1][0]
-        if faces:
-            _draw_walls(ax, faces, kinds, elev=VIEW_TE[0], azim=VIEW_TE[1])
-            te_kinds.extend(kinds)
+        _draw_walls(ax, faces, kinds, elev=VIEW_TE[0], azim=VIEW_TE[1])
+        te_kinds.extend(kinds)
         ax.set_title(f"{label}\nz={z0:.1f}–{z1:.1f} m", fontsize=8)
     te_strip.suptitle(f"{key} — mapped loft close-ups TE (true scale)", fontsize=10)
     _legend_kinds(te_strip, te_kinds)
@@ -313,8 +311,7 @@ def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         z0, z1 = crop[0][0], crop[-1][0]
         one = plt.figure(figsize=(8.5, 6.1))
         ax = one.add_subplot(111, projection="3d")
-        if faces:
-            _draw_walls(ax, faces, kinds, elev=VIEW_LE[0], azim=VIEW_LE[1])
+        _draw_walls(ax, faces, kinds, elev=VIEW_LE[0], azim=VIEW_LE[1])
         ax.set_title(f"{key} — {label}, true scale, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(one, kinds)
         note(one, f"{max(len(crop) - 1, 0)} mapped loft strips (region roles + ribs).")
@@ -322,8 +319,7 @@ def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         save_fig(one, key, name, category=REGIONS)
         te = plt.figure(figsize=(8.5, 6.1))
         ax_te = te.add_subplot(111, projection="3d")
-        if faces:
-            _draw_walls(ax_te, faces, kinds, elev=VIEW_TE[0], azim=VIEW_TE[1])
+        _draw_walls(ax_te, faces, kinds, elev=VIEW_TE[0], azim=VIEW_TE[1])
         ax_te.set_title(f"{key} — {label} TE, true scale, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(te, kinds)
         note(te, f"{max(len(crop) - 1, 0)} mapped loft strips, trailing-edge view.")

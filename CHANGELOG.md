@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Mapped loft and geometry-to-mesh handoff are frozen (consume table in
+  ``docs/section/guides/geometry_to_mesh.md``; loft rules and closed bugs in
+  ``docs/blade/bug_log.md``).
+
 - Loft keep-set equals intercept ``DroppedWeb.index`` when that set is passed:
   no 0.08 cluster or extra TE-plug omit. ``_regularise_anchors`` keeps a
   ``web_*`` over a nearby ``cap_*``. TE wrap walks include the OML ridge;

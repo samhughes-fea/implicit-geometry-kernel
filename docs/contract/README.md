@@ -1,10 +1,14 @@
-# section_contract — ABI-shaped handoff vocabulary
+# contract — ABI-shaped handoff vocabulary
+
+↑ [docs](../README.md) · [src](../../src/implicit_geometry_kernel/contract/README.md) ·
+[tests](../../tests/contract/README.md) · teaching
+[05_midline_handoff](../../examples/section/teaching/05_midline_handoff.py)
 
 > **0.2.0:** `BeamResultantVector`, `load_orders.py` and the load-axis constants were
 > removed: loads belong to the section and laminate models, not the geometry kernel
 > (see [FORK.md](../FORK.md)). The sections below that describe them are kept as
-> history. The package now holds `ShellMidlineStrip`, `StripBond`, `CellWallLoop` and
-> `InfeasibleSectionGeometry`.
+> history. The package now holds `ShellMidlineStrip`, `StripBond`, `CellWallLoop`,
+> `LaminateOffsetRegion` and `InfeasibleSectionGeometry`.
 
 **Package:** `implicit_geometry_kernel.contract`  
 **Role:** thin FE-agnostic DTO / invariant boundary between the geometry worker
@@ -20,12 +24,14 @@ Spanwise consumers also use the 2.5-D fields on `BladeGeometry`
 (`oml_sdf`, `wall_mid_sdf`, `wall_meta`) and `GeometrySolver.project(..., plane=True)`.
 Those are geometry oracles, not DTOs: they do not replace `ShellMidlineStrip`.
 
-Wave 0: loft strips from `shell_graph` polylines; snap with `wall_mid_sdf`.
-`T` is a step (no taper). Newton is **not** a spec at cap/skin partition
-vertices (`|φ|` can be `t_cap/2`). Wave 3: shell consumers use
+Wave 0: loft strips from `shell_graph` polylines on the **skin mid**; snap with
+`wall_mid_sdf`. Cap eccentricity is `LaminateOffsetRegion`, not a kinked
+polyline. `T` is a step (no taper). Wave 3: shell consumers use
 `shell_strips_from_graph`; `ShellMidlineStrip` is not versioned; `cut.walls`
 still lists solid caps. See
 [`guides/geometry_to_mesh.md`](../section/guides/geometry_to_mesh.md#oracle-policy-wave-0).
+The consume / not-in-kernel table is frozen under
+[What next](../section/guides/geometry_to_mesh.md#what-next).
 
 **Do not** merge this package into `section_geometry`, `section_shell_fea`,
 `section_bind`, or `section_loads`. Workers speak the handoff vocabulary; none

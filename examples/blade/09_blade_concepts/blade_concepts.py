@@ -179,6 +179,13 @@ def _face_rgba(kinds: list[str], alpha: float = 0.88) -> np.ndarray:
     return np.array([to_rgba(panel_colour(k), alpha) for k in kinds])
 
 
+def _tight(fig, **kwargs) -> None:
+    try:
+        fig.tight_layout(**kwargs)
+    except ValueError:
+        pass
+
+
 def _legend_kinds(fig, kinds: list[str], *, ncol: int | None = None, fontsize: int = 7) -> None:
     seen = []
     for k in kinds:
@@ -270,7 +277,7 @@ def figure_sections(key: str, geo: BladeGeometry, marks: list) -> None:
         print(f"{label:>12} {z:8.2f} {cut.chord:8.2f} {cut.twist:8.2f} {len(cut.walls):6d} "
               f"{len(cut.cells):6d}  {cut.layout}{dropped}")
     fig.suptitle(f"{key} — synthetic planform, 2-D cuts (skin / cap / web midlines)", fontsize=10)
-    fig.tight_layout()
+    _tight(fig)
     save_fig(fig, key, "sections", category=CROSS_SECTIONS)
 
 
@@ -288,7 +295,7 @@ def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
     fig.suptitle(f"{key} — mapped loft close-ups (true scale)", fontsize=10)
     _legend_kinds(fig, panel_kinds)
     note(fig, "Authored WallRegionGraph; web ends are shared skin-loop keys. tip_closure is a station face.")
-    fig.tight_layout(rect=(0, 0.10, 1, 0.92))
+    _tight(fig, rect=(0, 0.10, 1, 0.92))
     save_fig(fig, key, "closeups", category=FULL_BLADE)
     te_strip = plt.figure(figsize=(16.5, 3.8))
     te_kinds: list[str] = []
@@ -303,7 +310,7 @@ def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
     te_strip.suptitle(f"{key} — mapped loft close-ups TE (true scale)", fontsize=10)
     _legend_kinds(te_strip, te_kinds)
     note(te_strip, "Trailing-edge view of the same five landmark strips.")
-    te_strip.tight_layout(rect=(0, 0.10, 1, 0.92))
+    _tight(te_strip, rect=(0, 0.10, 1, 0.92))
     save_fig(te_strip, key, "closeups_te", category=FULL_BLADE)
     for name, zc, label in marks:
         crop = _strip_window(walls, zc)
@@ -315,7 +322,7 @@ def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         ax.set_title(f"{key} — {label}, true scale, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(one, kinds)
         note(one, f"{max(len(crop) - 1, 0)} mapped loft strips (region roles + ribs).")
-        one.tight_layout(rect=(0, 0.10, 1, 0.96))
+        _tight(one, rect=(0, 0.10, 1, 0.96))
         save_fig(one, key, name, category=REGIONS)
         te = plt.figure(figsize=(8.5, 6.1))
         ax_te = te.add_subplot(111, projection="3d")
@@ -323,7 +330,7 @@ def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         ax_te.set_title(f"{key} — {label} TE, true scale, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(te, kinds)
         note(te, f"{max(len(crop) - 1, 0)} mapped loft strips, trailing-edge view.")
-        te.tight_layout(rect=(0, 0.10, 1, 0.96))
+        _tight(te, rect=(0, 0.10, 1, 0.96))
         save_fig(te, key, f"{name}_te", category=REGIONS)
 
 
@@ -340,7 +347,7 @@ def figure_cutaways(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         ax.set_title(f"{key} — {label}, suction skin removed, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(fig, kinds)
         note(fig, "Cutaway of mapped region strips (pressure, caps, webs, ribs).")
-        fig.tight_layout(rect=(0, 0.10, 1, 0.96))
+        _tight(fig, rect=(0, 0.10, 1, 0.96))
         save_fig(fig, key, name, category=REGION_CUTAWAYS)
         te = plt.figure(figsize=(8.5, 6.1))
         ax_te = te.add_subplot(111, projection="3d")
@@ -348,7 +355,7 @@ def figure_cutaways(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         ax_te.set_title(f"{key} — {label} TE, suction skin removed, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(te, kinds)
         note(te, "Cutaway trailing-edge view.")
-        te.tight_layout(rect=(0, 0.10, 1, 0.96))
+        _tight(te, rect=(0, 0.10, 1, 0.96))
         save_fig(te, key, f"{name}_te", category=REGION_CUTAWAYS)
 
 
@@ -399,9 +406,9 @@ def _save_elevation(key: str, name: str, faces: list[np.ndarray], kinds: list[st
     ax.set_title(title, loc="left", fontsize=10)
     if legend:
         _legend_kinds(fig, kinds)
-        fig.tight_layout(rect=(0, 0.08, 1, 1))
+        _tight(fig, rect=(0, 0.08, 1, 1))
     else:
-        fig.tight_layout(rect=(0, 0.04, 1, 1))
+        _tight(fig, rect=(0, 0.04, 1, 1))
     note(fig, caption)
     save_fig(fig, key, name, category=FULL_BLADE)
 

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Family **C** pad 0 is stored as ``spar_cap_*_0`` in the unrotated pad dict.
+  Constructive union is indexed pads only; the canonical label stays the merged
+  product (and family **D** box).
 - Mapped loft strips resample unmatched station polylines to a shared vertex
   count and omit collapsed or non-finite faces (example 09 3-D autoscale).
 

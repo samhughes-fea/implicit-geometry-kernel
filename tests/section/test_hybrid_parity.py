@@ -104,12 +104,13 @@ def test_hybrid_vs_quadtree_taxonomy(layout_key: str, twist_deg: float):
 
 
 def test_family_c_constructive_union_includes_pad_zero():
-    """Pad 0 is stored under the canonical label; emit must still union it with *_1."""
+    """Pad 0 is ``*_0``; emit unions it with ``*_1`` onto the canonical label."""
     airfoil = AirfoilSDF.from_naca("2412", n_points=100, chord=1.0)
     section = build_section_view(airfoil, resolve_system_type("2C-CN-LC-0R"))
     pads = dict(section.spar_cap_components_unrotated or {})
-    assert "spar_cap_suction_surface" in pads
+    assert "spar_cap_suction_surface_0" in pads
     assert "spar_cap_suction_surface_1" in pads
+    assert "spar_cap_suction_surface" not in pads
     polys = emit_wall_solid_polygons(section)
     su = polys["spar_cap_suction_surface"]
     assert float(su.area) > 1.5e-3

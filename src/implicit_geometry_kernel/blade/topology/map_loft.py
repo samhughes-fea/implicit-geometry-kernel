@@ -48,28 +48,59 @@ def loft_mapped_strips(s0: Mapping[str, np.ndarray], s1: Mapping[str, np.ndarray
         if web.name not in s0 or web.name not in s1 or web.name not in names1:
             continue
         pa, pb = np.asarray(s0[web.name], float), np.asarray(s1[web.name], float)
-        n = min(len(pa), len(pb))
-        if n < 2:
+        if len(pa) < 2 or len(pb) < 2:
             continue
-        for i in range(n - 1):
+        pa, pb = _match_open_counts(pa, pb)
+        for i in range(len(pa) - 1):
             quad = np.stack([pa[i], pa[i + 1], pb[i + 1], pb[i]])
             if _quad_bowtie(quad):
                 a, b, c, d = quad
-                faces.append((web.name, np.stack([a, b, c]), True))
-                faces.append((web.name, np.stack([a, c, d]), True))
+                _append_face(faces, web.name, np.stack([a, b, c]), True)
+                _append_face(faces, web.name, np.stack([a, c, d]), True)
                 continue
-            faces.append((web.name, quad, False))
+            _append_face(faces, web.name, quad, False)
     return faces
+
+
+def _match_open_counts(pa: np.ndarray, pb: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Arc-resample both open polylines to the same vertex count (keep endpoints)."""
+    pa, pb = np.asarray(pa, float), np.asarray(pb, float)
+    n = max(len(pa), len(pb), 2)
+    if len(pa) != n:
+        pa = arc_resample_open(pa, n)
+    if len(pb) != n:
+        pb = arc_resample_open(pb, n)
+    return pa, pb
+
+
+def _finite_loft_face(face: np.ndarray) -> bool:
+    """Drop collapsed or non-finite strips (they poison 3-D autoscale)."""
+    p = np.asarray(face, float)
+    if p.ndim != 2 or len(p) < 3 or p.shape[1] < 3:
+        return False
+    if not np.all(np.isfinite(p)):
+        return False
+    uniq = [p[0]]
+    for q in p[1:]:
+        if not np.allclose(uniq[-1], q, atol=1e-12, rtol=0.0):
+            uniq.append(q)
+    if len(uniq) >= 2 and np.allclose(uniq[0], uniq[-1], atol=1e-12, rtol=0.0):
+        uniq = uniq[:-1]
+    return len(uniq) >= 3
+
+
+def _append_face(faces: list[tuple[str, np.ndarray, bool]], name: str,
+                 face: np.ndarray, collapsing: bool) -> None:
+    if _finite_loft_face(face):
+        faces.append((name, np.asarray(face, float), collapsing))
 
 
 def _strip_faces(name: str, pa: np.ndarray, pb: np.ndarray, t0, t1, branch,
                  *, birth: bool = False) -> list[tuple[str, np.ndarray, bool]]:
     pa, pb = np.asarray(pa, float), np.asarray(pb, float)
-    if len(pa) != len(pb) or len(pa) < 2:
-        n = min(len(pa), len(pb))
-        if n < 2:
-            return []
-        pa, pb = pa[:n], pb[:n]
+    if len(pa) < 2 or len(pb) < 2:
+        return []
+    pa, pb = _match_open_counts(pa, pb)
     collapsing = birth or np.allclose(pa[0], pa[-1]) or np.allclose(pb[0], pb[-1])
     if not birth:
         try:
@@ -80,19 +111,31 @@ def _strip_faces(name: str, pa: np.ndarray, pb: np.ndarray, t0, t1, branch,
             pass
     if branch.wrap and np.allclose(pa[0], pa[-1]) and np.allclose(pb[0], pb[-1]):
         return []
-    out = []
+    out: list[tuple[str, np.ndarray, bool]] = []
     if collapsing:
+        pa_pt = bool(np.allclose(pa[0], pa[-1]))
+        pb_pt = bool(np.allclose(pb[0], pb[-1]))
+        if pa_pt and not pb_pt:
+            apex = pa[0]
+            for i in range(len(pb) - 1):
+                _append_face(out, name, np.stack([apex, pb[i], pb[i + 1]]), True)
+            return out
+        if pb_pt and not pa_pt:
+            apex = pb[0]
+            for i in range(len(pa) - 1):
+                _append_face(out, name, np.stack([apex, pa[i], pa[i + 1]]), True)
+            return out
         for i in range(len(pa) - 1):
-            out.append((name, np.stack([pa[i], pa[i + 1], pb[min(i + 1, len(pb) - 1)]]), True))
+            _append_face(out, name, np.stack([pa[i], pa[i + 1], pb[i + 1]]), True)
         return out
     for i in range(len(pa) - 1):
         quad = np.stack([pa[i], pa[i + 1], pb[i + 1], pb[i]])
         if _quad_bowtie(quad):
             a, b, c, d = quad
-            out.append((name, np.stack([a, b, c]), True))
-            out.append((name, np.stack([a, c, d]), True))
+            _append_face(out, name, np.stack([a, b, c]), True)
+            _append_face(out, name, np.stack([a, c, d]), True)
         else:
-            out.append((name, quad, False))
+            _append_face(out, name, quad, False)
     return out
 
 

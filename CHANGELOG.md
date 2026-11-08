@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Mapped loft strips resample unmatched station polylines to a shared vertex
+  count and omit collapsed or non-finite faces (example 09 3-D autoscale).
+
 ## 0.8.1
 
 - Family **C** constructive cap union includes pad 0 (stored under the

@@ -44,9 +44,7 @@ from implicit_geometry_kernel.plotting.figure_io import (
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
-from implicit_geometry_kernel.section import (
-    MultiCellSection,
-)
+from _assemble import assemble_host
 from implicit_geometry_kernel.section.boundary.walls import emit_wall_solid_polygons
 from implicit_geometry_kernel.section.boundary.labels import is_residual_label
 from implicit_geometry_kernel.section.properties.backend import (
@@ -61,19 +59,17 @@ _SKIN_T = 0.003
 _COMPARE_LABELS = ("skin_suction_surface", "skin_pressure_surface", "shear_web_0", "spar_cap_suction_surface")
 
 
-def _build_section(af: AirfoilSDF) -> MultiCellSection:
-    return MultiCellSection.twin_web(
+def _build_section(af: AirfoilSDF):
+    return assemble_host(
         af,
-        x_fore=0.20,
-        x_aft=0.50,
+        n_webs=2,
+        family="D",
+        alignment="chord_normal",
+        web_fracs=(0.20, 0.50),
         skin_thickness=_SKIN_T,
-        web_thickness=0.004,
-        cap_height=(0.014, 0.012),
-        web_alignment="chord_normal",
-        twist_angle=0.0,
-        trailing_edge_insert_x_m=0.75,
-        leading_edge_insert_x_m=0.10,
-        core_enabled=True,
+        shear_web_thickness=0.004,
+        cap_height=0.014,
+        twist_rad=0.0,
     )
 
 

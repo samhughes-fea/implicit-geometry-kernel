@@ -45,9 +45,7 @@ from implicit_geometry_kernel.plotting.figure_io import (
 )
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
-from implicit_geometry_kernel.section import (
-    MultiCellSection,
-)
+from _assemble import assemble_host
 from implicit_geometry_kernel.section.midlines.ring_geometry import (
     point_to_open_polyline_nearest,
 )
@@ -63,19 +61,17 @@ _DPI = DEFAULT_DPI
 _TWIST_DEG = (0.0, 5.0, 10.0, 15.0, 30.0)
 
 
-def _build_section(af: AirfoilSDF, *, twist_rad: float) -> MultiCellSection:
-    return MultiCellSection.torsion_box(
+def _build_section(af: AirfoilSDF, *, twist_rad: float):
+    return assemble_host(
         af,
-        x_fore=0.15,
-        x_mid=0.35,
-        x_aft=0.55,
+        n_webs=3,
+        family="D",
+        alignment="chord_normal",
+        web_fracs=(0.15, 0.35, 0.55),
         skin_thickness=0.005,
-        web_thickness=0.006,
-        cap_height=(0.014, 0.012),
-        web_alignment="chord_normal",
-        twist_angle=float(twist_rad),
-        structural_family="D",
-        core_enabled=False,
+        shear_web_thickness=0.006,
+        cap_height=0.014,
+        twist_rad=float(twist_rad),
     )
 
 

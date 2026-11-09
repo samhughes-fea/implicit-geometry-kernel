@@ -3,6 +3,7 @@ examples/demos/section/le_te_insert_residual_demo.py
 ======================================
 Demonstrate LE/TE inserts as first-class residual-φ consumers.
 
+Insert windows are assemble-host extras (not ``SectionGeometry`` kwargs).
 Builds a twin-web NACA 2412 section with ``leading_edge_insert_x_m`` / ``trailing_edge_insert_x_m``,
 then plots constructive wall solids + residual inserts (hybrid / quadtree).
 
@@ -45,9 +46,7 @@ from implicit_geometry_kernel.plotting.figure_io import (
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section.properties.export import SectionPropertiesReport
-from implicit_geometry_kernel.section import (
-    MultiCellSection,
-)
+from implicit_geometry_kernel.section.assembly import MultiCellSection
 from implicit_geometry_kernel.section.boundary.labels import (
     classify_property_labels,
     is_residual_label,

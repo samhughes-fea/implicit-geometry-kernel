@@ -50,8 +50,9 @@ from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
 from implicit_geometry_kernel.section.properties.export import export_section_json
 from implicit_geometry_kernel.section.properties.export import SectionPropertiesReport
-from implicit_geometry_kernel.section import MultiCellSection, resolve_system_type
+from implicit_geometry_kernel.section import resolve_system_type
 from implicit_geometry_kernel.section.spec import SectionOptions, SectionSpec, build_section_geometry
+from _assemble import assemble_host
 from implicit_geometry_kernel.plotting import plot_section
 from implicit_geometry_kernel.frames import naca_to_twisted_pitch_axis_blade_frame
 from implicit_geometry_kernel.plotting.frames import section_plot_axes
@@ -76,24 +77,23 @@ OUTPUT = Path(_args.out_dir)
 OUTPUT.mkdir(parents=True, exist_ok=True)
 
 
-def _build_torsion_box(af: AirfoilSDF, *, twist_rad: float, web_alignment: str) -> MultiCellSection:
+def _build_torsion_box(af: AirfoilSDF, *, twist_rad: float, web_alignment: str):
     """Uniform web alignment for the 3-web torsion-box demo (F or CN)."""
-    return MultiCellSection(
-        airfoil_sdf=af,
-        web_x_positions=[0.15, 0.35, 0.55],
-        web_thickness=[0.005, 0.004, 0.005],
-        web_alignment=str(web_alignment),
-        cap_height=(0.014, 0.012),
+    return assemble_host(
+        af,
+        n_webs=3,
+        family="D",
+        alignment=str(web_alignment),
+        web_fracs=(0.15, 0.35, 0.55),
+        shear_web_thickness=[0.005, 0.004, 0.005],
+        cap_height=0.014,
         skin_thickness=0.003,
-        twist_angle=float(twist_rad),
-        trailing_edge_insert_x_m=0.80,
-        leading_edge_insert_x_m=0.08,
-        core_enabled=True,
+        twist_rad=float(twist_rad),
     )
 
 
 def _save_torsion_section_plot(
-    section: MultiCellSection,
+    section,
     grid: SDFGrid,
     *,
     af: AirfoilSDF,
@@ -141,18 +141,16 @@ print(f"  Max camber    : {yc.max():.4f}c  at x/c = {xc[np.argmax(yc)]:.3f}")
 
 print("\n--- Twin-web box spar (0 twist) -------------------------")
 
-twin = MultiCellSection.twin_web(
+twin = assemble_host(
     af,
-    x_fore         = 0.20,
-    x_aft          = 0.50,
-    skin_thickness = 0.003,
-    web_thickness  = 0.004,
-    cap_height     = (0.014, 0.012),    # (upper, lower)
-    web_alignment  = "chord_normal",
-    twist_angle    = 0.0,
-    trailing_edge_insert_x_m    = 0.75,
-    leading_edge_insert_x_m    = 0.10,
-    core_enabled   = True,
+    n_webs=2,
+    family="D",
+    alignment="chord_normal",
+    web_fracs=(0.20, 0.50),
+    skin_thickness=0.003,
+    shear_web_thickness=0.004,
+    cap_height=0.014,
+    twist_rad=0.0,
 )
 print(f"  Components: {twin.labels}")
 print(f"  n_webs={twin.n_webs}, n_cells={twin.n_cells}")

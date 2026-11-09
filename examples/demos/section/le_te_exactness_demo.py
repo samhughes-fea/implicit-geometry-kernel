@@ -48,7 +48,8 @@ from implicit_geometry_kernel.plotting.palette import (
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
-from implicit_geometry_kernel.section import MultiCellSection, resolve_system_type
+from implicit_geometry_kernel.section import resolve_system_type
+from _assemble import assemble_host
 from implicit_geometry_kernel.section.spec import SectionOptions, SectionSpec, build_section_geometry
 from implicit_geometry_kernel.plotting.plot import (
     plot_section,
@@ -61,18 +62,17 @@ from implicit_geometry_kernel.plotting.frames import section_plot_axes
 _DPI = DEFAULT_DPI
 
 
-def _build_section(af: AirfoilSDF, *, twist_rad: float = 0.0) -> MultiCellSection:
-    return MultiCellSection.twin_web(
+def _build_section(af: AirfoilSDF, *, twist_rad: float = 0.0):
+    return assemble_host(
         af,
-        x_fore=0.20,
-        x_aft=0.50,
+        n_webs=2,
+        family="D",
+        alignment="chord_normal",
+        web_fracs=(0.20, 0.50),
         skin_thickness=0.005,
-        web_thickness=0.006,
-        cap_height=(0.014, 0.012),
-        web_alignment="chord_normal",
-        twist_angle=float(twist_rad),
-        structural_family="D",
-        core_enabled=False,
+        shear_web_thickness=0.006,
+        cap_height=0.014,
+        twist_rad=float(twist_rad),
     )
 
 

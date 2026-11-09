@@ -1,6 +1,8 @@
 # visualisation demos — run list
 
-Figure gallery for station geometry. This is not the first on-ramp: start with
+Figure gallery for station geometry. Hosts assemble through ``SectionGeometry``
+(see [`_assemble.py`](_assemble.py)); do not construct ``MultiCellSection`` in
+new scripts. This is not the first on-ramp: start with
 [`../../section/teaching/`](../../section/teaching/) then the numbered examples
 in [`../../README.md`](../../README.md). Outputs:
 [`../figures/`](../figures/), committed and shown under [Figures](#figures) below. Artefact / regen index:

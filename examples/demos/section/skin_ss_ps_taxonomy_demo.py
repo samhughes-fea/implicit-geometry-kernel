@@ -38,9 +38,7 @@ from implicit_geometry_kernel.plotting.figure_io import (
 
 from implicit_geometry_kernel.plotting.frames import section_plot_axes
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
-from implicit_geometry_kernel.section import (
-    MultiCellSection,
-)
+from _assemble import assemble_host
 from implicit_geometry_kernel.section.midlines.export import (
     build_shell_midline_strips,
 )
@@ -71,15 +69,15 @@ def main(argv: list[str] | None = None) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     af = AirfoilSDF.from_naca("2412", chord=1.0)
-    section = MultiCellSection.twin_web(
+    section = assemble_host(
         af,
-        x_fore=0.20,
-        x_aft=0.50,
+        n_webs=2,
+        family="D",
+        alignment="chord_normal",
+        web_fracs=(0.20, 0.50),
         skin_thickness=0.005,
-        web_thickness=0.006,
-        cap_height=(0.014, 0.012),
-        structural_family="D",
-        core_enabled=False,
+        shear_web_thickness=0.006,
+        cap_height=0.014,
     )
 
     fig, ax = plt.subplots(figsize=(12.0, 5.0))

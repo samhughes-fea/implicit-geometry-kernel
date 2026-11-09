@@ -53,9 +53,7 @@ from implicit_geometry_kernel.plotting.palette import (
 )
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
-from implicit_geometry_kernel.section import (
-    MultiCellSection,
-)
+from _assemble import assemble_host
 from implicit_geometry_kernel.section.properties.area_mesh import (
     section_properties_via_quadtree,
 )
@@ -83,22 +81,21 @@ _WEB_T = 0.004
 _DEPTHS = (4, 5, 6, 7, 8)
 
 
-def _build_section(af: AirfoilSDF, *, twist_rad: float) -> MultiCellSection:
-    return MultiCellSection.twin_web(
+def _build_section(af: AirfoilSDF, *, twist_rad: float):
+    return assemble_host(
         af,
-        x_fore=0.22,
-        x_aft=0.48,
+        n_webs=2,
+        family="D",
+        alignment="chord_normal",
+        web_fracs=(0.22, 0.48),
         skin_thickness=0.004,
-        web_thickness=_WEB_T,
-        cap_height=(0.012, 0.010),
-        web_alignment="chord_normal",
-        twist_angle=float(twist_rad),
-        structural_family="D",
-        core_enabled=False,
+        shear_web_thickness=_WEB_T,
+        cap_height=0.012,
+        twist_rad=float(twist_rad),
     )
 
 
-def _constructive_web_area(section: MultiCellSection) -> float:
+def _constructive_web_area(section) -> float:
     polys = emit_wall_solid_polygons(section)
     geom = polys.get("shear_web_0")
     if geom is None or geom.is_empty:
@@ -106,7 +103,7 @@ def _constructive_web_area(section: MultiCellSection) -> float:
     return float(geom.area)
 
 
-def _web_centroid(section: MultiCellSection) -> np.ndarray:
+def _web_centroid(section) -> np.ndarray:
     polys = emit_wall_solid_polygons(section)
     geom = polys["shear_web_0"]
     c = geom.centroid

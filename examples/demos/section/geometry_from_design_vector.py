@@ -49,7 +49,7 @@ def _parse_float_list(s: str) -> list[float]:
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
-        description="Generate MultiCellSection geometry from thickness/layout parameters.",
+        description="Generate SectionGeometry host from thickness/layout parameters.",
     )
     p.add_argument("--naca", default="2412", help="4-digit NACA code (default 2412).")
     p.add_argument("--chord", type=float, default=1.0, help="Chord length [m].")
@@ -122,7 +122,7 @@ def main(argv: list[str] | None = None) -> int:
 
     from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
     from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
-    from implicit_geometry_kernel.section import MultiCellSection
+    from _assemble import assemble_host
     from implicit_geometry_kernel.section.properties.export import export_section_json
     from implicit_geometry_kernel.plotting import plot_section
     from implicit_geometry_kernel.section.properties.export import (
@@ -164,26 +164,17 @@ def main(argv: list[str] | None = None) -> int:
     le_x = args.leading_edge_insert_x_m_frac * chord if args.leading_edge_insert_x_m_frac is not None else None
 
     airfoil = AirfoilSDF.from_naca(str(args.naca).zfill(4), chord=chord)
-    mcs_kw = dict(
-        airfoil_sdf=airfoil,
-        web_x_positions=web_x,
-        web_thickness=web_thickness,
-        web_alignment=args.web_alignment,
-        cap_height=cap_height,
+    section = assemble_host(
+        airfoil,
+        n_webs=len(web_x),
+        family=str(args.structural_family),
+        alignment=str(args.web_alignment),
+        web_offsets=web_x,
+        shear_web_thickness=web_thickness,
+        cap_height=cap_height if not isinstance(cap_height, list) else cap_height[0],
         skin_thickness=float(args.skin_thickness),
-        twist_angle=twist_rad,
-        trailing_edge_insert_x_m=te_x,
-        leading_edge_insert_x_m=le_x,
-        core_enabled=not args.no_core,
-        structural_family=args.structural_family,
-        fixed_cap_anchor=args.fixed_cap_anchor,
-        pitch_fraction_of_chord_from_le=float(args.pitch_fraction_of_chord_from_le),
+        twist_rad=twist_rad,
     )
-    if args.fixed_cap_chord_half_width is not None:
-        mcs_kw["fixed_cap_chord_half_width"] = float(args.fixed_cap_chord_half_width)
-    if args.discrete_cap_chord_half_width is not None:
-        mcs_kw["discrete_cap_chord_half_width"] = float(args.discrete_cap_chord_half_width)
-    section = MultiCellSection(**mcs_kw)
 
     airfoil_plot = airfoil.rotate(twist_rad) if abs(twist_rad) > 1e-12 else airfoil
     grid = SDFGrid.from_airfoil(airfoil_plot, nx=int(args.nx), ny=int(args.ny))
@@ -203,6 +194,8 @@ def main(argv: list[str] | None = None) -> int:
         "labels": section.labels,
         "n_webs": section.n_webs,
         "n_cells": section.n_cells,
+        "leading_edge_insert_x_m": le_x,
+        "trailing_edge_insert_x_m": te_x,
     }
     if args.json:
         with open(out_dir / "design_vector.json", "w", encoding="utf-8") as fh:

@@ -75,6 +75,126 @@ def rib_cell_polygons_from_samples(
     return out
 
 
+def _ring_basis(ring: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Best-fit plane of a 3-D n-gon: origin, u, v, and 2-D xy of the ring."""
+    pts = np.asarray(ring, float)
+    origin = pts.mean(axis=0)
+    rel = pts - origin
+    n = np.zeros(3, float)
+    for i in range(len(pts)):
+        a, b = pts[i], pts[(i + 1) % len(pts)]
+        n[0] += (a[1] - b[1]) * (a[2] + b[2])
+        n[1] += (a[2] - b[2]) * (a[0] + b[0])
+        n[2] += (a[0] - b[0]) * (a[1] + b[1])
+    ln = float(np.linalg.norm(n))
+    if ln < 1e-15:
+        _, _, vh = np.linalg.svd(rel, full_matrices=False)
+        n = vh[-1]
+        ln = float(np.linalg.norm(n)) or 1.0
+    n = n / ln
+    seed = np.array([1.0, 0.0, 0.0]) if abs(n[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+    u = np.cross(n, seed)
+    u = u / (float(np.linalg.norm(u)) or 1.0)
+    v = np.cross(n, u)
+    xy = np.column_stack([rel @ u, rel @ v])
+    return origin, u, v, xy
+
+
+def _project_xy(pts: np.ndarray, origin: np.ndarray, u: np.ndarray, v: np.ndarray) -> np.ndarray:
+    rel = np.asarray(pts, float) - origin
+    return np.column_stack([rel @ u, rel @ v])
+
+
+def _area2(xy: np.ndarray) -> float:
+    x, y = xy[:, 0], xy[:, 1]
+    return float(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))
+
+
+def _cross2(a, b, c) -> float:
+    return float((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
+
+
+def _in_tri(p, a, b, c, *, eps: float = 1e-12) -> bool:
+    c1, c2, c3 = _cross2(a, b, p), _cross2(b, c, p), _cross2(c, a, p)
+    return not ((c1 < -eps or c2 < -eps or c3 < -eps) and (c1 > eps or c2 > eps or c3 > eps))
+
+
+def _point_in_ring(p, xy: np.ndarray) -> bool:
+    """Even-odd test in the ring plane (includes boundary)."""
+    x, y = float(p[0]), float(p[1])
+    inside = False
+    n = len(xy)
+    for i in range(n):
+        x1, y1 = xy[i]
+        x2, y2 = xy[(i + 1) % n]
+        if abs(_cross2(xy[i], xy[(i + 1) % n], p)) <= 1e-12:
+            if min(x1, x2) - 1e-12 <= x <= max(x1, x2) + 1e-12 and (
+                min(y1, y2) - 1e-12 <= y <= max(y1, y2) + 1e-12
+            ):
+                return True
+        cond = ((y1 > y) != (y2 > y)) and (
+            x < (x2 - x1) * (y - y1) / (y2 - y1 + 1e-30) + x1
+        )
+        if cond:
+            inside = not inside
+    return inside
+
+
+def ear_clip_ring(ring: np.ndarray) -> list[np.ndarray]:
+    """Triangles that fill ``ring`` using only its vertices (no Steiner points)."""
+    pts = np.asarray(ring, float)
+    if len(pts) > 2 and np.allclose(pts[0], pts[-1], atol=1e-12, rtol=0.0):
+        pts = pts[:-1]
+    if len(pts) < 3:
+        return []
+    if len(pts) == 3:
+        return [pts.copy()]
+    _origin, _u, _v, xy = _ring_basis(pts)
+    if _area2(xy) < 0.0:
+        pts = pts[::-1].copy()
+        xy = xy[::-1].copy()
+    idx = list(range(len(pts)))
+    faces: list[np.ndarray] = []
+    guard = 0
+    while len(idx) > 3 and guard < 8 * len(pts):
+        guard += 1
+        n = len(idx)
+        clipped = False
+        for k in range(n):
+            i0, i1, i2 = idx[(k - 1) % n], idx[k], idx[(k + 1) % n]
+            a, b, c = xy[i0], xy[i1], xy[i2]
+            if _cross2(a, b, c) <= 1e-14:
+                continue
+            if any(
+                _in_tri(xy[j], a, b, c)
+                for j in idx
+                if j not in (i0, i1, i2)
+            ):
+                continue
+            faces.append(np.stack([pts[i0], pts[i1], pts[i2]]))
+            del idx[k]
+            clipped = True
+            break
+        if not clipped:
+            break
+    if len(idx) == 3:
+        faces.append(np.stack([pts[idx[0]], pts[idx[1]], pts[idx[2]]]))
+    return faces
+
+
+def rib_cell_triangles_from_samples(
+    template: ShellTopologyTemplate,
+    samples: Mapping[str, np.ndarray],
+    member: TransverseMember | str,
+) -> list[tuple[str, np.ndarray]]:
+    """Ear-clip of :func:`rib_cell_polygons_from_samples` (drawing / STL only)."""
+    out: list[tuple[str, np.ndarray]] = []
+    for name, ring in rib_cell_polygons_from_samples(template, samples, member):
+        for tri in ear_clip_ring(ring):
+            out.append((name, tri))
+    return out
+
+
 def rib_face_polygons(geo, *, n_chord: int = 12) -> list[tuple[str, np.ndarray]]:
     """Rib/tip n-gons at each ``TransverseMember.z``, vertices from the mapped loft."""
     out: list[tuple[str, np.ndarray]] = []
@@ -93,14 +213,11 @@ def rib_face_polygons(geo, *, n_chord: int = 12) -> list[tuple[str, np.ndarray]]
 
 
 def rib_face_triangles(geo, *, n_chord: int = 12) -> list[tuple[str, np.ndarray]]:
-    """STL-only tessellation: fan n-gons from the first loft node (no centroid)."""
+    """STL tessellation: ear-clip of each rib n-gon (same vertices, no centroid)."""
     faces = []
     for name, ring in rib_face_polygons(geo, n_chord=n_chord):
-        body = ring[:-1] if len(ring) > 3 and np.allclose(ring[0], ring[-1]) else ring
-        if len(body) < 3:
-            continue
-        for i in range(1, len(body) - 1):
-            faces.append((name, np.stack([body[0], body[i], body[i + 1]])))
+        for tri in ear_clip_ring(ring):
+            faces.append((name, tri))
     return faces
 
 

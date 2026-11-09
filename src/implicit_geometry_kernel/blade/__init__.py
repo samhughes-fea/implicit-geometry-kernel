@@ -15,7 +15,7 @@ from implicit_geometry_kernel.blade.loft import BladeGeometry, SpanTable, Thickn
 from implicit_geometry_kernel.blade.topology import (
     Anchor, Region, ShellTopologyTemplate, WallRegionGraph, WebMember,
     ZonedShellTopology, loft_mapped_strips, rib_cell_polygons_from_samples,
-    rib_face_polygons, rib_face_triangles,
+    rib_cell_triangles_from_samples, rib_face_polygons, rib_face_triangles,
     place_station_keys, sample_region_polylines, signatures_compatible, zone_region_graphs,
 )
 from implicit_geometry_kernel.blade.windio import (
@@ -46,6 +46,7 @@ __all__ = ["Airfoil", "Anchor", "BladeConcept", "BladeGeometry", "CellPolygon", 
            "TopologyDiff", "TopologyEvent", "loft_mapped_strips", "partition_edge_curve",
            "place_station_keys",
            "resample_locked", "rib_cell_polygons_from_samples",
+           "rib_cell_triangles_from_samples",
            "rib_face_polygons", "rib_face_triangles", "sample_region_polylines",
            "section_at",
            "shared_loft_names", "signatures_compatible",

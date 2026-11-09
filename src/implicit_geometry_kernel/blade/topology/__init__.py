@@ -33,7 +33,9 @@ from implicit_geometry_kernel.blade.topology.map_walk import (
     _te_wrap_arc,
 )
 from implicit_geometry_kernel.blade.topology.ribs import (
+    ear_clip_ring,
     rib_cell_polygons_from_samples,
+    rib_cell_triangles_from_samples,
     rib_face_polygons,
     rib_face_triangles,
     section_cut_near,
@@ -61,7 +63,9 @@ __all__ = [
     "_regularise_anchors",
     "_te_wrap_arc",
     "loft_mapped_strips",
+    "ear_clip_ring",
     "rib_cell_polygons_from_samples",
+    "rib_cell_triangles_from_samples",
     "rib_face_polygons",
     "rib_face_triangles",
     "place_station_keys",

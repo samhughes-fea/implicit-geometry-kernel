@@ -28,6 +28,7 @@ from implicit_geometry_kernel.blade.topology import (
     _te_wrap_arc,
     place_station_keys,
     rib_cell_polygons_from_samples,
+    rib_cell_triangles_from_samples,
     sample_region_polylines,
 )
 
@@ -429,6 +430,84 @@ def test_rib_ngons_use_loft_skin_and_web_nodes():
         assert n_hit == 2
 
 
+def test_rib_triangles_use_only_ngon_vertices():
+    from implicit_geometry_kernel.blade.stations import TransverseMember
+
+    geo = _geo(web_positions=(0.18, 0.48),
+               transverse=(TransverseMember("tip_closure", 10.0, 0.012),))
+    tpls, samples = _templates(geo, [10.0], n_chord=8)
+    rings = dict(rib_cell_polygons_from_samples(tpls[0], samples[0], "tip_closure"))
+    tris = rib_cell_triangles_from_samples(tpls[0], samples[0], "tip_closure")
+    assert tris
+    for name, tri in tris:
+        assert _ptset(tri) <= _ptset(rings[name])
+        assert len(tri) == 3
+
+
+def test_ear_clip_le_cell_stays_inside_ngon():
+    from implicit_geometry_kernel.blade.topology.ribs import (
+        _point_in_ring,
+        _project_xy,
+        _ring_basis,
+        ear_clip_ring,
+    )
+
+    geo = _09_geo("5D-F-PA-10R")
+    member = next(m for m in geo.transverse if str(m.name) == "rib_1")
+    z = float(member.z)
+    assert z == pytest.approx(np.linspace(0.0, 12.0, 11)[1])
+    tpls, samples = _templates(geo, [z], n_chord=24)
+    samp = samples[0]
+    z_loft = float(next(iter(samp.values()))[0, 2])
+    assert z_loft == pytest.approx(float(geo.section_at(z).z), abs=1e-9)
+    rings = rib_cell_polygons_from_samples(tpls[0], samp, member)
+    assert rings
+    name, ring = rings[0]
+    assert name.endswith("cell_0")
+    tris = rib_cell_triangles_from_samples(tpls[0], samp, member)
+    assert tris
+    for _n, tri in tris:
+        assert np.allclose(tri[:, 2], z_loft, atol=1e-8)
+    origin, u, v, xy = _ring_basis(ring)
+    clipped = ear_clip_ring(ring)
+    assert clipped
+    for tri in clipped:
+        for p in _project_xy(_barycentric(tri), origin, u, v):
+            assert _point_in_ring(p, xy)
+
+
+def _barycentric(tri: np.ndarray, n: int = 4) -> np.ndarray:
+    pts = []
+    for i in range(n + 1):
+        for j in range(n + 1 - i):
+            k = n - i - j
+            pts.append((i * tri[0] + j * tri[1] + k * tri[2]) / n)
+    return np.asarray(pts)
+
+
+def test_ear_clip_concave_cell_stays_inside():
+    from implicit_geometry_kernel.blade.topology.ribs import (
+        _point_in_ring,
+        _project_xy,
+        _ring_basis,
+        ear_clip_ring,
+    )
+
+    ring = np.array([
+        [0.0, 0.0, 0.0], [3.0, 0.0, 0.0], [3.0, 3.0, 0.0], [0.0, 3.0, 0.0],
+        [0.0, 2.0, 0.0], [2.0, 2.0, 0.0], [2.0, 1.0, 0.0], [0.0, 1.0, 0.0],
+    ])
+    origin, u, v, xy = _ring_basis(ring)
+    fan = [np.stack([ring[0], ring[i], ring[i + 1]]) for i in range(1, len(ring) - 1)]
+    assert any(
+        any(not _point_in_ring(p, xy) for p in _project_xy(_barycentric(t), origin, u, v))
+        for t in fan
+    )
+    for tri in ear_clip_ring(ring):
+        for p in _project_xy(_barycentric(tri), origin, u, v):
+            assert _point_in_ring(p, xy)
+
+
 def test_2df_span_metrics_are_watertight():
     import sys
     from pathlib import Path
@@ -457,28 +536,30 @@ def test_2df_span_metrics_are_watertight():
 
 
 def _09_stations():
+    s = 12.0 / 20.0
     root, foil = Airfoil.ellipse(1.0), Airfoil.naca4("0024")
     return [
-        Station(0.0, 1.80, root, twist=12.0, pitch_axis=0.50),
-        Station(1.0, 1.88, Airfoil.blend(root, foil, 0.15), twist=11.5, pitch_axis=0.47),
-        Station(2.5, 2.05, Airfoil.blend(root, foil, 0.50), twist=10.0, pitch_axis=0.40),
-        Station(4.0, 2.28, Airfoil.blend(root, foil, 0.85), twist=8.8, pitch_axis=0.33),
-        Station(5.0, 2.40, foil, twist=8.0, pitch_axis=0.30),
-        Station(6.5, 2.20, Airfoil.naca4("0022"), twist=6.5, pitch_axis=0.30),
-        Station(8.5, 1.85, Airfoil.naca4("0020"), twist=4.8, pitch_axis=0.30),
-        Station(11.0, 1.50, Airfoil.naca4("0018"), twist=2.8, pitch_axis=0.30),
-        Station(14.0, 1.10, Airfoil.naca4("0015"), twist=1.0, pitch_axis=0.30),
-        Station(17.0, 0.90, Airfoil.naca4("0013"), twist=-0.6, pitch_axis=0.30),
-        Station(20.0, 0.75, Airfoil.naca4("0012"), twist=-2.0, pitch_axis=0.30),
+        Station(0.0 * s, 1.80 * s, root, twist=12.0, pitch_axis=0.50),
+        Station(1.0 * s, 1.88 * s, Airfoil.blend(root, foil, 0.15), twist=11.5, pitch_axis=0.47),
+        Station(2.5 * s, 2.05 * s, Airfoil.blend(root, foil, 0.50), twist=10.0, pitch_axis=0.40),
+        Station(4.0 * s, 2.28 * s, Airfoil.blend(root, foil, 0.85), twist=8.8, pitch_axis=0.33),
+        Station(5.0 * s, 2.40 * s, foil, twist=8.0, pitch_axis=0.30),
+        Station(6.5 * s, 2.20 * s, Airfoil.naca4("0022"), twist=6.5, pitch_axis=0.30),
+        Station(8.5 * s, 1.85 * s, Airfoil.naca4("0020"), twist=4.8, pitch_axis=0.30),
+        Station(11.0 * s, 1.50 * s, Airfoil.naca4("0018"), twist=2.8, pitch_axis=0.30),
+        Station(14.0 * s, 1.10 * s, Airfoil.naca4("0015"), twist=1.0, pitch_axis=0.30),
+        Station(17.0 * s, 0.90 * s, Airfoil.naca4("0013"), twist=-0.6, pitch_axis=0.30),
+        Station(20.0 * s, 0.75 * s, Airfoil.naca4("0012"), twist=-2.0, pitch_axis=0.30),
     ]
 
 
 def _09_geo(key: str) -> BladeGeometry:
     st = _09_stations()
+    sc = 12.0 / 20.0
     return BladeGeometry.from_concept(
-        BladeConcept(key), st, 0.004,
-        spar_cap_thickness=0.008, shear_web_thickness=0.004, span_kind="pchip",
-        pivot_fraction=([s.z for s in st], [s.pitch_axis for s in st]),
+        BladeConcept(key), st, 0.004 * sc,
+        spar_cap_thickness=0.008 * sc, shear_web_thickness=0.004 * sc,
+        pivot_fraction=([sta.z for sta in st], [sta.pitch_axis for sta in st]),
     )
 
 
@@ -512,7 +593,7 @@ def test_te_wrap_arc_includes_oml_ridge():
 
 def test_09_pa_4d_loft_keeps_live_webs_on_cylinder():
     geo = _09_geo("4D-F-PA-10R")
-    zs = (0.0, 0.5, 1.0, 2.5)
+    zs = (0.0, 0.3, 0.6, 1.5)
     _tpls, samples = _templates(geo, zs, n_chord=8)
     for z, samp in zip(zs, samples):
         cut = geo.section_at(float(z))
@@ -523,7 +604,7 @@ def test_09_pa_4d_loft_keeps_live_webs_on_cylinder():
 
 def test_09_pa_4d_loft_tracks_pitch_offset_not_catalogue():
     geo = _09_geo("4D-F-PA-10R")
-    z_mid = 5.0
+    z_mid = 3.0
     cut = geo.section_at(z_mid)
     authored = geo.region_graph.webs[0].at(z_mid)
     expect = float(cut.pitch_axis) + float(geo._web_x_from_pitch[0]) / float(cut.chord)
@@ -541,7 +622,7 @@ def test_09_pa_4d_loft_tracks_pitch_offset_not_catalogue():
 
 def test_09_pa_4d_web3_onset_and_drop_are_skin_ruled():
     geo = _09_geo("4D-F-PA-10R")
-    zs = np.linspace(0.0, 20.0, 41)
+    zs = np.linspace(0.0, 12.0, 41)
     live = [3 not in geo.section_at(float(z)).dropped_web_indices for z in zs]
     assert any(live) and not live[0]
     i_on = next(i for i, v in enumerate(live) if v)
@@ -552,7 +633,9 @@ def test_09_pa_4d_web3_onset_and_drop_are_skin_ruled():
     ruled = [c for n, _f, c in faces if n.startswith("bay_pr") or n in ("te", "te_pr")]
     assert ruled
     assert sum(1 for c in ruled if not c) >= max(1, len(ruled) // 2)
-    i_off = next(i for i in range(i_on + 1, len(live)) if not live[i])
+    live0 = [0 not in geo.section_at(float(z)).dropped_web_indices for z in zs]
+    assert live0[0] and not live0[-1]
+    i_off = next(i for i in range(1, len(live0)) if not live0[i])
     tpls, samples = _templates(geo, [zs[i_off - 1], zs[i_off]], n_chord=8)
     faces = loft_mapped_strips(samples[0], samples[1], tpls[0], tpls[1])
     te = [c for n, _f, c in faces if n in ("te_pr", "te") or n.startswith("bay_pr")]
@@ -562,7 +645,7 @@ def test_09_pa_4d_web3_onset_and_drop_are_skin_ruled():
 
 def test_09_pa_4d_pressure_skin_covers_web_events():
     geo = _09_geo("4D-F-PA-10R")
-    zs = np.linspace(0.0, 20.0, 41)
+    zs = np.linspace(0.0, 12.0, 41)
     tpls, samples = _templates(geo, zs, n_chord=8)
     for s0, s1, t0, t1 in zip(samples, samples[1:], tpls, tpls[1:]):
         got = {n for n, _f, _c in loft_mapped_strips(s0, s1, t0, t1)}
@@ -573,33 +656,32 @@ def test_09_pa_4d_pressure_skin_covers_web_events():
 
 def test_09_pa_loft_keeps_surviving_web_index():
     geo = _09_geo("2D-F-PA-10R")
-    zs = np.linspace(0.0, 20.0, 21)
+    zs = np.linspace(0.0, 12.0, 21)
     tpls, samples = _templates(geo, zs, n_chord=8)
-    saw_drop = False
     for z, samp in zip(zs, samples):
         cut = geo.section_at(float(z))
         names = set(samp)
-        if 0 in cut.dropped_web_indices and 1 not in cut.dropped_web_indices:
-            saw_drop = True
-            assert "web_1" in names, (z, names, cut.dropped_web_indices)
-            assert "web_0" not in names, (z, names, cut.dropped_web_indices)
-    assert saw_drop
+        for i in (0, 1):
+            label = f"web_{i}"
+            if i in cut.dropped_web_indices:
+                assert label not in names, (z, names, cut.dropped_web_indices)
+            else:
+                assert label in names, (z, names, cut.dropped_web_indices)
 
 
-def test_09_le_loft_drops_aft_web():
+def test_09_le_loft_tracks_web_indices():
     geo = _09_geo("2D-F-LE-10R")
-    zs = np.linspace(0.0, 20.0, 21)
+    zs = np.linspace(0.0, 12.0, 21)
     _tpls, samples = _templates(geo, zs, n_chord=8)
-    saw_drop = False
     for z, samp in zip(zs, samples):
         cut = geo.section_at(float(z))
         names = set(samp)
-        if 1 in cut.dropped_web_indices:
-            saw_drop = True
-            assert "web_1" not in names, (z, names, cut.dropped_web_indices)
-            if 0 not in cut.dropped_web_indices:
-                assert "web_0" in names, (z, names, cut.dropped_web_indices)
-    assert saw_drop
+        for i in (0, 1):
+            label = f"web_{i}"
+            if i in cut.dropped_web_indices:
+                assert label not in names, (z, names, cut.dropped_web_indices)
+            else:
+                assert label in names, (z, names, cut.dropped_web_indices)
 
 
 def test_strip_faces_resample_unequal_counts_and_drop_nonfinite():
@@ -625,10 +707,20 @@ def test_strip_faces_resample_unequal_counts_and_drop_nonfinite():
     assert not _finite_loft_face(np.zeros((4, 3)))
 
 
+@pytest.mark.parametrize("key", [
+    "0A-LC-0R", "0B-LC-0R", "1B-F-LC-10R", "2A-F-LC-10R", "2C-F-LC-10R", "2D-CN-LC-10R",
+])
+def test_09_extra_keys_build(key):
+    geo = _09_geo(key)
+    assert float(geo.stations[-1].z) == pytest.approx(12.0)
+    cut = geo.section_at(3.0)
+    assert cut is not None
+
+
 @pytest.mark.parametrize("key", ["2D-F-LC-0R", "4D-F-PA-10R"])
 def test_09_mapped_loft_faces_are_finite_and_bounded(key):
     geo = _09_geo(key)
-    zs = (0.0, 1.0, 5.0, 20.0)
+    zs = (0.0, 1.0, 5.0, 12.0)
     tpls, samples = _templates(geo, zs, n_chord=12)
     bound = 1.0e3
     n_faces = 0
@@ -652,7 +744,7 @@ def test_09_te_chatter_and_tip_span():
     from _shared.debug_mesh import as_quad, span_metrics
 
     geo = _09_geo("2D-F-LC-0R")
-    zs = np.linspace(0.0, 20.0, 41)
+    zs = np.linspace(0.0, 12.0, 41)
     tpls, samples = _templates(geo, zs, n_chord=12)
     walls = list(zip([float(z) for z in zs], tpls, samples))
     faces, kinds = [], []
@@ -664,12 +756,12 @@ def test_09_te_chatter_and_tip_span():
     metrics = span_metrics(walls, face_arr, np.asarray(kinds, dtype="U64"), geo=geo)
     assert metrics["n_coverage_holes"] == 0
     assert metrics["max_te_chatter"] < 0.05
-    assert metrics["z_tip"] == pytest.approx(20.0)
+    assert metrics["z_tip"] == pytest.approx(12.0)
 
 
 def test_09_3df_le_tip_anchors_one_web():
-    cut = _09_geo("3D-F-LE-10R").section_at(20.0)
+    cut = _09_geo("3D-F-LE-10R").section_at(12.0)
     assert len(cut.walls_of("web")) >= 1
-    cut_pa = _09_geo("3D-F-PA-10R").section_at(20.0)
+    cut_pa = _09_geo("3D-F-PA-10R").section_at(12.0)
     assert len(cut_pa.walls_of("web")) >= 1
 

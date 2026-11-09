@@ -20,8 +20,10 @@ flowchart LR
 ```
 
 Cascade functions (`effective_layout_for_web_count`, `step_down_cascade`,
-`layout_without_spar_caps`) are catalogue identity: which token you become when
-webs or caps run out. Station geometry imports them; it does not own the
-registry.
+`layout_without_spar_caps`) are **assemble recipes** for a station slice: live
+web count (W) and cap family (X) when webs drop or caps run out. They do not
+mint a new blade concept; Z and R stay on the parent token. Station geometry
+imports them; it does not own the registry. A cut keeps the parent on
+`SectionCut.layout`.
 
 Decode: [taxonomy](../blade/concepts/taxonomy.md).

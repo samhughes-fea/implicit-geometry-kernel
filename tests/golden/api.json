@@ -164,7 +164,7 @@
    "wall": "(self, label: 'str') -> 'SectionWall'",
    "walls_of": "(self, kind: 'str') -> 'Tuple[SectionWall, ...]'"
   },
-  "signature": "(z: 'float', chord: 'float', twist: 'float', pitch_axis: 'float', offset: 'Tuple[float, float]', layout: 'str', walls: 'Tuple[SectionWall, ...]', cells: 'Tuple[CellPolygon, ...]', dropped_webs: 'Tuple[str, ...]' = (), transverse: 'Tuple[TransverseMember, ...]' = (), stringers: 'Tuple[Stringer, ...]' = (), host: 'Any' = None, scale: 'float' = 1.0, dropped_web_indices: 'Tuple[int, ...]' = ()) -> None"
+  "signature": "(z: 'float', chord: 'float', twist: 'float', pitch_axis: 'float', offset: 'Tuple[float, float]', layout: 'str', walls: 'Tuple[SectionWall, ...]', cells: 'Tuple[CellPolygon, ...]', dropped_webs: 'Tuple[str, ...]' = (), transverse: 'Tuple[TransverseMember, ...]' = (), stringers: 'Tuple[Stringer, ...]' = (), host: 'Any' = None, scale: 'float' = 1.0, dropped_web_indices: 'Tuple[int, ...]' = (), station_webs: 'int' = 0, station_family: 'str' = '') -> None"
  },
  "implicit_geometry_kernel.SectionWall": {
   "kind": "class",

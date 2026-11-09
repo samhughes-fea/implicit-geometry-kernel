@@ -46,6 +46,7 @@ def test_walls_labels_and_thicknesses(cut):
         assert cap.bonds and all(host.startswith("skin_") for host in cap.bonds)
         assert cap.xy[:, 0].min() == pytest.approx(-0.12) and cap.xy[:, 0].max() == pytest.approx(0.18)
     assert cut.layout == "2D-F-LC-0R" and cut.dropped_webs == ()
+    assert cut.station_webs == 2 and cut.station_family == "D"
 
 
 def test_cell_areas(cut):
@@ -272,6 +273,24 @@ def test_pivot_fraction_conflicts_with_pitch_axis_table():
             pitch_axis=lambda z: 0.3,
             pivot_fraction=0.25,
         )
+
+
+def test_cut_keeps_parent_concept_when_webs_drop():
+    """LE freeze drops webs; the cut is still the authored 5D concept."""
+    stations = [
+        Station(0.0, 0.2409, Airfoil.naca4("0012"), pitch_axis=0.3),
+        Station(10.0, 0.0878, Airfoil.naca4("0012"), pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(
+        stations, "5D-F-LE-0R", 0.001,
+        spar_cap_thickness=0.005, shear_web_thickness=0.004, pivot_fraction=0.3,
+    )
+    cut = geo.section_at(10.0)
+    assert cut.layout == "5D-F-LE-0R"
+    assert cut.station_webs == 1
+    assert cut.station_family == "C"
+    assert cut.dropped_web_indices
+    assert max(cut.dropped_web_indices) <= 4
 
 
 def test_missing_pivot_fraction_raises():

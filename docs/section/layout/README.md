@@ -9,9 +9,9 @@ anchoring, and applying the catalogue cascade when webs drop. Tokens and
 [`../assembly/`](../assembly/README.md).
 
 Absolute web x-offsets [m from LE] may come from spanwise anchoring. Webs
-whose local cavity is too shallow are **dropped**, not slid.
-`effective_layout_for_web_count` maps survivors onto a catalogue rung;
-`step_down_cascade` returns the ladder.
+whose local cavity is too shallow are **dropped**, not slid. The blade concept
+token does not change. `effective_layout_for_web_count` maps survivors onto an
+assemble recipe (live W and X); `step_down_cascade` returns that W/X ladder.
 
 ## Table of contents
 
@@ -43,8 +43,8 @@ whose local cavity is too shallow are **dropped**, not slid.
 | `SystemLayoutSpec` | `catalogue` | Frozen layout config |
 | `resolve_system_type` | `catalogue` | String → spec |
 | `SYSTEM_TYPE_KEYS` | `catalogue` | Registered ids |
-| `effective_layout_for_web_count` | `catalogue` | Surviving webs → catalogue rung |
-| `step_down_cascade` | `catalogue` | Ordered drop ladder |
+| `effective_layout_for_web_count` | `catalogue` | Surviving webs → assemble recipe |
+| `step_down_cascade` | `catalogue` | Ordered W/X recipe ladder |
 | `StructuralFamily` | `catalogue` | Cap family `"A"`…`"D"` |
 | `CapPlacementRule` | `cap_placement.py` | Cap kind / anchor / half-width |
 | `SectionLayout` | `section_layout.py` | Parametric web + orientation + caps |
@@ -97,7 +97,7 @@ Station resolve is orchestrated from [`../spec/`](../spec/README.md)
 `examples/blade/02_web_placement`) show webs **dropped** when the local cavity can
 no longer hold them (not slid). `StationLayoutResolution.web_x_positions_m`
 is the resolved metres-from-LE list; loft input `web_offsets` is the same
-quantity. This package owns the drop / catalogue step-down.
+quantity. This package owns the drop and the assemble-recipe step-down.
 `section_schedule` does **not** own this policy (thickness presence is a
 different spanwise product — see BSP
 `glossary`).

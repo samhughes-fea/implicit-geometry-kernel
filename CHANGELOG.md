@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- ``SectionCut.layout`` is the authored blade concept after web drop, not a
+  sibling catalogue token. Realised W and X are ``station_webs`` /
+  ``station_family``. Cascade helpers remain assemble recipes for that slice.
+
 ## 0.8.2
 
 - Family **C** pad 0 is stored as ``spar_cap_*_0`` in the unrotated pad dict.

@@ -70,7 +70,7 @@ flowchart TB
 | 02 | [Web placement](blade/02_web_placement/) | `web_positions`, `web_offsets`, `dropped_webs` |
 | 03 | [Airfoils and root transition](blade/03_airfoils_and_root_transition/) | `Airfoil`, `Station` |
 | 04 | [Airfoil families](blade/04_airfoil_families/) | `Airfoil.cst`, `with_thickness` |
-| 05 | [Linear vs PCHIP](blade/05_pchip_span/) | `TableLaw`, `span_kind` |
+| 05 | [Span laws](blade/05_span_laws/) | `TableLaw`, `PlyDrop` |
 | 06 | [Blade queries](blade/06_blade_queries/) | `thickness_at`, `query`, `write_oml`, `validate` |
 | 07 | [Mid-surfaces](blade/07_mid_surfaces/) | `write_mid_surfaces` |
 | 08 | [Reference blades](blade/08_reference_blades/) | windIO → `BladeGeometry` |

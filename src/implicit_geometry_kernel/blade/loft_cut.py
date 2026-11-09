@@ -50,13 +50,8 @@ class LoftCutMixin:
     def _span_scalar(self: BladeGeometry, table, values, z: float) -> float:
         if table is not None:
             return float(table(z))
-        if self.span_kind == "linear":
-            zs = np.asarray([s.z for s in self.stations], dtype=np.float64)
-            return float(np.interp(z, zs, np.asarray(values, dtype=np.float64)))
-        from implicit_geometry_kernel.structure.laws import TableLaw
-
-        knots = [float(s.z) for s in self.stations]
-        return float(TableLaw(knots, [float(v) for v in values], kind="pchip")(z))
+        zs = np.asarray([s.z for s in self.stations], dtype=np.float64)
+        return float(np.interp(z, zs, np.asarray(values, dtype=np.float64)))
 
     def oml_polyline(self: BladeGeometry, z: float) -> np.ndarray:
         """Closed outer mould line in the blade frame at ``z``, shape ``(N, 3)``.

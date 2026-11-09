@@ -13,7 +13,7 @@ Station    Station (span position, chord, twist, pitch axis, offset),
            SkinRegion, ShearWeb
 Loft       BladeGeometry (layout lofted between stations; optional span tables),
            interpolate(z), section_at(z) -> SectionCut, oml_polyline, oml_sdf.
-           Scalars interpolate linearly or PCHIP; airfoils stay 2-D linear blends.
+           Scalars interpolate linearly; airfoils stay 2-D linear blends.
 Section    implicit_geometry_kernel.section — one-station SectionSpec / SectionGeometry
 Feature    FieldSample.meta ids, GeometrySolver, wall_meta / wall_mid_sdf,
            shell_graph / partition_edges / station_network,

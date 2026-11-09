@@ -10,7 +10,7 @@ Span loft, airfoils, queries, catalogue concepts, and published blades.
 | 02 | [02_web_placement](02_web_placement/) | `web_positions`, `dropped_webs` |
 | 03 | [03_airfoils_and_root_transition](03_airfoils_and_root_transition/) | `Airfoil`, `Station` |
 | 04 | [04_airfoil_families](04_airfoil_families/) | CST, t/c family |
-| 05 | [05_pchip_span](05_pchip_span/) | linear vs PCHIP (`TableLaw`, `span_kind`) |
+| 05 | [05_span_laws](05_span_laws/) | linear `TableLaw`, `PlyDrop` ramps |
 | 06 | [06_blade_queries](06_blade_queries/) | `thickness_at`, `write_oml` |
 | 07 | [07_mid_surfaces](07_mid_surfaces/) | `write_mid_surfaces` |
 | 08 | [08_reference_blades](08_reference_blades/) | windIO (needs `[reference]` / catalogue) |

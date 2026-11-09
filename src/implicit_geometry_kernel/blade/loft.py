@@ -7,7 +7,7 @@ box spar cap between them). ``interpolate(z)`` is the only interpolator: airfoil
 ``Airfoil.blend`` / ``cylinder_to_airfoil`` (circle roots) or
 ``interpolate_by_thickness`` (foil to foil). Chord, twist, pitch axis and offset
 come from the stations or optional span tables. ``section_at`` and ``oml_polyline``
-both call it. Scalar tables may be linear or PCHIP; airfoils are not 3-D-morphed.
+both call it. Scalars interpolate linearly; airfoils are not 3-D-morphed.
 
 ``section_at(z)`` returns the wall midlines with their thickness, region labels and the
 closed cell-wall loops, placed in the blade frame. ``oml_polyline(z)`` is the closed
@@ -29,9 +29,9 @@ walls by label downstream (``ThinWalledSection.from_geometry``).
 Web positions are hard-coded in each mode's native unit (see
 ``blade.concepts.web_anchoring``). ``LC`` is authored chord fractions at every
 station. ``LE`` is authored metres from the leading edge (catalogue fractions
-times root chord). ``PA`` is authored blade-x from the pitch axis: primary
-slots sit in the root ``[x_LE, x_TE]`` band about the pitch axis; secondary
-slots sit in the TE growth shelf ``[x_TE(root), x_TE(max_chord)]``. Give
+times root chord). ``PA`` is authored blade-x from the pitch axis: up to three
+primary slots are uniform interiors of the root ``[x_LE, x_TE]`` band; extra
+slots continue that lattice (first extra at root TE). Give
 ``web_positions`` (chord fractions) or ``web_offsets`` (metres from the leading
 edge) to override. Webs that do not intercept a station are omitted (same
 index may seed later) rather than slid, and ``SectionCut.dropped_webs`` lists
@@ -71,7 +71,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin):
     This class stores interpolants and layout, not a snapshot of every wall along
     the span. Public attributes after construction: ``stations``, ``spec``,
     ``layout``, ``web_offsets``, ``transverse``, ``stringers``, ``ply_drops``,
-    ``region_graph``, ``n_airfoil_points``, ``span_kind``, ``merge_cap_and_skin``.
+    ``region_graph``, ``n_airfoil_points``, ``merge_cap_and_skin``.
     ``section_at(z)`` returns a frozen ``SectionCut`` (``walls``, ``cells``);
     ``cut.shell_graph()`` derives the loftable graph. That is not
     ``SectionGeometryResult`` (the gated station product). Object graph:
@@ -109,9 +109,6 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin):
         stacking point). A float is constant along the span; a callable or
         ``(z, values)`` table varies it. ``pitch_axis`` is an alias for the same
         table. There is no 0.25 / 0.333 fallback.
-    span_kind:
-        ``"linear"`` (default) or ``"pchip"`` for station chord, twist, pitch axis
-        and offset. Airfoil graphs stay linear blends.
     transverse:
         Ribs, bulkheads and frames at fixed ``z``. A member appears as a closed
         rib face on ``section_at(z).shell_graph().faces`` at that station only.
@@ -144,7 +141,6 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin):
         cap_windows: Optional[SpanTable] = None,
         transverse: Sequence[TransverseMember] = (),
         stringers: Sequence[Stringer] = (),
-        span_kind: str = "linear",
         ply_drops: Sequence[PlyDrop] = (),
         merge_cap_and_skin: bool = False,
         region_graph=None,
@@ -226,9 +222,6 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin):
         if int(getattr(spec, "n_ribs", 0) or 0) > 0 and not self.transverse:
             self.transverse = catalogue_ribs(self.stations, spec.n_ribs)
         self.stringers = tuple(stringers)
-        if span_kind not in ("linear", "pchip"):
-            raise ValueError("span_kind must be 'linear' or 'pchip'")
-        self.span_kind = span_kind
         self.ply_drops = tuple(ply_drops)
         self.merge_cap_and_skin = bool(merge_cap_and_skin)
         if region_graph is None:

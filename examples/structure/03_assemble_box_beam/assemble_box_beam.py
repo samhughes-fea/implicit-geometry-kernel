@@ -32,7 +32,7 @@ def rect(x0, x1, y0, y1) -> PolygonSDF:
 
 def main() -> None:
     ctx = BuildContext(oml=rect(-W / 2, W / 2, -H / 2, H / 2), span=(0.0, L))
-    skin = WallContribution(ctx.table.add("skin", "skin"), TableLaw([0.0, L], [SKIN, 0.6 * SKIN], kind="linear"))
+    skin = WallContribution(ctx.table.add("skin", "skin"), TableLaw([0.0, L], [SKIN, 0.6 * SKIN]))
     cap = WallContribution(ctx.table.add("cap_upper", "cap"), ConstantLaw(CAP),
                            footprint=rect(-0.2, 0.2, 0.0, 1.0))
     web = BranchContribution(

@@ -137,7 +137,7 @@ def test_stations(structure):
 
 def test_thickness_can_vary_along_the_span():
     ctx = BuildContext(oml=rect(-0.5, 0.5, -0.1, 0.1), span=(0.0, 2.0))
-    skin = WallContribution(ctx.table.add("skin", "skin"), TableLaw([0.0, 2.0], [0.02, 0.01], kind="linear"))
+    skin = WallContribution(ctx.table.add("skin", "skin"), TableLaw([0.0, 2.0], [0.02, 0.01]))
     s = assemble(ctx, [skin])
     pts = np.array([[0.0, 0.1, 0.0], [0.0, 0.1, 1.0], [0.0, 0.1, 2.0]])
     assert np.allclose(s.thickness(pts), [0.02, 0.015, 0.01])

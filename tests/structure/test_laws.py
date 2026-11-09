@@ -7,7 +7,7 @@ from implicit_geometry_kernel.structure import ConstantLaw, ProductLaw, ScaledLa
 
 
 def test_constant_and_combinators():
-    a, b = ConstantLaw(2.0), TableLaw([0.0, 1.0], [1.0, 3.0], kind="linear")
+    a, b = ConstantLaw(2.0), TableLaw([0.0, 1.0], [1.0, 3.0])
     z = np.array([0.0, 0.5, 1.0])
     assert np.allclose(SumLaw(a, b)(z), [3.0, 4.0, 5.0])
     assert np.allclose(ProductLaw(a, b)(z), [2.0, 4.0, 6.0])
@@ -22,34 +22,28 @@ def test_single_plane_batch_matches_pointwise():
     assert np.allclose(law(z), law.at(1.3))
 
 
-def test_pchip_hits_knots_is_monotone_and_clamped():
+def test_table_law_hits_knots_is_linear_and_clamped():
     zk = [0.0, 1.0, 2.0, 4.0, 6.0]
     vk = [0.030, 0.030, 0.020, 0.008, 0.008]
     law = TableLaw(zk, vk)
     assert np.allclose(law(np.array(zk)), vk, rtol=0, atol=1e-15)
     z = np.linspace(-1.0, 7.0, 4001)
     v = law(z)
-    assert np.all(np.diff(v) <= 1e-15)  # monotone data, monotone law
-    assert v.min() >= min(vk) - 1e-15 and v.max() <= max(vk) + 1e-15  # no overshoot
+    assert np.all(np.diff(v) <= 1e-15)
+    assert v.min() >= min(vk) - 1e-15 and v.max() <= max(vk) + 1e-15
     assert law.at(-1.0) == vk[0] and law.at(7.0) == vk[-1]
+    assert law.at(1.5) == pytest.approx(0.025)
+    assert law.at(3.0) == pytest.approx(0.014)
 
 
-def test_pchip_has_continuous_slope_at_interior_knots():
-    law = TableLaw([0.0, 1.0, 3.0, 4.0], [0.0, 1.0, 1.5, 3.0])
-    h = 1e-7
-    for k in (1.0, 3.0):
-        left = (law.at(k) - law.at(k - h)) / h
-        right = (law.at(k + h) - law.at(k)) / h
-        assert left == pytest.approx(right, abs=1e-5)
-
-
-def test_pchip_matches_scipy_when_available():
-    interpolate = pytest.importorskip("scipy.interpolate")
-    zk = np.array([0.0, 0.7, 1.5, 3.0, 3.2, 6.0])
-    vk = np.array([1.0, 0.9, 1.4, 0.2, 0.25, 0.25])
-    z = np.linspace(0.0, 6.0, 997)
-    ref = interpolate.PchipInterpolator(zk, vk)(z)
-    assert np.allclose(TableLaw(zk, vk)(z), ref, rtol=0, atol=1e-13)
+def test_table_law_ply_drop_plateaus():
+    law = TableLaw([0.0, 2.0, 3.0, 6.0], [0.030, 0.030, 0.008, 0.008])
+    z = np.linspace(0.0, 6.0, 61)
+    v = law(z)
+    assert np.allclose(v[z <= 2.0], 0.030)
+    assert np.allclose(v[z >= 3.0], 0.008)
+    mid = v[(z > 2.0) & (z < 3.0)]
+    assert np.all(np.diff(mid) < 0.0)
 
 
 @pytest.mark.parametrize("args", [([], []), ([0.0, 1.0], [1.0]), ([0.0, 0.0], [1.0, 2.0]), ([0.0, np.nan], [1.0, 2.0])])

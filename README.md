@@ -15,7 +15,7 @@ Manual: [docs/README.md](docs/README.md). Names: [glossary](docs/glossary.md).
 Frames: [docs/frames](docs/frames/README.md#which-array).
 Catalogue: [WX-Y-Z-NR](docs/blade/concepts/taxonomy.md).
 
-![Eight of the 40 layouts](examples/blade/01_loft_and_cut/figures/layouts.png)
+![IEA 15 MW true-scale close-ups](examples/blade/08_reference_blades/figures/iea15/full_blade/closeups.png)
 
 ## What it can do
 

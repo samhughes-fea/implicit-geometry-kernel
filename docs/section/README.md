@@ -122,7 +122,7 @@ resolution = SectionGeometry(
 
 | Step | Where |
 |------|--------|
-| Teaching `01`–`05` | [`examples/section/teaching/`](../../examples/section/teaching/) |
+| Teaching `01`–`06` | [`examples/section/teaching/`](../../examples/section/teaching/) |
 | Numbered section examples | [`examples/section/`](../../examples/section/) |
 | Progressive recipes | [`docs/guides/quickstart.md`](guides/quickstart.md) |
 | All 40 layout figures | [`docs/reference/structural_systems_gallery.md`](reference/structural_systems_gallery.md) |
@@ -460,7 +460,7 @@ This is per-region 2-D geometry, not beam `EA` / `EI` / `GJ`
 - Tokens: [catalogue](../catalogue/README.md) · [taxonomy](../blade/concepts/taxonomy.md)
 - Loft wrap: [blade](../blade/README.md#loft-cut-versus-station-result)
 - Module pages linked under [Package structure](#package-structure)
-- `examples/` — runnable teaching scripts `01`–`05`
+- `examples/` — runnable teaching scripts `01`–`06`
 - [`docs/guides/quickstart.md`](guides/quickstart.md) — progressive guided paths
 - [`docs/reference/structural_systems_gallery.md`](reference/structural_systems_gallery.md) — all 40 layout figures
 - [`docs/guides/anatomy_on_a_figure.md`](guides/anatomy_on_a_figure.md) — labels / midlines / cells on a figure

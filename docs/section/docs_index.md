@@ -63,7 +63,7 @@ flowchart TB
 
 | Path | Role |
 |------|------|
-| [`../../examples/section/teaching/`](../../examples/section/teaching/) | `01`–`05` newcomer path: first station → properties → resolve/size → anchors → midline hand-off |
+| [`../../examples/section/teaching/`](../../examples/section/teaching/) | `01`–`06` newcomer path: first station → properties → resolve/size → anchors → midline hand-off → consumer seams |
 | [`../../examples/section/`](../../examples/section/) | Numbered: catalogue, properties, mid-surface and cells |
 | [`../../examples/demos/`](../../examples/demos/) | Figure generation / gallery |
 
@@ -112,5 +112,5 @@ flowchart TB
 | [`cells/`](cells/README.md) | Cell-wall loops |
 | [`sdf` package](../sdf/README.md) | Shape kernel (`implicit_geometry_kernel.sdf`) |
 | [tests](../../tests/section/README.md) | How to run the package tests |
-| [teaching](../../examples/section/teaching/) | Teaching scripts `01`–`05` |
+| [teaching](../../examples/section/teaching/) | Teaching scripts `01`–`06` |
 | [demos](../../examples/demos/section/) | Demo run list |

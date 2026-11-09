@@ -206,7 +206,7 @@ result = SectionGeometry(
 
 | Goal | Go to |
 |------|--------|
-| Runnable teaching `01`–`05` | [`../../../examples/section/teaching/`](../../../examples/section/teaching/) |
+| Runnable teaching `01`–`06` | [`../../../examples/section/teaching/`](../../../examples/section/teaching/) |
 | More call recipes | [`caller_patterns.md`](caller_patterns.md) |
 | Labels on a `"2D-F-LC-0R"` figure | [`anatomy_on_a_figure.md`](anatomy_on_a_figure.md) |
 | Feasibility / dropped webs | [`feasibility_and_drops.md`](feasibility_and_drops.md) |

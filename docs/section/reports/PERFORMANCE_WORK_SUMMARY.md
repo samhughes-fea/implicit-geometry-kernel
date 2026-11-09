@@ -239,7 +239,7 @@ change; see `tests/baseline_analytic_bounds.json` and `tests/test_support_bounds
 
 Regression guard + workload bench: `tests/test_support_bounds_regression.py` locks the counters
 and per-label properties (and asserts zero support-sampling);
-`visualisation/demos/manystation_bench.py` reports per-stage wall time across N
+`examples/demos/section/manystation_bench.py` reports per-stage wall time across N
 stations (build / properties / plot / export).
 
 ### Phase 4 — Performance levers
@@ -320,8 +320,8 @@ Environment knobs:
 - Recipe-faithful constructive polygons for laminates (`engine/constructive_polygons/`).
 - Residual φ path retained `LEInsert` / `TEInsert` (first-class; less mature).
 - `compute_section_properties(..., backend='hybrid')` merges shoelace + residual-label quadtree.
-- Spike: `visualisation/demos/constructive_vs_quadtree_spike.py`; bench:
-  `visualisation/demos/manystation_bench.py --compare`.
+- Spike: `examples/demos/section/constructive_vs_quadtree_spike.py`; bench:
+  `examples/demos/section/manystation_bench.py --compare`.
 - Parity: `tests/test_hybrid_parity.py`, `tests/test_constructive_polygons.py`.
 
 ### Phase 11 — Constructive sandwich cores
@@ -378,7 +378,7 @@ untwisted and twisted).
 
 ## Per-stage breakdown (many-station, post-Phase-9)
 
-`visualisation/demos/manystation_bench.py --stations 4 --plot --export` (2D-CN,
+`examples/demos/section/manystation_bench.py --stations 4 --plot --export` (2D-CN,
 depth 7, twisted mix), ms/station:
 
 | Stage | pre-Phase-8 | post-Phase-8 | post-Phase-9 | Notes |

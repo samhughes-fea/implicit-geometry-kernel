@@ -1,6 +1,7 @@
 # Integration
 
 ↑ [docs](../README.md) · [src](../../src/implicit_geometry_kernel/integration/README.md) ·
+[examples](../../examples/integration/README.md) ·
 [tests](../../tests/integration/README.md)
 
 Area and second-moment integrals of planar regions. Two backends share the same
@@ -9,9 +10,9 @@ quadrature on signed-distance solids.
 
 **Import:** `implicit_geometry_kernel.integration`
 
-There is no numbered example folder of its own.
+Numbered example: [quadtree vs shoelace](../../examples/integration/01_quadtree_vs_shoelace/).
 [Section properties](../../examples/section/02_section_properties/) and
-[signed-distance CSG](../../examples/sdf/01_signed_distance_csg/) exercise the
+[signed-distance CSG](../../examples/sdf/01_signed_distance_csg/) also exercise the
 package.
 
 ## Paths

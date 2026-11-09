@@ -125,7 +125,7 @@ topology truth; it may remain for tools and demos.
 
 Non-production script:
 
-`visualisation/demos/sg009_axis_cap_junction_spike.py`
+`examples/demos/section/sg009_axis_cap_junction_spike.py`
 
 For layouts `4D-F` (tangency stress) and `5C-CN` (short-cap / SG-007 stress):
 

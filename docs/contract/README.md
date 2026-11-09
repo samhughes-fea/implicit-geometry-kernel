@@ -3,7 +3,8 @@
 Hand-off types between station geometry and downstream mesh or beam models.
 
 ↑ [docs](../README.md) · [src](../../src/implicit_geometry_kernel/contract/README.md) ·
-[tests](../../tests/contract/README.md) · teaching
+[tests](../../tests/contract/README.md) ·
+[examples/contract/01](../../examples/contract/01_three_products_dtos/) · teaching
 [05_midline_handoff](../../examples/section/teaching/05_midline_handoff.py)
 
 **Import:** `implicit_geometry_kernel.contract`

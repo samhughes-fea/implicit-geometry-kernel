@@ -187,11 +187,15 @@ Public names: [glossary](../glossary.md) (loft group). On this package:
 | [02_web_placement](../../examples/blade/02_web_placement/) | Chord fractions versus offsets; dropped webs |
 | [03_airfoils_and_root_transition](../../examples/blade/03_airfoils_and_root_transition/) | NACA, ellipse, flatback; circular root |
 | [04_airfoil_families](../../examples/blade/04_airfoil_families/) | CST, \(t/c\) family, NACA 5/6 |
-| [05_pchip_span](../../examples/blade/05_pchip_span/) | Monotone cubic planform |
+| [05_pchip_span](../../examples/blade/05_pchip_span/) | Linear vs PCHIP (`TableLaw`, station chord/twist/offset) |
 | [06_blade_queries](../../examples/blade/06_blade_queries/) | Thickness field, batched query, validate |
 | [07_mid_surfaces](../../examples/blade/07_mid_surfaces/) | Lofted mid-surface OBJ next to the OML |
 | [08_reference_blades](../../examples/blade/08_reference_blades/) | windIO 2.0 blades |
 | [09_blade_concepts](../../examples/blade/09_blade_concepts/) | Catalogue concepts on a synthetic planform |
+| [10_loft_oracles](../../examples/blade/10_loft_oracles/) | `oml_sdf`, `wall_mid_sdf`, `wall_meta` |
+| [11_feature_station_network](../../examples/blade/11_feature_station_network/) | `station_network`, `FeatureTable` |
+| [12_locked_loft_zones](../../examples/blade/12_locked_loft_zones/) | `LockedLoftPlan`, `resample_locked` |
+| [13_planform_csv_roundtrip](../../examples/blade/13_planform_csv_roundtrip/) | `read_planform_csv`, `write_windio` |
 
 ---
 

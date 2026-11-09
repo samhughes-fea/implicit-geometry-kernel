@@ -1,7 +1,7 @@
 # Catalogue
 
 ↑ [docs](../README.md) · [src](../../src/implicit_geometry_kernel/catalogue/README.md) ·
-[tests](../../tests/catalogue/)
+[examples](../../examples/catalogue/README.md) · [tests](../../tests/catalogue/)
 
 Tokens, frozen `SystemLayoutSpec`, and the web-count cascade. This package does
 not loft a blade and does not assemble solids.

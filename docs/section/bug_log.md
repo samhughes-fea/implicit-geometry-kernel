@@ -90,7 +90,7 @@ them up" without reading the linked entry first. Full classification: [SG-018](#
 | `midlines/ring_geometry.py` | definition. |
 | `midlines/skin_split.py`, in `split_skin_at_junctions` | **indexing only.** The web foot is already the junction; this reads the arc length at which to split the skin. It no longer writes to `arr[row]`. See SG-002. |
 | `topology/shell_strip_topology.py` | re-export plus a `_point_to_open_polyline_nearest` compatibility alias. No call. |
-| `visualisation/demos/shell_junction_topology_demo.py`, `visualisation/demos/topology_twist_stability_demo.py` | **measurement.** Both demos use it to *report* junction gaps, which is what produced the numbers in SG-002 and SG-005. |
+| `examples/demos/section/shell_junction_topology_demo.py`, `examples/demos/section/topology_twist_stability_demo.py` | **measurement.** Both demos use it to *report* junction gaps, which is what produced the numbers in SG-002 and SG-005. |
 
 It is **gone** from `topology/cap_web_junctions.py` and from `section_mesh`'s
 `centerline_mesh.py`, neither of which imports it any more.
@@ -139,7 +139,7 @@ back to a bevel (identical geometry against `mitre_limit = 1e6`) across
 not a hidden exactness cliff.
 
 SG-001 through SG-004 were all found while building
-`visualisation/demos/geometry_to_mesh_flythrough.py`,
+`examples/demos/section/` (geometry-to-mesh fly-through is not ported; teaching `05` is the handoff twin),
 which draws raw emit and junction-prepared strips side by side at a junction
 zoom — the two forms are hard to compare any other way.
 

@@ -1,5 +1,10 @@
-"""Optional shell meshing (Gmsh). Geometry stays in the kernel; this is the backend."""
+"""Meshing backends. Geometry stays in the kernel.
 
-from implicit_geometry_kernel.mesh.gmsh_shell import mesh_shell, write_shell_msh
+``polygon`` is a kernel Voronoi fill (GEOS). ``delaunay`` is a numpy Steiner
+trimesh. ``gmsh`` is the optional extra.
+"""
 
-__all__ = ["mesh_shell", "write_shell_msh"]
+from implicit_geometry_kernel.mesh.gmsh import mesh_rib_cells, mesh_shell, write_shell_msh
+from implicit_geometry_kernel.mesh.polygon import polygon_mesh_ring
+
+__all__ = ["mesh_rib_cells", "mesh_shell", "polygon_mesh_ring", "write_shell_msh"]

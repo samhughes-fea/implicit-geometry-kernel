@@ -105,13 +105,13 @@ $$
 
 Local-chord stations slide with \(c(z)\). Leading-edge offsets are metres from
 the LE and are omitted when \(\xi_k\) misses the inner skin. Pitch-axis webs
-are parallel to the pitch axis on the planform. Primary slots occupy the root
-band; secondary slots occupy the trailing-edge growth shelf:
+are parallel to the pitch axis on the planform. Up to three primary slots are
+uniform interiors of the root band; extra slots continue that lattice (first
+extra at root TE):
 
 $$
-x^{\mathrm{pri}}\in\bigl[x_{\mathrm{LE}}(0),\,x_{\mathrm{TE}}(0)\bigr],
-\qquad
-x^{\mathrm{sec}}\in\bigl[x_{\mathrm{TE}}(0),\,x_{\mathrm{TE}}(z_{c,\max})\bigr].
+\Delta x=\frac{x_{\mathrm{TE}}(0)-x_{\mathrm{LE}}(0)}{n_{\mathrm{pri}}+1},\quad
+x_i=x_{\mathrm{LE}}(0)+i\,\Delta x.
 \tag{2}
 $$
 

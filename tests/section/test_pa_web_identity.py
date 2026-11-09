@@ -36,6 +36,19 @@ def test_pa_four_web_freeze_matches_helper():
     assert expected[-1] > expected[0]
 
 
+def test_pa_five_web_freeze_matches_helper():
+    st = _stations_grow()
+    geo = BladeGeometry(
+        st, "5D-F-PA-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
+        pivot_fraction=0.5,
+    )
+    expected = pa_web_x_from_pitch(st, lambda z: 0.5, 5)
+    assert geo._web_x_from_pitch == pytest.approx(expected)
+    assert len(expected) == 5
+    dx = expected[1] - expected[0]
+    assert expected[4] == pytest.approx(expected[2] + 2 * dx)
+
+
 def test_lc_uniform_fracs_unchanged():
     spec = resolve_system_type("4D-F-LC-0R")
     assert spec.web_chord_fracs == pytest.approx((0.2, 0.4, 0.6, 0.8))

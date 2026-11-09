@@ -13,7 +13,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-from matplotlib.colors import BoundaryNorm, ListedColormap  # noqa: E402
+from matplotlib.colors import BoundaryNorm, ListedColormap, to_rgba  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
 from implicit_geometry_kernel.plotting.palette import NAVY, RED, TEAL  # noqa: E402
@@ -24,13 +24,24 @@ REFERENCE = "#0b0b0b"  # closed-form references are drawn in ink, dashed
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#6250d6"]
 WALL_COLOURS = {"skin": NAVY, "cap": RED, "web": TEAL}
 # rust, mustard, olive, teal, burgundy, ochre, slate, terracotta,
-# forest, gold, brick, plum, cadet, sienna, pine, wine
+# forest, gold, brick, plum, cadet, sienna, pine, wine,
+# dusty blue, copper, sage, maroon, khaki, indigo, rust-rose, olive-grey,
+# pewter, apricot, moss, claret, sand, steel, persimmon, umber
 RETRO_PANELS = (
     "#c45c26", "#d4a017", "#6b7f3a", "#2e6b6a",
     "#8b2942", "#c4893c", "#4a6080", "#b85c38",
     "#3d5c45", "#c9a227", "#9c3b2a", "#6e4a7a",
     "#3d6e7a", "#a0673b", "#2f4f3e", "#7a3a4a",
+    "#5b7fa6", "#b87333", "#7a9e72", "#6b1c2a",
+    "#c2b280", "#3f3d7a", "#c46b6b", "#6d7058",
+    "#6e7a86", "#e09a5a", "#4f6f4a", "#7b2d4e",
+    "#d8c08a", "#4a6678", "#d0603a", "#5c4033",
 )
+MESH_EDGE = "#1f2937"
+MESH_EDGE_ALPHA = 0.82
+MESH_LW_3D = 0.40
+MESH_LW_FLAT = 0.28
+MESH_LW_RIB = MESH_LW_3D
 
 
 def panel_colour(role: str) -> str:
@@ -40,6 +51,22 @@ def panel_colour(role: str) -> str:
     for ch in key:
         h = (h * 16777619) ^ ord(ch)
     return RETRO_PANELS[h % len(RETRO_PANELS)]
+
+
+def mesh_edge_rgba(n: int):
+    """Broadcast loft-quad stroke for ``n`` faces."""
+    return np.broadcast_to(to_rgba(MESH_EDGE, MESH_EDGE_ALPHA), (max(int(n), 0), 4)).copy()
+
+
+def is_rib_role(role: str) -> bool:
+    key = str(role).lower()
+    return "rib" in key or key.startswith("tip")
+
+
+def mesh_linewidths(kinds, *, base: float = MESH_LW_3D, rib: float | None = None) -> list[float]:
+    """Loft-quad stroke on every role (ribs match webs and skins)."""
+    weight = base if rib is None else rib
+    return [weight if is_rib_role(k) else base for k in kinds]
 
 plt.rcParams.update({"font.size": 9, "axes.titlesize": 9, "axes.labelsize": 9, "legend.fontsize": 8,
                      "xtick.labelsize": 8, "ytick.labelsize": 8, "axes.grid": False})

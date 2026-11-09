@@ -6,8 +6,10 @@ from pathlib import Path
 
 import numpy as np
 
+from matplotlib.colors import BoundaryNorm, ListedColormap
+
 from _shared.plotting import (
-    NAVY, RED, SERIES, TEAL, draw_cap_solids, draw_shell, note, panel_colour, plt,
+    NAVY, RED, SERIES, TEAL, WALL_COLOURS, draw_cap_solids, draw_shell, note, panel_colour, plt,
 )
 from implicit_geometry_kernel.blade.network import wall_meta_from_cut
 from implicit_geometry_kernel.blade.topology import (
@@ -24,6 +26,11 @@ FULL_BLADE = "full_blade"
 VIZ_DIRS = (CROSS_SECTIONS, CSG_MESH, REGIONS, REGION_CUTAWAYS, PLANFORM, FULL_BLADE)
 N_SECTION_GRID = 16
 CSG_MESH_N_CHORD = 8
+_OCC_NX, _OCC_NY = 160, 100
+_OCC_EXTERIOR, _OCC_CAVITY = "#f4f4f2", "#c5d4e0"
+_OCC_KIND = {"skin": 2, "cap": 3, "web": 4, "core": 5}
+_OCC_COLOURS = [_OCC_EXTERIOR, _OCC_CAVITY, NAVY, RED, TEAL, "#8b7d6b"]
+_OCC_LABELS = ("cavity", "skin", "cap", "web", "core")
 VIEW_LE = (26.0, -62.0)
 VIEW_TE = (26.0, 118.0)
 _KEEP_ROOT = frozenset({

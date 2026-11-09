@@ -40,7 +40,18 @@ from _shared.blade_viz import (  # noqa: E402
     tidy_legacy_pngs,
 )
 from _shared.debug_mesh import as_quad, dump_debug_mesh  # noqa: E402
-from _shared.plotting import NAVY, RED, TEAL, note, panel_colour, plt  # noqa: E402
+from _shared.plotting import (  # noqa: E402
+    MESH_LW_3D,
+    MESH_LW_FLAT,
+    NAVY,
+    RED,
+    TEAL,
+    mesh_edge_rgba,
+    mesh_linewidths,
+    note,
+    panel_colour,
+    plt,
+)
 from implicit_geometry_kernel import (  # noqa: E402
     Airfoil,
     BladeGeometry,
@@ -55,6 +66,7 @@ from implicit_geometry_kernel.blade.topology import (  # noqa: E402
     sample_region_polylines,
     section_cut_near,
 )
+from implicit_geometry_kernel.mesh.polygon import fill_rib_cells  # noqa: E402
 from implicit_geometry_kernel.blade.windio import (  # noqa: E402
     cap_window_table_from_windio_structure,
     transverse_members_from_windio,
@@ -387,13 +399,14 @@ def _wall_stations(geo: BladeGeometry, z_of_s: np.ndarray, n_span: int = LOFT_ST
         sg = cut.shell_graph()
         live = live_web_fracs(cut)
         tmpl = ShellTopologyTemplate.from_region_graph(
-            geo.region_graph, float(z), n_chord=WALL_POINTS, live_web_fracs=live or None,
+            geo.region_graph, float(getattr(cut, "z", z)), n_chord=WALL_POINTS,
+            live_web_fracs=live or None,
             t_c=_cut_tc(cut),
             dropped_web_indices=tuple(cut.dropped_web_indices),
         )
         samples = sample_region_polylines(cut, sg, tmpl, geo.region_graph)
         if samples:
-            out.append((float(z), tmpl, samples))
+            out.append((float(getattr(cut, "z", z)), tmpl, samples))
     return out
 
 
@@ -401,8 +414,19 @@ def _is_suction_role(name: str) -> bool:
     return is_suction_role(name)
 
 
+_WALL_CACHE: dict[tuple, tuple[list[np.ndarray], list[str]]] = {}
+
+
 def _wall_faces(stations: list, *, skip_suction: bool = False, geo: BladeGeometry | None = None
                 ) -> tuple[list[np.ndarray], list[str]]:
+    key = (
+        id(geo) if geo is not None else 0,
+        skip_suction,
+        tuple(round(float(s[0]), 9) for s in stations),
+    )
+    hit = _WALL_CACHE.get(key)
+    if hit is not None:
+        return hit
     faces, roles = [], []
     for (_z0, t0, a), (_z1, t1, b) in zip(stations[:-1], stations[1:]):
         for name, face, _collapsing in loft_mapped_strips(a, b, t0, t1):
@@ -410,23 +434,24 @@ def _wall_faces(stations: list, *, skip_suction: bool = False, geo: BladeGeometr
                 continue
             faces.append(face)
             roles.append(name)
-    if geo is not None:
-        z0 = float(stations[0][0]) if stations else None
-        z1 = float(stations[-1][0]) if stations else None
+    if geo is not None and stations:
+        z0, z1 = float(stations[0][0]), float(stations[-1][0])
         seen = set()
-        for z, tmpl, samples in stations:
-            if z0 is not None and not (z0 - 1e-9 <= float(z) <= z1 + 1e-9):
+        cells: list[tuple[str, np.ndarray]] = []
+        for member in geo.transverse:
+            zm = float(member.z)
+            if not (z0 - 1e-9 <= zm <= z1 + 1e-9):
                 continue
-            for member in geo.transverse:
-                if abs(float(member.z) - float(z)) > 1e-8:
-                    continue
-                key = (str(member.name), round(float(z), 9))
-                if key in seen:
-                    continue
-                seen.add(key)
-                for name, ring in rib_cell_polygons_from_samples(tmpl, samples, member):
-                    faces.append(ring)
-                    roles.append(name)
+            _z, tmpl, samples = min(stations, key=lambda s: abs(float(s[0]) - zm))
+            name = str(member.name)
+            if name in seen:
+                continue
+            seen.add(name)
+            cells.extend(rib_cell_polygons_from_samples(tmpl, samples, member))
+        for name, face in fill_rib_cells(cells):
+            faces.append(face)
+            roles.append(name)
+    _WALL_CACHE[key] = (faces, roles)
     return faces, roles
 
 
@@ -509,8 +534,8 @@ def _draw_oml(ax, rings: list[np.ndarray], geo: BladeGeometry, *, elev: float, a
     rgba = np.broadcast_to(to_rgba(NAVY, 0.88), (len(faces), 4)).copy()
     kw = dict(facecolors=rgba, shade=True)
     if mesh_edges:
-        kw["edgecolors"] = np.broadcast_to(to_rgba("#9ca3af", 0.55), (len(faces), 4)).copy()
-        kw["linewidths"] = 0.15
+        kw["edgecolors"] = mesh_edge_rgba(len(faces))
+        kw["linewidths"] = MESH_LW_3D
     else:
         kw["linewidths"] = 0.0
     ax.add_collection3d(Poly3DCollection(faces, **kw))
@@ -535,8 +560,8 @@ def _draw_walls(ax, faces: list[np.ndarray], kinds: list[str], *, elev: float, a
     rgba = _face_rgba(kinds)
     kw: dict = dict(facecolors=rgba, shade=True)
     if mesh_edges:
-        kw["edgecolors"] = np.broadcast_to(to_rgba("#9ca3af", 0.45), (len(shown), 4)).copy()
-        kw["linewidths"] = 0.12
+        kw["edgecolors"] = mesh_edge_rgba(len(shown))
+        kw["linewidths"] = mesh_linewidths(kinds, base=MESH_LW_3D)
     else:
         kw["linewidths"] = 0.0
     ax.add_collection3d(Poly3DCollection(shown, **kw))
@@ -599,7 +624,10 @@ def figure_projected(stem: str, title: str, faces: list[np.ndarray], kinds: list
         fig_h = fig_w * float(np.ptp(np.vstack(stretched)[:, 1])) / max(span, 1e-6) + 1.35
         fig, ax = plt.subplots(figsize=(fig_w, max(3.2, fig_h)))
         ax.add_collection(PolyCollection(
-            [stretched[i] for i in order], facecolors=fc[order], edgecolors="none", rasterized=True,
+            [stretched[i] for i in order], facecolors=fc[order],
+            edgecolors=mesh_edge_rgba(len(order)),
+            linewidths=[mesh_linewidths(kinds, base=MESH_LW_FLAT)[i] for i in order],
+            rasterized=True,
         ))
         ax.set_aspect("equal")
         ax.autoscale_view()
@@ -683,7 +711,7 @@ def figure_cutaways(stem: str, title: str, wall_stations: list,
         _draw_walls(ax, faces, kinds, elev=VIEW_LE[0], azim=VIEW_LE[1], mesh_edges=True)
         ax.set_title(f"{title} — {label}, suction skin removed, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(fig, kinds)
-        note(fig, "Cutaway of mapped region strips (pressure, caps, webs, ribs). Not a tidalshell mesh.")
+        note(fig, "Suction skin omitted; camera on the suction side looking onto inner pressure skin.")
         fig.tight_layout(rect=(0, 0.10, 1, 0.96))
         save_fig(fig, stem, key, dpi=200, category=REGION_CUTAWAYS)
         te = plt.figure(figsize=(8.5, 6.1))
@@ -691,7 +719,7 @@ def figure_cutaways(stem: str, title: str, wall_stations: list,
         _draw_walls(ax_te, faces, kinds, elev=VIEW_TE[0], azim=VIEW_TE[1], mesh_edges=True)
         ax_te.set_title(f"{title} — {label} TE, suction skin removed, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(te, kinds)
-        note(te, "Cutaway trailing-edge view.")
+        note(te, "Same omitted-suction mesh; trailing-edge corner, still looking from the suction side.")
         te.tight_layout(rect=(0, 0.10, 1, 0.96))
         save_fig(te, stem, f"{key}_te", dpi=200, category=REGION_CUTAWAYS)
 
@@ -716,7 +744,7 @@ def gmsh_shell_probe(geo: BladeGeometry, stem: str) -> None:
     if importlib.util.find_spec("gmsh") is None:
         print("gmsh not installed; skip wall-strip mesh probe")
         return
-    from implicit_geometry_kernel.mesh.gmsh_shell import write_shell_msh
+    from implicit_geometry_kernel.mesh.gmsh import write_shell_msh
 
     marks = _landmarks(geo)
     z_maxc = next(z for k, z, _ in marks if k == "max_chord")

@@ -8,24 +8,26 @@ Published windIO blades stay in [08_reference_blades](../08_reference_blades/).
 python examples/blade/09_blade_concepts/blade_concepts.py
 ```
 
-Eleven tokens share one 20 m PCHIP loft (circular root → NACA family, eleven
-design knots, chord 1.8 → 2.4 → 0.45 m, twist 12° → −2°).
+Eighteen tokens share one 12 m loft: the original 20 m knots scaled uniformly
+(span, chord, and wall gauges × 12/20). Circular root → NACA family, eleven
+design knots, chord 1.08 → 1.44 → 0.45 m, twist 12° → −2°.
 
 ## Web anchoring
 
 Catalogue tokens: [WX-Y-Z-NR taxonomy](../../../docs/blade/concepts/taxonomy.md).
 Code: `implicit_geometry_kernel.blade.concepts`.
 
-All three modes use **hard-coded positions** in native units. `n_webs` picks how
-many authored slots to use; it does not invent a lattice.
+All three modes use **hard-coded positions** in native units. For PA, `n_webs`
+sets a uniform root lattice (up to three interiors); extra webs continue that
+lattice (first extra at root TE).
 
 | Mode | Quantity | Planform |
 |---|---|---|
 | `LC` | chord fractions | slide with local chord (not parallel to PA) |
 | `LE` | metres from the LE (root chord as the stick) | track the LE / taper (not parallel to PA) |
-| `PA` | blade-x from the pitch axis | **parallel to PA** — primary = root `[x_LE, x_TE]` about PA; secondary = `[x_TE(root), x_TE(max chord)]` |
+| `PA` | blade-x from the pitch axis | **parallel to PA** — primary = uniform interiors of root `[x_LE, x_TE]`; secondary continues the same Δx (first extra at root TE) |
 
-Primary/secondary **planform bands are PA-only**. LE/PA omit a web that misses
+Primary/secondary **slots are PA-only**. LE/PA omit a web that misses
 the inner skin (the same index may seed later). Rib count is required: `0R`
 none, `4R` four faces, `10R` ten faces from just after the root through the tip.
 
@@ -41,7 +43,14 @@ none, `4R` four faces, `10R` ten faces from just after the root through the tip.
 | `3D-F-LC-10R` | three webs, box cap, local chord, ten ribs |
 | `3D-F-LE-10R` | three webs, box cap, leading-edge offsets, ten ribs |
 | `3D-F-PA-10R` | three webs, box cap, PA blade-x (primary about PA), ten ribs |
-| `4D-F-PA-10R` | four webs, box cap, PA blade-x (primary + TE-shelf secondary), ten ribs |
+| `4D-F-PA-10R` | four webs, box cap, PA blade-x (three uniform primary + one lattice-step secondary), ten ribs |
+| `5D-F-PA-10R` | five webs, box cap, PA blade-x (three uniform primary + two lattice-step secondaries), ten ribs |
+| `0A-LC-0R` | no webs, no caps (skin only) |
+| `0B-LC-0R` | no webs, one cap pair |
+| `1B-F-LC-10R` | one flapwise web, one cap band, ten ribs |
+| `2A-F-LC-10R` | two webs, no spar caps, local chord, ten ribs |
+| `2C-F-LC-10R` | two webs, per-web cap patches, local chord, ten ribs |
+| `2D-CN-LC-10R` | two webs, box cap, chord-normal webs, local chord, ten ribs |
 
 Each concept compiles `BladeConcept(key)` → `BladeGeometry.from_concept`. Wall strips use the authored `WallRegionGraph` and `loft_mapped_strips`. Web ends are the shared skin-loop keys (not T-joint feet). Unnamed 3-D PNGs use the leading-edge camera; `*_te.png` is the trailing-edge twin.
 
@@ -86,3 +95,5 @@ samples.npz             station polylines, loft quads, all polygons + roles
 ![3D-F-LE-10R planform structure](figures/3D-F-LE-10R/planform/structure.png)
 
 ![4D-F-PA-10R planform structure](figures/4D-F-PA-10R/planform/structure.png)
+
+![5D-F-PA-10R planform structure](figures/5D-F-PA-10R/planform/structure.png)

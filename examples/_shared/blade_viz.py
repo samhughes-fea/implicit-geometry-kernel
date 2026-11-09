@@ -6,16 +6,24 @@ from pathlib import Path
 
 import numpy as np
 
-from _shared.plotting import NAVY, RED, SERIES, TEAL, note, plt
-from implicit_geometry_kernel.blade.topology import _chord_fracs, role_atom
+from _shared.plotting import (
+    NAVY, RED, SERIES, TEAL, draw_cap_solids, draw_shell, note, panel_colour, plt,
+)
+from implicit_geometry_kernel.blade.network import wall_meta_from_cut
+from implicit_geometry_kernel.blade.topology import (
+    ShellTopologyTemplate, _chord_fracs, _cut_tc, role_atom, sample_region_polylines,
+)
 from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
 
 CROSS_SECTIONS = "cross_sections"
+CSG_MESH = "csg_mesh"
 REGIONS = "regions"
 REGION_CUTAWAYS = "region_cutaways"
 PLANFORM = "planform"
 FULL_BLADE = "full_blade"
-VIZ_DIRS = (CROSS_SECTIONS, REGIONS, REGION_CUTAWAYS, PLANFORM, FULL_BLADE)
+VIZ_DIRS = (CROSS_SECTIONS, CSG_MESH, REGIONS, REGION_CUTAWAYS, PLANFORM, FULL_BLADE)
+N_SECTION_GRID = 16
+CSG_MESH_N_CHORD = 8
 VIEW_LE = (26.0, -62.0)
 VIEW_TE = (26.0, 118.0)
 _KEEP_ROOT = frozenset({
@@ -47,6 +55,178 @@ def live_web_fracs(cut) -> list[float]:
         pts = np.asarray(run.points, float)[:, :2]
         live.append(float(np.clip(_chord_fracs(cut, pts[:1])[0], 0.0, 1.0)))
     return live
+
+
+def span_section_zs(geo, n: int = N_SECTION_GRID) -> np.ndarray:
+    """Equally spaced z from root to tip (inclusive)."""
+    z0, z1 = float(geo.stations[0].z), float(geo.stations[-1].z)
+    return np.linspace(z0, z1, int(n))
+
+
+def _section_xy_bounds(cut) -> tuple[float, float, float, float]:
+    xs, ys = [cut.offset[0]], [cut.offset[1]]
+    for wall in cut.walls:
+        xy = np.asarray(wall.xy, float)
+        if len(xy):
+            xs.append(xy[:, 0])
+            ys.append(xy[:, 1])
+    x = np.concatenate([np.atleast_1d(v) for v in xs])
+    y = np.concatenate([np.atleast_1d(v) for v in ys])
+    return float(x.min()), float(x.max()), float(y.min()), float(y.max())
+
+
+def _root_anchored_limits(cuts, pad_frac: float = 0.04) -> tuple[tuple[float, float], tuple[float, float]]:
+    """Shared blade-frame window: root box, expanded if a later station sticks out."""
+    boxes = [_section_xy_bounds(c) for c in cuts if c is not None]
+    if not boxes:
+        return (-1.0, 1.0), (-1.0, 1.0)
+    x0, x1, y0, y1 = boxes[0]
+    for xa, xb, ya, yb in boxes[1:]:
+        x0, x1 = min(x0, xa), max(x1, xb)
+        y0, y1 = min(y0, ya), max(y1, yb)
+    pad = pad_frac * max(x1 - x0, y1 - y0, 1e-6)
+    return (x0 - pad, x1 + pad), (y0 - pad, y1 + pad)
+
+
+def _station_limits(cut, pad_frac: float = 0.04) -> tuple[tuple[float, float], tuple[float, float]]:
+    x0, x1, y0, y1 = _section_xy_bounds(cut)
+    pad = pad_frac * max(x1 - x0, y1 - y0, 1e-6)
+    return (x0 - pad, x1 + pad), (y0 - pad, y1 + pad)
+
+
+def _paint_section(ax, cut, z, xlim, ylim, *, show_axes: bool = False,
+                   window: str | None = None) -> None:
+    if cut is None:
+        ax.set_title(f"z = {z:.1f} m\ninfeasible", fontsize=8, pad=6)
+    else:
+        draw_shell(ax, cut)
+        draw_cap_solids(ax, cut)
+        ax.plot(cut.offset[0], cut.offset[1], "k+", ms=5)
+        extra = f"\n{window}" if window else ""
+        ax.set_title(f"z = {z:.1f} m\nchord {cut.chord:.2f} m{extra}", fontsize=8, pad=6)
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
+    ax.set_aspect("equal", adjustable="box")
+    if show_axes:
+        ax.set_xlabel("x / m")
+        ax.set_ylabel("y / m")
+        ax.tick_params(labelsize=7)
+    else:
+        ax.axis("off")
+
+
+def _sample_cuts(geo):
+    zs = span_section_zs(geo)
+    cuts: list = []
+    errors: list = []
+    for z in zs:
+        try:
+            cuts.append(geo.section_at(float(z)))
+            errors.append(None)
+        except InfeasibleSectionGeometry as exc:
+            cuts.append(None)
+            errors.append(exc)
+    return zs, cuts, errors
+
+
+def figure_section_grid(stem: str, title: str, geo, *, figures: Path, repo: Path,
+                        caption: str) -> None:
+    """4×4 ``sections.png``, dual-scale ``01.png``–``16.png``, and ``csg_mesh`` singles."""
+    zs, cuts, errors = _sample_cuts(geo)
+    xlim, ylim = _root_anchored_limits(cuts)
+    fig, axes = plt.subplots(4, 4, figsize=(12.0, 13.2))
+    fig.subplots_adjust(left=0.04, right=0.99, top=0.93, bottom=0.05, wspace=0.18, hspace=0.42)
+    print(f"{'station':>12} {'z [m]':>8} {'chord':>8} {'twist':>8} {'walls':>6} {'cells':>6}  layout")
+    for i, (ax, z, cut, exc) in enumerate(zip(axes.ravel(), zs, cuts, errors)):
+        label = f"{i + 1}/{len(zs)}"
+        _paint_section(ax, cut, z, xlim, ylim)
+        if cut is None:
+            print(f"{label:>12} {z:8.2f}  skipped ({exc})")
+            continue
+        dropped = f", dropped {len(cut.dropped_webs)}" if cut.dropped_webs else ""
+        print(f"{label:>12} {z:8.2f} {cut.chord:8.2f} {cut.twist:8.2f} {len(cut.walls):6d} "
+              f"{len(cut.cells):6d}  {cut.layout}{dropped}")
+        if i == len(zs) - 1:
+            kinds = sorted({w.kind for w in cut.walls})
+            thick = {k: max((w.thickness for w in cut.walls if w.kind == k), default=0.0) for k in kinds}
+            print(f"{'':>12} tip walls {kinds}  t={thick}  dropped={cut.dropped_webs}")
+    fig.suptitle(f"{title} — 4×4 span cuts (skin / cap / web)", fontsize=10)
+    note(fig, caption)
+    save_fig(fig, figures, stem, CROSS_SECTIONS, "sections", repo=repo)
+    for i, (z, cut) in enumerate(zip(zs, cuts), start=1):
+        one, (ax_root, ax_st) = plt.subplots(1, 2, figsize=(8.4, 4.2))
+        st_xlim, st_ylim = (xlim, ylim) if cut is None else _station_limits(cut)
+        _paint_section(ax_root, cut, z, xlim, ylim, show_axes=True, window="root window")
+        _paint_section(ax_st, cut, z, st_xlim, st_ylim, show_axes=True, window="station window")
+        one.tight_layout()
+        save_fig(one, figures, stem, CROSS_SECTIONS, f"{i:02d}", repo=repo)
+    figure_csg_mesh(stem, geo, zs, cuts, figures=figures, repo=repo)
+
+
+def _finish_csg_axes(ax, xlim, ylim) -> None:
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_xlabel("x / m")
+    ax.set_ylabel("y / m")
+    ax.tick_params(labelsize=7)
+
+
+def _paint_wall_meta(ax, fig, cut, z, xlim, ylim) -> None:
+    field, _table = wall_meta_from_cut(cut)
+    xs = np.linspace(xlim[0], xlim[1], 80)
+    ys = np.linspace(ylim[0], ylim[1], 50)
+    X, Y = np.meshgrid(xs, ys)
+    pts = np.column_stack([X.ravel(), Y.ravel(), np.full(X.size, float(z))])
+    phi = np.asarray(field.evaluate(pts).phi, float).reshape(X.shape)
+    cf = ax.contourf(X, Y, phi, levels=16, cmap="RdBu_r")
+    ax.contour(X, Y, phi, levels=[0.0], colors="k", linewidths=0.7)
+    fig.colorbar(cf, ax=ax, shrink=0.72, pad=0.02, label="φ / m")
+    ax.set_title(f"z = {z:.1f} m\nwall_meta φ", fontsize=8, pad=6)
+    _finish_csg_axes(ax, xlim, ylim)
+
+
+def _paint_mesh_nodes(ax, geo, cut, z, xlim, ylim) -> None:
+    tmpl = ShellTopologyTemplate.from_region_graph(
+        geo.region_graph, float(z), n_chord=CSG_MESH_N_CHORD,
+        live_web_fracs=live_web_fracs(cut) or None, t_c=_cut_tc(cut),
+        dropped_web_indices=tuple(cut.dropped_web_indices),
+    )
+    samples = sample_region_polylines(cut, cut.shell_graph(), tmpl, geo.region_graph)
+    for name, pts in samples.items():
+        xy = np.asarray(pts, float)
+        if len(xy) < 1:
+            continue
+        colour = panel_colour(name)
+        ax.plot(xy[:, 0], xy[:, 1], color=colour, lw=0.9, zorder=2)
+        ax.scatter(xy[1:-1, 0], xy[1:-1, 1], s=10, c="k", zorder=3, linewidths=0)
+        ax.scatter(xy[[0, -1], 0], xy[[0, -1], 1], s=22, c="k", zorder=4, linewidths=0)
+    ax.set_title(f"z = {z:.1f} m\nconformal nodes (n_chord={CSG_MESH_N_CHORD})", fontsize=8, pad=6)
+    _finish_csg_axes(ax, xlim, ylim)
+
+
+def figure_csg_mesh(stem: str, geo, zs, cuts, *, figures: Path, repo: Path) -> None:
+    """``csg_mesh/01.png``–``16.png``: wall_meta φ vs authored station mesh nodes."""
+    for i, (z, cut) in enumerate(zip(zs, cuts), start=1):
+        fig, (ax_csg, ax_mesh) = plt.subplots(1, 2, figsize=(8.4, 4.2))
+        if cut is None:
+            ax_csg.set_title(f"z = {z:.1f} m\ninfeasible", fontsize=8, pad=6)
+            ax_mesh.set_title(f"z = {z:.1f} m\ninfeasible", fontsize=8, pad=6)
+            for ax in (ax_csg, ax_mesh):
+                ax.set_aspect("equal", adjustable="box")
+                ax.set_xlabel("x / m")
+                ax.set_ylabel("y / m")
+                ax.tick_params(labelsize=7)
+        else:
+            xlim, ylim = _station_limits(cut)
+            try:
+                _paint_wall_meta(ax_csg, fig, cut, z, xlim, ylim)
+            except ValueError:
+                ax_csg.set_title(f"z = {z:.1f} m\ninfeasible", fontsize=8, pad=6)
+                _finish_csg_axes(ax_csg, xlim, ylim)
+            _paint_mesh_nodes(ax_mesh, geo, cut, z, xlim, ylim)
+        fig.tight_layout()
+        save_fig(fig, figures, stem, CSG_MESH, f"{i:02d}", repo=repo)
 
 
 def landmarks(geo) -> list[tuple[str, float, str]]:

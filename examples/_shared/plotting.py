@@ -1,7 +1,7 @@
 """Shared helpers for the worked examples: plot style, wall drawing and output paths.
 
 Each example writes its figures to a ``figures/`` folder next to its script. Walls
-keep the same colour in every figure: skins blue, spar caps red, webs green.
+keep the same colour in every figure: skins navy, spar caps red, webs teal.
 """
 
 from __future__ import annotations
@@ -13,6 +13,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
+from matplotlib.colors import BoundaryNorm, ListedColormap  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
+
 from implicit_geometry_kernel.plotting.palette import NAVY, RED, TEAL  # noqa: E402
 from implicit_geometry_kernel.section.boundary import LineString, OPS  # noqa: E402
 
@@ -106,6 +109,33 @@ def draw_shell(ax, cut, alpha: float = 0.35) -> None:
             ax.fill(*poly.exterior.xy, color=colour, alpha=alpha, lw=0)
         ax.plot(xy[:, 0], xy[:, 1], color=colour, lw=0.8)
     ax.set_aspect("equal")
+
+
+def legend_outside(ax, **kwargs):
+    """Legend to the right of the axes, not over the geometry."""
+    loc = kwargs.pop("loc", "center left")
+    bbox = kwargs.pop("bbox_to_anchor", (1.02, 0.5))
+    return ax.legend(loc=loc, bbox_to_anchor=bbox, fontsize=kwargs.pop("fontsize", 7), **kwargs)
+
+
+def meta_cmap(n: int, colours=None):
+    """Discrete colormap for integer feature ids 0 .. n-1 (not tab10 on raw ids)."""
+    n = max(int(n), 1)
+    palette = list(colours) if colours is not None else list(SERIES) + list(RETRO_PANELS)
+    while len(palette) < n:
+        palette = palette + palette
+    cmap = ListedColormap(palette[:n])
+    bounds = np.arange(n + 1) - 0.5
+    return cmap, BoundaryNorm(bounds, n)
+
+
+def meta_legend(ax, names: dict[int, str], colours=None):
+    """Patches for integer id → name."""
+    cmap, _ = meta_cmap(max(names) + 1 if names else 1, colours)
+    handles = [Patch(facecolor=cmap(i), edgecolor="none", label=f"{i}:{names[i]}") for i in sorted(names)]
+    if handles:
+        legend_outside(ax, handles=handles)
+    return handles
 
 
 def note(fig, text: str) -> None:

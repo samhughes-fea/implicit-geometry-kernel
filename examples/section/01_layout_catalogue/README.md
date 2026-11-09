@@ -37,7 +37,7 @@ cut = BladeGeometry(stations, "2D-F-LC-0R", 0.008, pivot_fraction=0.3, spar_cap_
 | Item | Value |
 |---|---|
 | Airfoil | NACA 2418, 2 m chord, pitch axis at 0.3 c, 15° twist |
-| Walls | skin 8 mm, caps 30 mm, webs 15 mm |
+| Walls | skin 8 mm, caps 30 mm, webs 15 mm (the catalogue figure uses 4× display thickness) |
 
 The twist is there so that the F and CN variants differ: at 15° the F webs are still
 vertical and the CN webs lean with the chord.

@@ -13,8 +13,10 @@ python examples/blade/01_loft_and_cut/loft_and_cut.py
 
 A layout key reads `{webs}{cap family}-{web orientation}`: `2D-F` has two webs, box
 spar caps between them, and flapwise webs. `-CN` webs are normal to the chord instead.
-The layout gallery draws solids (`draw_cut`). Span cuts draw the conformal skin-mid
-shell (`draw_shell`).
+The layout gallery draws solids (`draw_cut`) at **4× display thickness** so the fills
+read; the note under the figure says so. Span cuts draw the conformal skin-mid
+shell (`draw_shell`) at manufacturing gauges (shared axes: the tip is small because
+the planform tapers).
 
 ![Eight of the 40 layouts](figures/layouts.png)
 

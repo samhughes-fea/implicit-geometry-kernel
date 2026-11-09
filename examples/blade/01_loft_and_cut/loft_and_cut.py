@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from _shared.plotting import draw_cut, draw_shell, plt, save  # noqa: E402
+from _shared.plotting import draw_cut, draw_shell, note, plt, save  # noqa: E402
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station  # noqa: E402
 
 
@@ -21,12 +21,16 @@ def layouts():
     keys = ["0A-LC-0R", "1A-F-LC-0R", "2A-F-LC-0R", "2B-F-LC-0R", "2D-F-LC-0R", "2D-CN-LC-0R", "3D-F-LC-0R", "4C-F-LC-0R"]
     fig, axes = plt.subplots(4, 2, figsize=(9, 6.4))
     for ax, key in zip(axes.ravel(), keys):
-        cut = BladeGeometry(stations, key, 0.008, spar_cap_thickness=0.03, shear_web_thickness=0.015, pivot_fraction=0.3).section_at(0.5)
+        cut = BladeGeometry(stations, key, 0.032, spar_cap_thickness=0.12, shear_web_thickness=0.06, pivot_fraction=0.3).section_at(0.5)
+        n_web, n_cell = len(cut.walls_of("web")), len(cut.cells)
+        webs = "web" if n_web == 1 else "webs"
+        cells = "cell" if n_cell == 1 else "cells"
         draw_cut(ax, cut)
-        ax.set_title(f"{key}: {len(cut.walls_of('web'))} webs, {len(cut.cells)} cells", fontsize=9)
+        ax.set_title(f"{key}: {n_web} {webs}, {n_cell} {cells}", fontsize=9)
         ax.axis("off")
-    fig.suptitle("Eight of the 40 layouts on a NACA 2418, 2 m chord (skin blue, caps red, webs green)", fontsize=10)
-    fig.tight_layout()
+    fig.suptitle("Eight of the 40 layouts on a NACA 2418, 2 m chord (skin navy, caps red, webs teal)", fontsize=10)
+    note(fig, "Display thickness 4× (skin 32 mm, cap 120 mm, web 60 mm on a 2 m chord).")
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
     save(fig, __file__, "layouts")
 
 
@@ -44,8 +48,12 @@ def span_cuts():
         ax.set_xlim(-1.0, 2.2)
         ax.set_ylim(-0.6, 0.6)
         ax.tick_params(labelsize=7)
+        if ax is axes[0]:
+            ax.set_xlabel("x / m")
+            ax.set_ylabel("y / m")
     fig.suptitle("2D-F wing cut along the span: flapwise webs stay vertical as the section twists", fontsize=10)
-    fig.tight_layout()
+    note(fig, "Shared axes: the tip is small because the planform tapers. Manufacturing gauges, not display thickness.")
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
     save(fig, __file__, "span_cuts")
     return wing
 

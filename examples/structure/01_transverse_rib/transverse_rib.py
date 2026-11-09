@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from _shared.plotting import draw_cut, plt, save  # noqa: E402
+from _shared.plotting import SERIES, draw_cut, legend_outside, note, plt, save  # noqa: E402
 from implicit_geometry_kernel import (  # noqa: E402
     Airfoil,
     BladeConcept,
@@ -20,6 +20,8 @@ from implicit_geometry_kernel import (  # noqa: E402
     TransverseMember,
 )
 from implicit_geometry_kernel.blade.shell_graph import topology_diff  # noqa: E402
+
+CELL_LABELS = ("LE cell", "box", "TE cell")
 
 
 def main():
@@ -45,18 +47,22 @@ def main():
     events = topology_diff(at_rib.shell_graph(), other.shell_graph()).events
     print("topology events:", ", ".join(f"{e.kind}:{e.name}" for e in events if "rib" in e.kind))
 
-    fig, ax = plt.subplots(figsize=(6.2, 3.4))
-    draw_cut(ax, at_rib)
+    fig, ax = plt.subplots(figsize=(6.6, 3.4))
     oml = blade.oml_polyline(5.0)
     ax.plot(oml[:, 0], oml[:, 1], color="#0b0b0b", lw=0.7, ls="--", label="OML")
-    for face in faces:
-        ax.plot(face.points[:, 0], face.points[:, 1], color="#eda100", lw=1.4, label=face.name)
-    ax.set_aspect("equal")
-    ax.set_title("2D-F cut at the rib: closed cell faces (amber) inside the OML")
-    handles, labels = ax.get_legend_handles_labels()
-    by = dict(zip(labels, handles))
-    ax.legend(by.values(), by.keys(), loc="upper right", fontsize=7)
-    fig.tight_layout()
+    for i, face in enumerate(faces):
+        xy = face.points[:, :2]
+        colour = SERIES[i % len(SERIES)]
+        label = CELL_LABELS[i] if i < len(CELL_LABELS) else face.name
+        ax.fill(xy[:, 0], xy[:, 1], color=colour, alpha=0.35, lw=0, label=label)
+        ax.plot(xy[:, 0], xy[:, 1], color=colour, lw=0.8)
+    draw_cut(ax, at_rib)
+    ax.set_xlabel("x / m")
+    ax.set_ylabel("y / m")
+    ax.set_title("2D-F cut at the rib: closed cell faces inside the OML")
+    legend_outside(ax)
+    note(fig, "Filled LE / box / TE cells; walls are manufacturing gauges (skin 3 mm).")
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
     save(fig, __file__, "rib_face")
 
 

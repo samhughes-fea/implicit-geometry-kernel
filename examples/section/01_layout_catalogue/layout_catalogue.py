@@ -24,12 +24,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import numpy as np  # noqa: E402
-from _shared.plotting import note, draw_cut, plt, save  # noqa: E402
+from _shared.plotting import draw_cut, note, plt, save  # noqa: E402
 from implicit_geometry_kernel import SYSTEM_TYPE_LAYOUT_KEYS, Airfoil, BladeGeometry, Station, resolve_system_type  # noqa: E402
 from implicit_geometry_kernel.section.boundary import OPS, Polygon  # noqa: E402
 
 CHORD, TWIST, PITCH = 2.0, 15.0, 0.3
 SKIN, CAP, WEB = 0.008, 0.03, 0.015
+DISPLAY = 4
 FAMILIES = ("A", "B", "C", "D")
 ORIENTATIONS = ("F", "CN")
 
@@ -48,10 +49,10 @@ def skin_midline_area(airfoil: Airfoil) -> float:
     return OPS.offset_inward(Polygon(outline), 0.5 * SKIN).area
 
 
-def cut_all(stations):
+def cut_all(stations, skin=SKIN, cap=CAP, web=WEB):
     cuts = {}
     for key in SYSTEM_TYPE_LAYOUT_KEYS:
-        geo = BladeGeometry(stations, key, SKIN, spar_cap_thickness=CAP, shear_web_thickness=WEB, pivot_fraction=0.3)
+        geo = BladeGeometry(stations, key, skin, spar_cap_thickness=cap, shear_web_thickness=web, pivot_fraction=0.3)
         cuts[key] = geo.section_at(0.5)
     return cuts
 
@@ -79,15 +80,20 @@ def figure(cuts, worst):
     for ax in axes.ravel():
         ax.axis("off")
     # row 0: the two web-less layouts; rows 1-5: 1 to 5 webs, columns A-F, A-CN, B-F, ...
-    placed = {"0A-LC-0R": (0, 0), "0B-LC-0R": (0, 2)}
-    for n in range(1, 6):
-        for i, fam in enumerate(FAMILIES):
-            for j, ori in enumerate(ORIENTATIONS):
-                if f"{n}{fam}-{ori}" in cuts:  # one web has no box cap (D) variant
-                    placed[f"{n}{fam}-{ori}"] = (n, 2 * i + j)
+    placed = {}
+    for key in cuts:
+        if key.startswith("0A"):
+            placed[key] = (0, 0)
+        elif key.startswith("0B"):
+            placed[key] = (0, 2)
+        else:
+            n = int(key[0])
+            fam = key[1]
+            ori = "CN" if "-CN-" in key else "F"
+            placed[key] = (n, 2 * FAMILIES.index(fam) + ORIENTATIONS.index(ori))
     for key, (r, c) in placed.items():
         ax = axes[r, c]
-        draw_cut(ax, cuts[key], midlines=False, alpha=0.6)
+        draw_cut(ax, cuts[key], midlines=True, alpha=0.55)
         ax.set_xlim(-0.75, 1.45)
         ax.set_ylim(-0.42, 0.42)
         ax.set_title(key, fontsize=8, pad=1)
@@ -96,8 +102,9 @@ def figure(cuts, worst):
         fig.text((2 * i + 1) / 8, 0.955, label, ha="center", fontsize=9)
     fig.suptitle("The 40 layouts on a NACA 2418, 2 m chord, 15° twist: flapwise (F) webs stay vertical, "
                  "chord-normal (CN) webs turn with the chord", fontsize=10, y=0.995)
-    note(fig, f"Skin {SKIN * 1e3:g} mm (blue), caps {CAP * 1e3:g} mm (red), webs {WEB * 1e3:g} mm (green). "
-              f"Every layout's cells add up to the area inside the skin midline to within {worst:.2%}.")
+    note(fig, f"Display thickness {DISPLAY}× (skin {DISPLAY * SKIN * 1e3:g} mm, cap {DISPLAY * CAP * 1e3:g} mm, "
+              f"web {DISPLAY * WEB * 1e3:g} mm). Printed web counts use the real gauges. "
+              f"Cells tile the skin-midline area to within {worst:.2%}.")
     fig.tight_layout(rect=(0, 0.02, 1, 0.95))
     save(fig, __file__, "layout_catalogue")
 
@@ -106,4 +113,4 @@ if __name__ == "__main__":
     stations = blade()
     cuts = cut_all(stations)
     worst = check(cuts, skin_midline_area(stations[0].airfoil))
-    figure(cuts, worst)
+    figure(cut_all(stations, DISPLAY * SKIN, DISPLAY * CAP, DISPLAY * WEB), worst)

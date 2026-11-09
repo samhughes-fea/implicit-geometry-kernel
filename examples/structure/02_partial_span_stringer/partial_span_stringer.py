@@ -12,7 +12,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from _shared.plotting import draw_cut, plt, save  # noqa: E402
+from _shared.plotting import SERIES, draw_cut, legend_outside, note, plt, save  # noqa: E402
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station, Stringer  # noqa: E402
 from implicit_geometry_kernel.blade.shell_graph import topology_diff  # noqa: E402
 
@@ -37,13 +37,29 @@ def main():
     events = topology_diff(inside.shell_graph(), outside.shell_graph()).events
     print("topology events:", ", ".join(f"{e.kind}:{e.name}" for e in events if "stringer" in e.kind))
 
-    fig, ax = plt.subplots(figsize=(6.2, 3.4))
+    foot, tip = run.points[0], run.points[-1]
+    fig, axes = plt.subplots(1, 2, figsize=(9.4, 3.5))
+    ax = axes[0]
     draw_cut(ax, inside)
-    ax.plot(run.points[:, 0], run.points[:, 1], color="#6250d6", lw=1.8, marker="o", ms=3, label=run.name)
-    ax.set_aspect("equal")
-    ax.set_title("2D-F cut inside the stringer span: free-end branch off the pressure skin")
-    ax.legend(loc="upper right", fontsize=7)
-    fig.tight_layout()
+    ax.plot(run.points[:, 0], run.points[:, 1], color=SERIES[5], lw=2.0, marker="o", ms=4, label="stringer")
+    ax.set_xlabel("x / m")
+    ax.set_ylabel("y / m")
+    ax.set_title("2D-F cut inside the stringer span")
+    legend_outside(ax)
+    ax = axes[1]
+    draw_cut(ax, inside)
+    ax.plot(run.points[:, 0], run.points[:, 1], color=SERIES[5], lw=2.4, marker="o", ms=6)
+    ax.annotate("free end, 40 mm depth", xy=(tip[0], tip[1]),
+                xytext=(tip[0] - 0.02, tip[1] + 0.04),
+                fontsize=7, ha="right",
+                arrowprops={"arrowstyle": "->", "lw": 0.6})
+    pad = 0.08
+    ax.set_xlim(min(foot[0], tip[0]) - pad, max(foot[0], tip[0]) + pad)
+    ax.set_ylim(min(foot[1], tip[1]) - pad, max(foot[1], tip[1]) + pad)
+    ax.set_xlabel("x / m")
+    ax.set_title("zoom on the free end")
+    note(fig, "Stringer on the pressure skin at 12% chord; 8 mm thick, 40 mm stand-off.")
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
     save(fig, __file__, "stringer")
 
 

@@ -33,7 +33,9 @@ Unnamed 3-D PNGs use the leading-edge camera; `*_te.png` is the trailing-edge tw
 
 ```
 figures/<stem>/
-  cross_sections/sections.png
+  cross_sections/sections.png   (4×4 grid, shared root-anchored window)
+  cross_sections/01.png … 16.png   (root window | station window)
+  csg_mesh/01.png … 16.png         (wall_meta φ | conformal mesh nodes)
   regions/{root,transition,max_chord,span70,tip}.png
   regions/{root,transition,max_chord,span70,tip}_te.png
   region_cutaways/{root,transition,max_chord,span70,tip}.png
@@ -41,6 +43,9 @@ figures/<stem>/
   planform/{axes,structure}.png
   full_blade/{elevation,plan,iso,closeups,closeups_te}.png
 ```
+
+`csg_mesh/` is `wall_meta_from_cut` φ next to authored `sample_region_polylines` nodes
+(`n_chord=8`), not the optional IEA 15 Gmsh `mesh_closeup.png`.
 
 Regen also writes debug dumps `mids.obj` / `mids.vtk` / `samples.npz` at the stem root
 (gitignored). PNGs stay committed.
@@ -52,7 +57,7 @@ loci from `shell_graph()`.
 **Coloured wall strips** (`full_blade` elevation / plan / iso, region close-ups,
 region cutaways) loft the **authored `WallRegionGraph`** with `loft_mapped_strips`.
 `shell_graph()` is still the 2-D assemble view. Colour on loft views is **region role**
-(`RETRO_PANELS`); `cross_sections/sections.png` keeps navy/red/teal by kind. A compiled
+(`RETRO_PANELS`); `cross_sections/sections.png` is a 4×4 span grid (navy/red/teal by kind). A compiled
 `tip_closure` plate is drawn at the tip. Region cutaways drop suction-side loop
 roles (`bay_su_*` included). Cross-section exaggeration on the orthographic views is
 **stated in the title**.
@@ -60,7 +65,8 @@ roles (`bay_su_*` included). Cross-section exaggeration on the orthographic view
 The kernel now also exposes the geometry primitives that make a real feature field
 possible (`FeatureTable`, `TagNode`, `LoftedPolygonSDF`, `wall_meta`,
 `GeometrySolver`, `station_network` / `station_network_from_meta`) without importing
-Gmsh.
+Gmsh. Small worked examples: [10 loft oracles](../10_loft_oracles/),
+[11 station network](../11_feature_station_network/).
 
 ![NREL 5 MW stations](figures/nrel5mw/cross_sections/sections.png)
 

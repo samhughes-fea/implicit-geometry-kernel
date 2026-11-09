@@ -26,13 +26,13 @@ from matplotlib.colors import to_rgba  # noqa: E402
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 
 from _shared.blade_viz import (  # noqa: E402
-    CROSS_SECTIONS,
     FULL_BLADE,
     REGION_CUTAWAYS,
     REGIONS,
     VIEW_LE,
     VIEW_TE,
     figure_planforms,
+    figure_section_grid,
     is_suction_role,
     landmarks,
     live_web_fracs,
@@ -40,9 +40,7 @@ from _shared.blade_viz import (  # noqa: E402
     tidy_legacy_pngs,
 )
 from _shared.debug_mesh import as_quad, dump_debug_mesh  # noqa: E402
-from _shared.plotting import (  # noqa: E402
-    NAVY, RED, TEAL, draw_cap_solids, draw_shell, note, panel_colour, plt,
-)
+from _shared.plotting import NAVY, RED, TEAL, note, panel_colour, plt  # noqa: E402
 from implicit_geometry_kernel import (  # noqa: E402
     Airfoil,
     BladeGeometry,
@@ -65,7 +63,6 @@ from implicit_geometry_kernel.blade.windio import (  # noqa: E402
 )
 from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule  # noqa: E402
 from implicit_geometry_kernel.section.layout.section_layout import SectionLayout  # noqa: E402
-from implicit_geometry_kernel.contract import InfeasibleSectionGeometry  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 CASES = (
@@ -356,35 +353,13 @@ def _landmarks(geo: BladeGeometry) -> list[tuple[str, float, str]]:
     return landmarks(geo)
 
 
-def figure_sections(stem: str, title: str, geo: BladeGeometry,
-                    marks: list[tuple[str, float, str]]) -> None:
-    fig, axes = plt.subplots(1, len(marks), figsize=(15.5, 3.4), sharey=True)
+def figure_sections(stem: str, title: str, geo: BladeGeometry) -> None:
     print(f"\n{title}")
-    print(f"{'station':>12} {'z [m]':>8} {'chord':>8} {'twist':>8} {'walls':>6} {'cells':>6}  layout")
-    for ax, (_key, z, label) in zip(np.atleast_1d(axes), marks):
-        try:
-            cut = geo.section_at(z)
-        except InfeasibleSectionGeometry as exc:
-            ax.set_title(f"{label}\ninfeasible", fontsize=8)
-            ax.axis("off")
-            print(f"{label:>12} {z:8.2f}  skipped ({exc})")
-            continue
-        draw_shell(ax, cut)
-        draw_cap_solids(ax, cut)
-        ax.plot(cut.offset[0], cut.offset[1], "k+", ms=5)
-        ax.set_title(f"{label}  z={z:.1f} m\nchord {cut.chord:.2f} m, {cut.twist:.1f}°", fontsize=8)
-        ax.axis("off")
-        dropped = f", dropped {len(cut.dropped_webs)}" if cut.dropped_webs else ""
-        print(f"{label:>12} {z:8.2f} {cut.chord:8.2f} {cut.twist:8.2f} {len(cut.walls):6d} "
-              f"{len(cut.cells):6d}  {cut.layout}{dropped}")
-        if _key == "tip":
-            kinds = sorted({w.kind for w in cut.walls})
-            thick = {k: max((w.thickness for w in cut.walls if w.kind == k), default=0.0) for k in kinds}
-            print(f"{'':>12} tip walls {kinds}  t={thick}  dropped={cut.dropped_webs}")
-    fig.suptitle(f"{title} — conformal skin-mid loop (cap OFFSET downstream)", fontsize=10)
-    note(fig, "Outer shape, gauges, web nd_arc tables, and cap windows from the windIO file.")
-    fig.tight_layout(rect=(0, 0.05, 1, 1))
-    save_fig(fig, stem, "sections", category=CROSS_SECTIONS)
+    figure_section_grid(
+        stem, title, geo, figures=FIGURES, repo=REPO,
+        caption="16 equally spaced stations, root to tip, one root-anchored blade-frame window. "
+                "Singles are root window | station window. Manufacturing gauges from the windIO file.",
+    )
 
 
 def _span_xyz(points: np.ndarray) -> np.ndarray:
@@ -775,7 +750,7 @@ def main() -> int:
         heading = f"{title} — {name}"
         marks = _landmarks(geo)
         tidy_legacy_pngs(_blade_dir(stem))
-        figure_sections(stem, heading, geo, marks)
+        figure_sections(stem, heading, geo)
         figure_planforms(stem, heading, geo, marks, figures=FIGURES, repo=REPO)
         walls = _wall_stations(geo, z_of_s)
         faces, kinds = _wall_faces(walls, geo=geo)

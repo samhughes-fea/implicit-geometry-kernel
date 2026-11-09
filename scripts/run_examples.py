@@ -1,6 +1,7 @@
 """Run every example and demo script headless and report the ones that fail.
 
-    python scripts/run_examples.py            # all scripts
+    python scripts/run_examples.py            # all scripts (blade/09 --smoke)
+    python scripts/run_examples.py --full     # blade/09 every catalogue key
     python scripts/run_examples.py --timeout 300
 
 Scripts listed in SKIP are known to be broken or too slow for CI; each says why.
@@ -24,8 +25,12 @@ SKIP = {
     # renders every layout at full resolution; takes several minutes
     "demos/section/quadtree_union_mesh.py",
 }
-# Wall-clock seconds. 09 draws every catalogue key; mapped strips now keep
-# unmatched TE verts so Linux CI needs longer than the default 480 s.
+# Extra argv for the CI/default run. --full drops these so maintainers can
+# regenerate the complete blade/09 gallery.
+SMOKE_ARGS = {
+    "blade/09_blade_concepts/blade_concepts.py": ["--smoke"],
+}
+# Wall-clock seconds when --full runs the complete 09 catalogue.
 SLOW = {
     "blade/09_blade_concepts/blade_concepts.py": 720.0,
 }
@@ -43,12 +48,14 @@ def scripts() -> list[Path]:
     return out
 
 
-def run(path: Path, timeout: float) -> tuple[Path, int, str]:
+def run(path: Path, timeout: float, extra: list[str] | None = None, full: bool = False) -> tuple[Path, int, str]:
     env = dict(os.environ, MPLBACKEND="Agg")
     rel = path.relative_to(EXAMPLES).as_posix()
-    timeout = max(float(timeout), float(SLOW.get(rel, 0.0)))
+    if full:
+        timeout = max(float(timeout), float(SLOW.get(rel, 0.0)))
+    extra = list(extra or ())
     try:
-        proc = subprocess.run([sys.executable, str(path)], cwd=path.parent, env=env, capture_output=True,
+        proc = subprocess.run([sys.executable, str(path), *extra], cwd=path.parent, env=env, capture_output=True,
                               text=True, timeout=timeout)
         if proc.returncode:
             err = (proc.stderr or proc.stdout or "").strip()
@@ -62,10 +69,18 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--timeout", type=float, default=480.0, help="seconds per script")
     parser.add_argument("--jobs", type=int, default=os.cpu_count() or 2)
+    parser.add_argument("--full", action="store_true",
+                        help="run blade/09 for every catalogue key (slow)")
     args = parser.parse_args()
     paths = scripts()
+
+    def _job(path: Path) -> tuple[Path, int, str]:
+        rel = path.relative_to(EXAMPLES).as_posix()
+        extra = [] if args.full else SMOKE_ARGS.get(rel, [])
+        return run(path, args.timeout, extra, full=args.full)
+
     with ThreadPoolExecutor(args.jobs) as pool:
-        results = list(pool.map(lambda p: run(p, args.timeout), paths))
+        results = list(pool.map(_job, paths))
     failed = [(p, code, msg) for p, code, msg in results if code != 0]
     for p, code, msg in failed:
         print(f"FAIL {p.relative_to(ROOT)} (exit {code})")

@@ -9,6 +9,7 @@ Wall strips use the authored ``WallRegionGraph`` and ``loft_mapped_strips``.
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -20,13 +21,13 @@ from matplotlib.colors import to_rgba  # noqa: E402
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 
 from _shared.blade_viz import (  # noqa: E402
-    CROSS_SECTIONS,
     FULL_BLADE,
     REGION_CUTAWAYS,
     REGIONS,
     VIEW_LE,
     VIEW_TE,
     figure_planforms,
+    figure_section_grid,
     is_suction_role,
     landmarks,
     live_web_fracs,
@@ -34,7 +35,7 @@ from _shared.blade_viz import (  # noqa: E402
     tidy_legacy_pngs,
 )
 from _shared.debug_mesh import dump_debug_mesh  # noqa: E402
-from _shared.plotting import draw_cap_solids, draw_shell, note, panel_colour, plt  # noqa: E402
+from _shared.plotting import note, panel_colour, plt  # noqa: E402
 from implicit_geometry_kernel import (  # noqa: E402
     Airfoil,
     BladeConcept,
@@ -49,8 +50,6 @@ from implicit_geometry_kernel.blade.topology import (  # noqa: E402
     sample_region_polylines,
     section_cut_near,
 )
-from implicit_geometry_kernel.contract import InfeasibleSectionGeometry  # noqa: E402
-
 KEYS = (
     "2D-F-LC-0R", "2D-F-LC-4R", "2D-F-LC-10R",
     "2D-F-LE-0R", "2D-F-LE-4R", "2D-F-LE-10R",
@@ -260,28 +259,12 @@ def save_fig(fig, key: str, name: str, *, category: str) -> Path:
     return save_viz(fig, FIGURES, key, category, name, repo=SCRIPT.parents[2])
 
 
-def figure_sections(key: str, geo: BladeGeometry, marks: list) -> None:
-    fig, axes = plt.subplots(1, len(marks), figsize=(15.5, 3.4), sharey=True)
-    print(f"{'station':>12} {'z [m]':>8} {'chord':>8} {'twist':>8} {'walls':>6} {'cells':>6}  layout")
-    for ax, (_k, z, label) in zip(np.atleast_1d(axes), marks):
-        try:
-            cut = geo.section_at(float(z))
-        except InfeasibleSectionGeometry as exc:
-            ax.set_title(f"{label}\ninfeasible", fontsize=8)
-            ax.axis("off")
-            print(f"{label:>12} {z:8.2f}  skipped ({exc})")
-            continue
-        draw_shell(ax, cut)
-        draw_cap_solids(ax, cut)
-        ax.plot(cut.offset[0], cut.offset[1], "k+", ms=5)
-        ax.set_title(f"{label}\nz = {z:.1f} m, c = {cut.chord:.2f} m", fontsize=8)
-        ax.tick_params(labelsize=7)
-        dropped = f", dropped {len(cut.dropped_webs)}" if cut.dropped_webs else ""
-        print(f"{label:>12} {z:8.2f} {cut.chord:8.2f} {cut.twist:8.2f} {len(cut.walls):6d} "
-              f"{len(cut.cells):6d}  {cut.layout}{dropped}")
-    fig.suptitle(f"{key} — synthetic planform, 2-D cuts (skin / cap / web midlines)", fontsize=10)
-    _tight(fig)
-    save_fig(fig, key, "sections", category=CROSS_SECTIONS)
+def figure_sections(key: str, geo: BladeGeometry) -> None:
+    figure_section_grid(
+        key, key, geo, figures=FIGURES, repo=SCRIPT.parents[2],
+        caption="16 equally spaced stations, root to tip, one root-anchored blade-frame window. "
+                "Singles are root window | station window. Manufacturing gauges (skin / cap / web).",
+    )
 
 
 def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> None:
@@ -505,14 +488,28 @@ def figure_elevation(key: str, title: str, faces: list[np.ndarray], kinds: list[
     )
 
 
-def main() -> int:
-    for key in KEYS:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--smoke", action="store_true",
+                        help="one catalogue key (CI). Default is the full KEYS gallery.")
+    parser.add_argument("--keys", nargs="+", metavar="TOKEN",
+                        help="subset of KEYS, e.g. 2D-F-PA-10R 3D-F-LC-10R")
+    args = parser.parse_args(argv)
+    keys = list(KEYS)
+    if args.smoke:
+        keys = ["2D-F-PA-10R"]
+    elif args.keys:
+        unknown = [k for k in args.keys if k not in KEYS]
+        if unknown:
+            parser.error(f"unknown key(s) {unknown}; choose from {list(KEYS)}")
+        keys = list(args.keys)
+    for key in keys:
         geo = build(key)
         marks = _marks(geo)
         print(f"\n{key}  regions={len(geo.region_graph.regions)}  "
               f"webs={len(geo.region_graph.webs)}")
         tidy_legacy_pngs(FIGURES / key)
-        figure_sections(key, geo, marks)
+        figure_sections(key, geo)
         figure_planforms(key, key, geo, marks, figures=FIGURES, repo=SCRIPT.parents[2], n=41)
         walls = _wall_stations(geo)
         if not walls:

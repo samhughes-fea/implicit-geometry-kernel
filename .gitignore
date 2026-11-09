@@ -10,7 +10,6 @@ dist/
 # demo figures (PNG, GIF) are committed; their data dumps are regenerated
 examples/demos/figures/**/*.json
 examples/demos/figures/**/*.csv
-examples/09_reference_blades/figures/**/*.msh
 examples/blade/08_reference_blades/figures/**/*.obj
 examples/blade/08_reference_blades/figures/**/*.npz
 examples/blade/08_reference_blades/figures/**/*.vtk

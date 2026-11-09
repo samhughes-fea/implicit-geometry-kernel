@@ -35,6 +35,8 @@ Home: [blade](blade/README.md#in-memory-objects). Source: `blade/`.
 | `BladeGeometry` | Loft interpolants; not a snapshot of every wall | `blade/loft.py` |
 | `section_at` | Function wrapping `BladeGeometry.section_at` | `blade/loft.py` |
 | `SectionCut` | Frozen cut at \(z\): walls, cells, dropped webs | `blade/cut.py` |
+| `station_webs` | Realised web count W on a `SectionCut` after drop | `blade/cut.py` |
+| `station_family` | Realised cap family X on a `SectionCut` after drop | `blade/cut.py` |
 | `SectionWall` | One wall midline in the blade frame | `blade/cut.py` |
 | `CellPolygon` | Closed cell interior on a loft cut | `blade/cut.py` |
 | `ShellGraph` | Loftable skin loop, web branches, rib faces | `blade/shell_graph.py` |
@@ -112,6 +114,7 @@ Home: [sdf](sdf/README.md). Barrel names:
 | `cut.walls` solids / `shell_graph` partitions | Caps listed as solids; conformal skin-mid loop with cap colour |
 | `CapPlacementRule` / `AnchoredWallGeometry` | Plan-form cap policy; through-thickness face offsets |
 | `SectionCut` / `SectionGeometryResult` | Loft wrap at \(z\); gated station worker product |
+| `SectionCut.layout` / `station_webs` / `station_family` | Authored concept token; realised W and X after web drop |
 
 ## Barrel functions
 

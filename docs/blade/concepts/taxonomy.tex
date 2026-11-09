@@ -1,0 +1,622 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=22mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{caption}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\emergencystretch=3em
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!50!black,
+  citecolor=black,
+  pdftitle={Blade-concept tokens},
+  pdfauthor={implicit-geometry-kernel}
+}
+
+\graphicspath{%
+  {../../../examples/demos/figures/structural_family_grids/}%
+  {../../../examples/blade/09_blade_concepts/figures/}%
+}
+
+\newcommand{\tok}[1]{\texttt{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\captionsetup{font=small,labelfont=bf,skip=6pt}
+\captionsetup[sub]{font=footnotesize,skip=2pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Blade-concept tokens}
+\rhead{\small implicit-geometry-kernel}
+\cfoot{\thepage}
+
+\title{Blade-concept tokens}
+\author{implicit-geometry-kernel\\
+  \normalsize Companion to \texttt{docs/blade/concepts/taxonomy.md}}
+\date{}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\begin{abstract}
+\noindent
+A catalogue token names a \textbf{blade concept}, not only a station layout.
+$W$, $X$, and $Y$ are the station slice; $Z$ is span web freeze; $R$ is
+transverse faces. Example: \tok{2D-F-LC-0R}. Authoring:
+\code{blade.concepts.BladeConcept}. Spec:
+\code{implicit\_geometry\_kernel.catalogue}.
+The Markdown source remains canonical; this PDF is a printable companion with
+station, planform, and schematic demonstrations.
+\end{abstract}
+
+\tableofcontents
+\vspace{1em}
+
+\section{Token grammar}
+
+\begin{verbatim}
+[W][X]-[Y]-[Z]-[R]     e.g.  2D-F-LC-0R    2D-F-LE-10R    2D-F-PA-10R
+    | |  |  |   +-- rib count (required): 0R none | 10R ten faces
+    | |  |  +------ web anchoring (required): LC | LE | PA
+    | |  +--------- web orientation: F flapwise | CN chord-normal
+    | +------------ spar-cap family: A B C D
+    +-------------- web count: 0..5
+\end{verbatim}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=5pt},
+  token/.style={box, fill=black!6, font=\ttfamily\small},
+  part/.style={box, fill=white, minimum width=2.4cm},
+  arr/.style={-{Latex}, thick}
+]
+\node[token] (tok) {2D-F-PA-10R};
+\node[part, below left=1.4cm and 2.4cm of tok] (W) {$W=2$ webs};
+\node[part, below left=1.4cm and 0.05cm of tok] (X) {$X=\mathrm{D}$ box cap};
+\node[part, below=1.4cm of tok] (Y) {$Y=\mathrm{F}$ flapwise};
+\node[part, below right=1.4cm and 0.05cm of tok] (Z) {$Z=\mathrm{PA}$ pitch axis};
+\node[part, below right=1.4cm and 2.4cm of tok] (R) {$R=10$ ribs};
+\draw[arr] (tok) -- (W);
+\draw[arr] (tok) -- (X);
+\draw[arr] (tok) -- (Y);
+\draw[arr] (tok) -- (Z);
+\draw[arr] (tok) -- (R);
+\end{tikzpicture}
+\caption{Decode of a catalogue token into station slice $(W,X,Y)$, web freeze $Z$,
+and rib count $R$.}
+\label{fig:token-decode}
+\end{figure}
+
+Zero-web cores omit $[Y]$: \tok{0A-LC-0R}, \tok{0A-LE-10R}. Bare \tok{2D-F} and
+omitted \tok{0R} are invalid.
+
+\begin{table}[htbp]
+\centering
+\caption{Token parts.}
+\label{tab:parts}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+Part & Meaning & Examples \\
+\midrule
+\textbf{W} & Shear-web count & \tok{0}, \tok{1}, \tok{2}, \ldots \\
+\textbf{X} & Spar-cap family (\code{StructuralFamily})
+  & \tok{A} none $\cdot$ \tok{B} one band $\cdot$ \tok{C} per-web bands
+    $\cdot$ \tok{D} continuous box \\
+\textbf{Y} & Web orientation
+  & \tok{CN} chord-normal $\cdot$ \tok{F} flapwise (omit when $W=0$) \\
+\textbf{Z} & Web anchoring & \tok{LC} local chord $\cdot$ \tok{LE} leading edge
+  $\cdot$ \tok{PA} pitch axis \\
+\textbf{R} & Rib count & \tok{0R} none $\cdot$ \tok{10R} ten faces \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Display form: \tok{SystemType[W][X]-[Y]-[Z]-[R]}.
+\code{resolve\_system\_type("2D-F-LC-0R")} yields a frozen \code{SystemLayoutSpec}.
+\code{SYSTEM\_TYPE\_LAYOUT\_KEYS} is the 40 \tok{*-LC-0R} cores used for section
+goldens.
+
+\section{\texorpdfstring{$X$}{X} --- spar-cap families}
+\label{sec:x}
+
+\begin{table}[htbp]
+\centering
+\caption{Spar-cap families.}
+\label{tab:x-families}
+\begin{tabular}{@{}c L{0.82\textwidth}@{}}
+\toprule
+$X$ & Description \\
+\midrule
+\textbf{A} & No spar caps: skin, webs, cores (and optional inserts) only. \\
+\textbf{B} & \textbf{Single} fixed upper/lower cap pair on \textbf{one}
+  chordwise band. Anchor: \textbf{pitching} (default $\sim\tfrac13$ chord from
+  LE) or \textbf{max\_thickness}. \\
+\textbf{C} & \textbf{Multiple} discrete upper/lower cap patches --- one band
+  per web --- merged as \code{spar\_cap\_suction\_surface} /
+  \code{spar\_cap\_pressure\_surface}. \\
+\textbf{D} & \textbf{Continuous box} spar spanning leftmost to rightmost web
+  (needs $W\geq 2$; no \tok{1D-*}). \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[t]{0.24\textwidth}
+  \includegraphics[width=\linewidth]{2A-F.png}
+  \caption{\tok{2A-F}: no caps.}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.24\textwidth}
+  \includegraphics[width=\linewidth]{2B-F.png}
+  \caption{\tok{2B-F}: one band.}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.24\textwidth}
+  \includegraphics[width=\linewidth]{2C-F.png}
+  \caption{\tok{2C-F}: per-web bands.}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.24\textwidth}
+  \includegraphics[width=\linewidth]{2D-F.png}
+  \caption{\tok{2D-F}: continuous box.}
+\end{subfigure}
+\caption{Station slices for two flapwise webs, families $A$--$D$
+(\code{examples/demos/figures/structural\_family\_grids/}).}
+\label{fig:x-families}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[t]{0.42\textwidth}
+  \includegraphics[width=\linewidth]{0A.png}
+  \caption{\tok{0A}: skin and cores only.}
+\end{subfigure}\hspace{1.2em}
+\begin{subfigure}[t]{0.42\textwidth}
+  \includegraphics[width=\linewidth]{0B.png}
+  \caption{\tok{0B}: skin plus one cap band.}
+\end{subfigure}
+\caption{Zero-web hosts. Both cores build \code{MultiCellSection} with empty
+webs; public tokens still require anchoring, e.g.\ \tok{0A-LC-0R}.}
+\label{fig:zero-web}
+\end{figure}
+
+\section{\texorpdfstring{$Y$}{Y} --- web orientation}
+\label{sec:y}
+
+\begin{itemize}[leftmargin=1.4em]
+\item \textbf{CN} (chord-normal): chord-normal in the \textbf{untwisted} section.
+\item \textbf{F} (flapwise): vertical in the \textbf{twisted} blade frame.
+\end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[t]{0.48\textwidth}
+  \includegraphics[width=\linewidth]{2D-CN.png}
+  \caption{\tok{2D-CN}: chord-normal webs.}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.48\textwidth}
+  \includegraphics[width=\linewidth]{2D-F.png}
+  \caption{\tok{2D-F}: flapwise webs.}
+\end{subfigure}
+\caption{Same two-web box family under the two orientations.}
+\label{fig:y-cn-f}
+\end{figure}
+
+\subsection{Implementation note (\texorpdfstring{$S$ / $B$}{S / B} frames)}
+
+\textbf{CN}: the web mid-surface runs chord-normal in the chord ($S$) frame
+before section twist.
+\textbf{F}: chord-frame \code{ShearWebComponent} uses tilted $S$-frame endpoints
+so that, after the section's global $+\mathrm{twist}$, the axis is $B$-frame
+vertical and meets the same rotated inner-skin clip as skin and caps
+(\code{MultiCellSection} flapwise branch --- not a \code{ShearWebComponent}
+counter-rotation).
+Spar-cap clipping follows the same chord-vertical vs parallel-strip logic as
+webs.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small, >=Latex]
+  % S frame
+  \begin{scope}
+    \draw[->] (-0.2,0) -- (3.6,0) node[right] {$x_S$ (chord)};
+    \draw[->] (0,-0.9) -- (0,1.4) node[above] {$y_S$};
+    \draw[thick] (0.15,0.35) .. controls (1.6,0.95) .. (3.3,0.15);
+    \draw[thick] (0.15,-0.25) .. controls (1.6,-0.75) .. (3.3,-0.10);
+    \draw[very thick, blue!60!black] (1.15,-0.55) -- (1.15,0.78);
+    \draw[very thick, blue!60!black] (2.15,-0.58) -- (2.15,0.62);
+    \node[below] at (1.8,-1.05) {\textbf{CN} in $S$ (untwisted)};
+    \node[font=\footnotesize] at (1.8,1.55) {chord-normal to $x_S$};
+  \end{scope}
+  % B frame
+  \begin{scope}[shift={(6.2,0)}]
+    \draw[->] (-0.2,0) -- (3.6,0) node[right] {$x_B$};
+    \draw[->] (0,-0.9) -- (0,1.4) node[above] {$y_B$ (flap)};
+    \begin{scope}[rotate=18]
+      \draw[thick] (0.15,0.35) .. controls (1.6,0.95) .. (3.3,0.15);
+      \draw[thick] (0.15,-0.25) .. controls (1.6,-0.75) .. (3.3,-0.10);
+    \end{scope}
+    \draw[very thick, red!65!black] (1.35,-0.72) -- (1.35,0.95);
+    \draw[very thick, red!65!black] (2.35,-0.68) -- (2.35,0.82);
+    \node[below] at (1.8,-1.05) {\textbf{F} in $B$ (twisted)};
+    \node[font=\footnotesize] at (1.8,1.55) {vertical after $+\mathrm{twist}$};
+  \end{scope}
+\end{tikzpicture}
+\caption{Orientation $Y$ is not interchangeable between frames: CN is
+chord-normal in the untwisted $S$ section; F is flapwise-vertical in the
+twisted $B$ blade frame.}
+\label{fig:s-b-frames}
+\end{figure}
+
+\section{\texorpdfstring{$Z$}{Z} --- web anchoring}
+\label{sec:z}
+
+The $Z$ letter is \tok{LC}, \tok{LE}, or \tok{PA}. Positions are authored in
+that mode's native unit (\code{web\_anchoring}). Let $c(z)$ be
+local chord, $c(0)$ the root chord, $s$ chord fraction from the leading edge,
+and $x$ blade-frame distance from the pitch axis (trailing edge positive).
+\begin{equation}
+s_k^{\mathrm{LC}}(z)=f_k\in(0,1),
+\qquad
+\xi_k^{\mathrm{LE}}=f_k\,c(0),
+\qquad
+x_k^{\mathrm{PA}}=\mathrm{const}.
+\label{eq:anchoring}
+\end{equation}
+Local-chord stations slide with $c(z)$. Leading-edge offsets are metres from
+the LE and are omitted when $\xi_k$ misses the inner skin. Pitch-axis webs
+are parallel to the pitch axis on the planform. Up to three primary slots are
+uniform interiors of the root band; extra slots continue that lattice (first
+extra at root TE):
+\begin{equation}
+\Delta x=\frac{x_{\mathrm{TE}}(0)-x_{\mathrm{LE}}(0)}{n_{\mathrm{pri}}+1},\quad
+x_i=x_{\mathrm{LE}}(0)+i\,\Delta x.
+\label{eq:pa-lattice}
+\end{equation}
+Primary and secondary bands exist only for PA. Catalogue registry:
+\code{catalogue/system\_layout.py}. Worked loft: example~09.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small, >=Latex, x=1.35cm, y=0.9cm]
+  \draw[thick] (0,0) -- (5.6,0) node[right] {TE};
+  \node[left] at (0,0) {LE};
+  \fill (1.85,0) circle (2.2pt);
+  \node[above] at (1.85,0.12) {pitch axis};
+  \foreach \i/\lab in {1/1, 2/2, 3/3} {
+    \draw[very thick, blue!60!black]
+      ({0.0 + \i*5.6/4}, -0.55) -- ({0.0 + \i*5.6/4}, 0.55);
+    \node[below, font=\footnotesize] at ({0.0 + \i*5.6/4}, -0.55) {$x_{\i}$};
+  }
+  \draw[<->] ({5.6/4}, -0.95) -- ({2*5.6/4}, -0.95)
+    node[midway, below, font=\footnotesize] {$\Delta x$};
+  \node[align=center, font=\footnotesize] at (2.8, 1.05)
+    {primary PA lattice on the root chord band, eq.~\eqref{eq:pa-lattice}};
+\end{tikzpicture}
+\caption{Three primary pitch-axis slots as uniform interiors of the root
+LE--TE band. Extra slots continue the same lattice (first extra at root TE).}
+\label{fig:pa-lattice}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[t]{0.32\textwidth}
+  \includegraphics[width=\linewidth]{2D-F-LC-10R/planform/structure.png}
+  \caption{\tok{2D-F-LC-10R}: local chord.}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.32\textwidth}
+  \includegraphics[width=\linewidth]{2D-F-LE-10R/planform/structure.png}
+  \caption{\tok{2D-F-LE-10R}: leading edge.}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.32\textwidth}
+  \includegraphics[width=\linewidth]{2D-F-PA-10R/planform/structure.png}
+  \caption{\tok{2D-F-PA-10R}: pitch axis.}
+\end{subfigure}
+\caption{Planform structure for the three anchoring letters $Z$ at fixed
+$W{=}2$, $X{=}\mathrm{D}$, $Y{=}\mathrm{F}$, $R{=}10$
+(example~09).}
+\label{fig:z-planforms}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{5D-F-PA-10R/full_blade/cutaway.png}
+\caption{Worked loft \tok{5D-F-PA-10R}: five-web box, flapwise, pitch-axis
+freeze, ten rib faces.}
+\label{fig:worked-5d}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[t]{0.48\textwidth}
+  \includegraphics[width=\linewidth]{2D-F-LC-0R/full_blade/cutaway.png}
+  \caption{\tok{2D-F-LC-0R}: no ribs.}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.48\textwidth}
+  \includegraphics[width=\linewidth]{2D-F-LC-10R/full_blade/cutaway.png}
+  \caption{\tok{2D-F-LC-10R}: ten rib faces.}
+\end{subfigure}
+\caption{Rib count $R$ at otherwise identical \tok{2D-F-LC} concepts.}
+\label{fig:ribs}
+\end{figure}
+
+\section{Layout registry (\texttt{resolve\_system\_type})}
+\label{sec:registry}
+
+Source of truth: \code{catalogue/system\_layout.py}
+(\code{SYSTEM\_TYPE\_KEYS}, \code{\_LAYOUT\_REGISTRY}). The cap-family letter
+of each key is taxonomy $X$ and matches \code{structural\_family} on the spec.
+
+\begin{itemize}[leftmargin=1.4em]
+\item \textbf{0-web cores:} only \tok{0A} and \tok{0B} (no orientation letter).
+  Public tokens still require anchoring: \tok{0A-LC-0R}, \tok{0A-LE-0R},
+  \tok{0A-LC-10R}. Both cores build \code{MultiCellSection} with empty webs
+  (family A / B). Catalogue field \code{geometry\_mode="zero\_web\_catalogue"}
+  is metadata only --- it does not select a separate host class.
+\item \textbf{No \tok{0C} / \tok{0D}:} $X=\mathrm{C}$ and $X=\mathrm{D}$ need
+  webs ($W\geq 1$).
+\item \textbf{Multicell cores:} for $W=1..5$, $X=\mathrm{A,B,C,D}$,
+  $Y=\mathrm{CN,F}$ --- all combinations except \tok{1D-CN} and \tok{1D-F}.
+\item Total: \textbf{40} orientation cores (\code{SYSTEM\_TYPE\_LAYOUT\_KEYS}
+  is those cores with \tok{-LC-0R}); \textbf{120} \code{SYSTEM\_TYPE\_KEYS}
+  (each core $\times$ $\{\mathrm{LC},\mathrm{LE},\mathrm{PA}\}$ $\times$
+  \tok{0R}). Other rib counts (\tok{-10R}) resolve but are not enumerated in
+  the 120.
+\end{itemize}
+
+\begin{table}[htbp]
+\centering
+\caption{Orientation-core coverage (40 cores). Struck cells are forbidden.}
+\label{tab:registry}
+\small
+\begin{tabular}{@{}c *{8}{c}@{}}
+\toprule
+$W$ & \tok{A-CN} & \tok{A-F} & \tok{B-CN} & \tok{B-F}
+    & \tok{C-CN} & \tok{C-F} & \tok{D-CN} & \tok{D-F} \\
+\midrule
+0 & \multicolumn{2}{c}{\tok{0A} (no $Y$)}
+  & \multicolumn{2}{c}{\tok{0B} (no $Y$)}
+  & \multicolumn{2}{c}{---}
+  & \multicolumn{2}{c}{---} \\
+1 & \tok{1A-CN} & \tok{1A-F} & \tok{1B-CN} & \tok{1B-F}
+  & \tok{1C-CN} & \tok{1C-F} & --- & --- \\
+2 & \tok{2A-CN} & \tok{2A-F} & \tok{2B-CN} & \tok{2B-F}
+  & \tok{2C-CN} & \tok{2C-F} & \tok{2D-CN} & \tok{2D-F} \\
+3 & \tok{3A-CN} & \tok{3A-F} & \tok{3B-CN} & \tok{3B-F}
+  & \tok{3C-CN} & \tok{3C-F} & \tok{3D-CN} & \tok{3D-F} \\
+4 & \tok{4A-CN} & \tok{4A-F} & \tok{4B-CN} & \tok{4B-F}
+  & \tok{4C-CN} & \tok{4C-F} & \tok{4D-CN} & \tok{4D-F} \\
+5 & \tok{5A-CN} & \tok{5A-F} & \tok{5B-CN} & \tok{5B-F}
+  & \tok{5C-CN} & \tok{5C-F} & \tok{5D-CN} & \tok{5D-F} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Spanwise step-down cascade}
+\label{sec:cascade}
+
+A token such as \tok{4D-F-PA-10R} is the \textbf{blade concept} (station $W/X/Y$,
+span $Z$, transverse $R$). Webs that no longer fit are \textbf{dropped}, not
+slid. The cut keeps that parent token on \code{SectionCut.layout}. Live web
+count ($W$) and cap family ($X$) are the \textbf{station slice}
+(\code{station\_webs}, \code{station\_family}); they are not a new concept.
+Display: \tok{4D-F-PA-10R | W=1 X=C dropped=(0,1,2)}.
+
+\code{effective\_layout\_for\_web\_count} / \code{step\_down\_cascade} return
+\textbf{assemble recipes} for that slice (how to place caps when $N$ webs
+survive). $Z$ and $R$ are copied from the parent; they are not rungs.
+
+\begin{table}[htbp]
+\centering
+\caption{Orientation cores by live web count and family (step-down rungs).}
+\label{tab:cascade-cores}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+$W$ (webs) & $X=\mathrm{A}$ & $X=\mathrm{B}$ & $X=\mathrm{C}$ & $X=\mathrm{D}$ \\
+\midrule
+5 & \tok{5A-CN} \tok{5A-F} & \tok{5B-CN} \tok{5B-F}
+  & \tok{5C-CN} \tok{5C-F} & \tok{5D-CN} \tok{5D-F} \\
+4 & \tok{4A-CN} \tok{4A-F} & \tok{4B-CN} \tok{4B-F}
+  & \tok{4C-CN} \tok{4C-F} & \tok{4D-CN} \tok{4D-F} \\
+3 & \tok{3A-CN} \tok{3A-F} & \tok{3B-CN} \tok{3B-F}
+  & \tok{3C-CN} \tok{3C-F} & \tok{3D-CN} \tok{3D-F} \\
+2 & \tok{2A-CN} \tok{2A-F} & \tok{2B-CN} \tok{2B-F}
+  & \tok{2C-CN} \tok{2C-F} & \tok{2D-CN} \tok{2D-F} \\
+1 & \tok{1A-CN} \tok{1A-F} & \tok{1B-CN} \tok{1B-F}
+  & \tok{1C-CN} \tok{1C-F} & --- (no \tok{1D}) \\
+0 & \tok{0A} & \tok{0B} & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$W/X$ floors at \textbf{one web}:
+\begin{verbatim}
+A:  nA -> ... -> 1A
+B:  nB -> ... -> 1B
+C:  nC -> ... -> 1C
+D:  nD -> ... -> 2D -> 1C
+\end{verbatim}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  font=\small\ttfamily,
+  node distance=0.55cm and 0.7cm,
+  rung/.style={draw, rounded corners=2pt, inner sep=4pt, minimum width=1.35cm},
+  arr/.style={-{Latex}, thick}
+]
+\node[rung] (d5) {5D};
+\node[rung, right=of d5] (d4) {4D};
+\node[rung, right=of d4] (d3) {3D};
+\node[rung, right=of d3] (d2) {2D};
+\node[rung, right=of d2, fill=black!8] (c1) {1C};
+\draw[arr] (d5) -- (d4);
+\draw[arr] (d4) -- (d3);
+\draw[arr] (d3) -- (d2);
+\draw[arr] (d2) -- (c1);
+\node[font=\small\rmfamily, below=0.45cm of d3, align=center]
+  {Family D hands to C at $W=1$. Orientation $Y$ is held.\\
+   \tok{0A}/\tok{0B} are selectable but not degradation targets.};
+\end{tikzpicture}
+\caption{Step-down cascade for family D. Families A--C floor at one web of the
+same letter.}
+\label{fig:cascade-d}
+\end{figure}
+
+\tok{0A} / \tok{0B} are selectable but not degradation targets. If no web can
+be anchored, \code{InfeasibleSection\-Geometry} is raised. Family \textbf{D}
+hands to \textbf{C} at $W=1$. Orientation $Y$ is held.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[t]{0.48\textwidth}
+  \includegraphics[width=\linewidth]{5D-F-PA-10R/cross_sections/01.png}
+  \caption{Inboard station: live $W$ still matches the parent.}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.48\textwidth}
+  \includegraphics[width=\linewidth]{5D-F-PA-10R/cross_sections/16.png}
+  \caption{Tipward station: webs that miss the inner skin are dropped.}
+\end{subfigure}
+\caption{Station slice versus concept token. The cut keeps parent
+\tok{5D-F-PA-10R} on \code{SectionCut.layout}; realised
+\code{station\_webs} / \code{station\_family} record the surviving recipe.
+Display form, e.g.\ \tok{4D-F-PA-10R | W=1 X=C dropped=(0,1,2)}.}
+\label{fig:station-slice}
+\end{figure}
+
+\section{Reference axes and kwargs (advanced)}
+\label{sec:axes}
+
+These axes are not interchangeable.
+
+\begin{table}[htbp]
+\centering
+\caption{Reference axes and loci.}
+\label{tab:axes}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{4.1cm}X@{}}
+\toprule
+Axis / locus & Role \\
+\midrule
+\textbf{Pitching axis} & Stacking / twist reference; often $\sim\tfrac13\cdot c$
+  from LE. Not elastic axis or shear centre. \\
+\textbf{Max-thickness locus} & Optional $Y=\mathrm{B}$ anchor from
+  sampled \code{thickness\_distribution} on \code{AirfoilSDF}. \\
+\textbf{Elastic / centroid / shear centre} & Not used for cap placement in v1. \\
+\textbf{Web-local reference} & $Y=\mathrm{C}$ caps centred on each web chord
+  station (SG-013). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{\texttt{structural\_family} behaviour.}
+\label{tab:family-kwargs}
+\begin{tabular}{@{}l L{0.62\textwidth}@{}}
+\toprule
+\code{structural\_family} & Behaviour \\
+\midrule
+\tok{"D"} \textit{(default)} & Continuous caps between outer webs \\
+\tok{"A"} & No spar-cap solids \\
+\tok{"B"} & One band; \code{fixed\_cap\_anchor} \\
+\tok{"C"} & Union of per-web bands \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Kwargs subset:
+\begin{itemize}[nosep,leftmargin=1.4em]
+\item \code{fixed\_cap\_anchor}
+\item \code{pitch\_fraction\_of\_chord\_from\_le}
+\item \code{fixed\_cap\_chord\_half\_width}
+\item \code{discrete\_cap\_chord\_half\_width}
+\end{itemize}
+
+Older docs used $Y=\mathrm{A/B/C}$ with $\mathrm{C}$ = box spar; the extended
+scheme uses $\mathrm{B}$/$\mathrm{C}$ for discrete patterns and $\mathrm{D}$
+for continuous box.
+
+\section{Downstream handoff}
+\label{sec:handoff}
+
+\begin{sloppypar}
+Gated midlines emit twisted \code{ShellMidlineStrip} polylines.
+Prefer \code{shell\_mesh\_inputs\_from\_geometry\_result}.
+Bind orders zones skin $\to$ caps $\to$ webs; do not assume
+\code{panels[i]} aligns with \code{midlines[i]} when both exist.
+\end{sloppypar}
+
+\section{Caveats (v1)}
+\label{sec:caveats}
+
+\begin{itemize}[leftmargin=1.4em]
+\item Cap placement is not from shear-centre or elastic-axis coordinates.
+\item Max-thickness anchor uses sampled \code{thickness\_distribution} only.
+\item \tok{0A} / \tok{0B} are zero-web hosts: skin $\pm$ caps midlines hand off
+  without web junctions.
+\end{itemize}
+
+\appendix
+\section{Demonstration map}
+\label{app:demo-map}
+
+Filled slots use existing example and demo figures, or TikZ redraws of
+schematics that the Markdown already states. Proposed rows are useful later
+demonstrations; they are not missing assets required to read this PDF.
+
+\begin{table}[htbp]
+\centering
+\caption{Figure and table slots.}
+\label{tab:demo-map}
+\small
+\begin{tabular}{@{}L{3.4cm} L{3.6cm} L{2.2cm} L{5.0cm}@{}}
+\toprule
+Slot & Where & Status & Asset or note \\
+\midrule
+Token decode & \S\,Token grammar & filled & Fig.~\ref{fig:token-decode} (TikZ) \\
+Token parts & intro & filled & Table~\ref{tab:parts} \\
+Families $A$--$D$ & \S\ref{sec:x} & filled & Fig.~\ref{fig:x-families}, Table~\ref{tab:x-families} \\
+Zero-web hosts & \S\ref{sec:x} & filled & Fig.~\ref{fig:zero-web} \\
+CN vs F stations & \S\ref{sec:y} & filled & Fig.~\ref{fig:y-cn-f} \\
+$S$ vs $B$ frames & \S\ref{sec:y} & filled & Fig.~\ref{fig:s-b-frames} (TikZ) \\
+Anchoring eqs.\ (1)--(2) & \S\ref{sec:z} & filled & display maths \\
+PA lattice & \S\ref{sec:z} & filled & Fig.~\ref{fig:pa-lattice} (TikZ) \\
+LC / LE / PA planforms & \S\ref{sec:z} & filled & Fig.~\ref{fig:z-planforms} \\
+Worked five-web loft & \S\ref{sec:z} & filled & Fig.~\ref{fig:worked-5d} \\
+Rib count $0R$ vs $10R$ & \S\ref{sec:z} & filled & Fig.~\ref{fig:ribs} \\
+Registry matrix & \S\ref{sec:registry} & filled & Table~\ref{tab:registry} \\
+Cascade $W\times X$ & \S\ref{sec:cascade} & filled & Table~\ref{tab:cascade-cores} \\
+Family D cascade & \S\ref{sec:cascade} & filled & Fig.~\ref{fig:cascade-d} (TikZ) \\
+Station slice vs token & \S\ref{sec:cascade} & filled & Fig.~\ref{fig:station-slice} \\
+Axes / kwargs & \S\ref{sec:axes} & filled & Tables~\ref{tab:axes}, \ref{tab:family-kwargs} \\
+\midrule
+Spanwise montage of drop events & cascade & proposed & full \code{cross\_sections/01}--\code{16} strip with dropped-index labels \\
+Annotated \tok{W=1 X=C} overlay & cascade & proposed & callout on a tip cut matching \tok{dropped=(0,1,2)} exactly \\
+LE miss / omit sequence & $Z=\mathrm{LE}$ & proposed & stations where $\xi_k$ leaves the inner skin \\
+Max-thickness $B$ anchor & \S\ref{sec:axes} & proposed & overlay of \code{thickness\_distribution} peak on a \tok{B} station \\
+Shell bind order & \S\ref{sec:handoff} & proposed & skin $\to$ caps $\to$ webs zone diagram \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

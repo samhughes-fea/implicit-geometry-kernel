@@ -9,6 +9,10 @@ same PR that finishes a step.
 
 ## Status (resume here)
 
+The architecture programme is **closed**. Steps 1–8 are done; step 9 was declined.
+Standing work is product/API/docs cleanup, demo ports onto the public entry points,
+and parked consumer items — not a new numbered step.
+
 Status keys are **Steps 1–9**. Phase numbers in the body are historical names for
 the same work; they are not extra steps.
 
@@ -33,7 +37,7 @@ the same work; they are not extra steps.
 | 4 | Sections assembled through `structure/` (`section/assembly/plan.py`, `members.py`) | Done (PR #7) |
 | 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **Done** — tagged `v0.5.0` |
 | 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | **Done.** Seams in this kernel; Gmsh and constitutive plies stay in consumers |
-| 7 | Completeness (Phase 5 list below) | **Done** (7.1–7.10). Mid-surface patches and optional STEP (`[cad]`) land with WP9 |
+| 7 | Completeness (Phase 5 list below) | **Done** (7.1–7.10). Mid-surface patches and optional STEP (`[cad]`) shipped |
 | 8 | Exactness (Phase 4 below). Tag 0.6.0 after mid-surface, plots extra, and alias removal | **Done.** Nose, insert polygons, PCHIP loft scalars, mid-surface field from `shell_graph`, plots extra, and 0.5.x alias removal |
 | 9 | Separate blade-model package | **Declined.** Consumers keep their own adapters |
 
@@ -42,7 +46,7 @@ Step 5 breakdown (Phase 2 complete; tagged `v0.5.0`):
 | Slice | What | State |
 |-------|------|-------|
 | Phase 1a/1b | One shape model: CSG shapes are `SDFNode` subclasses, compile step removed | Done (PR #8) |
-| Phase 1c | One Shapely gateway: `section/boundary/polygons.py` | Done (PR #9) |
+| Phase 1c | One polygon gateway: `section/boundary/polygons.py` (Shapely then; GEOS `PolygonOps` now) | Done (PR #9) |
 | `sdf/`, `integration/`, `frames/` | Move to the target tree | Done (PR #10, #11, #12) |
 | 5a | `props` → `properties`, `recipes` → `walls` | Done (PR #13) |
 | 5b | `constructive` into `boundary` and `properties` (`export.py` → `boundary/walls.py` and `cores.py`; `labels` and `emitters` → `boundary/`; `properties.py` → `properties/polygons.py`) | Done (PR #14) |
@@ -82,8 +86,8 @@ Decisions already made by the maintainer:
 - Public docs describe the three geometry products and roles. `src/` and `tests/`
   must not name consumer packages (`tests/test_consumer_names.py`). Scripts and
   `docs/FORK.md` may name checkouts.
-- Optional extra `[mesh]` (`gmsh`) is not advertised. `[cad]` / STEP patches wait
-  until after step 6.
+- Optional extra `[mesh]` (`gmsh`) is not advertised. `[cad]` / STEP patches shipped
+  after step 6.
 - 0.6.0 closes the deprecation window: mid-surface exactness, plots extra,
   alias removal. Maintainer tags it.
 
@@ -133,7 +137,7 @@ contract  <-  sdf / integration / frames  <-  structure  <-  catalogue  <-  sect
 
 Extras (`plotting` `[plots]`, `mesh` `[mesh]`, `blade.cad` `[cad]`, `profiling.py`)
 are not layers. Geometry modules must not import them. Consumers still own real
-Gmsh jobs; `mesh/gmsh_shell.py` is a convenience.
+Gmsh jobs; `mesh/gmsh/` is a convenience.
 
 - `catalogue/` holds WX-Y-Z-NR tokens; it imports only itself (and `contract`).
 - `structure/` defines what members exist (wall partitions, branches, regions,
@@ -238,14 +242,13 @@ After 5c and 5d. This is still part of step 5, not a new status row.
 
 ## Step 5 (continued): Phase 2d — one place per wall type
 
-Adding a member type should mean one module in `section/walls/` plus a registration,
-with no edits elsewhere. Today kinds are still found by string prefixes (`is_skin_label`,
-`startswith("shear_web_")`, `startswith("spar_cap")`) across `boundary/labels.py`,
-`boundary/walls.py`, `boundary/cores.py`, `boundary/emitters.py`, `assembly/multicell.py`,
-`midlines/export.py`, `properties/export_section_json.py` and `blade/cut.py`.
+**Done.** Station wall kinds dispatch on `SECTION_BUILDERS` (`on_shell_product`,
+`polygon_by_surface`). `StiffenerWall` is a registered constructive kind. Label
+helpers (`is_skin_label`) remain indexing, not a second kind registry.
 
-Phase 2d **extends** the existing `structure` builders and `SECTION_BUILDERS`. Do not
-add a second, parallel registry.
+Adding a member type means one module in `section/walls/` plus a registration,
+with no edits elsewhere. Phase 2d **extends** the existing `structure` builders
+and `SECTION_BUILDERS`. Do not add a second, parallel registry.
 
 ```python
 class WallType(Protocol):
@@ -325,8 +328,7 @@ Each gap is closed with a worked example and a test. Order of need:
 5. **Done.** Thickness fields over (z, s) with ply-drop ramps as geometry (law plus taper length).
 6. **Done.** Named key points (LE, TE, cap edges, web feet) at every station.
 7. **Done (OML).** Watertight OML surface mesh (STL/OBJ) from a quad span grid.
-   Mid-surface patches per member and optional STEP behind `[cad]` wait until
-   after step 6.
+   Mid-surface patches per member and optional STEP behind `[cad]` shipped.
 8. **Done.** Point queries: thickness, member and local frame at any 3-D point; distance
    to the OML; batched.
 9. **Done.** Planform plus airfoil CSV reader and a windIO writer so a geometry round-trips.
@@ -349,6 +351,19 @@ reference. Golden numbers are regenerated in these PRs with the change stated.
 | Loft scalars | chord, twist, pitch axis, offset linear between stations | **Done.** optional PCHIP (monotone, no overshoot); airfoils stay linear blends | reference planforms match their tables with smooth first derivatives |
 
 Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays.
+
+## Standing work (not new steps)
+
+- Port older `examples/demos/` scripts onto `SectionSpec` / `SectionGeometry` /
+  `BladeGeometry` / `shell_graph`. Do not delete the gallery (decision 3).
+- Do not advertise `[mesh]` (`gmsh`). Consumers own mesher jobs and ply ABD/PCOMP.
+- Parked shell-graph items stay parked: G10 (thin-wall adapter, other repo),
+  G11 (PCOMP), TE classifier on OML only, no BVH, no `T` taper, no cores on
+  `shell_graph` unless a shell consumer needs them
+  ([MERGED_SHELL_GAPS](section/reports/MERGED_SHELL_GAPS.md)).
+- Mapped loft freeze: loft webs follow intercept `DroppedWeb.index`; no
+  per-blade branches in loft code ([blade bug log](blade/bug_log.md)).
+- Efficiency track parked ([PERFORMANCE_WORK_SUMMARY](section/reports/PERFORMANCE_WORK_SUMMARY.md)).
 
 ## Risks
 

@@ -44,7 +44,7 @@ flowchart TB
   blade[blade]
   extract[extract]
   plotting[plotting]
-  mesh[mesh]
+  meshPkg[mesh]
   cad[blade.cad]
   sdf --> structure
   frames --> section
@@ -57,7 +57,7 @@ flowchart TB
   sdf --> blade
   blade --> extract
   plotting -.->|plots extra| section
-  extract -.->|mesh extra| mesh
+  blade -.->|mesh extra| meshPkg
   blade -.->|cad extra| cad
 ```
 

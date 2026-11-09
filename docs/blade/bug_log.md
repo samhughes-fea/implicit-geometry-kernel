@@ -12,7 +12,7 @@ Each entry records the **symptom**, **evidence**, **root cause**, and
 **Identifiers.** `BG-nnn` here. Independent of `SG-nnn`
 ([`section/bug_log.md`](../section/bug_log.md)) and repo-root `BL-nnn`.
 
-**Reference cases.** Example 09 catalogue keys on the synthetic 20 m planform
+**Reference cases.** Example 09 catalogue keys on the synthetic 12 m planform
 (`4D-F-PA-10R` for PA freeze). windIO: IEA 15 / 3.4 / 10 / 22, NREL 5 MW from
 `reference_blades/` (example 08). Tests: [`tests/test_shell_topology.py`](../../tests/test_shell_topology.py),
 [`tests/test_reference_transition.py`](../../tests/test_reference_transition.py),
@@ -55,8 +55,9 @@ the PA blade-x freeze. `test_09_pa_4d_loft_tracks_pitch_offset_not_catalogue`.
 **Root cause.** Loft anchors used the layout token as a chord-fraction table
 rather than the metre freeze (PA blade-x / LE offset).
 
-**Fix.** PA is hard-coded blade-x about the pitch axis (primary in the root
-band, secondary on the TE shelf). Labels keep authored indices.
+**Fix.** PA is hard-coded blade-x about the pitch axis (uniform interiors of
+the root band; extra webs continue that lattice). Labels keep authored
+indices.
 
 **Verification.** `test_09_pa_4d_loft_tracks_pitch_offset_not_catalogue`,
 `test_09_pa_4d_loft_keeps_live_webs_on_cylinder`. **Fixed.**

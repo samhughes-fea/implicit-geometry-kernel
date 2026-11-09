@@ -89,7 +89,7 @@ Public attributes on a built `BladeGeometry`:
 - `web_offsets` — LE freeze, metres from the leading edge, or `None`
 - `transverse`, `stringers`, `ply_drops` — frozen member tuples
 - `region_graph` — keyed `WallRegionGraph` ([`blade/topology.py`](../../src/implicit_geometry_kernel/blade/topology.py))
-- `n_airfoil_points`, `span_kind`, `merge_cap_and_skin`
+- `n_airfoil_points`, `merge_cap_and_skin`
 
 `Station` fields: `z`, `chord`, `airfoil`, `twist`, `pitch_axis`, `offset`.
 
@@ -147,14 +147,13 @@ x_k^{\mathrm{PA}}=\mathrm{const}.
 \tag{1}
 $$
 
-Pitch-axis webs are parallel to the pitch axis. Primary slots occupy the root
-chord band about the pitch axis; secondary slots occupy the trailing-edge shelf
-that opens at maximum chord:
+Pitch-axis webs are parallel to the pitch axis. Up to three primary slots are
+uniform interiors of the root chord band; extra slots continue that lattice
+(first extra at root TE):
 
 $$
-x^{\mathrm{pri}}\in\bigl[x_{\mathrm{LE}}(0),\,x_{\mathrm{TE}}(0)\bigr],
-\qquad
-x^{\mathrm{sec}}\in\bigl[x_{\mathrm{TE}}(0),\,x_{\mathrm{TE}}(z_{c,\max})\bigr].
+\Delta x=\frac{x_{\mathrm{TE}}(0)-x_{\mathrm{LE}}(0)}{n_{\mathrm{pri}}+1},\quad
+x_i=x_{\mathrm{LE}}(0)+i\,\Delta x.
 \tag{2}
 $$
 
@@ -187,7 +186,7 @@ Public names: [glossary](../glossary.md) (loft group). On this package:
 | [02_web_placement](../../examples/blade/02_web_placement/) | Chord fractions versus offsets; dropped webs |
 | [03_airfoils_and_root_transition](../../examples/blade/03_airfoils_and_root_transition/) | NACA, ellipse, flatback; circular root |
 | [04_airfoil_families](../../examples/blade/04_airfoil_families/) | CST, \(t/c\) family, NACA 5/6 |
-| [05_pchip_span](../../examples/blade/05_pchip_span/) | Linear vs PCHIP (`TableLaw`, station chord/twist/offset) |
+| [05_span_laws](../../examples/blade/05_span_laws/) | Linear `TableLaw` and `PlyDrop` ramps |
 | [06_blade_queries](../../examples/blade/06_blade_queries/) | Thickness field, batched query, validate |
 | [07_mid_surfaces](../../examples/blade/07_mid_surfaces/) | Lofted mid-surface OBJ next to the OML |
 | [08_reference_blades](../../examples/blade/08_reference_blades/) | windIO 2.0 blades |

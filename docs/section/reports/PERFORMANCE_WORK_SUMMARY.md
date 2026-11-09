@@ -290,10 +290,11 @@ From the repository root (PowerShell):
 ```powershell
 $env:SECTION_GEOMETRY_PROFILE="1"
 python -c "
-from implicit_geometry_kernel.section.api.factory import build_section_view, resolve_system_type
+from implicit_geometry_kernel.section.assembly import build_section_view
+from implicit_geometry_kernel.catalogue import resolve_system_type
 from implicit_geometry_kernel.section.properties.compute import compute_section_properties
 from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.profiling import reset_stats
 
 airfoil = AirfoilSDF.from_naca('2412', n_points=120, chord=1.0)
@@ -471,7 +472,7 @@ are unchanged (laminate/FI-only trials).
 | — topology_cap_web | 0.008 |
 
 Post-E2, **assemble** dominates; topology is no longer the G7 ~50 ms hotspot.
-**E4 (Shapely cavity/union reuse) skipped** — props/`constructive_s` are not the top stages.
+**E4 (GEOS cavity/union reuse) skipped** — props/`constructive_s` are not the top stages.
 
 <a id="phase-13"></a>
 ## Phase 13 — Assemble substages + batched cap feasibility (A1–A2)
@@ -502,7 +503,7 @@ Family-D flapwise strip endpoints also batch via `inner_y_at_xs`.
 | — topology_split | 0.001 |
 
 Assemble is no longer the wall (~8× down from Phase 12). Topology and properties
-are now co-leading (~8 ms each). **Shapely cavity/`unary_union` reuse still not
+are now co-leading (~8 ms each). **GEOS cavity/`unary_union` reuse still not
 justified** (props remain constructive/hybrid shoelace, not a multi-union spike).
 
 <a id="phase-14"></a>
@@ -565,7 +566,7 @@ Emit Booleans are no longer the bulk of `properties_constructive` (~4–5 ms e
 substages vs ~6 ms total including shoelace/filter). **Next candidate if sizing
 still wall-bound:** laminate polygon construction cost inside `emit_laminates`
 and/or shoelace in `section_properties_from_polygons` — not further union collapse.
-Shapely remains.
+Constructive overlay is GEOS (`PolygonOps`), not Shapely.
 
 <a id="phase-16"></a>
 ## Phase 16 — Shoelace vs laminate split + shared deeper offset (P1–P2)
@@ -608,8 +609,7 @@ track parked** pending evidence that BSP sizing is still wall-bound on geometry
 7. ~~Constructive emit substages + shared cavity/unions~~ **Done (Phase 15).**
 8. ~~Shoelace vs laminate split + shared deeper offset~~ **Done (Phase 16).**
 9. ~~Docs closeout (efficiency review index + README profile note)~~ **Done.**
-10. **Efficiency track parked.** Ship Phases 12–16 as conventional-commit PRs when
-    asked (split listed in
-    section_geometry_efficiency_review.md).
+10. **Efficiency track parked.** Prefer product/API/docs cleanup and gallery
+    ports onto `SectionSpec` / `SectionGeometry` / `BladeGeometry` / `shell_graph`.
 11. Resume geometry perf only with BSP evidence that cache misses / rebuilds
     dominate sizing wall time — then profile hit rate, not emit Booleans.

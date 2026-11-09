@@ -1,3 +1,12 @@
+# LaTeX build artefacts for printable docs companions
+docs/**/*.aux
+docs/**/*.log
+docs/**/*.toc
+docs/**/*.out
+docs/**/*.fls
+docs/**/*.fdb_latexmk
+docs/**/*.synctex.gz
+
 # Private blade catalogue: clone locally, never commit (see that repo's README).
 /reference_blades/
 

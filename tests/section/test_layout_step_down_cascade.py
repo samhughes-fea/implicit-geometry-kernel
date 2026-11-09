@@ -2,7 +2,7 @@
 
 Web positions are anchored spanwise, so a tapering section eventually stops
 being able to carry every web. ``effective_layout_for_web_count`` maps the
-surviving count back onto a catalogue layout.
+surviving count onto an assemble recipe (live W and X), not a new blade concept.
 
 The rule is family-general: keep the parent family and orientation where the
 catalogue defines that web count, otherwise fall to the next less-elaborate

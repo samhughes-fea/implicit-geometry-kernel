@@ -1,8 +1,9 @@
 """Assemble fail-closed: requested webs and cap rule must match.
 
-``resolve_station_layout`` may step ``2D-F`` → ``1C-F`` when webs drop.
-``MultiCellSection`` must *not* silently shrink the web set while keeping a
-``continuous_box`` rule (illegal 1D → ``None`` caps → twist ``AttributeError``).
+``resolve_station_layout`` may assemble a ``1C`` **recipe** when a ``2D`` concept
+drops to one web. ``MultiCellSection`` must *not* silently shrink the web set
+while keeping a ``continuous_box`` rule (illegal 1D → ``None`` caps → twist
+``AttributeError``). The cut still names the parent concept.
 """
 
 from __future__ import annotations
@@ -67,7 +68,7 @@ def test_partial_web_drop_at_assemble_raises_not_attribute_error():
 
 
 def test_resolve_then_assemble_1c_succeeds_with_non_none_components():
-    """After resolve steps to 1C-F, assemble with frozen anchors is legal."""
+    """After resolve uses a 1C assemble recipe, frozen anchors are legal."""
     chord = 0.1353
     af = _naca_chord(chord)
     xs = _anchored_2d_f()

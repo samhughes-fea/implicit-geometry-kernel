@@ -145,13 +145,19 @@ taxonomy **X** and matches `structural_family` on the spec.
 ## Spanwise step-down cascade
 
 Construction narrative: [station layout](../../section/layout/README.md).
-Cascade identity: [catalogue](../../catalogue/README.md).
+Assemble recipes: [catalogue](../../catalogue/README.md).
 
-Web positions are anchored spanwise; webs that no longer fit are **dropped**,
-not slid. `effective_layout_for_web_count` / `step_down_cascade` live in
-`catalogue/system_layout.py`.
+A token such as `4D-F-PA-10R` is the **blade concept** (station W/X/Y, span Z,
+transverse R). Webs that no longer fit are **dropped**, not slid. The cut keeps
+that parent token on `SectionCut.layout`. Live web count (W) and cap family (X)
+are the **station slice** (`station_webs`, `station_family`); they are not a
+new concept. Display: `4D-F-PA-10R | W=1 X=C dropped=(0,1,2)`.
 
-| X (webs) | Y = A | Y = B | Y = C | Y = D |
+`effective_layout_for_web_count` / `step_down_cascade` return **assemble
+recipes** for that slice (how to place caps when N webs survive). Z and R are
+copied from the parent; they are not rungs.
+
+| W (webs) | X = A | X = B | X = C | X = D |
 |---|---|---|---|---|
 | 5 | `5A-CN` `5A-F` | `5B-CN` `5B-F` | `5C-CN` `5C-F` | `5D-CN` `5D-F` |
 | 4 | `4A-CN` `4A-F` | `4B-CN` `4B-F` | `4C-CN` `4C-F` | `4D-CN` `4D-F` |
@@ -160,18 +166,18 @@ not slid. `effective_layout_for_web_count` / `step_down_cascade` live in
 | 1 | `1A-CN` `1A-F` | `1B-CN` `1B-F` | `1C-CN` `1C-F` | — (no `1D`) |
 | 0 | `0A` | `0B` | — | — |
 
-Cascade floors at **X = 1**:
+W/X floors at **one web**:
 
 ```text
-A:  nA-Z → … → 1A-Z
-B:  nB-Z → … → 1B-Z
-C:  nC-Z → … → 1C-Z
-D:  nD-Z → … → 2D-Z → 1C-Z
+A:  nA → … → 1A
+B:  nB → … → 1B
+C:  nC → … → 1C
+D:  nD → … → 2D → 1C
 ```
 
 `0A` / `0B` are selectable but not degradation targets. If no web can be
-anchored, `InfeasibleSectionGeometry` is raised. **Y = D** hands to **Y = C**
-at **X = 1**. Orientation **Z** is carried until **X = 0**.
+anchored, `InfeasibleSectionGeometry` is raised. Family **D** hands to **C**
+at W = 1. Orientation Y is held.
 
 ---
 

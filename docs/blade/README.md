@@ -93,7 +93,8 @@ Public attributes on a built `BladeGeometry`:
 
 `Station` fields: `z`, `chord`, `airfoil`, `twist`, `pitch_axis`, `offset`.
 
-`SectionCut` fields: `z`, `chord`, `twist`, `pitch_axis`, `offset`, `layout`,
+`SectionCut` fields: `z`, `chord`, `twist`, `pitch_axis`, `offset`, `layout`
+(authored concept token), `station_webs`, `station_family` (realised W and X),
 `walls`, `cells`, `dropped_webs`, `dropped_web_indices`, `transverse`,
 `stringers`, `host`, `scale`. `host` is the station `SectionMidlineHost`
 (usually a `MultiCellSection`).

@@ -177,11 +177,15 @@ class LoftCutMixin:
         dropped_idx = tuple(
             int(idx) for d in resolution.dropped if (idx := getattr(d, "index", None)) is not None
         )
-        key = getattr(resolution.layout, "catalogue_key", None) or self.layout
+        recipe = resolution.layout
+        n_live = int(getattr(recipe, "n_webs", 0) or len(resolution.web_indices))
+        fam = str(getattr(recipe, "structural_family", None) or "")
         cut = SectionCut(
-            z, chord, twist, pitch, (float(offset[0]), float(offset[1])), str(key), tuple(walls), cells,
+            z, chord, twist, pitch, (float(offset[0]), float(offset[1])), str(self.layout), tuple(walls), cells,
             dropped, self._transverse_at(z), self._stringers_at(z), result.section, k,
             dropped_web_indices=dropped_idx,
+            station_webs=n_live,
+            station_family=fam,
         )
         if self.merge_cap_and_skin:
             from implicit_geometry_kernel.blade.shell_graph import shell_strips_from_graph

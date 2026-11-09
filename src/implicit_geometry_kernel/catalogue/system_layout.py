@@ -240,11 +240,12 @@ def family_min_webs(family: str) -> int:
 def effective_layout_for_web_count(
     layout: SystemLayoutSpec, n_webs: int
 ) -> SystemLayoutSpec:
-    """The layout a section actually realises when only ``n_webs`` survive.
+    """Assemble recipe for a station that can carry only ``n_webs``.
 
-    Web positions are anchored spanwise, so as the section shrinks it stops
-    being able to carry every web. This maps the surviving count back onto a
-    catalogue layout, stepping **down** only.
+    Not a new blade concept: span freeze (Z) and rib count (R) stay on the
+    parent token. Web positions are anchored spanwise, so as the section shrinks
+    it stops being able to carry every web. This maps the surviving count onto
+    a catalogue W/X slice, stepping **down** only.
 
     The rule is family-general: keep the parent family and orientation where the
     catalogue defines that web count, otherwise fall to the next less-elaborate
@@ -361,11 +362,11 @@ def layout_without_spar_caps(layout: SystemLayoutSpec) -> SystemLayoutSpec:
 
 
 def step_down_cascade(layout: SystemLayoutSpec) -> tuple[str, ...]:
-    """Full ladder of layout keys from ``layout`` down to its terminal rung.
+    """Full ladder of **assemble-recipe** keys from ``layout`` down to its floor.
 
-    Floors at one web — see :func:`effective_layout_for_web_count` for why zero
-    is an infeasibility rather than a rung. A layout that already has no webs
-    is its own terminal rung and yields a single-entry ladder.
+    These tokens name station W/X slices (with parent Z and R copied), not new
+    blade concepts. Floors at one web — see :func:`effective_layout_for_web_count`.
+    A layout that already has no webs is its own terminal rung.
     """
     floor = 1 if int(layout.n_webs) >= 1 else 0
     return tuple(

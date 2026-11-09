@@ -81,7 +81,13 @@ class CellPolygon:
 
 @dataclass(frozen=True)
 class SectionCut:
-    """The section of a ``BladeGeometry`` at span position ``z``."""
+    """The section of a ``BladeGeometry`` at span position ``z``.
+
+    ``layout`` is the authored **concept** token (W/X/Y, span Z, transverse R).
+    Webs that no longer fit are listed on ``dropped_web_indices``; the realised
+    station slice is ``station_webs`` (W) and ``station_family`` (X). Those two
+    are not a new catalogue token.
+    """
 
     z: float
     chord: float
@@ -97,6 +103,8 @@ class SectionCut:
     host: Any = field(default=None, repr=False, compare=False)
     scale: float = 1.0
     dropped_web_indices: Tuple[int, ...] = ()
+    station_webs: int = 0
+    station_family: str = ""
 
     def wall(self, label: str) -> SectionWall:
         for w in self.walls:

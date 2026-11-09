@@ -35,7 +35,9 @@ slots sit in the TE growth shelf ``[x_TE(root), x_TE(max_chord)]``. Give
 ``web_positions`` (chord fractions) or ``web_offsets`` (metres from the leading
 edge) to override. Webs that do not intercept a station are omitted (same
 index may seed later) rather than slid, and ``SectionCut.dropped_webs`` lists
-them. Loft identity follows the same metre laws (not catalogue LC fractions),
+them. ``SectionCut.layout`` stays the authored concept; ``station_webs`` /
+``station_family`` are the realised W/X slice. Loft identity follows the same
+metre laws (not catalogue LC fractions),
 so a PA web walks with the pitch axis until that intercept fails.
 """
 

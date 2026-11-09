@@ -159,6 +159,7 @@ def test_nominal_layout_is_retained_for_comparison():
     )
 
     assert res.nominal_layout.key == "5D-F-LC-0R"
+    assert res.concept_key == "5D-F-LC-0R"
     assert res.layout.key == "1C-F-LC-0R"
     assert res.stepped_down is True
     lost = {d.index for d in res.dropped}

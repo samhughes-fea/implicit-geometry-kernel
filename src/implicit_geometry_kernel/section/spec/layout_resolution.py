@@ -137,7 +137,11 @@ def resolve_web_x_positions(
 
 @dataclass(frozen=True)
 class StationLayoutResolution:
-    """What a station actually builds, once webs that do not fit are dropped."""
+    """What a station actually builds, once webs that do not fit are dropped.
+
+    ``nominal_layout`` / ``concept_key`` are the authored concept.
+    ``layout`` is the assemble recipe (live web count and cap family).
+    """
 
     layout: SectionLayout
     web_x_positions_m: tuple[float, ...]
@@ -145,6 +149,13 @@ class StationLayoutResolution:
     nominal_layout: SectionLayout
     web_y_coords: tuple[tuple[float, float], ...] = ()
     web_indices: tuple[int, ...] = ()
+
+    @property
+    def concept_key(self) -> str | None:
+        """Authored catalogue token. ``layout.key`` is the assemble recipe after drop."""
+        return getattr(self.nominal_layout, "catalogue_key", None) or getattr(
+            self.nominal_layout, "key", None
+        )
 
     @property
     def stepped_down(self) -> bool:

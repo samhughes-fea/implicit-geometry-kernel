@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/dual_rep_consistency_demo.py
+examples/demos/section/dual_rep_consistency_demo.py
 =====================================
 Computational-geometry demo: constructive vs residual-φ consistency.
 
@@ -16,7 +16,7 @@ Writes:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/dual_rep_consistency_demo.py
+    python examples/demos/section/dual_rep_consistency_demo.py
 """
 
 from __future__ import annotations

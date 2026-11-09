@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/constructive_vs_quadtree_spike.py
+examples/demos/section/constructive_vs_quadtree_spike.py
 =========================================
 WP1 spike: constructive wall-solid polygons + shoelace vs full-label quadtree.
 
@@ -7,7 +7,7 @@ Reports emit/shoelace timings and per-label area errors for 2D-CN NACA 2412.
 Naive buffer is not used — emitters are recipe-faithful (WP2).
 
 Run from repository root:
-    python examples/demos/section_geometry/constructive_vs_quadtree_spike.py
+    python examples/demos/section/constructive_vs_quadtree_spike.py
 """
 
 from __future__ import annotations

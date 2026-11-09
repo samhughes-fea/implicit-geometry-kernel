@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/thickness_as_field_offset_demo.py
+examples/demos/section/thickness_as_field_offset_demo.py
 ==========================================
 Wall thickness is a field operation, not a mesh operation.
 
@@ -24,7 +24,7 @@ Writes under ``examples/demos/figures/thickness_as_field_offset/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/thickness_as_field_offset_demo.py
+    python examples/demos/section/thickness_as_field_offset_demo.py
 """
 
 from __future__ import annotations

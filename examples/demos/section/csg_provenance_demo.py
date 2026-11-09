@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/csg_provenance_demo.py
+examples/demos/section/csg_provenance_demo.py
 ===============================
 Demonstrate implicit-CSG component interactions via distance-field diagnostics.
 

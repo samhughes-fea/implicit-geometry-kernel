@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/thin_feature_robustness_demo.py
+examples/demos/section/thin_feature_robustness_demo.py
 ========================================
 Computational-geometry demo: knife-edge web capsules under twist.
 
@@ -18,7 +18,7 @@ Writes:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/thin_feature_robustness_demo.py
+    python examples/demos/section/thin_feature_robustness_demo.py
 """
 
 from __future__ import annotations

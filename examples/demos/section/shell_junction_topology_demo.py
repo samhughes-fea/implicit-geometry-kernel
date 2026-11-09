@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/shell_junction_topology_demo.py
+examples/demos/section/shell_junction_topology_demo.py
 =======================================
 Demonstrate constructive shell midline junction topology.
 
@@ -13,7 +13,7 @@ cap-web T-junction vertices). Writes:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/shell_junction_topology_demo.py
+    python examples/demos/section/shell_junction_topology_demo.py
 
 Outputs default to ``examples/demos/figures/shell_junction_topology/``.
 """

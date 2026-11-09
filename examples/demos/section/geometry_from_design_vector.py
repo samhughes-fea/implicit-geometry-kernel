@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/geometry_from_design_vector.py
+examples/demos/section/geometry_from_design_vector.py
 =======================================
 Build and plot 2-D section **computational geometry** from wall thicknesses
 and layout only — no structural / aerodynamic solves.
@@ -12,7 +12,7 @@ Design-like inputs (all lengths in metres unless noted):
 
 Run (any working directory; path is resolved from this file)::
 
-    python examples/demos/section_geometry/geometry_from_design_vector.py --help
+    python examples/demos/section/geometry_from_design_vector.py --help
 
 Or install once from the repo root: ``pip install -e .``
 

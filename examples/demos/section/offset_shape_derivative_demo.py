@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/offset_shape_derivative_demo.py
+examples/demos/section/offset_shape_derivative_demo.py
 ===================================================
 The derivative the field gives for free: d/dt of an offset is a boundary integral.
 
@@ -33,7 +33,7 @@ Writes under ``examples/demos/figures/offset_shape_derivative/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/offset_shape_derivative_demo.py --presentation
+    python examples/demos/section/offset_shape_derivative_demo.py --presentation
 """
 
 from __future__ import annotations

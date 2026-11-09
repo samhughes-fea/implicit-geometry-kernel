@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/topology_twist_stability_demo.py
+examples/demos/section/topology_twist_stability_demo.py
 =========================================
 Computational-geometry demo: shell topology stability under twist.
 
@@ -18,7 +18,7 @@ Writes:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/topology_twist_stability_demo.py
+    python examples/demos/section/topology_twist_stability_demo.py
 """
 
 from __future__ import annotations

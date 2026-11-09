@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/le_te_exactness_demo.py
+examples/demos/section/le_te_exactness_demo.py
 ================================
 Demonstrate LE/TE geometric exactness of the implicit / constructive kernel.
 
@@ -13,7 +13,7 @@ Shows:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/le_te_exactness_demo.py
+    python examples/demos/section/le_te_exactness_demo.py
 
 Outputs default to ``examples/demos/figures/le_te_exactness/``.
 """

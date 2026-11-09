@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/csg_tree_diff_demo.py
+examples/demos/section/csg_tree_diff_demo.py
 =========================================
 Diff two design vectors by comparing their CSG expression trees.
 
@@ -17,7 +17,7 @@ Writes under examples/demos/figures/csg_tree_diff/:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/csg_tree_diff_demo.py --presentation
+    python examples/demos/section/csg_tree_diff_demo.py --presentation
 """
 
 from __future__ import annotations

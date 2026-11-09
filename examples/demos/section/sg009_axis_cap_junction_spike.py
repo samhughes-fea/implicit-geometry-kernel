@@ -14,7 +14,7 @@ Expect ~0 nm after SG-005 / SG-007 / SG-009. See docs/reports/SG009_JUNCTION_PRI
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/sg009_axis_cap_junction_spike.py
+    python examples/demos/section/sg009_axis_cap_junction_spike.py
 """
 
 from __future__ import annotations

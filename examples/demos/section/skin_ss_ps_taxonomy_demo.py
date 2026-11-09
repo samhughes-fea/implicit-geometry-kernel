@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/skin_ss_ps_taxonomy_demo.py
+examples/demos/section/skin_ss_ps_taxonomy_demo.py
 ====================================
 Demonstrate nested outer-skin taxonomy: suction/pressure solids and
 leading_edge / bay / trailing_edge arcs.
@@ -12,7 +12,7 @@ Writes:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/skin_ss_ps_taxonomy_demo.py
+    python examples/demos/section/skin_ss_ps_taxonomy_demo.py
 """
 
 from __future__ import annotations

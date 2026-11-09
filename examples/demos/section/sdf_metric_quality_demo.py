@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/sdf_metric_quality_demo.py
+examples/demos/section/sdf_metric_quality_demo.py
 ===================================
 Computational-geometry demo: metric SDF quality and CSG-seam ridges.
 
@@ -19,7 +19,7 @@ Writes:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/sdf_metric_quality_demo.py
+    python examples/demos/section/sdf_metric_quality_demo.py
 """
 
 from __future__ import annotations

@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/cell_wall_loops_demo.py
+examples/demos/section/cell_wall_loops_demo.py
 =====================================
 Plot constructive cell-wall loops on NACA midlines (0…5 webs).
 
@@ -13,7 +13,7 @@ Builds ``MultiCellSection``, exports B-frame midline strips, then
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/cell_wall_loops_demo.py
+    python examples/demos/section/cell_wall_loops_demo.py
 
 Outputs default to ``examples/demos/figures/cell_wall_loops/``.
 """

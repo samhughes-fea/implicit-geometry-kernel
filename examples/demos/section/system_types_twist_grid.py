@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/system_types_twist_grid.py
+examples/demos/section/system_types_twist_grid.py
 ===================================
 Visualise section geometry on a **3×4** grid (**chord-fraction presets** × **1…4 webs**)
 and **two** web-alignment panels (**chord-normal** vs **flapwise**) at a fixed twist (default 20°).
@@ -22,7 +22,7 @@ Chord-fraction presets (columns A / B / C — web positions, LE → TE)
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/system_types_twist_grid.py --out-dir outputs/system_types_twist20
+    python examples/demos/section/system_types_twist_grid.py --out-dir outputs/system_types_twist20
 
 Writes ``system_types_grid_summary.json`` and, by default, one ``sections/<alignment>_<A|B|C>_n<k>.json``
 per subplot (section properties, airfoil vertices; use ``--with-contours`` for φ=0 polylines — slower).

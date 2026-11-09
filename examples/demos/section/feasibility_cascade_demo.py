@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/feasibility_cascade_demo.py
+examples/demos/section/feasibility_cascade_demo.py
 ===============================================
 What the package does when a layout cannot fit: drop → step down → raise.
 
@@ -21,7 +21,7 @@ Writes under ``examples/demos/figures/feasibility_cascade/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/feasibility_cascade_demo.py --presentation
+    python examples/demos/section/feasibility_cascade_demo.py --presentation
 """
 
 from __future__ import annotations

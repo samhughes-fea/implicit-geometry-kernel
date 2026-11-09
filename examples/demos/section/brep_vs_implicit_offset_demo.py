@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/brep_vs_implicit_offset_demo.py
+examples/demos/section/brep_vs_implicit_offset_demo.py
 ===================================================
 Why the representation was changed: what an inward offset costs each way.
 
@@ -36,7 +36,7 @@ Writes under ``examples/demos/figures/brep_vs_implicit_offset/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/brep_vs_implicit_offset_demo.py
+    python examples/demos/section/brep_vs_implicit_offset_demo.py
 """
 
 from __future__ import annotations

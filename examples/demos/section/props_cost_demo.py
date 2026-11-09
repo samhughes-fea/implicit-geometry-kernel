@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/props_cost_demo.py
+examples/demos/section/props_cost_demo.py
 ===========================
 Section-property backends: wall time vs accuracy (Pareto).
 
@@ -17,7 +17,7 @@ Writes:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/props_cost_demo.py
+    python examples/demos/section/props_cost_demo.py
 """
 
 from __future__ import annotations

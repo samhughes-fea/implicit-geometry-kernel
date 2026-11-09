@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/evaluation_cost_pruning_demo.py
+examples/demos/section/evaluation_cost_pruning_demo.py
 ========================================
 Why the implicit path is cheap: shared subtrees and analytic support boxes.
 
@@ -29,7 +29,7 @@ Writes under ``examples/demos/figures/evaluation_cost_pruning/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/evaluation_cost_pruning_demo.py
+    python examples/demos/section/evaluation_cost_pruning_demo.py
 """
 
 from __future__ import annotations

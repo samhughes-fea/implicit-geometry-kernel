@@ -13,7 +13,7 @@ Gallery tiles from structural_family_grids_demo.py stay legend-less.
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/anatomy_2d_f_demo.py
+    python examples/demos/section/anatomy_2d_f_demo.py
 """
 
 from __future__ import annotations

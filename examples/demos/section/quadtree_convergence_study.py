@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/quadtree_convergence_study.py
+examples/demos/section/quadtree_convergence_study.py
 ======================================
 Quadtree depth / section-property convergence study.
 
@@ -13,7 +13,7 @@ Default sweep: depth 4..9 for two cases (untwisted and 15 deg twist). Expect
 grid baseline).
 
 Run from the repository root:
-    python examples/demos/section_geometry/quadtree_convergence_study.py
+    python examples/demos/section/quadtree_convergence_study.py
 """
 
 from __future__ import annotations

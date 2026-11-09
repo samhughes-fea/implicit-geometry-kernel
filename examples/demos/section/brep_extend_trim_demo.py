@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/brep_extend_trim_demo.py
+examples/demos/section/brep_extend_trim_demo.py
 ============================================
 Extend and trim: how many code paths does placing one web cost?
 
@@ -42,7 +42,7 @@ Writes under ``examples/demos/figures/brep_extend_trim/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/brep_extend_trim_demo.py --presentation
+    python examples/demos/section/brep_extend_trim_demo.py --presentation
 """
 
 from __future__ import annotations

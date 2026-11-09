@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/csg_expression_tree_demo.py
+examples/demos/section/csg_expression_tree_demo.py
 ====================================
 Geometry is a compiled program: show the CSG expression tree behind a region.
 
@@ -26,7 +26,7 @@ Writes under ``examples/demos/figures/csg_expression_tree/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/csg_expression_tree_demo.py --presentation
+    python examples/demos/section/csg_expression_tree_demo.py --presentation
 """
 
 from __future__ import annotations

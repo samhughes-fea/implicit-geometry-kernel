@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/naca2412_section.py
+examples/demos/section/naca2412_section.py
 ============================
 End-to-end demonstration of the section_geometry package.
 
@@ -14,7 +14,7 @@ Demonstrates:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/naca2412_section.py
+    python examples/demos/section/naca2412_section.py
 
 Outputs under ``examples/demos/figures/naca2412_section/``.
 

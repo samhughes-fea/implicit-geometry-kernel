@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/api_quickstart_demo.py
+examples/demos/section/api_quickstart_demo.py
 ==========================================
 The whole public interface, run, and what it hands back.
 
@@ -24,7 +24,7 @@ Writes under ``examples/demos/figures/api_quickstart/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/api_quickstart_demo.py
+    python examples/demos/section/api_quickstart_demo.py
 """
 
 from __future__ import annotations

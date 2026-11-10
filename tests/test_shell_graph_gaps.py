@@ -176,7 +176,7 @@ def test_g6_iea10_tip_section_at_builds_or_drops_web():
 
 # --- G7 ----------------------------------------------------------------------
 
-def test_g7_section_at_lru_no_bvh():
+def test_g7_section_at_lru_and_lofted_aabb():
     from implicit_geometry_kernel.blade.topology.fields import CutWallMetaSDF
 
     geo = _geo()
@@ -190,8 +190,8 @@ def test_g7_section_at_lru_no_bvh():
     stack = StackThickness(geo)
     assert stack._cache_size == 256
     lofted = LoftedPolygonSDF(lambda z: geo.oml_polyline(z)[:, :2])
-    assert not hasattr(lofted, "bvh")
-    assert not hasattr(lofted, "_bvh")
+    assert lofted.accel_at(4.0) is not None
+    assert lofted.bvh
 
 
 # --- G8 ----------------------------------------------------------------------

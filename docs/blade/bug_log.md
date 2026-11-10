@@ -643,6 +643,8 @@ change the band law.
 Cores share that tree. [`examples/_shared/blade_viz.py`](../../examples/_shared/blade_viz.py).
 
 **Verification.** `test_csg_property_quadtree_uses_thin_band_wall_tubes`.
+Regenerated example 09 `csg_mesh` (including `5D-F-PA-10R` `04.png`: occupancy
+tubes and property union share thin-band refine).
 **Fixed.**
 
 ## BG-026
@@ -662,5 +664,7 @@ a five-web root/transition station. Truncation drops further splits.
 per-token branch. [`examples/_shared/blade_viz.py`](../../examples/_shared/blade_viz.py).
 
 **Verification.** `test_csg_quadtree_max_cells_covers_five_web_root`.
+Regenerated example 09 `5D-F-PA-10R` `csg_mesh/01.png`–`16.png` after
+`max_cells=400000` (no truncation in the gallery pass).
 **Fixed.**
 

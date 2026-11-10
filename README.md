@@ -166,8 +166,7 @@ The kernel is geometry only. Consumers: kernel barrel for loft;
 hand-off; `extract` as a subpackage (off the kernel `__all__`). `sdf` imports
 nothing from `section` or `blade`. Matplotlib lives in `implicit_geometry_kernel.plotting`.
 
-`section`, `sdf`, `frames`, `integration` and `contract` started as a one-time fork of
-the same code in [blade-structure](https://github.com/samhughes-fea/blade-structure);
+`section`, `sdf`, `frames`, `integration` and `contract` started as a one-time fork;
 see [docs/FORK.md](docs/FORK.md) for where each part came from and how it was renamed.
 
 ## Tests

@@ -12,7 +12,7 @@ Report: **Import Cycles: none.** Probe 1 bounce is gone: EXTRACTED
 
 Do not treat these notes as bugs unless a product fails. Do not reopen refused
 trailing-edge extract
-([TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md](../../section/reports/TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md)).
+([SHELL_FE_REPLACEMENT_GAPS.md](../../section/reports/SHELL_FE_REPLACEMENT_GAPS.md)).
 Related: [STRUCTURE_PROBES.md](STRUCTURE_PROBES.md),
 [PERFORMANCE_WORK_SUMMARY.md](../../section/reports/PERFORMANCE_WORK_SUMMARY.md)
 kernel scan.

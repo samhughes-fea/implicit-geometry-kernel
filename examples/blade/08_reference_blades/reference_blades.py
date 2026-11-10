@@ -490,7 +490,7 @@ def _crop_rings(geo: BladeGeometry, rings: list[np.ndarray], zc: float) -> tuple
 
 
 def _strip_window(rings: list[np.ndarray], zc: float, n_strips: int = CLOSEUP_STRIPS) -> list[np.ndarray]:
-    """A few loft intervals around ``zc`` so quad edges stay visible (tidalshell recipe)."""
+    """A few loft intervals around ``zc`` so quad edges stay visible."""
     zs = np.array([float(r[0, 2]) for r in rings])
     i = int(np.argmin(np.abs(zs - zc)))
     i0 = max(0, i - n_strips // 2)

@@ -7,7 +7,7 @@ Five SOLID questions on the loft cut and shell graph. Counts from `src/`,
 `tests/`, and `examples/` (not `docs/_build`). Do not treat these probes as
 bugs unless a product fails. Do not reopen refused trailing-edge extract or
 bisector station networks
-([TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md](../../section/reports/TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md)
+([SHELL_FE_REPLACEMENT_GAPS.md](../../section/reports/SHELL_FE_REPLACEMENT_GAPS.md)
 source of truth).
 
 Canonical modules are under `blade/loft/` and `blade/topology/`.
@@ -126,6 +126,6 @@ methods in several translation units). Do not add extra public types.
 
 ## Out of scope here
 
-Tidalshell extract (bisector, MERGED TE, continuous `T`).
+A consumer's own extract (bisector, MERGED TE, continuous `T`).
 A bug-log row (no product failure in these probes).
 Further rewrites of `cut.shell_graph()` call sites that are not builders.

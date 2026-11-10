@@ -13,6 +13,11 @@
 - Reference-catalogue tests: marked ``reference`` (``pytest -m reference``),
   honour ``REFERENCE_BLADES_DIR``, and no longer read a helper example 08
   dropped. ``pyyaml`` is in ``[dev]``.
+- Consumer names: the shell-FE replacement gap report is
+  ``docs/section/reports/SHELL_FE_REPLACEMENT_GAPS.md``; docs, examples and
+  docstrings describe consumers generically. ``tests/test_consumer_names.py``
+  now also scans ``examples/`` and checks that no private consumer is named
+  anywhere in the repository.
 
 ## 0.9.0 (2026-11-10)
 

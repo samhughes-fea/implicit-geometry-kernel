@@ -35,7 +35,6 @@ from _shared.blade_viz import (  # noqa: E402
     figure_section_grid,
     is_suction_role,
     landmarks,
-    live_web_fracs,
     save_fig as save_viz,
     tidy_legacy_pngs,
 )

@@ -15,7 +15,7 @@ from _shared.plotting import (
 )
 from implicit_geometry_kernel.blade.topology.network import wall_meta_from_cut
 from implicit_geometry_kernel.blade.topology import (
-    ShellTopologyTemplate, _chord_fracs, _cut_tc, _template_from_cut, role_atom,
+    _chord_fracs, _template_from_cut, role_atom,
     sample_region_polylines,
 )
 from implicit_geometry_kernel.contract import InfeasibleSectionGeometry

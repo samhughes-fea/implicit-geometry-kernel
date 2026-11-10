@@ -104,7 +104,7 @@ Home: [sdf](sdf/README.md). Barrel names:
 | `TagNode` | IR node that stamps a feature id |
 | `Circle` / `Polygon` | Canonical 2-D Expr leaves (`SDFNode`) |
 | `PriorityUnionNode` | Union resolved by feature priority |
-| `LoftedPolygonSDF` | Polygon SDF that varies along span |
+| `LoftedPolygonSDF` | Polygon SDF at each point's `z`; `accelerate` BVH via `accel_at` / `bvh` |
 | `GeometrySolver` | In-plane Newton (`sdf.solve`); not the extract package |
 
 ## Lookalikes

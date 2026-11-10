@@ -54,7 +54,7 @@ Sandwich cores and trailing-edge inserts stay constructive solids (not loop runs
 | `shell_strips_from_graph(cut)` | Shell `ShellMidlineStrip`s from the graph (no extra cap loop) |
 | `graph.offset_regions()` | Cap footprints that need constitutive OFFSET (`LaminateOffsetRegion`) |
 | `ShellGraph.with_web_feet_on_loop()` | Web endpoints on the skin-mid loop (applied by `shell_graph`) |
-| `BladeGeometry.section_at(z)` | Cut at `z`; LRU 256 keyed by `round(z, 9)` (no BVH) |
+| `BladeGeometry.section_at(z)` | Cut at `z`; LRU 256 keyed by `round(z, 9)` (cut cache, not a polygon BVH) |
 | `web_position_table_from_windio_structure` | Span-varying chord fractions from windIO `nd_arc` |
 | `geo.oml_sdf()` | Exact polygon SDF at each point's own `z` |
 | `geo.cavity_sdf()` / `geo.wall_mid_sdf()` | cavity is `oml + T`; mid is the signed SDF of the `shell_graph` skin loop |
@@ -262,7 +262,7 @@ equals intercept `DroppedWeb.index` ([blade bug log](../../blade/bug_log.md)).
 | `topology_diff` / `shared_loft_names` / `loft_mapped_strips` | `ThinWalledSection` (G10) |
 | `LockedLoftPlan` / `resample_locked` | Versioned `ShellMidlineStrip` |
 | `shell_strips_from_graph` / `offset_regions` | Cores/TE inserts on the shell loop |
-| `wall_mid_sdf` + planar project | BVH |
+| `geo.oml_sdf()` (`accelerate`, `accel_at` / `bvh`) | TE classifier stays an OML-ring helper |
 
 | Goal | Go to |
 |------|--------|

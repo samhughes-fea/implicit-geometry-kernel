@@ -359,9 +359,10 @@ Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays
   / `TagNode`.
 - Do not advertise `[mesh]` (`gmsh`). Consumers own mesher jobs and ply ABD/PCOMP.
 - Parked shell-graph items stay parked: G10 (thin-wall adapter, other repo),
-  G11 (PCOMP), TE classifier on OML only, no BVH, no `T` taper, no cores on
+  G11 (PCOMP), TE classifier on OML only, no `T` taper, no cores on
   `shell_graph` unless a shell consumer needs them
   ([MERGED_SHELL_GAPS](section/reports/MERGED_SHELL_GAPS.md)).
+  `LoftedPolygonSDF` BVH (`accelerate` / `accel_at`) is shipped.
 - Mapped loft freeze: loft webs follow intercept `DroppedWeb.index`; no
   per-blade branches in loft code ([blade bug log](blade/bug_log.md)).
 - Efficiency track parked ([PERFORMANCE_WORK_SUMMARY](section/reports/PERFORMANCE_WORK_SUMMARY.md)).

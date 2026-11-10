@@ -19,12 +19,12 @@ Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm,
 | **G4** | Wave 0 shipped | `T` step kept (8 mm); Newton is not a spec at partition vertices |
 | **G5** | Wave 0 shipped | Loft from graph; snap with SDF; joint `|φ| = 4.000 mm` is out of Pass 1 check |
 | **G6** | Wave 4 shipped | `with_web_feet_on_loop`; loft re-resolves / drops webs on flapwise re-anchor |
-| **G7** | Wave 5 shipped | `section_at` LRU 256 per `round(z, 9)`; no BVH |
+| **G7** | Wave 5 shipped | `section_at` LRU 256 per `round(z, 9)`; `LoftedPolygonSDF` BVH on (`accelerate`, `accel_at`) |
 | **G8** | Wave 6 shipped | `web_positions_from_windio_structure`; example 09 no longer hardcodes `(0.22, 0.50)` |
 | **G9** | Wave 7 shipped | Cores / TE inserts stay constructive solids; not on `shell_graph` |
 | **G10** | consumer-only | `ThinWalledSection.from_geometry` is not in this repo |
 | **G11** | kernel-out-of-scope | No PCOMP / ply stagger in `src/implicit_geometry_kernel` |
-| **WP6** | parked | named `feature_curve(geo, name_a, name_b, zs)` exists; TE classifier stays an OML helper; no BVH |
+| **WP6** | parked | named `feature_curve(geo, name_a, name_b, zs)` exists; TE classifier stays an OML helper; OML BVH shipped |
 
 Implementation sequence is [Waves](#waves) below. **G4 is locked:** keep the `T` step; document Newton limits at partition vertices (no geometric taper).
 
@@ -113,7 +113,7 @@ Example 09 uses it. No silent label lerp.
 
 **Status:** Wave 5 shipped.
 
-**Today:** [`BladeGeometry.section_at`](../../../src/implicit_geometry_kernel/blade/loft/loft.py) caches cuts per `round(z, 9)` (LRU 256). [`CutWallMetaSDF`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) and `StackThickness` keep derived LRU 256 on that same key. [`LoftedPolygonSDF`](../../../src/implicit_geometry_kernel/sdf/lofted.py) still caches polygons only — **no BVH**.
+**Today:** [`BladeGeometry.section_at`](../../../src/implicit_geometry_kernel/blade/loft/loft.py) caches cuts per `round(z, 9)` (LRU 256). [`CutWallMetaSDF`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) and `StackThickness` keep derived LRU 256 on that same key. [`LoftedPolygonSDF`](../../../src/implicit_geometry_kernel/sdf/nodes/lofted.py) caches station polygons and, with ``accelerate=True`` (default), a uniform-grid AABB (`accel_at` / `bvh`). That is not the cut LRU.
 
 ---
 
@@ -167,7 +167,7 @@ is parked.
 |---|---|
 | Feature-curve keys | named form exists; Newton form stays two SDFs + a guess |
 | TE on merged loop | `classify_trailing_edge(oml)` and on the stacked loop are both `sharp` on this NACA; the helper is still an **OML-ring** API |
-| BVH on `LoftedPolygonSDF` | no `bvh` attribute (G7) |
+| BVH on `LoftedPolygonSDF` | shipped: `accelerate=True`, `accel_at(z)`, `bvh` mapping (BG-015) |
 | IEA 10 tip | G6: loft re-resolves / drops webs (Wave 4) |
 
 ---
@@ -175,7 +175,8 @@ is parked.
 ## Waves
 
 Opening a wave means implementing that row. **Waves 0–7 are shipped.** G10/G11 stay
-parked. No `ShellMidlineStrip` version, no `T` taper, no BVH.
+closed for this kernel (consumer / PCOMP). No `ShellMidlineStrip` version, no `T`
+taper. `LoftedPolygonSDF` BVH is shipped.
 
 ```text
 Wave 0 (G5+G4) → Wave 1 (G2) → Wave 2 (G3) → Wave 3 (G1)
@@ -230,7 +231,7 @@ Depends on Waves 0–2.
 
 ### Wave 5 — Cost (G7) (shipped)
 
-- **G7:** `section_at` LRU 256 per `round(z, 9)`. Derived `CutWallMetaSDF` / `StackThickness` caches stay. **No** BVH on `LoftedPolygonSDF`.
+- **G7:** `section_at` LRU 256 per `round(z, 9)`. Derived `CutWallMetaSDF` / `StackThickness` caches stay. `LoftedPolygonSDF` uses `accelerate` BVH (`accel_at` / `bvh`).
 
 ### Wave 6 — WindIO web footprints (G8) (shipped)
 
@@ -254,4 +255,6 @@ Depends on Waves 0–2.
 
 ## What this inventory does not do
 
-This page does not close G10–G11. No DTO version, no taper, no cores on `shell_graph`, no BVH, no Gmsh, no PCOMP, no tidalshell edits — until the matching wave is opened.
+G10/G11 stay out of `src/` (thin-wall consumer; PCOMP). No DTO version, no `T`
+taper, no cores on `shell_graph` by default, no Gmsh driver, no tidalshell edits.
+OML polygon BVH is in `LoftedPolygonSDF`.

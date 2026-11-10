@@ -46,7 +46,7 @@ VIZ_DIRS = (CROSS_SECTIONS, CSG_MESH, REGIONS, REGION_CUTAWAYS, PLANFORM, FULL_B
 N_SECTION_GRID = 16
 _OCC_EXTERIOR, _OCC_CAVITY = "#f4f4f2", "#c5d4e0"
 _CSG_QT_DEPTH = 10
-_CSG_QT_MAX_CELLS = 150_000
+_CSG_QT_MAX_CELLS = 400_000
 _CSG_FIG_W = 15.6
 _CSG_FIG_H_PAD = 2.2
 _CSG_FIG_H_MIN = 4.0
@@ -258,7 +258,7 @@ def _leaf_rects(bounds: np.ndarray) -> np.ndarray:
 
 
 def _sample_wall_meta(geo, cut, z, xlim, ylim):
-    """Adaptive ``wall_meta`` on a thin-band quadtree (depth ≤ 10, min cell ≤ t/4)."""
+    """Adaptive ``wall_meta`` on a thin-band quadtree (depth ≤ 10, min cell ≤ t/4, 400k cells)."""
     del xlim, ylim
     field, _table = wall_meta_from_cut(cut)
     spec = _csg_quadtree_spec(geo, cut, z)

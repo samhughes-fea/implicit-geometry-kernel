@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -15,6 +16,7 @@ from _shared.blade_viz import (  # noqa: E402
     _CSG_FIG_H_MIN,
     _CSG_FIG_W,
     _CSG_QT_DEPTH,
+    _CSG_QT_MAX_CELLS,
     _attach_union_phi,
     _blade_xy_to_host_naca,
     _conformal_samples,
@@ -38,6 +40,7 @@ from implicit_geometry_kernel.section.boundary.labels import (  # noqa: E402
     is_wall_solid_label,
 )
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station  # noqa: E402
+from implicit_geometry_kernel.blade.concepts import BladeConcept  # noqa: E402
 from implicit_geometry_kernel.blade.topology import _chord_fracs  # noqa: E402
 
 
@@ -114,6 +117,7 @@ def test_csg_wall_meta_quadtree_caps_leaf_depth_at_ten():
     assert int(mesh.spec.max_depth) == 10
     assert _CSG_QT_DEPTH == 10
     assert mesh.spec.thin_band is True
+    assert int(mesh.spec.max_cells) == _CSG_QT_MAX_CELLS
     assert mesh.spec.min_cell_size == pytest.approx(min(0.0015 * chord, 0.5 * radius))
     assert mesh.spec.refine_band == pytest.approx(radius)
     phi = np.asarray(mesh.phi_by_label["wall"], float)
@@ -214,6 +218,36 @@ def test_csg_property_quadtree_uses_thin_band_wall_tubes():
     labels = {str(k) for k in mesh.phi_by_label if k != "_union_walls"}
     assert any(is_core_label(k) for k in labels)
     assert any(is_wall_solid_label(k) for k in labels)
+    assert int(mesh.spec.max_cells) == _CSG_QT_MAX_CELLS
+
+
+def test_csg_quadtree_max_cells_covers_five_web_root():
+    """BG-026: 5D root occupancy finished at ~330k leaves vs a 150k cap."""
+    assert _CSG_QT_MAX_CELLS >= 400_000
+    s = 12.0 / 20.0
+    root, foil = Airfoil.ellipse(1.0), Airfoil.naca4("0024")
+    st = [
+        Station(0.0 * s, 1.80 * s, root, twist=12.0, pitch_axis=0.50),
+        Station(1.0 * s, 1.88 * s, Airfoil.blend(root, foil, 0.15), twist=11.5, pitch_axis=0.47),
+        Station(2.5 * s, 2.05 * s, Airfoil.blend(root, foil, 0.50), twist=10.0, pitch_axis=0.40),
+        Station(4.0 * s, 2.28 * s, Airfoil.blend(root, foil, 0.85), twist=8.8, pitch_axis=0.33),
+        Station(5.0 * s, 2.40 * s, foil, twist=8.0, pitch_axis=0.30),
+        Station(20.0 * s, 0.75 * s, Airfoil.naca4("0012"), twist=-2.0, pitch_axis=0.30),
+    ]
+    geo = BladeGeometry.from_concept(
+        BladeConcept("5D-F-PA-10R"), st, 0.004 * s,
+        spar_cap_thickness=0.008 * s, shear_web_thickness=0.004 * s,
+        pivot_fraction=([sta.z for sta in st], [sta.pitch_axis for sta in st]),
+    )
+    cut = geo.section_at(float(st[0].z))
+    xlim, ylim = _station_limits(cut)
+    spec = _csg_quadtree_spec(geo, cut, cut.z)
+    assert int(spec.max_cells) == _CSG_QT_MAX_CELLS
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        bounds, mesh = _sample_wall_meta(geo, cut, cut.z, xlim, ylim)
+    assert not any("max_cells" in str(w.message) for w in caught)
+    assert bounds.shape[0] < int(mesh.spec.max_cells)
 
 
 def test_te_mesh_limits_contain_te_and_are_smaller_than_station():

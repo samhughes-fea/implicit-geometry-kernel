@@ -3,6 +3,7 @@
 ## Unreleased
 
 - CSG property panels reuse occupancy thin-band wall-tube refine (BG-025).
+  Occupancy ``max_cells`` is 400000 so 5D root stations finish (BG-026).
 
 - Docs hygiene: package bug logs (no repo-root ``BL-`` file); section module
   table uses ``walls/`` / ``boundary/`` / ``properties/``; reports index;

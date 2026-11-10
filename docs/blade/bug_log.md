@@ -49,7 +49,7 @@ entries are from a retired repo-root log.
 | [BG-023](#bg-023) | Example 09 mapped loft emitted collapsed or unmatched strip faces | **Fixed** |
 | [BG-024](#bg-024) | Property CSG quadtree was rotated vs wall occupancy | **Fixed** |
 | [BG-025](#bg-025) | Property CSG column 3 undersamples thin wall tubes | **Fixed** |
-| [BG-026](#bg-026) | 5D occupancy QT hits `max_cells=150000` and truncates | **Open** |
+| [BG-026](#bg-026) | 5D occupancy QT hits `max_cells=150000` and truncates | **Fixed** |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -657,6 +657,10 @@ stops with `_refine_soa: max_cells=150000 reached`; the mesh is truncated.
 **Root cause.** Occupancy uses depth 10, `thin_band`, and 150k `max_cells` on
 a five-web root/transition station. Truncation drops further splits.
 
-**Fix.** Not applied. Raise `max_cells` for 5D root stations, or stop
-occupancy at a cheaper spec where the figure still reads.
+**Fix.** CSG occupancy (and the property tree that reuses it) uses
+`_CSG_QT_MAX_CELLS = 400000`, above the observed 330k five-web root. No
+per-token branch. [`examples/_shared/blade_viz.py`](../../examples/_shared/blade_viz.py).
+
+**Verification.** `test_csg_quadtree_max_cells_covers_five_web_root`.
+**Fixed.**
 

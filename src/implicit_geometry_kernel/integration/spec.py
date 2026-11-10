@@ -9,7 +9,11 @@ import numpy as np
 
 @dataclass
 class QuadtreeSpec:
-    """Configuration for adaptive quadtree area meshing."""
+    """Configuration for adaptive quadtree area meshing.
+
+    ``thin_band``: if True, ``refine_band`` is a tube radius added to
+    ``scale * diag`` rather than a cavity cap that stops coarse refine.
+    """
 
     x_min: float
     x_max: float
@@ -23,6 +27,7 @@ class QuadtreeSpec:
     max_cells: int = 20000
     square_cells: bool = True
     root_cell_size: float | None = None
+    thin_band: bool = False
 
     @classmethod
     def from_points(

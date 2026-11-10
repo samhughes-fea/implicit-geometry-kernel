@@ -44,6 +44,7 @@ def quadtree_spec_for_airfoil(
     refine_band: float | None = None,
     max_cells: int | None = None,
     root_cell_size: float | None = None,
+    thin_band: bool = False,
 ) -> QuadtreeSpec:
     """Default ``QuadtreeSpec`` sized to an airfoil bounding box."""
     verts = np.asarray(getattr(airfoil_sdf, "vertices", airfoil_sdf), dtype=float)
@@ -66,6 +67,7 @@ def quadtree_spec_for_airfoil(
         max_cells=mc,
         square_cells=True,
         root_cell_size=float(root_cell_size),
+        thin_band=bool(thin_band),
     )
 
 
@@ -83,4 +85,5 @@ def quadtree_spec_to_dict(spec: QuadtreeSpec) -> dict[str, float | int | bool | 
         "max_cells": int(spec.max_cells) if spec.max_cells is not None else None,
         "square_cells": bool(spec.square_cells),
         "root_cell_size": float(spec.root_cell_size) if spec.root_cell_size is not None else None,
+        "thin_band": bool(spec.thin_band),
     }

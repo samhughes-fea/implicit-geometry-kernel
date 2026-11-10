@@ -88,6 +88,15 @@ def test_effective_refine_band_scales_with_cell_size():
     assert not _cell_needs_refine(phi_near, band_ceiling=0.02, band_scale=1.5, cell_diag=0.005)
 
 
+def test_thin_band_refine_ignores_chord_ceiling():
+    from implicit_geometry_kernel.integration.quadtree.soa import _cell_needs_refine
+
+    phi_cavity = np.array([0.1, 0.1, 0.1, 0.1, 0.1])
+    kwargs = dict(band_ceiling=0.02, band_scale=1.5, cell_diag=0.2)
+    assert not _cell_needs_refine(phi_cavity, **kwargs)
+    assert _cell_needs_refine(phi_cavity, **kwargs, thin_band=True)
+
+
 def test_boundary_moments_batch_matches_per_cell():
     """Vectorized boundary moments must reproduce the per-cell marching-squares path."""
     from implicit_geometry_kernel.integration.quadtree.moments import (

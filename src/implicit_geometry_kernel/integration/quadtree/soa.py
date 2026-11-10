@@ -26,15 +26,34 @@ _CHILD_CORNER_RECIPE: tuple[tuple[tuple[str, int], ...], ...] = (
 )
 
 
+def _effective_refine_bands(
+    band_ceiling: float,
+    band_scale: float,
+    cell_diags: np.ndarray,
+    thin_band: bool,
+) -> np.ndarray:
+    """Per-cell refine radius.
+
+    Filled solids cap the radius at ``refine_band`` so cavities stay coarse.
+    Thin tubes (``thin_band``) use a Lipschitz bound ``scale * diag + radius``
+    so a coarse cell whose probes sit in the cavity still sees the wall.
+    """
+    scaled = float(band_scale) * np.asarray(cell_diags, dtype=float)
+    if thin_band:
+        return scaled + float(band_ceiling)
+    return np.minimum(float(band_ceiling), scaled)
+
+
 def _cell_needs_refine(
     all_phi_cell: np.ndarray,
     band_ceiling: float,
     band_scale: float,
     cell_diag: float,
+    thin_band: bool = False,
 ) -> bool:
     if np.min(all_phi_cell) <= 0.0 <= np.max(all_phi_cell):
         return True
-    band = min(float(band_ceiling), float(band_scale) * float(cell_diag))
+    band = float(_effective_refine_bands(band_ceiling, band_scale, np.array([cell_diag]), thin_band)[0])
     return bool(np.min(np.abs(all_phi_cell)) < band)
 
 
@@ -43,13 +62,14 @@ def _cells_need_refine_batch(
     band_ceiling: float,
     band_scale: float,
     cell_diags: np.ndarray,
+    thin_band: bool = False,
 ) -> np.ndarray:
     """Vectorized refine test; ``all_phi`` shape ``(n_cells, n_probes)``."""
     mins = all_phi.min(axis=1)
     maxs = all_phi.max(axis=1)
     sign_change = (mins <= 0.0) & (maxs >= 0.0)
     abs_mins = np.abs(all_phi).min(axis=1)
-    bands = np.minimum(float(band_ceiling), float(band_scale) * cell_diags)
+    bands = _effective_refine_bands(band_ceiling, band_scale, cell_diags, thin_band)
     return sign_change | (abs_mins < bands)
 
 
@@ -202,6 +222,7 @@ def _refine_soa(
     max_cells = spec.max_cells
     band_ceiling = spec.refine_band
     band_scale = spec.refine_band_scale
+    thin_band = bool(spec.thin_band)
 
     fb, flevel, fcorners = frontier
     refine_stats = {"sign_change": 0, "near_interface": 0, "subdivisions": 0}
@@ -267,7 +288,7 @@ def _refine_soa(
             interior[~acol] = sentinel
             all_phi = np.concatenate([ecorners[lbl], interior], axis=1)
             label_needs = _cells_need_refine_batch(
-                all_phi, band_ceiling, band_scale, cell_diags
+                all_phi, band_ceiling, band_scale, cell_diags, thin_band
             )
             needs |= label_needs & acol
             sign_change = (all_phi.min(axis=1) <= 0.0) & (all_phi.max(axis=1) >= 0.0)

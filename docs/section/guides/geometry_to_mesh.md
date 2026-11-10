@@ -270,6 +270,7 @@ equals intercept `DroppedWeb.index` ([blade bug log](../../blade/bug_log.md)).
 | Mapped loft freeze | [`../../blade/bug_log.md`](../../blade/bug_log.md) |
 | Junction kinks (SG-002 / SG-004) | [`../bug_log.md`](../bug_log.md) |
 
-G10/G11 stay out of this kernel
-([`MERGED_SHELL_GAPS.md#waves`](../reports/MERGED_SHELL_GAPS.md#waves)).
+G10/G11 stay out of this kernel (closed here: consumer thin-wall; PCOMP).
+G4 keeps the nearest-run `T` step (no geometric taper).
+([`MERGED_SHELL_GAPS.md`](../reports/MERGED_SHELL_GAPS.md)).
 Do not treat cores or inserts as missing from `shell_graph()`.

@@ -16,14 +16,14 @@ Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm,
 | **G1** | Wave 3 shipped | `shell_strips_from_graph` = 8 runs; `cut.walls` still 10 (solid caps) |
 | **G2** | Wave 1 shipped | `partition_edges` / `partition_edge_curve`; colouring unchanged |
 | **G3** | Wave 2 shipped | `topology_diff` + `shared_loft_names`; no label lerp |
-| **G4** | Wave 0 shipped | `T` step kept (8 mm); Newton is not a spec at partition vertices |
+| **G4** | locked / closed | `T` step kept (8 mm); no geometric taper; Newton is not a spec at partition vertices |
 | **G5** | Wave 0 shipped | Loft from graph; snap with SDF; joint `|φ| = 4.000 mm` is out of Pass 1 check |
 | **G6** | Wave 4 shipped | `with_web_feet_on_loop`; loft re-resolves / drops webs on flapwise re-anchor |
 | **G7** | Wave 5 shipped | `section_at` LRU 256 per `round(z, 9)`; `LoftedPolygonSDF` BVH on (`accelerate`, `accel_at`) |
 | **G8** | Wave 6 shipped | `web_positions_from_windio_structure`; example 09 no longer hardcodes `(0.22, 0.50)` |
 | **G9** | Wave 7 shipped | Cores / TE inserts stay constructive solids; not on `shell_graph` |
 | **G10** | closed for this kernel | No `thin_wall` module; consumers use `mid_surface` / `shell_graph` |
-| **G11** | kernel-out-of-scope | No PCOMP / ply stagger in `src/implicit_geometry_kernel` |
+| **G11** | closed for this kernel | No PCOMP / ply stagger; bind laminates via `offset_regions` / stacked `layers` |
 | **WP6** | parked | named `feature_curve(geo, name_a, name_b, zs)` exists; TE classifier stays an OML helper; OML BVH shipped |
 
 Implementation sequence is [Waves](#waves) below. **G4 is locked:** keep the `T` step; document Newton limits at partition vertices (no geometric taper).
@@ -77,7 +77,7 @@ Example 09 uses it. No silent label lerp.
 
 ## G4 — Thickness jumps
 
-**Status:** Wave 0 shipped (keep the step; Newton limits documented).
+**Status:** locked / closed (keep the step; Newton limits documented; no geometric taper).
 
 **Today:** [`StackThickness`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) assigns nearest loop-run `T` (step, not ramp). Not ply stagger.
 
@@ -151,9 +151,9 @@ Gauge tables still come from layer names.
 
 ## G11 — Combined vs tied laminates
 
-**Status:** kernel-out-of-scope.
+**Status:** closed for this kernel.
 
-**Today:** combined `T` is geometry. No `PCOMP` string under `src/implicit_geometry_kernel`. Stays tidalshell / shell-fem.
+**Today:** combined `T` is geometry. Laminate bind is `offset_regions()`, stacked `layers`, `shell_strips_from_graph`. No `PCOMP` string under `src/implicit_geometry_kernel` (`test_g11_no_pcomp_in_kernel_src`). ABD / ply stagger stay tidalshell / shell-fem.
 
 ---
 
@@ -248,7 +248,7 @@ Depends on Waves 0–2.
 ### Parked
 
 - **G10** closed here (other repo owns the thin-wall adapter).
-- **G11** PCOMP (tidalshell / shell-fem).
+- **G11** closed here (PCOMP / ply ABD stay tidalshell / shell-fem).
 - TE classifier on OML vs loop: both `sharp` on the NACA fixture — retarget only if a blunt merged loop appears.
 
 ---

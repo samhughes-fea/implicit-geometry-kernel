@@ -14,9 +14,8 @@ def locate_shell_vertex(geo, vid, zs, n_chord: int = 8) -> np.ndarray:
     straight chord between stations. Infeasible stations are omitted.
     """
     from implicit_geometry_kernel.blade.topology import (
-        _cut_tc,
         _key_name,
-        ShellTopologyTemplate,
+        _template_from_cut,
         place_station_keys,
         section_cut_near,
     )
@@ -27,10 +26,9 @@ def locate_shell_vertex(geo, vid, zs, n_chord: int = 8) -> np.ndarray:
         if cut is None:
             continue
         sg = cut.shell_graph()
-        ShellTopologyTemplate.from_region_graph(
-            geo.region_graph, float(z), n_chord=n_chord, t_c=_cut_tc(cut),
-        )
-        keys = place_station_keys(cut, sg, geo.region_graph, float(z))
+        tmpl = _template_from_cut(geo.region_graph, cut, float(z), n_chord)
+        wrap_on = any(b.wrap for b in tmpl.loop)
+        keys = place_station_keys(cut, sg, geo.region_graph, float(z), te_blunt=wrap_on)
         name = _key_name(vid)
         side = "suction"
         if len(vid) > 1 and vid[0] == "TE" and vid[1] in ("suction", "pressure"):

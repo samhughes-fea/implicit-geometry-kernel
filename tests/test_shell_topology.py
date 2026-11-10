@@ -23,14 +23,21 @@ from implicit_geometry_kernel.blade.topology import (
     WallRegionGraph,
     WebMember,
     _cluster_web_members,
-    _cut_tc,
     _regularise_anchors,
     _te_wrap_arc,
+    _template_from_cut,
     place_station_keys,
     rib_cell_polygons_from_samples,
     rib_cell_triangles_from_samples,
     sample_region_polylines,
+    hold_te_blunt,
+    te_blunt_flags_for_cuts,
+    te_blunt_eps,
+    te_blunt_of_cut,
+    te_is_blunt,
+    te_opening,
 )
+from implicit_geometry_kernel.blade.topology.map_walk import _skin_mid_loop
 
 
 def _geo(key="2D-F-LC-0R", **kwargs):
@@ -44,18 +51,14 @@ def _geo(key="2D-F-LC-0R", **kwargs):
 
 
 def _templates(geo, zs, n_chord=8):
+    cuts = [geo.section_at(float(z)) for z in zs]
+    flags = te_blunt_flags_for_cuts(cuts)
     out = []
     samples = []
-    for z in zs:
-        cut = geo.section_at(float(z))
+    for cut, blunt in zip(cuts, flags):
         sg = cut.shell_graph()
-        live = []
-        for run in sg.webs:
-            xy = np.asarray(run.points, float)[:, :2]
-            live.append(float(np.mean((xy[:, 0] - cut.offset[0]) / max(cut.chord, 1e-9) + cut.pitch_axis)))
-        t = ShellTopologyTemplate.from_region_graph(
-            geo.region_graph, float(z), n_chord=n_chord, live_web_fracs=live or None, t_c=_cut_tc(cut),
-            dropped_web_indices=tuple(cut.dropped_web_indices),
+        t = _template_from_cut(
+            geo.region_graph, cut, float(cut.z), n_chord, te_blunt=blunt,
         )
         out.append(t)
         samples.append(sample_region_polylines(cut, sg, t, geo.region_graph))
@@ -128,16 +131,22 @@ def test_one_station_cap_flicker_is_transition_not_hole():
 
 
 def test_te_wrap_collapsing_patch():
-    geo = _geo(web_positions=(0.18, 0.48))
-    tpls, samples = _templates(geo, [3.0, 5.0])
+    stations = [
+        Station(0.0, 2.0, Airfoil.ellipse(1.0), pitch_axis=0.5),
+        Station(10.0, 1.0, Airfoil.naca4("0012"), pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008,
+                        shear_web_thickness=0.004, web_positions=(0.25, 0.50), pivot_fraction=0.5)
+    tpls, samples = _templates(geo, [0.0, 10.0], n_chord=8)
     t0, t1 = tpls
-    wrap = next((b for b in t0.loop if b.wrap), t0.loop[0])
-    t0_forced = t0
-    faces = loft_mapped_strips(samples[0], samples[1], t0_forced, t1)
-    assert faces
-    if wrap.wrap:
-        mapped = t0.map_vertex(wrap.start, t1)
-        assert mapped == ("TE",) or mapped in t1.vertices
+    wrap = next(b for b in t0.loop if b.wrap)
+    assert next((b for b in t1.loop if b.wrap), None) is None
+    faces = loft_mapped_strips(samples[0], samples[1], t0, t1)
+    te = [(n, f, c) for n, f, c in faces if n == wrap.name]
+    assert te
+    assert any(c or len(f) == 3 for _n, f, c in te)
+    mapped = t0.map_vertex(wrap.start, t1)
+    assert mapped == ("TE",) or mapped in t1.vertices
 
 
 def test_write_mid_surfaces_obj_region_groups_and_rib(tmp_path: Path):
@@ -185,9 +194,12 @@ def test_mapped_loft_omits_rib_strips():
 def _assert_keyed_seams(geo, z, n_chord=10):
     cut = geo.section_at(float(z))
     sg = cut.shell_graph()
-    t = ShellTopologyTemplate.from_region_graph(geo.region_graph, float(z), n_chord=n_chord)
+    t = _template_from_cut(geo.region_graph, cut, float(z), n_chord)
     samples = sample_region_polylines(cut, sg, t, geo.region_graph)
-    keys = place_station_keys(cut, sg, geo.region_graph, float(z))
+    keys = place_station_keys(
+        cut, sg, geo.region_graph, float(z),
+        te_blunt=any(b.wrap for b in t.loop),
+    )
     su = [b for b in t.loop if b.side == "suction" and not b.wrap]
     pr = [b for b in t.loop if b.side == "pressure" and not b.wrap]
     for chain in (su, pr):
@@ -215,6 +227,79 @@ def _assert_keyed_seams(geo, z, n_chord=10):
             interior = samples[web.name][1:-1]
             assert not np.all(np.min(np.linalg.norm(wall[:, None] - interior, axis=2), axis=0) == 0.0)
     return t, samples, keys
+
+
+def _web_kink_deg(pts: np.ndarray) -> float:
+    pts = np.asarray(pts, float)
+    if len(pts) < 2:
+        return 0.0
+    axis = pts[-1] - pts[0]
+    nrm = float(np.linalg.norm(axis[:2]))
+    if nrm < 1e-12:
+        return 0.0
+    axis = axis[:2] / nrm
+    segs = np.diff(pts[:, :2], axis=0)
+    lengths = np.linalg.norm(segs, axis=1)
+    keep = lengths > 1e-12
+    if not np.any(keep):
+        return 0.0
+    directions = segs[keep] / lengths[keep, None]
+    cross = np.abs(directions[:, 0] * axis[1] - directions[:, 1] * axis[0])
+    return float(np.degrees(np.arcsin(np.clip(cross, 0.0, 1.0))).max())
+
+
+def test_conformal_webs_stay_straight_on_5d_stations_07_11():
+    """SG-002 analogue: loft sampler must not relocate emitted web feet (csg_mesh 07–11)."""
+    geo = _09_geo("5D-F-PA-10R")
+    zs = np.linspace(float(geo.stations[0].z), float(geo.stations[-1].z), 16)
+    tpls, samples = _templates(geo, zs[6:11], n_chord=8)
+    n_webs = 0
+    for tmpl, samp in zip(tpls, samples):
+        for web in tmpl.webs:
+            assert web.name in samp
+            n_webs += 1
+            worst = _web_kink_deg(samp[web.name])
+            assert worst <= 0.05, (
+                f"z={tmpl.z:.1f} m {web.name}: conformal web leans {worst:.3f} deg "
+                "off its axis — feet were relocated onto chord-fraction skin keys"
+            )
+    assert n_webs >= 1
+
+
+def test_te_opening_classifies_ellipse_naca_flatback():
+    naca = _geo(web_positions=(0.18, 0.48))
+    cut = naca.section_at(4.0)
+    pts = _skin_mid_loop(cut.shell_graph(), float(cut.z))
+    assert not te_is_blunt(cut, pts)
+    assert not te_blunt_of_cut(cut)
+    assert te_opening(cut, pts) <= te_blunt_eps(cut)
+
+    stations = [
+        Station(0.0, 2.0, Airfoil.ellipse(1.0), pitch_axis=0.5),
+        Station(10.0, 1.0, Airfoil.ellipse(1.0), pitch_axis=0.5),
+    ]
+    ell = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008,
+                        shear_web_thickness=0.004, web_positions=(0.25, 0.50), pivot_fraction=0.5)
+    ecut = ell.section_at(0.0)
+    assert te_blunt_of_cut(ecut)
+    assert te_opening(ecut, _skin_mid_loop(ecut.shell_graph(), 0.0)) > 0.04 * 2.0
+
+    blunt = Airfoil.naca4("0018").with_te_thickness(0.05)
+    fb = BladeGeometry(
+        [Station(0.0, 2.0, blunt, pitch_axis=0.3), Station(10.0, 1.0, blunt, pitch_axis=0.3)],
+        "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
+        web_positions=(0.18, 0.48), pivot_fraction=0.3,
+    )
+    fcut = fb.section_at(0.0)
+    assert te_blunt_of_cut(fcut)
+
+
+def test_hold_te_blunt_hysteresis():
+    assert hold_te_blunt([2.0, 0.8, 0.4, 0.2, 1.2], 1.0) == [
+        True, False, False, False, True,
+    ]
+    assert hold_te_blunt([0.2, 0.9, 1.1], 1.0) == [False, False, True]
+    assert hold_te_blunt([1.1, 1.0, 0.9], 1.0) == [True, False, False]
 
 
 def test_catalogue_2df_consecutive_loop_keys_shared():
@@ -245,8 +330,9 @@ def test_ellipse_root_lofts_te_wrap():
     ]
     geo = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008,
                         shear_web_thickness=0.004, web_positions=(0.25, 0.50), pivot_fraction=0.5)
-    tpls, samples = _templates(geo, [0.0, 1.0], n_chord=8)
-    assert "te" in samples[0] and "te" in samples[1]
+    tpls, samples = _templates(geo, [0.0, 10.0], n_chord=8)
+    assert "te" in samples[0]
+    assert "te" not in samples[1]
     wrap = np.asarray(samples[0]["te"], float)
     assert float(np.linalg.norm(wrap[0] - wrap[-1])) > 0.04 * 2.0
     names = {n for n, _f, _c in loft_mapped_strips(samples[0], samples[1], tpls[0], tpls[1])}
@@ -261,6 +347,18 @@ def test_blade_concept_authors_same_key_graph_as_layout():
     assert tuple(a.name for a in authored.anchors) == tuple(a.name for a in direct.anchors)
     t = ShellTopologyTemplate.from_region_graph(authored, 1.0, n_chord=6)
     su = [b for b in t.loop if b.side == "suction" and not b.wrap]
+    for a, b in zip(su, su[1:]):
+        assert a.end == b.start
+
+
+def test_family_c_template_has_pad_patches_and_inter_pad_bay():
+    graph = WallRegionGraph.from_section_layout("2C-F-LC-0R")
+    t = ShellTopologyTemplate.from_region_graph(graph, 0.0, n_chord=6)
+    su = [b for b in t.loop if b.side == "suction" and not b.wrap]
+    caps = [b.name for b in su if b.name.startswith("cap_")]
+    bays = [b.name for b in su if b.name.startswith("bay_")]
+    assert len(caps) == 4
+    assert bays
     for a, b in zip(su, su[1:]):
         assert a.end == b.start
 
@@ -286,15 +384,12 @@ def test_synthetic_windio_keyed_sampler():
     _assert_keyed_seams(geo, 2.0)
 
 
-def test_sharp_te_wrap_is_omitted_from_samples():
-    t, samples, _keys = _assert_keyed_seams(_geo(web_positions=(0.18, 0.48)), 4.0)
-    wrap = next((b for b in t.loop if b.wrap), None)
-    assert wrap is not None
-    if wrap.name in samples:
-        pts = np.asarray(samples[wrap.name], float)
-        chord = 2.0
-        slen = float(np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1)))
-        assert slen < 0.05 * chord
+def test_sharp_te_has_no_wrap_branch():
+    t, samples, keys = _assert_keyed_seams(_geo(web_positions=(0.18, 0.48)), 4.0)
+    assert next((b for b in t.loop if b.wrap), None) is None
+    assert "te" not in samples
+    a, b = keys[("te", "suction")], keys[("te", "pressure")]
+    assert float(np.linalg.norm(a - b)) < 1e-6 * 2.0
 
 
 def test_ellipse_root_omits_fat_te_wrap():
@@ -323,10 +418,8 @@ def test_le_te_loop_still_holds_web_keys_on_skin():
     )
     geo = _geo(web_positions=(0.25, 0.55), region_graph=graph)
     t, samples, _keys = _assert_keyed_seams(geo, 3.0, n_chord=12)
-    if "te" in samples:
-        pts = np.asarray(samples["te"], float)
-        slen = float(np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1)))
-        assert slen < 0.05 * 2.0
+    assert "te" not in samples
+    assert next((b for b in t.loop if b.wrap), None) is None
     names = {b.name for b in t.loop}
     assert "le_su" in names
     assert any(n.startswith("bay_") or n.startswith("te_") for n in names)
@@ -350,6 +443,39 @@ def test_bowtie_quad_is_not_lofted():
         if collapsing or len(face) < 4:
             continue
         assert not _quad_bowtie(face)
+
+
+def test_09_5d_foil_stations_have_no_te_spur():
+    geo = _09_geo("5D-F-PA-10R")
+    for z in (3.2, 4.0):
+        t, samples, _keys = _assert_keyed_seams(geo, z)
+        assert next((b for b in t.loop if b.wrap), None) is None
+        assert "te" not in samples
+        assert "te_su" in samples and "te_pr" in samples
+        assert any(b.side == "suction" and b.name in samples for b in t.loop)
+        assert any(b.side == "pressure" and b.name in samples for b in t.loop)
+        oml = np.asarray(geo.oml_polyline(float(z)), float)
+        te_x = float(np.max(oml[:, 0]))
+        chord = float(geo.section_at(float(z)).chord)
+        xs = np.concatenate([np.asarray(p, float)[:, 0] for p in samples.values() if len(p)])
+        assert float(np.max(xs)) <= te_x + 1e-3 * chord
+
+
+def test_09_te_wrap_held_without_flicker():
+    geo = _09_geo("2D-F-PA-10R")
+    zs = np.linspace(0.0, 12.0, 41)
+    tpls, samples = _templates(geo, zs, n_chord=8)
+    flags = [any(b.wrap for b in t.loop) for t in tpls]
+    n_flip = sum(a != b for a, b in zip(flags, flags[1:]))
+    assert n_flip <= 1
+    if True in flags and False in flags:
+        i = flags.index(False)
+        assert all(flags[:i]) and not any(flags[i:])
+    for wrap_on, samp in zip(flags, samples):
+        if wrap_on:
+            assert "te" in samp
+        else:
+            assert "te" not in samp
 
 
 def test_catalogue_2df_te_trace_is_smooth():
@@ -408,18 +534,27 @@ def test_rib_ngons_use_loft_skin_and_web_nodes():
     assert rings
     assert all(len(ring) > 4 for _n, ring in rings)
     tmpl, samp = tpls[0], samples[0]
-    su = [b for b in tmpl.loop if b.side == "suction" and not b.wrap]
-    pr = [b for b in tmpl.loop if b.side == "pressure" and not b.wrap]
-    for k, ((sb, pb), (_name, ring)) in enumerate(zip(zip(su, pr), rings)):
-        wanted = _ptset(samp[sb.name]) | _ptset(samp[pb.name])
-        aft = next((w for w in tmpl.webs if w.suction == sb.end or w.pressure == sb.end), None)
-        fwd = next((w for w in tmpl.webs if w.suction == sb.start or w.pressure == sb.start), None)
+    from implicit_geometry_kernel.blade.topology.map import _key_name
+    from implicit_geometry_kernel.blade.topology.ribs import _group_skin_branches
+
+    web_keys = {_key_name(w.suction) for w in tmpl.webs}
+    su_g = _group_skin_branches(
+        [b for b in tmpl.loop if b.side == "suction" and not b.wrap], web_keys)
+    pr_g = _group_skin_branches(
+        [b for b in tmpl.loop if b.side == "pressure" and not b.wrap], web_keys)
+    for k, ((sbs, pbs), (_name, ring)) in enumerate(zip(zip(su_g, pr_g), rings)):
+        wanted = set()
+        for b in (*sbs, *pbs):
+            if b.name in samp:
+                wanted |= _ptset(samp[b.name])
+        aft = next((w for w in tmpl.webs if w.suction == sbs[-1].end or w.pressure == sbs[-1].end), None)
+        fwd = next((w for w in tmpl.webs if w.suction == sbs[0].start or w.pressure == sbs[0].start), None)
         if aft is not None and aft.name in samp:
             wanted |= _ptset(samp[aft.name])
         if fwd is not None and fwd.name in samp:
             wanted |= _ptset(samp[fwd.name])
         wrap = next((b for b in tmpl.loop if b.wrap), None)
-        if wrap is not None and wrap.name in samp and str(sb.end[0]) == "TE":
+        if wrap is not None and wrap.name in samp and _key_name(sbs[-1].end) == "te":
             wanted |= _ptset(samp[wrap.name])
         got = _ptset(ring)
         assert wanted <= got, (k, sorted(wanted - got)[:4])
@@ -715,6 +850,49 @@ def test_09_extra_keys_build(key):
     assert float(geo.stations[-1].z) == pytest.approx(12.0)
     cut = geo.section_at(3.0)
     assert cut is not None
+
+
+@pytest.mark.parametrize("key,z,n_patches", [
+    ("2A-F-LC-10R", 6.0, 3),
+    ("2C-F-LC-10R", 6.0, 3),
+    ("2D-F-LC-10R", 6.0, 3),
+    ("1B-F-LC-10R", 6.0, 2),
+    ("2D-F-PA-10R", 6.0, 3),
+])
+def test_rib_patches_split_only_at_live_webs(key, z, n_patches):
+    from implicit_geometry_kernel.blade.stations import TransverseMember
+
+    geo = _09_geo(key)
+    tpls, samples = _templates(geo, [z], n_chord=8)
+    member = next((m for m in geo.transverse if str(m.name).startswith("rib")),
+                  TransverseMember("rib", z, 0.01))
+    rings = rib_cell_polygons_from_samples(tpls[0], samples[0], member)
+    assert len(tpls[0].webs) + 1 == n_patches
+    assert len(rings) == n_patches
+    if key == "2C-F-LC-10R":
+        n_su = sum(1 for b in tpls[0].loop if b.side == "suction" and not b.wrap)
+        assert n_su > n_patches
+
+
+def test_rib_patches_follow_dropped_pa_webs():
+    geo = _09_geo("2D-F-PA-10R")
+    tpls, samples = _templates(geo, [11.5], n_chord=8)
+    rings = rib_cell_polygons_from_samples(tpls[0], samples[0], "rib_tip")
+    assert len(rings) == len(tpls[0].webs) + 1
+
+
+def test_rib_patches_zero_webs_one_ring():
+    from implicit_geometry_kernel.blade.stations import TransverseMember
+
+    geo = _09_geo("0B-LC-0R")
+    tpls, samples = _templates(geo, [6.0], n_chord=8)
+    assert tpls[0].webs == ()
+    n_su = sum(1 for b in tpls[0].loop if b.side == "suction" and not b.wrap)
+    assert n_su > 1
+    rings = rib_cell_polygons_from_samples(
+        tpls[0], samples[0], TransverseMember("rib_x", 6.0, 0.01))
+    assert len(rings) == 1
+    assert rings[0][0] == "rib_x"
 
 
 @pytest.mark.parametrize("key", ["2D-F-LC-0R", "4D-F-PA-10R"])

@@ -6,6 +6,7 @@ from typing import Mapping
 import numpy as np
 
 from implicit_geometry_kernel.blade.locked_loft import arc_resample_open
+from implicit_geometry_kernel.blade.topology.sizing import resample_open_h
 from implicit_geometry_kernel.blade.topology.template import (
     LoopBranch,
     ShellTopologyTemplate,
@@ -38,9 +39,15 @@ def loft_mapped_strips(s0: Mapping[str, np.ndarray], s1: Mapping[str, np.ndarray
         if not branch.wrap or branch.name not in s0:
             continue
         dest = _strip_dest(branch, s1, t0, t1)
-        if dest is None:
-            continue
-        pa, pb = np.asarray(s0[branch.name], float), np.asarray(s1[dest], float)
+        pa = np.asarray(s0[branch.name], float)
+        if dest is not None and dest in s1:
+            pb = np.asarray(s1[dest], float)
+        else:
+            ridge = _sample_te_ridge(s1)
+            if ridge is None:
+                continue
+            pb = np.vstack([ridge, ridge])
+            dest = branch.name
         faces.extend(_strip_faces(dest, pa, pb, t0, t1, branch))
         used.add(dest)
     names1 = {w.name for w in t1.webs}
@@ -106,7 +113,7 @@ def _strip_faces(name: str, pa: np.ndarray, pb: np.ndarray, t0, t1, branch,
         try:
             start_m = t0.map_vertex(branch.start, t1) if branch.start in t0.vertices else branch.start
             end_m = t0.map_vertex(branch.end, t1) if branch.end in t0.vertices else branch.end
-            collapsing = collapsing or (start_m == end_m and not branch.wrap)
+            collapsing = collapsing or (start_m == end_m)
         except KeyError:
             pass
     if branch.wrap and np.allclose(pa[0], pa[-1]) and np.allclose(pb[0], pb[-1]):
@@ -167,7 +174,8 @@ def _concat_side_samples(samples: Mapping[str, np.ndarray], tmpl: ShellTopologyT
 
 
 def _resample_keys(p0: np.ndarray, p1: np.ndarray, arc: np.ndarray, n: int,
-                   *, bunch_end: bool = False) -> np.ndarray:
+                   *, bunch_end: bool = False, size_field: bool = False,
+                   chord: float = 1.0, t: float = 0.0) -> np.ndarray:
     """Arc-length resample between two keys that already lie on ``arc`` (TE→LE)."""
     n = max(int(n), 2)
     if len(arc) < 2:
@@ -182,7 +190,9 @@ def _resample_keys(p0: np.ndarray, p1: np.ndarray, arc: np.ndarray, n: int,
         sub = np.vstack([p0, arc[i0 + 1 : i1], p1])
     else:
         sub = np.vstack([p0, arc[i0 - 1 : i1 : -1], p1])
-    if bunch_end and n > 2:
+    if size_field:
+        sampled = resample_open_h(sub, chord, t)
+    elif bunch_end and n > 2:
         sampled = _arc_resample_bunched(sub, n)
     else:
         sampled = arc_resample_open(sub, n)
@@ -266,6 +276,14 @@ def _same_web_set(t0: ShellTopologyTemplate, t1: ShellTopologyTemplate) -> bool:
     if isinstance(s0, tuple) and isinstance(s1, tuple) and len(s0) == 2 and len(s1) == 2:
         return s0[1] == s1[1]
     return s0 == s1
+
+
+def _sample_te_ridge(samples: Mapping[str, np.ndarray]) -> np.ndarray | None:
+    for name in ("te_su", "te_pr", "te"):
+        pts = np.asarray(samples.get(name, []), float)
+        if len(pts):
+            return np.asarray(pts[-1], float)
+    return None
 
 
 def _strip_dest(branch: LoopBranch, s1: Mapping[str, np.ndarray],

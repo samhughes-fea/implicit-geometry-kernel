@@ -63,14 +63,87 @@ def _skin_mid_loop(graph: ShellGraph, z: float) -> np.ndarray:
     return np.column_stack([xy[:, :2], np.full(len(xy), float(z))])
 
 
+TE_OPEN_BAND = 0.005
+TE_OPEN_OVER_C = 0.005
+TE_OPEN_OVER_T = 2.0
+
+
 def _te_frac_drop(cut) -> float:
-    """Chord-fraction length of the TE wrap: full ``TE_ARC`` on a cylinder, a
-    fraction of that on a thin foil, so the cap width follows t/c instead of
-    switching on a y-span threshold (that switch wrinkled the loft)."""
+    """Deprecated: t/c inset that invented wrap on a sharp OML. Prefer ``te_is_blunt``."""
     tc = _cut_tc(cut)
     if tc is None:
         tc = 0.2
     return float(TE_ARC) * float(np.clip(float(tc) / 0.45, 0.25, 1.0))
+
+
+def te_blunt_eps(cut) -> float:
+    """Opening above ``2 t + 0.005 c`` is a finite TE edge, not a point TE plus skin offset."""
+    c = max(float(getattr(cut, "chord", 0.0) or 0.0), 1e-12)
+    ts = [
+        float(w.thickness)
+        for w in getattr(cut, "walls", ())
+        if getattr(w, "kind", "") in ("skin", "web") and float(getattr(w, "thickness", 0.0) or 0.0) > 0.0
+    ]
+    t = min(ts) if ts else 0.0
+    return TE_OPEN_OVER_T * t + TE_OPEN_OVER_C * c
+
+
+def te_opening(cut, pts: np.ndarray) -> float:
+    """Distance between suction and pressure TE corners on the skin-mid loop."""
+    if pts is None or len(pts) < 2:
+        return 0.0
+    _i_le, i_su, i_pr = _te_corner_indices(pts, cut)
+    return float(np.linalg.norm(np.asarray(pts[i_su], float)[:2] - np.asarray(pts[i_pr], float)[:2]))
+
+
+def te_is_blunt(cut, pts: np.ndarray) -> bool:
+    """True when the midline has a finite TE edge, not a single ridge vertex."""
+    return te_opening(cut, pts) > te_blunt_eps(cut)
+
+
+def te_blunt_of_cut(cut) -> bool:
+    """``te_is_blunt`` on the cut's skin-mid loop."""
+    z = float(getattr(cut, "z", 0.0))
+    return te_is_blunt(cut, _skin_mid_loop(cut.shell_graph(), z))
+
+
+def hold_te_blunt(openings, eps) -> list[bool]:
+    """Hysteresis along a span sample: leave blunt when opening ≤ ε; enter when > ε."""
+    openings = [float(x) for x in openings]
+    eps = [float(x) for x in np.atleast_1d(eps)]
+    if len(eps) == 1 and len(openings) > 1:
+        eps = eps * len(openings)
+    if not openings:
+        return []
+    state = openings[0] > eps[0]
+    out: list[bool] = []
+    for o, e in zip(openings, eps):
+        e = max(float(e), 1e-15)
+        if state and o <= e:
+            state = False
+        elif (not state) and o > e:
+            state = True
+        out.append(state)
+    return out
+
+
+def te_blunt_flags_for_cuts(cuts) -> list[bool | None]:
+    """Held blunt flags for a station sequence; ``None`` cuts stay ``None``."""
+    openings: list[float] = []
+    eps: list[float] = []
+    idx: list[int] = []
+    for i, cut in enumerate(cuts):
+        if cut is None:
+            continue
+        pts = _skin_mid_loop(cut.shell_graph(), float(cut.z))
+        openings.append(te_opening(cut, pts))
+        eps.append(te_blunt_eps(cut))
+        idx.append(i)
+    held = hold_te_blunt(openings, eps)
+    out: list[bool | None] = [None] * len(cuts)
+    for i, flag in zip(idx, held):
+        out[i] = flag
+    return out
 
 
 def _oml_te_xyz(cut) -> np.ndarray | None:
@@ -89,18 +162,45 @@ def _oml_te_xyz(cut) -> np.ndarray | None:
 
 
 def _te_corner_indices(pts: np.ndarray, cut) -> tuple[int, int, int]:
-    """LE and the OML-TE ridge index (both corners). Side arcs start at the ridge;
-    wrap corners are interpolated along those arcs at ``_te_frac_drop``.
+    """LE index and suction / pressure TE corners on the skin-mid loop.
+
+    Corners are the farthest pair among vertices within ``TE_OPEN_BAND`` of the
+    trailing extreme (same order as ``TE_OPEN_OVER_C``). A sharp NACA collapses
+    to one ridge; a cylinder / flatback keeps two.
     """
     frac = _chord_fracs(cut, pts)
     i_le = int(np.argmin(frac))
-    oml = _oml_te_xyz(cut)
-    if oml is not None:
-        i_te = int(np.argmin(np.linalg.norm(pts[:, :2] - np.asarray(oml, float)[:2], axis=1)))
-        if i_te != i_le:
-            return i_le, i_te, i_te
-    i_te = int(np.argmax(frac))
-    return i_le, i_te, i_te
+    fmax = float(frac.max())
+    idx = np.flatnonzero(frac >= fmax - TE_OPEN_BAND)
+    if len(idx) < 2:
+        i_te = int(np.argmax(frac))
+        return i_le, i_te, i_te
+    xy = np.asarray(pts, float)[idx, :2]
+    delta = xy[:, None, :] - xy[None, :, :]
+    d2 = np.sum(delta * delta, axis=2)
+    k = int(np.argmax(d2))
+    a, b = divmod(k, len(idx))
+    i0, i1 = int(idx[a]), int(idx[b])
+    i_ridge = int(np.argmax(frac))
+    n = len(pts)
+
+    def _side_idx(step: int) -> set[int]:
+        out: set[int] = set()
+        i = i_ridge
+        for _ in range(n):
+            i = (i + int(step)) % n
+            if i == i_le:
+                break
+            out.add(i)
+        return out
+
+    cw, ccw = _side_idx(1), _side_idx(-1)
+    same = (i0 in cw and i1 in cw) or (i0 in ccw and i1 in ccw)
+    if same:
+        return i_le, i_ridge, i_ridge
+    if float(pts[i0, 1]) >= float(pts[i1, 1]):
+        return i_le, i0, i1
+    return i_le, i1, i0
 
 
 def _te_wrap_arc(pts: np.ndarray, a: np.ndarray, b: np.ndarray, i_le: int,
@@ -199,9 +299,11 @@ def _xyz_at_frac(arc: np.ndarray, fracs: np.ndarray, f: float) -> np.ndarray:
     return arc[int(np.argmin(np.abs(fracs - f)))].copy()
 
 
-def _side_arcs(pts: np.ndarray, cut) -> tuple[np.ndarray, np.ndarray]:
+def _side_arcs(pts: np.ndarray, cut, i_le: int | None = None, i_su: int | None = None,
+               i_pr: int | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Suction and pressure arcs, each TE-corner → LE (open; TE corners may differ)."""
-    i_le, i_su, i_pr = _te_corner_indices(pts, cut)
+    if i_le is None or i_su is None or i_pr is None:
+        i_le, i_su, i_pr = _te_corner_indices(pts, cut)
     n = len(pts)
     if i_su == i_pr:
         cw = _walk_arc_dir(pts, i_su, i_le, 1)

@@ -11,6 +11,7 @@ from implicit_geometry_kernel import (
     WallRegionGraph,
     transverse_members_from_windio,
 )
+from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
 from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
 
 
@@ -21,6 +22,56 @@ def _tapered(key: str, **kwargs):
     ]
     return BladeGeometry(stations, key, 0.003, pivot_fraction=0.3, spar_cap_thickness=0.008,
                          shear_web_thickness=0.002, **kwargs)
+
+
+def test_family_c_regions_are_per_web_pads_not_a_box():
+    graph = WallRegionGraph.from_section_layout("2C-F-LC-0R")
+    assert graph.cap_mode == "pads"
+    assert len(graph.cap_windows) == 2
+    su = [r for r in graph.regions if r.side == "suction" and r.is_cap]
+    assert su
+    assert ("web_0", "web_1") not in {(r.start, r.end) for r in su}
+    fracs = dict(graph.evaluate_anchors(0.0))
+    for r in su:
+        mid = 0.5 * (fracs[r.start] + fracs[r.end])
+        assert any(lo - 1e-9 <= mid <= hi + 1e-9 for lo, hi in graph.cap_windows)
+
+
+def test_family_d_cap_still_spans_outer_webs():
+    graph = WallRegionGraph.from_section_layout("2D-F-LC-0R")
+    assert graph.cap_mode == "box"
+    su = [r for r in graph.regions if r.side == "suction" and r.is_cap]
+    assert [(r.start, r.end) for r in su] == [("web_0", "web_1")]
+
+
+def test_family_b_cap_is_the_fixed_band():
+    graph = WallRegionGraph.from_section_layout("2B-F-LC-0R")
+    assert graph.cap_mode == "band"
+    su = [r for r in graph.regions if r.side == "suction" and r.is_cap]
+    assert any({r.start, r.end} == {"cap_lo", "cap_hi"} for r in su)
+
+
+def test_overlapping_family_c_pads_merge_into_one_window():
+    layout = SectionLayout(
+        web_chord_fracs=(0.30, 0.34),
+        orientation="flapwise",
+        cap_placement=CapPlacementRule.per_web_pads(),
+        structural_family="C",
+    )
+    graph = WallRegionGraph.from_section_layout(layout)
+    assert graph.cap_mode == "pads"
+    assert len(graph.cap_windows) == 1
+    su = [r for r in graph.regions if r.side == "suction" and r.is_cap]
+    assert any(r.start.startswith("web_") and r.end.startswith("web_") for r in su)
+
+
+def test_family_c_one_web_marks_both_pad_halves():
+    graph = WallRegionGraph.from_section_layout("1C-F-LC-0R")
+    su = [r for r in graph.regions if r.side == "suction" and r.is_cap]
+    assert len(su) == 2
+    ends = {(r.start, r.end) for r in su}
+    assert ("web_0", "cap_hi") in ends
+    assert ("cap_lo", "web_0") in ends
 
 
 def test_from_section_layout_stable_names_catalogue_keys():

@@ -308,6 +308,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin):
         if self._web_x_from_pitch is None and self.web_offsets is None:
             return graph
         webs = tuple(replace(w, frac=self._web_chord_frac_law(w.index)) for w in graph.webs)
+        pad = float(getattr(graph, "cap_pad", None) or 0.0)
         anchors = []
         for a in graph.anchors:
             if a.name.startswith("web_"):
@@ -317,6 +318,21 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin):
                     anchors.append(a)
                     continue
                 anchors.append(replace(a, frac=self._web_chord_frac_law(i)))
+            elif pad > 0.0:
+                parts = str(a.name).split("_")
+                if (len(parts) >= 3 and parts[0] == "cap" and parts[1].isdigit()
+                        and parts[2] in ("lo", "hi")):
+                    i = int(parts[1])
+                    law = self._web_chord_frac_law(i)
+                    sign = -1.0 if parts[2] == "lo" else 1.0
+                    anchors.append(replace(
+                        a,
+                        frac=lambda z, _law=law, _p=pad, _s=sign: float(
+                            np.clip(_law(z) + _s * _p, 0.02, 0.98)
+                        ),
+                    ))
+                    continue
+                anchors.append(a)
             else:
                 anchors.append(a)
         return replace(graph, webs=webs, anchors=tuple(anchors))

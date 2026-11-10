@@ -23,6 +23,11 @@ from implicit_geometry_kernel.blade.topology.map import (
     place_station_keys,
     sample_region_polylines,
 )
+from implicit_geometry_kernel.blade.topology.sizing import (
+    resample_open_h,
+    size_field_h,
+    station_live_thickness,
+)
 from implicit_geometry_kernel.blade.topology.map_loft import (
     _quad_bowtie,
     loft_mapped_strips,
@@ -31,6 +36,12 @@ from implicit_geometry_kernel.blade.topology.map_walk import (
     _chord_fracs,
     _oml_te_xyz,
     _te_wrap_arc,
+    hold_te_blunt,
+    te_blunt_eps,
+    te_blunt_flags_for_cuts,
+    te_blunt_of_cut,
+    te_is_blunt,
+    te_opening,
 )
 from implicit_geometry_kernel.blade.topology.ribs import (
     ear_clip_ring,
@@ -62,6 +73,8 @@ __all__ = [
     "_quad_bowtie",
     "_regularise_anchors",
     "_te_wrap_arc",
+    "_template_from_cut",
+    "hold_te_blunt",
     "loft_mapped_strips",
     "ear_clip_ring",
     "rib_cell_polygons_from_samples",
@@ -69,10 +82,18 @@ __all__ = [
     "rib_face_polygons",
     "rib_face_triangles",
     "place_station_keys",
+    "resample_open_h",
     "role_atom",
     "sample_region_polylines",
+    "size_field_h",
+    "station_live_thickness",
     "section_cut_near",
     "signatures_compatible",
+    "te_blunt_eps",
+    "te_blunt_flags_for_cuts",
+    "te_blunt_of_cut",
+    "te_is_blunt",
+    "te_opening",
     "templates_along",
     "zone_region_graphs",
 ]

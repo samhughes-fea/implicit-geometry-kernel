@@ -35,7 +35,7 @@ Unnamed 3-D PNGs use the leading-edge camera; `*_te.png` is the trailing-edge tw
 figures/<stem>/
   cross_sections/sections.png   (4×4 grid, shared root-anchored window)
   cross_sections/01.png … 16.png   (root window | station window)
-  csg_mesh/01.png … 16.png         (wall_meta φ | conformal mesh nodes)
+  csg_mesh/01.png … 16.png         (constructive | occupancy | property QT; bays | nodes | property by label)
   regions/{root,transition,max_chord,span70,tip}.png
   regions/{root,transition,max_chord,span70,tip}_te.png
   region_cutaways/{root,transition,max_chord,span70,tip}.png
@@ -44,8 +44,9 @@ figures/<stem>/
   full_blade/{elevation,plan,iso,closeups,closeups_te}.png
 ```
 
-`csg_mesh/` is `wall_meta_from_cut` φ next to authored `sample_region_polylines` nodes
-(`n_chord=8`), not the optional IEA 15 Gmsh `mesh_closeup.png`.
+`csg_mesh/` is a 2×3 of constructive polygons, `wall_meta` occupancy, and the
+property quadtree (union + by label), then cell bays and mid-surface nodes (`h`).
+Not the optional IEA 15 Gmsh `mesh_closeup.png`.
 
 Regen also writes debug dumps `mids.obj` / `mids.vtk` / `samples.npz` at the stem root
 (gitignored). PNGs stay committed.

@@ -28,11 +28,12 @@ from _shared.blade_viz import (  # noqa: E402
     REGIONS,
     VIEW_LE,
     VIEW_TE,
+    figure_csg_mesh,
     figure_planforms,
     figure_section_grid,
     is_suction_role,
+    _sample_cuts,
     landmarks,
-    live_web_fracs,
     save_fig as save_viz,
     tidy_legacy_pngs,
 )
@@ -54,11 +55,11 @@ from implicit_geometry_kernel import (  # noqa: E402
     loft_mapped_strips,
 )
 from implicit_geometry_kernel.blade.topology import (  # noqa: E402
-    ShellTopologyTemplate,
-    _cut_tc,
+    _template_from_cut,
     rib_cell_polygons_from_samples,
     sample_region_polylines,
     section_cut_near,
+    te_blunt_flags_for_cuts,
 )
 from implicit_geometry_kernel.mesh.polygon import fill_rib_cells  # noqa: E402
 KEYS = (
@@ -126,20 +127,21 @@ def _station_zs(geo: BladeGeometry) -> list[float]:
 
 
 def _wall_stations(geo: BladeGeometry) -> list[tuple[float, object, dict]]:
-    out = []
+    raw = []
     for z in _station_zs(geo):
         cut = section_cut_near(geo, float(z))
-        if cut is None:
-            continue
+        if cut is not None:
+            raw.append(cut)
+    flags = te_blunt_flags_for_cuts(raw)
+    out = []
+    for cut, blunt in zip(raw, flags):
         sg = cut.shell_graph()
-        tmpl = ShellTopologyTemplate.from_region_graph(
-            geo.region_graph, float(getattr(cut, "z", z)), n_chord=N_CHORD,
-            live_web_fracs=live_web_fracs(cut) or None, t_c=_cut_tc(cut),
-            dropped_web_indices=tuple(cut.dropped_web_indices),
+        tmpl = _template_from_cut(
+            geo.region_graph, cut, float(cut.z), N_CHORD, te_blunt=blunt,
         )
         samples = sample_region_polylines(cut, sg, tmpl, geo.region_graph)
         if samples:
-            out.append((float(getattr(cut, "z", z)), tmpl, samples))
+            out.append((float(cut.z), tmpl, samples))
     return out
 
 
@@ -532,6 +534,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="subset of KEYS, e.g. 2D-F-PA-10R 3D-F-LC-10R")
     parser.add_argument("--cutaway-only", action="store_true",
                         help="write full_blade/cutaway.png (and TE twin) only")
+    parser.add_argument("--planform-only", action="store_true",
+                        help="write planform/axes.png and planform/structure.png only")
+    parser.add_argument("--csg-mesh-only", action="store_true",
+                        help="write csg_mesh/01.png–16.png only")
     args = parser.parse_args(argv)
     keys = list(KEYS)
     if args.smoke:
@@ -546,6 +552,13 @@ def main(argv: list[str] | None = None) -> int:
         marks = _marks(geo)
         print(f"\n{key}  regions={len(geo.region_graph.regions)}  "
               f"webs={len(geo.region_graph.webs)}")
+        if args.planform_only:
+            figure_planforms(key, key, geo, marks, figures=FIGURES, repo=SCRIPT.parents[2], n=41)
+            continue
+        if args.csg_mesh_only:
+            zs, cuts, _errors = _sample_cuts(geo)
+            figure_csg_mesh(key, geo, zs, cuts, figures=FIGURES, repo=SCRIPT.parents[2])
+            continue
         if args.cutaway_only:
             walls = _wall_stations(geo)
             if not walls:

@@ -59,7 +59,7 @@ Figures per key under `figures/<key>/`:
 ```
 cross_sections/sections.png   (4×4 grid, shared root-anchored window)
 cross_sections/01.png … 16.png   (root window | station window)
-csg_mesh/01.png … 16.png         (wall_meta φ | conformal mesh nodes)
+csg_mesh/01.png … 16.png         (constructive | occupancy | property QT; bays | nodes | property by label)
 regions/{root,transition,max_chord,span70,tip}.png
 regions/{root,transition,max_chord,span70,tip}_te.png
 region_cutaways/{root,transition,max_chord,span70,tip}.png
@@ -68,7 +68,7 @@ planform/{axes,structure}.png   (structure: web loci + chordwise rib lines)
 full_blade/{elevation,closeups,closeups_te,cutaway,cutaway_te}.png
 ```
 
-`csg_mesh/` is `wall_meta_from_cut` φ next to authored conformal-mesh nodes (`n_chord=8`).
+`csg_mesh/` is a 2×3: constructive polygons (`emit_constructive_polygons`, including cores) | `wall_meta` occupancy | property quadtree (union of wall solids); cell bays | mid-surface nodes (`h`) | property occupancy by label on that same tree.
 
 Regen also writes debug meshes at `figures/<key>/` (gitignored; same loft as the PNGs):
 

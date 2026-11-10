@@ -60,11 +60,11 @@ from implicit_geometry_kernel import (  # noqa: E402
     loft_mapped_strips,
 )
 from implicit_geometry_kernel.blade.topology import (  # noqa: E402
-    ShellTopologyTemplate,
-    _cut_tc,
+    _template_from_cut,
     rib_cell_polygons_from_samples,
     sample_region_polylines,
     section_cut_near,
+    te_blunt_flags_for_cuts,
 )
 from implicit_geometry_kernel.mesh.polygon import fill_rib_cells  # noqa: E402
 from implicit_geometry_kernel.blade.windio import (  # noqa: E402
@@ -391,22 +391,21 @@ def _station_zs(geo: BladeGeometry, z_of_s: np.ndarray, n_span: int) -> list[flo
 
 def _wall_stations(geo: BladeGeometry, z_of_s: np.ndarray, n_span: int = LOFT_STATIONS
                    ) -> list[tuple[float, object, dict[str, np.ndarray]]]:
-    out = []
+    raw = []
     for z in _station_zs(geo, z_of_s, n_span):
         cut = section_cut_near(geo, float(z))
-        if cut is None:
-            continue
+        if cut is not None:
+            raw.append(cut)
+    flags = te_blunt_flags_for_cuts(raw)
+    out = []
+    for cut, blunt in zip(raw, flags):
         sg = cut.shell_graph()
-        live = live_web_fracs(cut)
-        tmpl = ShellTopologyTemplate.from_region_graph(
-            geo.region_graph, float(getattr(cut, "z", z)), n_chord=WALL_POINTS,
-            live_web_fracs=live or None,
-            t_c=_cut_tc(cut),
-            dropped_web_indices=tuple(cut.dropped_web_indices),
+        tmpl = _template_from_cut(
+            geo.region_graph, cut, float(cut.z), WALL_POINTS, te_blunt=blunt,
         )
         samples = sample_region_polylines(cut, sg, tmpl, geo.region_graph)
         if samples:
-            out.append((float(getattr(cut, "z", z)), tmpl, samples))
+            out.append((float(cut.z), tmpl, samples))
     return out
 
 

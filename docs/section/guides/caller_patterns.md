@@ -23,16 +23,21 @@ Runnable twin: `../../../examples/section/teaching/01_first_station.py`.
 from implicit_geometry_kernel.blade import Airfoil
 from implicit_geometry_kernel.section import (
     SectionGeometry,
+    SectionOptions,
+    SectionSpec,
     resolve_system_type,
 )
 
-result = SectionGeometry(
-    layout=resolve_system_type("2D-F-LC-0R"),
-    airfoil=Airfoil.naca4("2412").to_sdf(chord=1.0),
+spec = SectionSpec.from_kwargs(
+    resolve_system_type("2D-F-LC-0R"),
+    Airfoil.naca4("2412").to_sdf(chord=1.0),
     skin_thickness=0.004,
     spar_cap_thickness=0.012,
     shear_web_thickness=0.005,
-    outputs=("properties", "midlines", "cell_wall_loops"),
+)
+result = SectionGeometry(
+    spec,
+    SectionOptions(outputs=("properties", "midlines", "cell_wall_loops")),
 ).execute().get_results()
 ```
 
@@ -44,23 +49,25 @@ re-resolving (so the design-variable set stays fixed). Runnable twin:
 
 ```python
 runner0 = SectionGeometry(
-    layout=layout,
-    airfoil=airfoil,
-    skin_thickness=t_skin_min,
-    spar_cap_thickness=0.0,
-    shear_web_thickness=0.0,
+    SectionSpec.from_kwargs(
+        layout, airfoil,
+        skin_thickness=t_skin_min,
+        spar_cap_thickness=0.0,
+        shear_web_thickness=0.0,
+    ),
 )
 frozen = runner0.resolve().get_layout_resolution()
 
 for skin_thickness, spar_cap_thickness, shear_web_thickness in trials:
     result = SectionGeometry(
-        layout=frozen.layout,
-        airfoil=airfoil,
-        skin_thickness=skin_thickness,
-        spar_cap_thickness=spar_cap_thickness,
-        shear_web_thickness=shear_web_thickness,
+        SectionSpec.from_kwargs(
+            frozen.layout, airfoil,
+            skin_thickness=skin_thickness,
+            spar_cap_thickness=spar_cap_thickness,
+            shear_web_thickness=shear_web_thickness,
+        ),
+        SectionOptions(outputs=("properties",)),
         resolution=frozen,  # carries surviving web x/y
-        outputs=("properties",),
     ).execute().get_results()
 ```
 
@@ -76,15 +83,18 @@ Guide: [`feasibility_and_drops.md`](feasibility_and_drops.md).
 
 ```python
 result = SectionGeometry(
-    layout=layout,
-    airfoil=airfoil_at_station,
-    skin_thickness=0.004,
-    web_x_positions_m=(0.15, 0.50),  # metres from LE, fixed along span
-    outputs=("midlines",),
+    SectionSpec.from_kwargs(
+        layout, airfoil_at_station,
+        skin_thickness=0.004,
+        spar_cap_thickness=0.0,
+        shear_web_thickness=0.0,
+        web_offsets=(0.15, 0.50),  # metres from LE, fixed along span
+    ),
+    SectionOptions(outputs=("midlines",)),
 ).execute().get_results()
 ```
 
-**Local fractions (legacy):** omit `web_x_positions_m`. Positions become
+**Local fractions (legacy):** omit `web_offsets`. Positions become
 `layout.web_chord_fracs × local_chord`. Every web scales with the section;
 none is dropped for taper.
 

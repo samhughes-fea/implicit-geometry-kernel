@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf import FeatureTable, NO_FEATURE, PriorityUnionNode, TagNode
-from implicit_geometry_kernel.sdf.nodes.tagged import CircleSDF
+from implicit_geometry_kernel.sdf import FeatureTable, PriorityUnionNode, TagNode
+from implicit_geometry_kernel.sdf.nodes import Circle
 
 
 def _xy(xs, ys, z=0.0):
@@ -22,15 +22,15 @@ def test_feature_table_reuses_names():
 
 
 def test_tag_node_stamps_meta():
-    tagged = TagNode(CircleSDF(0.0, 0.0, 1.0, meta=NO_FEATURE), 7)
+    tagged = TagNode(Circle(0.0, 0.0, 1.0), 7)
     s = tagged.evaluate(_xy([0.0], [0.0]))
     assert s.meta[0] == 7
     assert s.phi[0] < 0.0
 
 
 def test_priority_union_inside_prefers_cap():
-    skin = TagNode(CircleSDF(0.0, 0.0, 1.0), 1)
-    cap = TagNode(CircleSDF(0.0, 0.0, 0.4), 2)
+    skin = TagNode(Circle(0.0, 0.0, 1.0), 1)
+    cap = TagNode(Circle(0.0, 0.0, 0.4), 2)
     field = PriorityUnionNode([skin, cap], [1, 3])
     inside_cap = field.evaluate(_xy([0.0], [0.0]))
     in_skin_only = field.evaluate(_xy([0.7], [0.0]))

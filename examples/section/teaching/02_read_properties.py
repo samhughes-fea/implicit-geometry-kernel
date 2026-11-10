@@ -22,20 +22,22 @@ _ensure_mod.ensure_repo_path()
 from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.section import (
     SectionGeometry,
+    SectionOptions,
+    SectionSpec,
     resolve_system_type,
 )
 
 
 def main() -> None:
+    spec = SectionSpec.from_kwargs(
+        resolve_system_type("2D-F-LC-0R"),
+        Airfoil.naca4("2412").to_sdf(chord=1.0),
+        skin_thickness=0.004,
+        spar_cap_thickness=0.012,
+        shear_web_thickness=0.005,
+    )
     result = (
-        SectionGeometry(
-            layout=resolve_system_type("2D-F-LC-0R"),
-            airfoil=Airfoil.naca4("2412").to_sdf(chord=1.0),
-            skin_thickness=0.004,
-            spar_cap_thickness=0.012,
-            shear_web_thickness=0.005,
-            outputs=("properties",),
-        )
+        SectionGeometry(spec, SectionOptions(outputs=("properties",)))
         .execute()
         .get_results()
     )

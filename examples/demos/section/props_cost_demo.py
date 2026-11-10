@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/props_cost_demo.py
+examples/demos/section/props_cost_demo.py
 ===========================
 Section-property backends: wall time vs accuracy (Pareto).
 
@@ -17,7 +17,7 @@ Writes:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/props_cost_demo.py
+    python examples/demos/section/props_cost_demo.py
 """
 
 from __future__ import annotations
@@ -57,9 +57,7 @@ from implicit_geometry_kernel.plotting.palette import (
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
-from implicit_geometry_kernel.section import (
-    MultiCellSection,
-)
+from _assemble import assemble_host
 from implicit_geometry_kernel.section.boundary.cores import emit_constructive_polygons
 from implicit_geometry_kernel.section.properties.polygons import section_properties_from_polygons
 from implicit_geometry_kernel.section.properties.backend import (
@@ -85,18 +83,17 @@ _TRACK = (
 )
 
 
-def _build(af: AirfoilSDF, *, twist_rad: float) -> MultiCellSection:
-    return MultiCellSection.twin_web(
+def _build(af: AirfoilSDF, *, twist_rad: float):
+    return assemble_host(
         af,
-        x_fore=0.20,
-        x_aft=0.50,
+        n_webs=2,
+        family="D",
+        alignment="chord_normal",
+        web_fracs=(0.20, 0.50),
         skin_thickness=0.004,
-        web_thickness=0.004,
-        cap_height=(0.014, 0.012),
-        web_alignment="chord_normal",
-        twist_angle=float(twist_rad),
-        structural_family="D",
-        core_enabled=True,
+        shear_web_thickness=0.004,
+        cap_height=0.014,
+        twist_rad=float(twist_rad),
     )
 
 
@@ -118,7 +115,7 @@ def _mean_rel_area_err(
 
 
 def _run_case(
-    section: MultiCellSection,
+    section,
     af: AirfoilSDF,
     *,
     twist_rad: float,

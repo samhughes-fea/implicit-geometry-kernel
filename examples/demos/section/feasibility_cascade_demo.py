@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/feasibility_cascade_demo.py
+examples/demos/section/feasibility_cascade_demo.py
 ===============================================
 What the package does when a layout cannot fit: drop → step down → raise.
 
@@ -21,7 +21,7 @@ Writes under ``examples/demos/figures/feasibility_cascade/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/feasibility_cascade_demo.py --presentation
+    python examples/demos/section/feasibility_cascade_demo.py --presentation
 """
 
 from __future__ import annotations
@@ -47,6 +47,7 @@ from implicit_geometry_kernel.contract import (
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     SectionGeometry,
+    SectionSpec,
     resolve_system_type,
 )
 from implicit_geometry_kernel.plotting.figure_io import (
@@ -85,14 +86,15 @@ def _sweep_cascade(
     for chord in chord_values_m:
         airfoil = AirfoilSDF.from_naca("2412", chord=float(chord), n_points=160)
         runner = SectionGeometry(
-            layout=layout,
-            airfoil=airfoil,
-            skin_thickness=float(skin_thickness),
-            spar_cap_thickness=0.0,
-            shear_web_thickness=0.004,
-            twist_rad=0.0,
-            web_offsets=web_x,
-            outputs=(),
+            SectionSpec.from_kwargs(
+                layout,
+                airfoil,
+                skin_thickness=float(skin_thickness),
+                spar_cap_thickness=0.0,
+                shear_web_thickness=0.004,
+                twist_rad=0.0,
+                web_offsets=web_x,
+            ),
         )
         try:
             resolution = runner.resolve().get_layout_resolution()

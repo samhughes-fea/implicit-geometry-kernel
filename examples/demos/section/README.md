@@ -1,11 +1,12 @@
 # visualisation demos — run list
 
-Demo scripts for `section_geometry` products. Outputs:
+Figure gallery for station geometry. Hosts assemble through ``SectionGeometry``
+(see [`_assemble.py`](_assemble.py)); do not construct ``MultiCellSection`` in
+new scripts. This is not the first on-ramp: start with
+[`../../section/teaching/`](../../section/teaching/) then the numbered examples
+in [`../../README.md`](../../README.md). Outputs:
 [`../figures/`](../figures/), committed and shown under [Figures](#figures) below. Artefact / regen index:
 [`ARTIFACTS.md`](ARTIFACTS.md). Run from the repository root.
-
-Teaching scripts (print-first, few flags):
-[`../../section/teaching/`](../../section/teaching/).
 
 See also [`../README.md`](../README.md).
 
@@ -13,34 +14,43 @@ See also [`../README.md`](../README.md).
 python examples/demos/section/<script>.py
 ```
 
+Scripts listed in [`scripts/run_examples.py`](../../../scripts/run_examples.py)
+`SKIP` stay in-tree but are not run in CI:
+[`le_te_insert_residual_demo.py`](le_te_insert_residual_demo.py) (hybrid residual
+quadtree no longer exposed) and [`quadtree_union_mesh.py`](quadtree_union_mesh.py)
+(full-resolution, several minutes).
+
 ## Table of contents
 
-1. [Newcomer path](#newcomer-path)
+1. [Gallery tour](#gallery-tour)
 2. [Product](#product)
 3. [Exactness](#exactness)
 4. [Kernel](#kernel)
 5. [Perf / benches](#perf--benches)
 6. [Stdout-only / helpers](#stdout-only--helpers)
-7. [Figures](#figures)
+7. [Not ported yet](#not-ported-yet)
+8. [Figures](#figures)
 
 ---
 
-## Newcomer path
+## Gallery tour
 
-Run these first (from the repository root):
+After teaching `01`–`06`, these gallery scripts are a useful figure tour
+(from the repository root):
 
-1. [`naca2412_section.py`](naca2412_section.py) ? one twin-web station
-2. [`structural_family_grids_demo.py`](structural_family_grids_demo.py) ? all 40 layout keys
-3. [`anatomy_2d_f_demo.py`](anatomy_2d_f_demo.py) ? labelled `2D-F` anatomy
-4. [`shell_junction_topology_demo.py`](shell_junction_topology_demo.py) ? junction snap
-5. [`cell_wall_loops_demo.py`](cell_wall_loops_demo.py) ? cell-wall loops
+1. [`naca2412_section.py`](naca2412_section.py) — one twin-web station
+2. [`structural_family_grids_demo.py`](structural_family_grids_demo.py) — all 40 layout keys
+3. [`anatomy_2d_f_demo.py`](anatomy_2d_f_demo.py) — labelled `2D-F` anatomy
+4. [`shell_junction_topology_demo.py`](shell_junction_topology_demo.py) — junction snap
+5. [`cell_wall_loops_demo.py`](cell_wall_loops_demo.py) — cell-wall loops
 
 Checked-in gallery:
-`../../docs/reference/structural_systems_gallery.md`.
+[`../../../docs/section/reference/structural_systems_gallery.md`](../../../docs/section/reference/structural_systems_gallery.md).
 Regen commands: [`ARTIFACTS.md`](ARTIFACTS.md).
 
-Figures use [`figure_io.py`](../../../plotting/figure_io.py) (`save_figure`, default DPI 150).
-Conference-facing demos accept `--presentation` (larger fonts, DPI 220).
+Figures use [`figure_io.py`](../../../src/implicit_geometry_kernel/plotting/figure_io.py)
+(`save_figure`, default DPI 150). Conference-facing demos accept `--presentation`
+(larger fonts, DPI 220).
 
 ---
 
@@ -56,13 +66,9 @@ Section / gallery / junctions / cell walls / anatomy.
 | [`anatomy_2d_f_demo.py`](anatomy_2d_f_demo.py) | Labelled `2D-F` with legend — `../figures/anatomy_2d_f/` |
 | [`section_centerline_geometry_taxonomy.py`](section_centerline_geometry_taxonomy.py) | Per-label SDF panels for layout keys |
 | [`system_types_twist_grid.py`](system_types_twist_grid.py) | Layout grids at fixed twist |
-| `spanwise_web_anchors.py` | Root-anchored vs per-station web positions |
 | [`skin_ss_ps_taxonomy_demo.py`](skin_ss_ps_taxonomy_demo.py) | Upper/lower skin solids and midline arcs |
 | [`shell_junction_topology_demo.py`](shell_junction_topology_demo.py) | Junction snap before/after (raw vs prepared midlines) |
 | [`cell_wall_loops_demo.py`](cell_wall_loops_demo.py) | Closed cell loops for 0-5 webs |
-| `section_properties_dashboard.py` | Per-label area / inertia dashboard |
-| `feature_flythroughs.py` | Reusable GIF fly-through pipeline |
-| `design_vector_morph.py` | One design vector -> solids, midlines and Q4 mesh, animated |
 | [`api_quickstart_demo.py`](api_quickstart_demo.py) | The README quickstart, run, plus what the result holds |
 
 ---
@@ -77,7 +83,7 @@ Section / gallery / junctions / cell walls / anatomy.
 | [`bug_log_sg009_demo.py`](bug_log_sg009_demo.py) | SG-009 tangency schematic (crossing then shared node) |
 | [`dual_rep_consistency_demo.py`](dual_rep_consistency_demo.py) | Polygon boundary vs SDF contour |
 | [`le_te_exactness_demo.py`](le_te_exactness_demo.py) | Skin midline vs aerofoil tip |
-| [`le_te_insert_residual_demo.py`](le_te_insert_residual_demo.py) | LE/TE inserts on the SDF path |
+| [`le_te_insert_residual_demo.py`](le_te_insert_residual_demo.py) | LE/TE inserts on the SDF path (in-tree; **CI SKIP**) |
 | [`sdf_metric_quality_demo.py`](sdf_metric_quality_demo.py) | SDF gradient quality fields |
 | [`thin_feature_robustness_demo.py`](thin_feature_robustness_demo.py) | Thin webs under twist |
 | [`topology_twist_stability_demo.py`](topology_twist_stability_demo.py) | Junction gaps vs twist |
@@ -103,11 +109,6 @@ consumes the prepared form only.
 | [`sdf_operator_algebra_demo.py`](sdf_operator_algebra_demo.py) | Every IR operator as one line of numpy |
 | [`thickness_as_field_offset_demo.py`](thickness_as_field_offset_demo.py) | Gauge sweep / Eikonal residual |
 | [`evaluation_cost_pruning_demo.py`](evaluation_cost_pruning_demo.py) | Shared-subtree memoisation and bbox cull |
-| `geometry_to_mesh_flythrough.py` | Solids ? raw midlines ? prepared strips ? Q4 mesh |
-
-The fly-through needs ImageMagick (`magick`) on PATH; pass `--no-gif` for
-frames/static strip only. `--max-frames N` for a fast preview. `--presentation`
-raises fonts/DPI.
 
 ---
 
@@ -116,9 +117,8 @@ raises fonts/DPI.
 | Script | What it draws |
 |--------|----------------|
 | [`props_cost_demo.py`](props_cost_demo.py) | Hybrid vs quadtree vs grid cost |
-| [`quadtree_union_mesh.py`](quadtree_union_mesh.py) | Shared union quadtree meshes |
+| [`quadtree_union_mesh.py`](quadtree_union_mesh.py) | Shared union quadtree meshes (in-tree; **CI SKIP**, slow) |
 | [`quadtree_convergence_study.py`](quadtree_convergence_study.py) | Quadtree depth vs dense-grid reference |
-| `quadtree_vs_shoelace_convergence_study.py` | Polygon vs quadtree accuracy?cost |
 | [`manystation_bench.py`](manystation_bench.py) | Throughput across many stations |
 
 ---
@@ -133,11 +133,27 @@ raises fonts/DPI.
 | [`cell_wall_loops_case_payload.py`](cell_wall_loops_case_payload.py) | JSON payload helper |
 | [`_plot_debug.py`](_plot_debug.py) | Optional Matplotlib call tracing |
 
-Mesh strip demos live under
-`section_mesh/visualisation/demos/`.
+Mesh strip demos belong in a downstream mesher, not this kernel.
 
 Dual-rep acceptance narrative:
-`../../docs/reports/DUAL_REP_ACCEPTANCE.md`.
+[`../../../docs/section/reports/DUAL_REP_ACCEPTANCE.md`](../../../docs/section/reports/DUAL_REP_ACCEPTANCE.md).
+
+---
+
+## Not ported yet
+
+Fork-era drivers cited in older docs. Names kept here so the gallery index is
+honest; do not look for these `.py` files in this folder.
+
+| Name | Role (when it existed) |
+|------|------------------------|
+| `spanwise_web_anchors.py` | Root-anchored vs per-station web positions (see teaching `04`) |
+| `section_properties_dashboard.py` | Per-label area / inertia dashboard |
+| `feature_flythroughs.py` | Reusable GIF fly-through pipeline |
+| `design_vector_morph.py` | Design-vector morph GIF (static plot: [`geometry_from_design_vector.py`](geometry_from_design_vector.py)) |
+| `geometry_to_mesh_flythrough.py` | Solids → midlines → Q4 mesh (kernel stops at contract types) |
+| `spanwise_yz_plan_flyover.py` | Spanwise YZ plan fly-over GIF |
+| `quadtree_vs_shoelace_convergence_study.py` | Polygon vs quadtree accuracy–cost (see [`../../integration/01_quadtree_vs_shoelace/`](../../integration/01_quadtree_vs_shoelace/)) |
 
 ### Plot debug tracing
 

@@ -3,7 +3,7 @@
 import numpy as np
 
 from implicit_geometry_kernel.sdf import GeometrySolver, LoftedPolygonSDF
-from implicit_geometry_kernel.sdf.nodes.tagged import CircleSDF, PolygonSDF
+from implicit_geometry_kernel.sdf.nodes import Circle, Polygon
 
 
 def _square(z):
@@ -24,7 +24,8 @@ def test_lofted_polygon_uses_own_station():
 def test_lofted_matches_fixed_polygon_at_same_z():
     z = 0.5
     lofted = LoftedPolygonSDF(_square)
-    fixed = PolygonSDF(_square(z))
+    verts = tuple((float(p[0]), float(p[1])) for p in _square(z))
+    fixed = Polygon(verts)
     rng = np.random.default_rng(0)
     xy = rng.uniform(-2.0, 2.0, size=(40, 2))
     pts = np.column_stack([xy, np.full(40, z)])
@@ -33,7 +34,7 @@ def test_lofted_matches_fixed_polygon_at_same_z():
 
 def test_project_circle_in_plane():
     solver = GeometrySolver(tolerance=1e-8, max_step=0.5)
-    field = CircleSDF(0.0, 0.0, 1.0)
+    field = Circle(0.0, 0.0, 1.0)
     start = np.array([[2.0, 0.0, 3.0], [0.0, 0.5, 3.0]])
     out = solver.project(field, start, plane=True)
     assert np.all(out.converged)
@@ -43,8 +44,8 @@ def test_project_circle_in_plane():
 
 def test_intersect_two_circles():
     solver = GeometrySolver(tolerance=1e-8, max_step=0.5)
-    a = CircleSDF(0.0, 0.0, 1.0)
-    b = CircleSDF(1.0, 0.0, 1.0)
+    a = Circle(0.0, 0.0, 1.0)
+    b = Circle(1.0, 0.0, 1.0)
     guess = np.array([[0.5, 0.8, 0.0]])
     out = solver.intersect(a, b, guess)
     assert out.converged[0]

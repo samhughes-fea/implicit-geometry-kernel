@@ -24,13 +24,18 @@ imports every non-plotting module because extras are lazy at the call site.
 | Extra | Install | Lives in | Role |
 |---|---|---|---|
 | `[plots]` | matplotlib | `plotting/` | figures |
-| `[mesh]` | gmsh | `mesh/` | convenience shell mesh; consumers still own real Gmsh jobs |
+| `[mesh]` | gmsh | `mesh/gmsh/` | unadvertised convenience; consumers own real Gmsh jobs |
 | `[cad]` | cadquery | `blade/cad.py` | STEP writer |
 | `[splines]` | scipy | `blade/airfoil.py` CubicSpline only | dense LE resample; falls back to the polyline |
 | `[reference]` | pyyaml | tests and example 08 | WindIO YAML; `blade/windio.py` takes mappings |
 | profiling | none | `profiling.py` | timers; not on root `__all__` |
 
-`mesh` may import `blade`, `extract`, `contract`, and `profiling` only.
+`mesh` may import `blade`, `extract`, `contract`, `geos`, and `profiling`.
+Kernel polygon fill lives in `mesh/polygon.py` (Qhull Voronoi + numba clip;
+faces have more than four nodes). Numpy Steiner Delaunay is `mesh/delaunay.py`.
+The Gmsh backend is `mesh/gmsh/` (`shell.py` mapped strips, `plane.py` planar
+cells). That extra is leftover convenience. The kernel station/CSG mesh is
+`integration/quadtree` (`build_shared_quadtree`).
 
 ## House-rule splits
 
@@ -57,7 +62,7 @@ Grey extra `[contours]`: `sdf.kernels.grid` may use **contourpy** for debug
 level-sets if installed. It is not a core dependency. There is no matplotlib
 fallback (geometry must not import matplotlib).
 
-Span `TableLaw` PCHIP is in-house numpy, not SciPy.
+Span `TableLaw` is linear `numpy` interpolation, not SciPy.
 
 ## Frames
 

@@ -27,6 +27,12 @@ Guides and reference (overview: package README).
   [`DOCUMENTATION_STANDARDS`](../conventions/DOCUMENTATION_STANDARDS.md);
   do not move it into a subdirectory.
 
+Redirect stubs (`*(moved)*`): `api/` → `spec/`; `placement/` → `layout/`;
+`recipes/` → `section.walls`; `constructive/` → `section.boundary`; `props/` and
+`props_emit/` → `section.properties`; `sections/` → package README;
+`cell_wall_loops/` → `cells/`; `junction_preparation/` → `junctions/`;
+`sdf/` → [`docs/sdf`](../sdf/README.md); `visualisation/` → `plotting` extra.
+
 ## Doc map
 
 ```mermaid
@@ -63,7 +69,7 @@ flowchart TB
 
 | Path | Role |
 |------|------|
-| [`../../examples/section/teaching/`](../../examples/section/teaching/) | `01`–`05` newcomer path: first station → properties → resolve/size → anchors → midline hand-off |
+| [`../../examples/section/teaching/`](../../examples/section/teaching/) | `01`–`06` newcomer path: first station → properties → resolve/size → anchors → midline hand-off → consumer seams |
 | [`../../examples/section/`](../../examples/section/) | Numbered: catalogue, properties, mid-surface and cells |
 | [`../../examples/demos/`](../../examples/demos/) | Figure generation / gallery |
 
@@ -75,7 +81,7 @@ flowchart TB
 | [`guides/caller_patterns.md`](guides/caller_patterns.md) | Simple build, sizing loop, spanwise webs |
 | [`guides/anatomy_on_a_figure.md`](guides/anatomy_on_a_figure.md) | Labels / midlines / cells on a `"2D-F-LC-0R"` figure |
 | [`guides/feasibility_and_drops.md`](guides/feasibility_and_drops.md) | `InfeasibleSectionGeometry` vs dropped webs; `0A`/`0B` handoff |
-| [`guides/geometry_to_mesh.md`](guides/geometry_to_mesh.md) | Midlines → `ShellMidlineStrip` → downstream mesher |
+| [`guides/geometry_to_mesh.md`](guides/geometry_to_mesh.md) | Midlines → `ShellMidlineStrip` → downstream mesher; in-plane `h` sizing |
 
 ## Reference
 
@@ -89,12 +95,16 @@ flowchart TB
 
 ## Reports
 
+Index: [`reports/README.md`](reports/README.md).
+
 | Doc | Contents |
 |-----|----------|
 | [`reports/DUAL_REP_ACCEPTANCE.md`](reports/DUAL_REP_ACCEPTANCE.md) | Polygon vs SDF area acceptance |
 | [`reports/PERFORMANCE_WORK_SUMMARY.md`](reports/PERFORMANCE_WORK_SUMMARY.md) | Hybrid / quadtree performance notes |
 | [`reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md`](reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md) | SG-009 design spike — post-resample axis×cap junctions |
-| [`reports/MERGED_SHELL_GAPS.md`](reports/MERGED_SHELL_GAPS.md) | Pass 2 shell-graph gaps G1–G11 (measured, not closed) |
+| [`reports/MERGED_SHELL_GAPS.md`](reports/MERGED_SHELL_GAPS.md) | Pass 2 shell-graph gaps G1–G11 (G10/G11 closed here; G4 `T` locked) |
+| [`reports/TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md`](reports/TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md) | G-TE … G-ACC to retire a shell-FE consumer’s native kernel |
+| [`../blade/reports/GRAPHIFY_EXTRACTED_NEXT.md`](../blade/reports/GRAPHIFY_EXTRACTED_NEXT.md) | EXTRACTED graphify: no kernel-wide next step |
 | [`bug_log.md`](bug_log.md) | Debug log — junction/tolerance findings and the standing invariant |
 
 ## Module pages
@@ -104,13 +114,13 @@ flowchart TB
 | [`spec/`](spec/README.md) | Public runner, caller parameters, feasibility |
 | [`layout/`](layout/README.md) | Layout ids and web cascade |
 | [`assembly/`](assembly/README.md) | `MultiCellSection` |
-| [`recipes/`](recipes/README.md) | Dual-emission wall recipes (code: `section.walls`) |
-| [`constructive/`](constructive/README.md) | Redirect: polygons live in `boundary` |
-| [`props/`](props/README.md) | Redirect: `properties_map` |
+| `walls/` (`section.walls`) | Dual-emission wall recipes. Docs redirect: [recipes](recipes/README.md) |
+| `boundary/` (`section.boundary`) | Polygons. Docs redirect: [constructive](constructive/README.md) |
+| `properties/` (`section.properties`) | `properties_map`. Docs redirect: [props](props/README.md) |
 | [`midlines/`](midlines/README.md) | Centreline strips |
 | [`junctions/`](junctions/README.md) | Junction snap |
 | [`cells/`](cells/README.md) | Cell-wall loops |
 | [`sdf` package](../sdf/README.md) | Shape kernel (`implicit_geometry_kernel.sdf`) |
 | [tests](../../tests/section/README.md) | How to run the package tests |
-| [teaching](../../examples/section/teaching/) | Teaching scripts `01`–`05` |
+| [teaching](../../examples/section/teaching/) | Teaching scripts `01`–`06` |
 | [demos](../../examples/demos/section/) | Demo run list |

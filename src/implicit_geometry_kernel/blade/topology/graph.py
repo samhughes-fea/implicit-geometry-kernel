@@ -2,16 +2,24 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import numpy as np
 
+from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
+
+if TYPE_CHECKING:
+    from implicit_geometry_kernel.catalogue.system_layout import SystemLayoutSpec
+    from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
+
 TE_ARC = 0.03
 MIN_GAP = 0.002
+PER_WEB_PAD = 0.04
 
 FracLaw = Callable[[float], float]
-ShellVertexId = tuple
+ShellVertexId = tuple[str, ...]
 
 
 def _interp_table(z: float, zs: Sequence[float], vs: Sequence[float]) -> float:
@@ -107,6 +115,9 @@ class WallRegionGraph:
     webs: tuple[WebMember, ...]
     te_arc: float = TE_ARC
     min_gap: float = MIN_GAP
+    cap_windows: tuple[tuple[float, float], ...] = ()
+    cap_placement: CapPlacementRule = field(default_factory=CapPlacementRule.none)
+    cap_pad: float | None = None
 
     def evaluate_anchors(self, z: float) -> tuple[tuple[str, float], ...]:
         """Active anchors at ``z``, TE-merged and ``min_gap`` regularised."""
@@ -131,156 +142,77 @@ class WallRegionGraph:
         return (regions, webs)
 
     @classmethod
-    def from_section_layout(cls, layout, *, te_arc: float = TE_ARC,
-                            min_gap: float = MIN_GAP) -> "WallRegionGraph":
-        if isinstance(layout, str):
-            from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
-            layout = SectionLayout.from_catalogue_key(layout)
-        elif not hasattr(layout, "cap_placement"):
-            from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
-            from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
-            cap = CapPlacementRule.from_structural_family(
-                getattr(layout, "structural_family", "D"),
-                spar_cap_positioning=getattr(layout, "spar_cap_positioning", None),
-            )
-            layout = SectionLayout(
-                web_chord_fracs=tuple(float(f) for f in getattr(layout, "web_chord_fracs", ()) or ()),
-                orientation=getattr(layout, "orientation", getattr(layout, "web_orientation", "flapwise")),
-                cap_placement=cap,
-                catalogue_key=getattr(layout, "key", None),
-                structural_family=str(getattr(layout, "structural_family", "") or ""),
-            )
-        webs_frac = tuple(float(f) for f in getattr(layout, "web_chord_fracs", ()) or ())
-        cap_rule = getattr(layout, "cap_placement", None)
-        anchors, regions, webs = _layout_parts(webs_frac, cap_rule)
-        return cls(anchors, regions, webs, te_arc=float(te_arc), min_gap=float(min_gap))
-
-    @classmethod
-    def from_windio_structure(cls, structure: Mapping, z_of_s=None, *,
-                              te_arc: float = TE_ARC,
-                              min_gap: float = MIN_GAP) -> "WallRegionGraph":
-        from implicit_geometry_kernel.blade.windio import (
-            cap_window_table_from_windio_structure,
-            web_position_table_from_windio_structure,
+    def from_section_layout(
+        cls,
+        layout: SectionLayout | str | SystemLayoutSpec,
+        *,
+        te_arc: float = TE_ARC,
+        min_gap: float = MIN_GAP,
+    ) -> WallRegionGraph:
+        from implicit_geometry_kernel.blade.topology.layout_compile import (
+            graph_from_section_layout,
         )
 
-        from implicit_geometry_kernel.blade.windio import web_span_windows_from_windio_structure
+        return graph_from_section_layout(cls, layout, te_arc=te_arc, min_gap=min_gap)
 
-        z_table = None if z_of_s is None else np.asarray(z_of_s, float)
-        anchors: list[Anchor] = [Anchor("le", 0.0), Anchor("te", 1.0)]
-        web_table = web_position_table_from_windio_structure(structure, z_table)
-        windows_span = web_span_windows_from_windio_structure(structure, z_table)
-        webs: list[WebMember] = []
-        if web_table is not None:
-            zg, cols = web_table
-            names = [str(w.get("name", f"web_{j}"))
-                     for j, w in enumerate(structure.get("webs") or ())
-                     if isinstance(w, Mapping)]
-            for j in range(cols.shape[1]):
-                z0 = z1 = None
-                win = windows_span[j] if j < len(windows_span) else None
-                if win is not None:
-                    z0, z1 = win
-                law = (zg, cols[:, j])
-                name = names[j] if j < len(names) else f"web_{j}"
-                webs.append(WebMember(int(j), law, z0, z1, name=name))
-                anchors.append(Anchor(f"web_{j}", law, z0, z1))
-        windows = cap_window_table_from_windio_structure(structure, z_table)
-        if windows is not None:
-            zg, vals = windows
-            anchors.append(Anchor("cap_lo", (zg, vals[:, 0])))
-            anchors.append(Anchor("cap_hi", (zg, vals[:, 1])))
-            web_fracs = tuple(float(np.median(web_table[1][:, j])) for j in range(web_table[1].shape[1])) if web_table is not None else ()
-            lo = float(np.median(windows[1][:, 0]))
-            hi = float(np.median(windows[1][:, 1]))
-            dummy_cap = _CapWindow((lo, hi))
-            _, regions, _ = _layout_parts(web_fracs, dummy_cap)
-        else:
-            _, regions, _ = _layout_parts(tuple(w.at(0.0) for w in webs) if webs else (), None)
-        return cls(tuple(anchors), regions, tuple(webs), te_arc=float(te_arc),
-                   min_gap=float(min_gap))
+    @classmethod
+    def from_windio_structure(
+        cls, structure: Mapping, z_of_s=None, *,
+        te_arc: float = TE_ARC,
+        min_gap: float = MIN_GAP,
+    ) -> WallRegionGraph:
+        from implicit_geometry_kernel.blade.topology.layout_compile import (
+            graph_from_windio_structure,
+        )
+
+        return graph_from_windio_structure(
+            cls, structure, z_of_s, te_arc=te_arc, min_gap=min_gap
+        )
 
 
-class _CapWindow:
-    kind = "fixed_band"
-    chord_window = None
-    half_width = None
-
-    def __init__(self, window: tuple[float, float]):
-        self.chord_window = (min(window), max(window))
-        self.half_width = 0.5 * (self.chord_window[1] - self.chord_window[0])
+def _indexed_cap_name(name: str) -> bool:
+    parts = str(name).split("_")
+    return len(parts) >= 3 and parts[0] == "cap" and parts[1].isdigit() and parts[2] in ("lo", "hi")
 
 
-def _layout_parts(web_fracs: Sequence[float], cap) -> tuple[tuple[Anchor, ...], tuple[Region, ...], tuple[WebMember, ...]]:
-    webs_frac = tuple(sorted(float(f) for f in web_fracs if 0.0 < float(f) < 1.0))
-    points: list[tuple[str, float]] = [("le", 0.0), ("te", 1.0)]
-    webs = []
-    for i, f in enumerate(webs_frac):
-        points.append((f"web_{i}", f))
-        webs.append(WebMember(i, f, name=f"web_{i}"))
-    cap_lo = cap_hi = None
-    kind = getattr(cap, "kind", "none") if cap is not None else "none"
-    window = getattr(cap, "chord_window", None) if cap is not None else None
-    if kind == "none" or cap is None:
-        pass
-    elif window is not None:
-        cap_lo, cap_hi = float(min(window)), float(max(window))
-    elif kind == "continuous_box" and len(webs_frac) >= 2:
-        cap_lo, cap_hi = float(webs_frac[0]), float(webs_frac[-1])
-    elif kind == "per_web_pads" and webs_frac:
-        pad = 0.04
-        cap_lo = max(0.02, float(webs_frac[0]) - pad)
-        cap_hi = min(0.98, float(webs_frac[-1]) + pad)
-    elif kind == "fixed_band":
-        hw = float(getattr(cap, "half_width", None) or 0.12)
-        cap_lo, cap_hi = max(0.02, 0.30 - hw), min(0.98, 0.30 + hw)
-    # Distinct cap edges only when they are not already web feet (Family D box).
-    if cap_lo is not None and cap_hi is not None and cap_hi - cap_lo > 1e-6:
-        existing = [p[1] for p in points]
-        if min(abs(cap_lo - e) for e in existing) > MIN_GAP:
-            points.append(("cap_lo", cap_lo))
-        if min(abs(cap_hi - e) for e in existing) > MIN_GAP:
-            points.append(("cap_hi", cap_hi))
-    points.sort(key=lambda kv: (kv[1], kv[0]))
-    merged: list[tuple[str, float]] = []
-    for name, frac in points:
-        if merged and abs(frac - merged[-1][1]) < MIN_GAP:
-            if name in ("le", "te"):
-                merged[-1] = (name, frac)
-            continue
-        merged.append((name, frac))
-    anchors = [Anchor(name, frac) for name, frac in merged]
-    ordered = [name for name, _ in merged]
-    regions = _regions_from_ordered(ordered, cap_lo=cap_lo, cap_hi=cap_hi)
-    return tuple(anchors), regions, tuple(webs)
+def live_cap_windows(
+    graph: WallRegionGraph,
+    fracs: Mapping[str, float],
+    ordered: Sequence[str],
+    *,
+    z: float,
+    active_webs: Sequence[WebMember],
+) -> tuple[tuple[float, float], ...]:
+    """Cap chord windows at ``z``: per-web pads, live box, or authored band."""
+    from implicit_geometry_kernel.blade.topology.layout_compile import _merge_chord_windows
+
+    kind = graph.cap_placement.kind
+    if kind == "per_web_pads":
+        pad = float(graph.cap_pad if graph.cap_pad is not None else PER_WEB_PAD)
+        return _merge_chord_windows(
+            [(max(0.02, float(w.at(z)) - pad), min(0.98, float(w.at(z)) + pad))
+             for w in active_webs]
+        )
+    if kind == "continuous_box":
+        webs = [float(fracs[n]) for n in ordered if str(n).startswith("web_") and n in fracs]
+        if len(webs) >= 2:
+            return ((min(webs), max(webs)),)
+        return ()
+    live = cap_windows_from_fracs(fracs)
+    return live if live else tuple(graph.cap_windows or ())
 
 
-def _regions_from_ordered(ordered: Sequence[str], *, cap_lo: float | None,
-                          cap_hi: float | None) -> tuple[Region, ...]:
-    out: list[Region] = [Region("te", "te", "te", False, "te", wrap=True)]
-    has_cap = cap_lo is not None and cap_hi is not None
-    for side in ("suction", "pressure"):
-        bay = 0
-        cap_i = 0
-        tag = side[:2]
-        for a, b in zip(ordered[:-1], ordered[1:]):
-            is_cap = False
-            if a == "le":
-                name = f"le_{tag}"
-            elif b == "te":
-                name = f"te_{tag}"
-            elif has_cap and (
-                (a.startswith("web_") and b.startswith("web_"))
-                or {a, b} == {"cap_lo", "cap_hi"}
-                or (a in ("cap_lo", "web_0") and b in ("cap_hi", "web_1"))
-            ):
-                name = f"cap_{tag}" if cap_i == 0 else f"cap_{tag}_{cap_i}"
-                cap_i += 1
-                is_cap = True
-            else:
-                name = f"bay_{tag}_{bay}"
-                bay += 1
-            out.append(Region(name, a, b, is_cap, side, wrap=False))
+def cap_windows_from_fracs(fracs: Mapping[str, float]) -> tuple[tuple[float, float], ...]:
+    """Live ``cap_lo``/``cap_hi`` or indexed ``cap_{i}_lo``/``cap_{i}_hi`` pairs."""
+    if "cap_lo" in fracs and "cap_hi" in fracs:
+        return ((float(fracs["cap_lo"]), float(fracs["cap_hi"])),)
+    out: list[tuple[float, float]] = []
+    i = 0
+    while f"cap_{i}_lo" in fracs or f"cap_{i}_hi" in fracs:
+        lo, hi = fracs.get(f"cap_{i}_lo"), fracs.get(f"cap_{i}_hi")
+        if lo is not None and hi is not None:
+            out.append((float(lo), float(hi)))
+        i += 1
     return tuple(out)
 
 
@@ -419,52 +351,3 @@ def _match_web_indices(live: Sequence[float], authored: Sequence[float],
         else:
             i -= 1
     return tuple(sorted(chosen))
-
-
-def role_atom(name: str) -> tuple:
-    """Paint-stable role for compatibility (cap flicker shares a cap atom)."""
-    if name == "te" or name.startswith("te_"):
-        return ("TE",)
-    if name.startswith("le_"):
-        return ("LE", name[-2:])
-    if name.startswith("cap_"):
-        return ("cap", name[4:6])
-    if name.startswith("bay_"):
-        parts = name.split("_")
-        side = parts[1] if len(parts) > 1 else ""
-        return ("bay", side)
-    if name.startswith("web"):
-        return ("web", name)
-    return ("panel", name)
-
-
-def signatures_compatible(a, b) -> bool:
-    """True if role atoms match after TE wrap / cap-paint flicker.
-
-    Web add/drop is **not** compatible (new zone) even if loop atoms match.
-    """
-    if a == b:
-        return True
-    if not isinstance(a, tuple) or not isinstance(b, tuple):
-        return False
-    if len(a) == 2 and len(b) == 2 and isinstance(a[0], tuple):
-        ra, wa = a
-        rb, wb = b
-        if wa != wb:
-            return False
-        return _loop_atoms(ra) == _loop_atoms(rb)
-    return _loop_atoms(a) == _loop_atoms(b)
-
-
-def _loop_atoms(names: Sequence[str]) -> frozenset:
-    atoms = []
-    for n in names:
-        atom = role_atom(n)
-        if atom[0] == "bay":
-            atoms.append(("panel", atom[1]))
-        elif atom[0] == "cap":
-            atoms.append(("panel", atom[1]))
-        else:
-            atoms.append(atom)
-    return frozenset(atoms)
-

@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/structural_family_grids_demo.py
+examples/demos/section/structural_family_grids_demo.py
 =======================================
 One PNG per structural system (registry ``SYSTEM_TYPE_KEYS``).
 
@@ -15,7 +15,7 @@ Writes under ``examples/demos/figures/structural_family_grids/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/structural_family_grids_demo.py
+    python examples/demos/section/structural_family_grids_demo.py
     python .../structural_family_grids_demo.py --twist-deg 15 --families A D
     python .../structural_family_grids_demo.py --keys 2D-F 3D-CN
     python .../structural_family_grids_demo.py --wall

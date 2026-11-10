@@ -1,8 +1,9 @@
 """Hard-coded web positions for catalogue LC / LE / PA anchoring.
 
 LC and LE store authored positions in their native units (chord fraction; metres
-from the leading edge). PA stores blade-x from the pitch axis and, uniquely,
-lives in two planform regions because those webs run parallel to the pitch axis.
+from the leading edge). PA stores blade-x from the pitch axis: primary webs are
+uniform interiors of the root ``[x_LE, x_TE]`` band; extra webs continue that
+same lattice (first extra at root TE). Those webs run parallel to the pitch axis.
 """
 
 from __future__ import annotations
@@ -10,16 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
-# Authored PA slots. ``n_webs`` takes a prefix (``n == 1`` is the PA itself).
-# Primary ``t`` is a signed fraction of the root half-width toward PA.
-# Secondary ``t`` is a fraction along [x_TE(root), x_TE(max_chord)].
-_PA_SLOTS: tuple[tuple[str, float], ...] = (
-    ("primary", -0.35),
-    ("primary", 0.35),
-    ("primary", 0.0),
-    ("secondary", 0.40),
-    ("secondary", 0.70),
-)
+_MAX_PRIMARY = 3
 
 
 @dataclass(frozen=True)
@@ -77,64 +69,27 @@ def pa_regions(
     )
 
 
-def _slots_for(n_webs: int) -> tuple[tuple[str, float], ...]:
-    n = int(n_webs)
-    if n <= 0:
-        return ()
-    if n == 1:
-        return (("primary", 0.0),)
-    if n <= len(_PA_SLOTS):
-        return _PA_SLOTS[:n]
-    extra: list[tuple[str, float]] = []
-    k = n - len(_PA_SLOTS)
-    for i in range(k):
-        extra.append(("secondary", (i + 1) / (k + 1)))
-    return _PA_SLOTS + tuple(extra)
-
-
-def _in_interval(x: float, bounds: tuple[float, float], *, tol: float = 1e-9) -> bool:
-    lo, hi = bounds
-    return float(lo) - tol <= float(x) <= float(hi) + tol
-
-
 def pa_web_x_from_pitch(
     stations: Sequence,
     pitch_at: Callable[[float], float],
     n_webs: int,
 ) -> tuple[float, ...]:
-    """Hard-coded PA blade-x list of length ``n_webs``, validated against regions."""
+    """Uniform PA blade-x list of length ``n_webs``.
+
+    Up to three primary webs sit at interiors of the root ``[x_LE, x_TE]``
+    band (spacing ``Δx = (x_TE − x_LE) / (n_primary + 1)``). Extra webs
+    continue that lattice: slot ``n_primary + k`` at ``x_LE + (n_primary + k)·Δx``
+    (first extra at root TE).
+    """
     n = int(n_webs)
     if n <= 0:
         return ()
     regions = pa_regions(stations, pitch_at)
-    half = max(regions.root_half_width, 1e-12)
-    shelf = regions.secondary_width
-    xs: list[float] = []
-    for kind, t in _slots_for(n):
-        if kind == "primary":
-            x = float(t) * half
-            if not _in_interval(x, regions.primary):
-                raise ValueError(
-                    f"PA primary web x={x} is outside root bounds {regions.primary}"
-                )
-            xs.append(x)
-            continue
-        if shelf <= 1e-9:
-            x = float(t) * half * 0.5
-            if not _in_interval(x, regions.primary):
-                raise ValueError(
-                    f"PA extra web x={x} is outside root bounds {regions.primary} "
-                    "(no secondary shelf)"
-                )
-            xs.append(x)
-            continue
-        x = float(regions.x_te_root) + float(t) * shelf
-        if not _in_interval(x, regions.secondary):
-            raise ValueError(
-                f"PA secondary web x={x} is outside shelf {regions.secondary}"
-            )
-        xs.append(x)
-    return tuple(xs)
+    x_min, x_max = float(regions.x_le_root), float(regions.x_te_root)
+    n_primary = min(n, _MAX_PRIMARY)
+    n_secondary = n - n_primary
+    dx = (x_max - x_min) / (n_primary + 1)
+    return tuple(x_min + i * dx for i in range(1, n_primary + n_secondary + 1))
 
 
 def lc_web_fractions(fracs: Sequence[float]) -> tuple[float, ...]:

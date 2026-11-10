@@ -10,7 +10,7 @@ from implicit_geometry_kernel import (
 )
 from implicit_geometry_kernel.extract import classify_trailing_edge, extract_zero_loops, feature_curve
 from implicit_geometry_kernel.sdf import GeometrySolver
-from implicit_geometry_kernel.sdf.nodes.tagged import CircleSDF
+from implicit_geometry_kernel.sdf.nodes import Circle
 
 
 def _geo():
@@ -67,7 +67,7 @@ def test_intersect_web_and_oml():
     geo = _geo()
     cut = geo.section_at(4.0)
     web = next(w for w in cut.walls if w.kind == "web")
-    from implicit_geometry_kernel.blade.network import wall_meta_from_cut
+    from implicit_geometry_kernel.blade.topology.network import wall_meta_from_cut
     meta, table = wall_meta_from_cut(cut)
     web_id = table.by_name(web.label).id
     # a point on the web near the skin: solver still holds z
@@ -78,7 +78,7 @@ def test_intersect_web_and_oml():
 
 
 def test_extract_circle_loop():
-    field = CircleSDF(0.0, 0.0, 1.0)
+    field = Circle(0.0, 0.0, 1.0)
     loops = extract_zero_loops(field, 0.0, (-1.5, 1.5, -1.5, 1.5), n=32)
     assert loops
     r = np.linalg.norm(loops[0][:, :2], axis=1)
@@ -86,7 +86,7 @@ def test_extract_circle_loop():
 
 
 def test_feature_curve_two_circles():
-    a, b = CircleSDF(0.0, 0.0, 1.0), CircleSDF(1.0, 0.0, 1.0)
+    a, b = Circle(0.0, 0.0, 1.0), Circle(1.0, 0.0, 1.0)
     zs = [0.0, 1.0, 2.0]
     curve = feature_curve(a, b, zs, (0.5, 0.8))
     assert curve.shape == (3, 3)

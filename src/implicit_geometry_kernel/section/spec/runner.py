@@ -13,33 +13,23 @@ product; ``get_results()`` returns the built geometry.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
-from typing import Any
+from implicit_geometry_kernel.section.spec.runner_lifecycle import RunnerLifecycleMixin
+from implicit_geometry_kernel.section.spec.options import SectionOptions
+from implicit_geometry_kernel.section.spec.section_spec import SectionSpec
+from implicit_geometry_kernel.section.spec.worker import SectionGeometryResult, StationLayoutResolution, build_section_geometry, resolve_station_layout
 
-from implicit_geometry_kernel.section.spec.worker import SectionGeometryResult, StationLayoutResolution, build_section_geometry, resolve_station_layout, section_geometry_prep_key
 
-
-class SectionGeometry:
+class SectionGeometry(RunnerLifecycleMixin):
     """Resolve the effective station layout, then build the section geometry.
 
     Parameters
     ----------
-    layout:
-        Nominal catalogue ``SystemLayoutSpec`` or parametric ``SectionLayout``
-        requested for this station. The *effective* layout may step down if the
-        local cavity cannot anchor every web (catalogue rung, or keyless
-        ``N`` webs + ``CapPlacementRule``).
-    airfoil:
-        Station ``AirfoilSDF``.
-    skin_thickness, spar_cap_thickness, shear_web_thickness:
-        Design-variable thicknesses [m].
-    twist_rad:
-        Geometric twist [rad] for the S→B map.
-    pivot_fraction:
-        Pitch-axis chord fraction from the LE (S-frame origin). Default: the
-        standalone frame fallback ``0.333``.
-    outputs:
-        Compute-cost gates — ``properties`` / ``midlines`` / ``cell_wall_loops``.
+    spec:
+        Frozen :class:`SectionSpec` (layout, airfoil, gauges, twist, webs).
+        The *effective* layout may step down if the local cavity cannot
+        anchor every web.
+    options:
+        :class:`SectionOptions` (output gates, quadtree, sample counts).
     min_cavity_depth_m:
         Forwarded to layout resolution: a web whose local cavity is too shallow
         to build minimum-gauge caps against is dropped rather than anchored.
@@ -53,105 +43,52 @@ class SectionGeometry:
 
     def __init__(
         self,
+        spec: SectionSpec,
+        options: SectionOptions | None = None,
         *,
-        layout: Any,
-        airfoil: Any,
-        skin_thickness: float | None = None,
-        spar_cap_thickness: float | None = None,
-        shear_web_thickness: float | None = None,
-        twist_rad: float | None = None,
-        twist_angle_rad: float | None = None,
-        twist_angle: float | None = None,
-        outputs: Iterable[str] = ("properties", "midlines", "cell_wall_loops"),
-        web_offsets: Sequence[float] | None = None,
         min_cavity_depth_m: float = 0.0,
-        n_web_samples: int = 20,
-        n_cap_samples: int = 80,
-        retain_mesh: bool = False,
-        props_backend: Any | None = None,
-        quadtree_spec: Any | None = None,
-        airfoil_for_spec: Any | None = None,
         resolution: StationLayoutResolution | None = None,
-        spar_cap_ply_pitch_m: float | None = None,
-        zone_gauges_m: Mapping[str, float] | None = None,
-        pivot_fraction: float | None = None,
     ) -> None:
-        from implicit_geometry_kernel.section.spec.section_spec import resolve_shear_web_thickness, resolve_skin_gauges, resolve_spar_cap_thickness, resolve_twist_rad
+        self._bind_spec(
+            spec,
+            options or SectionOptions(),
+            resolution=resolution,
+            min_cavity_depth_m=min_cavity_depth_m,
+        )
 
-        if layout is None:
-            raise ValueError("layout is required")
-        if airfoil is None:
-            raise ValueError("airfoil is required")
-        self._layout = layout
-        self._airfoil = airfoil
-        self._zone_gauges_m = None if zone_gauges_m is None else dict(zone_gauges_m)
-        if self._zone_gauges_m is not None:
-            from implicit_geometry_kernel.section.spec.prep import _compat_kwargs_from_zone_gauges
-
-            if any(
-                v is not None
-                for v in (skin_thickness, spar_cap_thickness, shear_web_thickness)
-            ):
-                raise ValueError(
-                    "geometry received both zone_gauges_m and component thickness kwargs"
-                )
-            derived = _compat_kwargs_from_zone_gauges(self._zone_gauges_m)
-            skin_thickness = derived["skin_thickness"]
-            spar_cap_thickness = derived["spar_cap_thickness"]
-            shear_web_thickness = derived["shear_web_thickness"]
-        self._t_skin_gauges = resolve_skin_gauges(
-            skin_thickness=skin_thickness, required=True
-        )
-        self._t_skin = max(self._t_skin_gauges)
-        self._t_spar = resolve_spar_cap_thickness(
-            spar_cap_thickness=spar_cap_thickness,
-            default=0.0,
-        )
-        self._t_web = resolve_shear_web_thickness(
-            shear_web_thickness=shear_web_thickness,
-            default=0.0,
-        )
-        self._twist_rad = resolve_twist_rad(
-            twist_rad=twist_rad,
-            twist_angle_rad=twist_angle_rad,
-            twist_angle=twist_angle,
-        )
-        self._outputs = tuple(outputs)
-        self._web_x_positions_m = web_offsets
+    def _bind_spec(
+        self,
+        spec: SectionSpec,
+        options: SectionOptions,
+        *,
+        resolution: StationLayoutResolution | None = None,
+        min_cavity_depth_m: float = 0.0,
+    ) -> None:
+        self._spec = spec
+        self._options = options
+        self._layout = spec.layout
+        self._airfoil = spec.airfoil
+        self._zone_gauges_m = None if spec.zone_gauges_m is None else dict(spec.zone_gauges_m)
+        self._t_skin_gauges = (spec.gauges.skin_ss, spec.gauges.skin_ps)
+        self._t_skin = spec.gauges.skin_max
+        self._t_spar = float(spec.gauges.cap)
+        self._t_web = spec.gauges.web_arg
+        self._twist_rad = spec.twist_rad
+        self._outputs = tuple(options.outputs)
+        self._web_x_positions_m = spec.webs
         self._min_cavity_depth_m = float(min_cavity_depth_m)
-        self._n_web_samples = int(n_web_samples)
-        self._n_cap_samples = int(n_cap_samples)
-        self._retain_mesh = bool(retain_mesh)
-        self._props_backend = props_backend
-        self._quadtree_spec = quadtree_spec
-        # Sizes the quadtree domain. Distinct from ``airfoil`` on purpose: the
-        # QT box must be built on the B-frame (twisted) airfoil AABB, because a
-        # chord-frame box clips rotated trailing-edge tips. Expressible here so
-        # the runner is a full facade over ``build_section_geometry`` — a caller
-        # that had to reach past it for one argument would just keep calling the
-        # function.
-        self._airfoil_for_spec = airfoil_for_spec
+        self._n_web_samples = int(options.n_web_samples)
+        self._n_cap_samples = int(options.n_cap_samples)
+        self._retain_mesh = bool(options.retain_mesh)
+        self._props_backend = options.props_backend
+        self._quadtree_spec = options.quadtree_spec
+        self._airfoil_for_spec = options.airfoil_for_spec
         self._executed = False
-        # A caller that has already resolved this station passes the resolution
-        # in rather than the three values derived from it (effective layout, web
-        # x positions, web y coords). Those three can drift apart; a resolution
-        # cannot disagree with itself.
-        #
-        # It also keeps a *frozen* topology frozen. A sizing loop resolves once
-        # at the minimum skin so the design-variable set is fixed for the whole
-        # search; re-resolving at each trial's thickness could hand back a
-        # different web set than the station was frozen against.
         self._layout_frozen = resolution is not None
         self._resolution: StationLayoutResolution | None = resolution
         self._result: SectionGeometryResult | None = None
-        self._spar_cap_ply_pitch_m = (
-            float(spar_cap_ply_pitch_m)
-            if spar_cap_ply_pitch_m is not None
-            else None
-        )
-        self._pivot_fraction = (
-            float(pivot_fraction) if pivot_fraction is not None else None
-        )
+        self._spar_cap_ply_pitch_m = spec.spar_cap_ply_pitch_m
+        self._pivot_fraction = spec.pivot_fraction
 
     def resolve(self) -> "SectionGeometry":
         """Resolve the effective layout **without building geometry**.
@@ -214,124 +151,6 @@ class SectionGeometry:
             airfoil_for_spec=self._airfoil_for_spec,
         )
         return build_section_geometry(spec, options=opts)
-
-    def _assemble_dropping_webs(self, resolution: StationLayoutResolution, last_exc):
-        """Wave 4: step down webs when flapwise re-anchor fails (not a frozen sizing freeze)."""
-        from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
-        from implicit_geometry_kernel.section.spec.layout_resolution import (
-            StationLayoutResolution,
-            _reattach_catalogue_preset,
-            _step_down_section_layout,
-        )
-        from implicit_geometry_kernel.section.spec.results import DroppedWeb
-
-        xs = list(resolution.web_x_positions_m)
-        idx = list(resolution.web_indices or range(len(xs)))
-        dropped = list(resolution.dropped)
-        while len(xs) > 1:
-            fail_i = getattr(last_exc, "web_index", None)
-            fail_x = getattr(last_exc, "web_x", None)
-            if fail_i is not None and fail_i in idx:
-                pos = idx.index(fail_i)
-            elif fail_x is not None:
-                pos = min(range(len(xs)), key=lambda j: abs(xs[j] - float(fail_x)))
-            else:
-                pos = 0
-            lost = float(xs.pop(pos))
-            lost_i = int(idx.pop(pos))
-            dropped.append(
-                DroppedWeb(
-                    lost,
-                    "flapwise web cannot re-anchor under twist; dropped at this station",
-                    index=lost_i,
-                )
-            )
-            sl = _step_down_section_layout(
-                resolution.nominal_layout, len(xs), indices=idx,
-            )
-            sl = _reattach_catalogue_preset(sl, resolution.nominal_layout)
-            new_res = StationLayoutResolution(
-                sl, tuple(xs), tuple(dropped), resolution.nominal_layout,
-                web_y_coords=(), web_indices=tuple(idx),
-            )
-            try:
-                result = self._assemble(new_res, live_y=True)
-                self._resolution = new_res
-                return result
-            except InfeasibleSectionGeometry as exc:
-                last_exc = exc
-        raise last_exc
-
-    def execute(self) -> "SectionGeometry":
-        """Resolve layout then build geometry. Idempotent; returns ``self``."""
-        from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
-
-        if self._executed:
-            return self
-        self.resolve()
-        resolution = self._resolution
-        assert resolution is not None  # set by resolve()
-        # Build against the *effective* layout: the nominal one may name webs
-        # this station cannot anchor, and sizing must not allocate design
-        # variables for components the section does not have.
-        try:
-            self._result = self._assemble(resolution)
-        except InfeasibleSectionGeometry as exc:
-            if self._layout_frozen or "re-anchor" not in str(exc).lower():
-                raise
-            try:
-                self._result = self._assemble(resolution, live_y=True)
-            except InfeasibleSectionGeometry:
-                self._result = self._assemble_dropping_webs(resolution, exc)
-        self._executed = True
-        return self
-
-    def get_results(self) -> SectionGeometryResult:
-        """Return the built :class:`SectionGeometryResult`. Requires :meth:`execute`."""
-        if not self._executed or self._result is None:
-            raise RuntimeError(
-                "SectionGeometry.execute() must be called before get_results()"
-            )
-        return self._result
-
-    def get_layout_resolution(self) -> StationLayoutResolution:
-        """Return the effective layout (anchored webs, drops).
-
-        Requires :meth:`resolve` **or** :meth:`execute` — the resolution is the
-        cheap first product and does not depend on the build.
-        """
-        if self._resolution is None:
-            raise RuntimeError(
-                "SectionGeometry.resolve() or .execute() must be called "
-                "before get_layout_resolution()"
-            )
-        return self._resolution
-
-    @property
-    def prep_key(self) -> tuple[Any, ...]:
-        """Cache key for this station's geometry inputs.
-
-        Uses the **anchored** web positions once executed, falling back to the
-        requested ones before that. Anchored positions change the built section
-        without changing the layout key or any thickness, so a key built from the
-        requested positions alone would let two different sections collide.
-        """
-        web_x = (
-            self._resolution.web_x_positions_m
-            if self._resolution is not None
-            else self._web_x_positions_m
-        )
-        return section_geometry_prep_key(
-            self._layout,
-            self._airfoil,
-            skin_thickness=self._t_skin,
-            spar_cap_thickness=self._t_spar,
-            shear_web_thickness=self._t_web,  # type: ignore
-            twist_rad=self._twist_rad,
-            outputs=self._outputs,
-            web_x_positions_m=web_x,
-            zone_gauges_m=self._zone_gauges_m,
-        )
 
 
 __all__ = ["SectionGeometry"]

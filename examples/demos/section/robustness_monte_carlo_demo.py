@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/robustness_monte_carlo_demo.py
+examples/demos/section/robustness_monte_carlo_demo.py
 =======================================
 Randomized robustness sweep for implicit section geometry.
 

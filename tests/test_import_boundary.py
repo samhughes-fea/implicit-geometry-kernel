@@ -120,7 +120,7 @@ _LAYER_ALLOWED = {
         "contract", "sdf", "integration", "frames", "structure", "catalogue", "section", "blade",
         "extract", "geos", "profiling",
     },
-    "mesh": {"contract", "blade", "extract", "mesh", "profiling"},
+    "mesh": {"contract", "blade", "extract", "mesh", "geos", "profiling"},
 }
 
 

@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.sdf.nodes.tagged import PolygonSDF
+from implicit_geometry_kernel.sdf.nodes import Polygon
 from implicit_geometry_kernel.sdf.nodes.span import ComplementNode, MaxNode
 from implicit_geometry_kernel.structure import (
     BranchContribution,
@@ -28,7 +28,7 @@ SKIN, CAP, WEB = 0.01, 0.03, 0.008
 
 
 def rect(x0, x1, y0, y1):
-    return PolygonSDF(np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]))
+    return Polygon(((x0, y0), (x1, y0), (x1, y1), (x0, y1)))
 
 
 class Skin(MemberBuilder):
@@ -137,7 +137,7 @@ def test_stations(structure):
 
 def test_thickness_can_vary_along_the_span():
     ctx = BuildContext(oml=rect(-0.5, 0.5, -0.1, 0.1), span=(0.0, 2.0))
-    skin = WallContribution(ctx.table.add("skin", "skin"), TableLaw([0.0, 2.0], [0.02, 0.01], kind="linear"))
+    skin = WallContribution(ctx.table.add("skin", "skin"), TableLaw([0.0, 2.0], [0.02, 0.01]))
     s = assemble(ctx, [skin])
     pts = np.array([[0.0, 0.1, 0.0], [0.0, 0.1, 1.0], [0.0, 0.1, 2.0]])
     assert np.allclose(s.thickness(pts), [0.02, 0.015, 0.01])

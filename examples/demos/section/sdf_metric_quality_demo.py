@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/sdf_metric_quality_demo.py
+examples/demos/section/sdf_metric_quality_demo.py
 ===================================
 Computational-geometry demo: metric SDF quality and CSG-seam ridges.
 
@@ -19,7 +19,7 @@ Writes:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/sdf_metric_quality_demo.py
+    python examples/demos/section/sdf_metric_quality_demo.py
 """
 
 from __future__ import annotations
@@ -46,9 +46,7 @@ from implicit_geometry_kernel.plotting.figure_io import (
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
-from implicit_geometry_kernel.section import (
-    MultiCellSection,
-)
+from _assemble import assemble_host
 from implicit_geometry_kernel.plotting.plot_sdf import (
     plot_sdf_field,
 )
@@ -59,18 +57,17 @@ _BAND_M = 0.02  # exclude a thin band around φ=0 from residual stats
 _RIDGE_GRAD = 0.55
 
 
-def _build_section(af: AirfoilSDF) -> MultiCellSection:
-    return MultiCellSection.twin_web(
+def _build_section(af: AirfoilSDF):
+    return assemble_host(
         af,
-        x_fore=0.20,
-        x_aft=0.50,
+        n_webs=2,
+        family="D",
+        alignment="chord_normal",
+        web_fracs=(0.20, 0.50),
         skin_thickness=0.005,
-        web_thickness=0.006,
-        cap_height=(0.014, 0.012),
-        web_alignment="chord_normal",
-        twist_angle=0.0,
-        structural_family="D",
-        core_enabled=False,
+        shear_web_thickness=0.006,
+        cap_height=0.014,
+        twist_rad=0.0,
     )
 
 

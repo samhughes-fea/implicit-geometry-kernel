@@ -6,30 +6,8 @@ from collections.abc import Callable, Sequence
 
 import numpy as np
 
+from implicit_geometry_kernel.sdf.kernels.polygon_numba import sdf_polyline_unsigned_numba
 from implicit_geometry_kernel.sdf.nodes.base import EvalCache, FieldSample, LeafNode, NO_FEATURE, SDFNode
-from implicit_geometry_kernel.sdf.kernels.primitives import sdf_circle, sdf_polygon, sdf_segment
-
-
-class CircleSDF(LeafNode):
-    """Exact circle in the section plane (z ignored)."""
-
-    def __init__(self, cx: float = 0.0, cy: float = 0.0, r: float = 1.0, meta: int = NO_FEATURE) -> None:
-        super().__init__(meta)
-        self.cx, self.cy, self.r = float(cx), float(cy), float(r)
-
-    def _phi(self, points: np.ndarray) -> np.ndarray:
-        return np.asarray(sdf_circle(points[:, 0], points[:, 1], self.cx, self.cy, self.r), dtype=np.float64)
-
-
-class PolygonSDF(LeafNode):
-    """Exact closed-polygon SDF in the section plane (z ignored)."""
-
-    def __init__(self, vertices: np.ndarray, meta: int = NO_FEATURE) -> None:
-        super().__init__(meta)
-        self.vertices = np.asarray(vertices, dtype=np.float64)
-
-    def _phi(self, points: np.ndarray) -> np.ndarray:
-        return np.asarray(sdf_polygon(points[:, 0], points[:, 1], self.vertices), dtype=np.float64)
 
 
 class PolylineBandSDF(LeafNode):
@@ -37,15 +15,11 @@ class PolylineBandSDF(LeafNode):
 
     def __init__(self, vertices: np.ndarray, radius: float, meta: int = NO_FEATURE) -> None:
         super().__init__(meta)
-        self.vertices = np.asarray(vertices, dtype=np.float64)
+        self.vertices = np.ascontiguousarray(vertices, dtype=np.float64)
         self.radius = float(radius)
 
     def _phi(self, points: np.ndarray) -> np.ndarray:
-        x, y = points[:, 0], points[:, 1]
-        d = np.full(points.shape[0], np.inf)
-        verts = self.vertices
-        for a, b in zip(verts[:-1], verts[1:]):
-            d = np.minimum(d, sdf_segment(x, y, a[0], a[1], b[0], b[1]))
+        d = sdf_polyline_unsigned_numba(points[:, 0], points[:, 1], self.vertices)
         return np.asarray(d, dtype=np.float64) - self.radius
 
 
@@ -70,6 +44,7 @@ class TagNode(SDFNode):
 
     def __init__(self, node: SDFNode, meta: int) -> None:
         self.node = node
+        self.expr = node
         self.meta_id = int(meta)
 
     def children(self) -> tuple[SDFNode, ...]:
@@ -77,25 +52,6 @@ class TagNode(SDFNode):
 
     def _evaluate(self, points: np.ndarray, cache: EvalCache) -> FieldSample:
         s = self.node.evaluate(points, cache)
-        return FieldSample(s.phi, np.full(s.phi.shape, self.meta_id, dtype=np.int32))
-
-
-class ExprSDF(SDFNode):
-    """A CSG shape stamped with a feature id (``meta``); ``phi`` unchanged.
-
-    Every shape in :mod:`implicit_geometry_kernel.sdf.nodes` is already an ``SDFNode``;
-    this wrapper only adds the id (without one it behaves as the shape itself).
-    """
-
-    def __init__(self, expr, meta: int = NO_FEATURE) -> None:
-        self.expr = expr
-        self.meta_id = int(meta)
-
-    def children(self) -> tuple[SDFNode, ...]:
-        return (self.expr,)
-
-    def _evaluate(self, points: np.ndarray, cache: EvalCache) -> FieldSample:
-        s = self.expr.evaluate(points, cache)
         return FieldSample(s.phi, np.full(s.phi.shape, self.meta_id, dtype=np.int32))
 
 
@@ -183,7 +139,7 @@ class MidSurfaceNode(SDFNode):
 
 
 __all__ = [
-    "CallableSDF", "CircleSDF", "ExprSDF", "FieldOffsetNode", "MidSurfaceNode",
-    "PolygonSDF", "PolylineBandSDF", "PriorityUnionNode",
+    "CallableSDF", "FieldOffsetNode", "MidSurfaceNode",
+    "PolylineBandSDF", "PriorityUnionNode",
     "TagNode", "TrimNode", "as_node",
 ]

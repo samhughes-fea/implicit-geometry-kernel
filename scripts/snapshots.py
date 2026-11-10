@@ -57,15 +57,17 @@ def _polyline_summary(points) -> dict:
 
 def section_case(key: str, twist_deg: float) -> dict:
     from implicit_geometry_kernel import Airfoil
-    from implicit_geometry_kernel.section import SectionGeometry, resolve_system_type
+    from implicit_geometry_kernel.section import SectionGeometry, SectionOptions, SectionSpec, resolve_system_type
 
     airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)
     result = SectionGeometry(
-        layout=resolve_system_type(key),
-        airfoil=airfoil,
-        twist_rad=math.radians(twist_deg),
-        outputs=("properties", "midlines", "cell_wall_loops"),
-        **GAUGES,
+        SectionSpec.from_kwargs(
+            resolve_system_type(key),
+            airfoil,
+            twist_rad=math.radians(twist_deg),
+            **GAUGES,
+        ),
+        SectionOptions(outputs=("properties", "midlines", "cell_wall_loops")),
     ).execute().get_results()
     props = {
         label: {k: float(v[k]) for k in PROPERTY_KEYS}

@@ -267,7 +267,7 @@ def shell_strips_from_graph(cut: SectionCut):
     from implicit_geometry_kernel.contract.shell_midline_strip import ShellMidlineStrip
 
     strips = []
-    for run in cut.shell_graph().runs():
+    for run in shell_graph(cut).runs():
         side = _side_from_name(run.name)
         strips.append(
             ShellMidlineStrip(
@@ -330,7 +330,7 @@ def shell_graph(cut: SectionCut, include_solids: bool = False) -> ShellGraph:
     boundaries so loft can see them without changing default 2D-F run names.
     """
 
-    ms = cut.mid_surface()
+    ms = _mid_surface(cut)
     skins = tuple(s for s in ms.segments if s.kind == "skin")
     webs = tuple(s for s in ms.segments if s.kind == "web")
     graph = ShellGraph(float(cut.z), _runs_of(ms, skins, cut, "skin"),

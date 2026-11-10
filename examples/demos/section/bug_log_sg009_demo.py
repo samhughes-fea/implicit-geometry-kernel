@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/bug_log_sg009_demo.py
+examples/demos/section/bug_log_sg009_demo.py
 ========================================
 SG-009 schematic: making a junction exact destroys the evidence used to find it.
 
@@ -16,7 +16,7 @@ Writes under ``examples/demos/figures/bug_log_sg009/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/bug_log_sg009_demo.py --presentation
+    python examples/demos/section/bug_log_sg009_demo.py --presentation
 """
 
 from __future__ import annotations

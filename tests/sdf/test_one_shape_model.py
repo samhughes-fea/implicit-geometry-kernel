@@ -7,7 +7,7 @@ from implicit_geometry_kernel.sdf.nodes.base import SDFNode
 from implicit_geometry_kernel.sdf.nodes import (
     Box, Circle, Intersect, Offset, Polygon, Rotate, Shell, Slab, Subtract, Union, eval_expr_batch,
 )
-from implicit_geometry_kernel.sdf.nodes.tagged import ExprSDF, TagNode
+from implicit_geometry_kernel.sdf.nodes.tagged import TagNode
 
 SQUARE = Polygon(((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)))
 SHAPES = [
@@ -46,6 +46,6 @@ def test_feature_ids_follow_the_combinator_rules():
     pts = np.array([[-0.5, 0, 0], [2.0, 0, 0]])
     assert Union(a, b).evaluate(pts).meta.tolist() == [1, 2]
     assert Offset(a, 0.1).evaluate(pts).meta.tolist() == [1, 1]
-    assert ExprSDF(Circle(0, 0, 1), 7).evaluate(pts).meta.tolist() == [7, 7]
+    assert TagNode(Circle(0, 0, 1), 7).evaluate(pts).meta.tolist() == [7, 7]
 
 

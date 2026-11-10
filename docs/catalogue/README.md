@@ -1,7 +1,7 @@
 # Catalogue
 
 ↑ [docs](../README.md) · [src](../../src/implicit_geometry_kernel/catalogue/README.md) ·
-[tests](../../tests/catalogue/)
+[examples](../../examples/catalogue/README.md) · [tests](../../tests/catalogue/)
 
 Tokens, frozen `SystemLayoutSpec`, and the web-count cascade. This package does
 not loft a blade and does not assemble solids.
@@ -24,6 +24,7 @@ Cascade functions (`effective_layout_for_web_count`, `step_down_cascade`,
 web count (W) and cap family (X) when webs drop or caps run out. They do not
 mint a new blade concept; Z and R stay on the parent token. Station geometry
 imports them; it does not own the registry. A cut keeps the parent on
-`SectionCut.layout`.
+`SectionCut.layout`. Realised W and X on that cut are `station_webs` and
+`station_family`.
 
 Decode: [taxonomy](../blade/concepts/taxonomy.md).

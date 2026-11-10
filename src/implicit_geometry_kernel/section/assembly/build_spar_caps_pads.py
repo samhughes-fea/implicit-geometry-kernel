@@ -2,17 +2,147 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
-from implicit_geometry_kernel.sdf.nodes import Subtract, union_expr
+import numpy as np
+
+from implicit_geometry_kernel.sdf.nodes import Expr, Subtract, union_expr
 from implicit_geometry_kernel.section.assembly.cap_feasibility import cap_feasibility_clamp
-from implicit_geometry_kernel.section.assembly.cap_ply_snap import snap_cap_heights
 from implicit_geometry_kernel.section.assembly.clip_algebra import (
     _parallel_web_strip_clip,
     flapwise_strip_params,
     web_station_projection,
 )
 from implicit_geometry_kernel.section.assembly.labels import ComponentLabel
+from implicit_geometry_kernel.section.walls.spar_cap import SparCap
+from implicit_geometry_kernel.section.walls.walls import CapWall
+
+_ONE_PLY_REL_TOL = 1e-9
+
+
+def snap_cap_height_at_most(height_m: float, pitch_m: float | None) -> float:
+    """Greatest on-grid height that does not exceed `height_m`.
+
+    Returns `height_m` unchanged when `pitch_m` is absent/invalid.
+    When not even one ply fits (`height_m < pitch`), returns ``0.0`` — geometric
+    run-out, matching ``PlyGrid.largest_at_most``. Leaving a sub-ply continuous
+    strip made the ply-count ceil (1 ply) disagree with geometry and broke Catalog FI.
+    """
+    if pitch_m is None:
+        return float(height_m)
+    p = float(pitch_m)
+    c = float(height_m)
+    if not (p > 0.0) or not math.isfinite(p) or not math.isfinite(c):
+        return float(height_m)
+    if c < p:
+        return 0.0
+    return math.floor(c / p + _ONE_PLY_REL_TOL) * p
+
+
+def snap_cap_heights(
+    h_upper: float,
+    h_lower: float,
+    pitch_m: float | None,
+) -> tuple[float, float]:
+    """Snap a suction/pressure pair after feasibility clamp."""
+    return (
+        snap_cap_height_at_most(h_upper, pitch_m),
+        snap_cap_height_at_most(h_lower, pitch_m),
+    )
+
+
+def _label_str(label: Any) -> str:
+    return str(getattr(label, "value", label))
+
+
+def _wrap_expr_cap(base_cap: SparCap, expr: Expr) -> SparCap:
+    return base_cap.with_expr(expr)
+
+
+def _camber_xy_tuple(camber_xy) -> tuple[tuple[float, float], ...] | None:
+    """Freeze feasibility camber samples for CapWall (hashable recipe field)."""
+    if camber_xy is None:
+        return None
+    arr = np.asarray(camber_xy, dtype=float)
+    if arr.ndim != 2 or arr.shape[0] < 2 or arr.shape[1] < 2:
+        return None
+    return tuple((float(x), float(y)) for x, y in arr[:, :2])
+
+
+def _cap_wall(
+    *,
+    skin_thickness: float,
+    x_start: float,
+    x_end: float,
+    cap_height: float,
+    surface: str,
+    twist_angle: float = 0.0,
+    fw: dict[str, Any] | None = None,
+    camber_xy=None,
+) -> CapWall | None:
+    """Build a CapWall recipe, or ``None`` when snapped height is geometric run-out."""
+    if float(cap_height) <= 0.0:
+        return None
+    fw = fw or {}
+    return CapWall(
+        skin_thickness=float(skin_thickness),
+        x_start=float(x_start),
+        x_end=float(x_end),
+        cap_height=float(cap_height),
+        surface=str(surface),
+        twist_angle=float(twist_angle),
+        flapwise_nx=fw.get("flapwise_nx"),
+        flapwise_ny=fw.get("flapwise_ny"),
+        flapwise_c_lo=fw.get("flapwise_c_lo"),
+        flapwise_c_hi=fw.get("flapwise_c_hi"),
+        flapwise_clip_mode=fw.get("flapwise_clip_mode"),
+        camber_xy=_camber_xy_tuple(camber_xy),
+    )
+
+
+def _project_cap(
+    wall: CapWall,
+    airfoil_sdf,
+    *,
+    airfoil_expr_node,
+    camber_xy=None,
+    strip_clip=None,
+) -> SparCap:
+    cap = wall.to_sdf_component(airfoil_sdf, camber_xy=camber_xy, airfoil_expr_node=airfoil_expr_node)
+    if strip_clip is not None:
+        cap._strip_clip = strip_clip
+    return cap
+
+
+def _register_cap_side(
+    *,
+    wall: CapWall | None,
+    label: ComponentLabel,
+    recipes: dict[str, Any],
+    unrotated: dict[Any, Any],
+    airfoil_sdf,
+    airfoil_expr_node,
+    camber_xy,
+    strip_clip,
+    web_union,
+) -> SparCap | None:
+    """Project and register one cap side; skip geometric run-out (``wall is None``)."""
+    if wall is None:
+        return None
+    recipes[_label_str(label)] = wall
+    cap = _project_cap(
+        wall,
+        airfoil_sdf,
+        airfoil_expr_node=airfoil_expr_node,
+        camber_xy=camber_xy,
+        strip_clip=strip_clip,
+    )
+    if web_union is not None:
+        cap = _wrap_expr_cap(cap, Subtract(cap.expr, web_union))
+        cap.footprint_expr = Subtract(cap.footprint_expr, web_union)
+    unrotated[label] = cap
+    return cap
 
 
 def fill_per_web_pads(
@@ -42,10 +172,7 @@ def fill_per_web_pads(
     _label_str,
 ) -> tuple[Any | None, Any | None]:
     if N < 1:
-        raise ValueError(
-            "per_web_pads cap placement requires at least one web "
-            f"(got N={N})."
-        )
+        raise ValueError(f"per_web_pads cap placement requires at least one web (got N={N}).")
     _clamped_c = [
         cap_feasibility_clamp(
             airfoil_sdf,
@@ -76,9 +203,7 @@ def fill_per_web_pads(
     elif _clamped_c:
         cap_h_upper = min(float(c[2]) for c in _clamped_c)
         cap_h_lower = min(float(c[3]) for c in _clamped_c)
-    cap_h_upper, cap_h_lower = snap_cap_heights(
-        cap_h_upper, cap_h_lower, spar_cap_ply_pitch_m
-    )
+    cap_h_upper, cap_h_lower = snap_cap_heights(cap_h_upper, cap_h_lower, spar_cap_ply_pitch_m)
     _clamped_c = [
         cap_feasibility_clamp(
             airfoil_sdf,

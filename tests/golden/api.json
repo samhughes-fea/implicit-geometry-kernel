@@ -65,7 +65,7 @@
    "write_mid_surfaces": "(self: 'BladeGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81, members=None, include_solids: 'bool' = False) -> 'str'",
    "write_oml": "(self: 'BladeGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81) -> 'str'"
   },
-  "signature": "(stations: 'Sequence[Station]', layout, skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, pivot_fraction: 'Optional[Union[float, SpanTable]]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), span_kind: 'str' = 'linear', ply_drops: 'Sequence[PlyDrop]' = (), merge_cap_and_skin: 'bool' = False, region_graph=None)"
+  "signature": "(stations: 'Sequence[Station]', layout: 'str | SystemLayoutSpec | SectionLayout', skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, pivot_fraction: 'Optional[Union[float, SpanTable]]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), ply_drops: 'Sequence[PlyDrop]' = (), merge_cap_and_skin: 'bool' = False, region_graph=None)"
  },
  "implicit_geometry_kernel.CellPolygon": {
   "kind": "class",
@@ -106,6 +106,8 @@
  "implicit_geometry_kernel.LoftedPolygonSDF": {
   "kind": "class",
   "members": {
+   "accel_at": "(self, z: 'float') -> 'dict | None'",
+   "bvh": "",
    "polygon_at": "(self, z: 'float') -> 'np.ndarray'"
   },
   "signature": "(provider: 'SectionPolygon', meta: 'int' = -1, cache_size: 'int' = 4096, accelerate: 'bool' = True) -> 'None'"
@@ -164,7 +166,7 @@
    "wall": "(self, label: 'str') -> 'SectionWall'",
    "walls_of": "(self, kind: 'str') -> 'Tuple[SectionWall, ...]'"
   },
-  "signature": "(z: 'float', chord: 'float', twist: 'float', pitch_axis: 'float', offset: 'Tuple[float, float]', layout: 'str', walls: 'Tuple[SectionWall, ...]', cells: 'Tuple[CellPolygon, ...]', dropped_webs: 'Tuple[str, ...]' = (), transverse: 'Tuple[TransverseMember, ...]' = (), stringers: 'Tuple[Stringer, ...]' = (), host: 'Any' = None, scale: 'float' = 1.0, dropped_web_indices: 'Tuple[int, ...]' = (), station_webs: 'int' = 0, station_family: 'str' = '') -> None"
+  "signature": "(z: 'float', chord: 'float', twist: 'float', pitch_axis: 'float', offset: 'Tuple[float, float]', layout: 'str', walls: 'Tuple[SectionWall, ...]', cells: 'Tuple[CellPolygon, ...]', dropped_webs: 'Tuple[str, ...]' = (), transverse: 'Tuple[TransverseMember, ...]' = (), stringers: 'Tuple[Stringer, ...]' = (), host: 'SectionMidlineHost | None' = None, scale: 'float' = 1.0, dropped_web_indices: 'Tuple[int, ...]' = (), station_webs: 'int' = 0, station_family: 'str' = '') -> None"
  },
  "implicit_geometry_kernel.SectionWall": {
   "kind": "class",
@@ -267,7 +269,7 @@
    "signature_at": "(self, z: 'float', web_fracs: 'Sequence[float] | None' = None) -> 'tuple'",
    "webs_at": "(self, z: 'float') -> 'tuple[WebMember, ...]'"
   },
-  "signature": "(anchors: 'tuple[Anchor, ...]', regions: 'tuple[Region, ...]', webs: 'tuple[WebMember, ...]', te_arc: 'float' = 0.03, min_gap: 'float' = 0.002) -> None"
+  "signature": "(anchors: 'tuple[Anchor, ...]', regions: 'tuple[Region, ...]', webs: 'tuple[WebMember, ...]', te_arc: 'float' = 0.03, min_gap: 'float' = 0.002, cap_windows: 'tuple[tuple[float, float], ...]' = (), cap_placement: 'CapPlacementRule' = <factory>, cap_pad: 'float | None' = None) -> None"
  },
  "implicit_geometry_kernel.WebMember": {
   "kind": "class",
@@ -463,7 +465,7 @@
  "implicit_geometry_kernel.structure.TableLaw": {
   "kind": "class",
   "members": {},
-  "signature": "(z: 'Sequence[float]', values: 'Sequence[float]', kind: 'str' = 'pchip') -> 'None'"
+  "signature": "(z: 'Sequence[float]', values: 'Sequence[float]') -> 'None'"
  },
  "implicit_geometry_kernel.structure.ThicknessLaw": {
   "kind": "class",

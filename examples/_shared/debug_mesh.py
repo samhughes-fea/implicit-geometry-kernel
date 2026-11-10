@@ -244,6 +244,47 @@ def _loft_quads(faces: list[np.ndarray], kinds: list[str]) -> tuple[np.ndarray, 
     return np.zeros((0, 4, 3), float), np.zeros((0,), dtype="U64")
 
 
+def _rib_ngons(walls: list, geo) -> tuple[list[np.ndarray], list[str]]:
+    """Authored rib n-gons at loft stations (OBJ/VTK; figures may ear-clip)."""
+    from implicit_geometry_kernel.blade.topology import rib_cell_polygons_from_samples
+
+    out_f, out_k = [], []
+    if geo is None or not walls:
+        return out_f, out_k
+    z0, z1 = float(walls[0][0]), float(walls[-1][0])
+    seen: set[str] = set()
+    for member in geo.transverse:
+        zm = float(member.z)
+        if not (z0 - 1e-9 <= zm <= z1 + 1e-9):
+            continue
+        _z, tmpl, samples = min(walls, key=lambda s, z=zm: abs(float(s[0]) - z))
+        key = str(member.name)
+        if key in seen:
+            continue
+        seen.add(key)
+        for name, ring in rib_cell_polygons_from_samples(tmpl, samples, member):
+            out_f.append(ring)
+            out_k.append(name)
+    return out_f, out_k
+
+
+def _dump_faces(walls: list, faces: list[np.ndarray], kinds: list[str], geo=None
+                ) -> tuple[list[np.ndarray], list[str]]:
+    loft_f, loft_k, rib_pass_f, rib_pass_k = [], [], [], []
+    for face, kind in zip(faces, kinds):
+        key = str(kind)
+        if "rib" in key.lower() or key.startswith("tip"):
+            rib_pass_f.append(face)
+            rib_pass_k.append(kind)
+        else:
+            loft_f.append(face)
+            loft_k.append(kind)
+    if geo is not None:
+        rib_f, rib_k = _rib_ngons(walls, geo)
+        return loft_f + rib_f, loft_k + rib_k
+    return loft_f + rib_pass_f, loft_k + rib_pass_k
+
+
 def dump_debug_mesh(out: Path, walls: list, faces: list[np.ndarray], kinds: list[str],
                     *, label: str, repo: Path, geo=None, stem: str = "mids",
                     write_samples: bool = True) -> None:
@@ -252,7 +293,7 @@ def dump_debug_mesh(out: Path, walls: list, faces: list[np.ndarray], kinds: list
         return
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
-    mesh, roles = _mesh_faces(faces, kinds)
+    mesh, roles = _mesh_faces(*_dump_faces(walls, faces, kinds, geo))
     obj_path = write_loft_obj(out / f"{stem}.obj", mesh, roles)
     vtk_path = write_loft_vtk(out / f"{stem}.vtk", mesh, roles)
     groups = {k for k in roles}

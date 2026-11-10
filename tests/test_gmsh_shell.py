@@ -7,7 +7,7 @@ import pytest
 
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
 from implicit_geometry_kernel.extract.curves import locate_shell_vertex
-from implicit_geometry_kernel.mesh.gmsh_shell import junction_web_errors, mesh_shell
+from implicit_geometry_kernel.mesh.gmsh import junction_web_errors, mesh_shell
 
 
 def _geo():

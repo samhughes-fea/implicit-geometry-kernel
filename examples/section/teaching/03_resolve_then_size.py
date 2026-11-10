@@ -22,6 +22,8 @@ _ensure_mod.ensure_repo_path()
 from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.section import (
     SectionGeometry,
+    SectionOptions,
+    SectionSpec,
     resolve_system_type,
 )
 
@@ -33,11 +35,13 @@ def main() -> None:
 
     frozen = (
         SectionGeometry(
-            layout=layout,
-            airfoil=airfoil,
-            skin_thickness=t_skin_min,
-            spar_cap_thickness=0.0,
-            shear_web_thickness=0.0,
+            SectionSpec.from_kwargs(
+                layout,
+                airfoil,
+                skin_thickness=t_skin_min,
+                spar_cap_thickness=0.0,
+                shear_web_thickness=0.0,
+            ),
         )
         .resolve()
         .get_layout_resolution()
@@ -55,13 +59,15 @@ def main() -> None:
     for skin_thickness, spar_cap_thickness, shear_web_thickness in trials:
         result = (
             SectionGeometry(
-                layout=frozen.layout,
-                airfoil=airfoil,
-                skin_thickness=skin_thickness,
-                spar_cap_thickness=spar_cap_thickness,
-                shear_web_thickness=shear_web_thickness,
+                SectionSpec.from_kwargs(
+                    frozen.layout,
+                    airfoil,
+                    skin_thickness=skin_thickness,
+                    spar_cap_thickness=spar_cap_thickness,
+                    shear_web_thickness=shear_web_thickness,
+                ),
+                SectionOptions(outputs=("properties",)),
                 resolution=frozen,
-                outputs=("properties",),
             )
             .execute()
             .get_results()

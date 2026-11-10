@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
+from types import MappingProxyType
 
 import numpy as np
 
@@ -22,6 +23,7 @@ class LoftedPolygonSDF(LeafNode):
 
     ``accelerate=True`` (default) caches a uniform-grid BVH / AABB of the station
     polygon for batched queries. ``phi`` matches the unaccelerated edge loop.
+    Read the cache with :meth:`accel_at` or the :attr:`bvh` mapping.
     """
 
     def __init__(
@@ -55,6 +57,17 @@ class LoftedPolygonSDF(LeafNode):
             old, _ = self._cache.popitem(last=False)
             self._accel.pop(old, None)
         return poly
+
+    def accel_at(self, z: float) -> dict | None:
+        """Uniform-grid AABB for the station polygon, or ``None`` if not accelerated."""
+        key = round(float(z), 9)
+        self.polygon_at(key)
+        return self._accel.get(key)
+
+    @property
+    def bvh(self) -> Mapping[float, dict]:
+        """Read-only map ``round(z, 9) →`` accel dict (empty when ``accelerate`` is off)."""
+        return MappingProxyType(self._accel)
 
     def _phi(self, points: np.ndarray) -> np.ndarray:
         if points.shape[0] == 0:

@@ -14,10 +14,11 @@ superseded conclusions are struck through or narrated rather than deleted,
 because several of these were mis-attributed on first pass and the correction is
 the useful part.
 
-**Identifiers.** Entries here are `SG-nnn`, local to this package. `BL-nnn`
-refers to the repo-root `docs/bug_log.md`,
-which tracks the section-selection sizing chain; the two numbering spaces are
-independent.
+**Identifiers.** Entries here are `SG-nnn`, local to this package. Sibling logs
+are [`blade/bug_log.md`](../blade/bug_log.md) (`BG-nnn`) and
+[`frames/bug_log.md`](../frames/bug_log.md) (`CF-nnn`). Historical `BL-nnn`
+ids in closed entries are from a retired repo-root log; they are not a live
+numbering space.
 
 **Reference case throughout:** NACA 2412, 1.0 m chord, 200 airfoil points,
 6 mm skin / 14 mm spar cap / 8 mm shear web, layouts named by the
@@ -46,7 +47,16 @@ Deviations are stated per entry.
 | [SG-016](#sg-016) | 50 package tests fail at HEAD (`SparCap._camber_surface`, g-row hardening) | **Fixed** — wrap copies `_camber_surface`; barrel / comment gates cleared |
 | [SG-017](#sg-017) | Caps are built from the skin but their bond to it is never emitted | **Fixed** — `bond_caps_to_skin` pairs every cap vertex with the skin; `ShellMidlineStrip.bonds` |
 | [SG-018](#sg-018) | Residual nearest / argmin sites vs standing invariant (Exactness item 6 follow-on) | **Logged** (2026-09-26) — no relocation defect |
-| [SG-019](#sg-019) | Family-C constructive cap union omitted pad 0 (canonical label) so hybrid area was half the SDF | **Fixed** — union indexed pads *and* the canonical pad |
+| [SG-019](#sg-019) | Family-C constructive cap union omitted pad 0 (canonical label) so hybrid area was half the SDF | **Fixed** — `v0.8.1` union then `v0.8.2` indexed-only after SG-027 |
+| [SG-020](#sg-020) | Closed architecture programme still read as open work in maintainer docs | **Fixed** — status table, Shapely/CAD/mesh wording, standing-work list |
+| [SG-021](#sg-021) | Gallery scripts still constructed `MultiCellSection` instead of `SectionGeometry` | **Fixed** — `_assemble.assemble_host`; insert demo kept as host extra |
+| [SG-022](#sg-022) | windIO chord windows placed as a pitch-centred half-width pad | **Fixed** — `chord_window` interval + deepest clamp |
+| [SG-023](#sg-023) | Plots under `src/` tripped Shapely gateway and mypy on 3.11 | **Fixed** — exclude `plotting/` from those gates |
+| [SG-024](#sg-024) | Layout catalogue 4×4 only placed `0A` / `0B` | **Fixed** |
+| [SG-025](#sg-025) | Catalogue example called `cut.layout.key` on a string | **Fixed** |
+| [SG-026](#sg-026) | Contract example swapped xy per strip and broke webs | **Fixed** |
+| [SG-027](#sg-027) | Family-C pad `*_0` treated as a distinct merge key from the unindexed canonical pad | **Fixed** — `v0.8.2` index-0 only; no unindexed sibling |
+| [SG-028](#sg-028) | `AirfoilSDF.from_naca` via `Airfoil.naca4` broke sdf↔blade and vertex counts | **Fixed** — shared `naca_four_digit_vertices` |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -90,7 +100,7 @@ them up" without reading the linked entry first. Full classification: [SG-018](#
 | `midlines/ring_geometry.py` | definition. |
 | `midlines/skin_split.py`, in `split_skin_at_junctions` | **indexing only.** The web foot is already the junction; this reads the arc length at which to split the skin. It no longer writes to `arr[row]`. See SG-002. |
 | `topology/shell_strip_topology.py` | re-export plus a `_point_to_open_polyline_nearest` compatibility alias. No call. |
-| `visualisation/demos/shell_junction_topology_demo.py`, `visualisation/demos/topology_twist_stability_demo.py` | **measurement.** Both demos use it to *report* junction gaps, which is what produced the numbers in SG-002 and SG-005. |
+| `examples/demos/section/shell_junction_topology_demo.py`, `examples/demos/section/topology_twist_stability_demo.py` | **measurement.** Both demos use it to *report* junction gaps, which is what produced the numbers in SG-002 and SG-005. |
 
 It is **gone** from `topology/cap_web_junctions.py` and from `section_mesh`'s
 `centerline_mesh.py`, neither of which imports it any more.
@@ -139,7 +149,7 @@ back to a bevel (identical geometry against `mitre_limit = 1e6`) across
 not a hidden exactness cliff.
 
 SG-001 through SG-004 were all found while building
-`visualisation/demos/geometry_to_mesh_flythrough.py`,
+`examples/demos/section/` (geometry-to-mesh fly-through is not ported; teaching `05` is the handoff twin),
 which draws raw emit and junction-prepared strips side by side at a junction
 zoom — the two forms are hard to compare any other way.
 
@@ -1319,16 +1329,352 @@ quadtree occupancy of the same canonical cap labels (rtol 0.55 in
 ### Evidence
 On ``2C-CN-LC-0R`` / NACA 2412, each pad SDF occupies ~9.5e-4 m² and the
 min-φ union is their sum (~1.91e-3). Hybrid / constructive area was ~9.14e-4
-(one pad). ``spar_cap_components_unrotated`` holds pad 0 under
+(one pad). ``spar_cap_components_unrotated`` held pad 0 under
 ``spar_cap_suction_surface`` and pad 1 under ``spar_cap_suction_surface_1``.
 
 ### Root cause
 ``_union_discrete_caps`` skipped the canonical surface key so family **D**
-would not treat the continuous box as a pad. Family **C** stores pad 0 on
+would not treat the continuous box as a pad. Family **C** then stored pad 0 on
 that same key, so emit unioned only ``*_1`` onward.
 
 ### Verification
-Include the canonical key when indexed siblings exist. Hybrid 2C suction
-9.15e-4 → 1.83e-3; C-family wall solids use the same hybrid/quadtree rtol as
-the other families.
+`v0.8.1` included the canonical key when indexed siblings existed. Hybrid 2C
+suction 9.15e-4 → 1.83e-3; C-family wall solids used the same hybrid/quadtree
+rtol as the other families. `v0.8.2` (SG-027) stores pad 0 as `*_0` only, so
+the union is indexed pads; the hybrid test is
+`tests/section/test_multicell_web_caps_and_bonding.py::test_family_c_hybrid_cap_area_matches_sdf`.
+
+**Commit:** `v0.8.1` (`d01cc90`); residual label split closed in `v0.8.2`.
+
+## SG-020
+
+**Closed architecture programme still read as open work in maintainer docs**
+
+**Status:** Fixed — 2026-11-09
+**Area:** `docs/REFACTOR_PLAN.md`, `docs/section/reports/PERFORMANCE_WORK_SUMMARY.md`,
+`docs/README.md`, `src/implicit_geometry_kernel/README.md`, glossary / catalogue
+
+### Symptom
+
+Reading the status plan as a to-do list implied further architecture steps.
+Phase 2d still described string-prefix wall dispatch as “today”; the efficiency
+report said “Shapely remains”; STEP/`[cad]` was still “wait until after step 6”;
+the public package map advertised `[mesh]` (`gmsh`) against the written decision
+not to advertise it. A reader could also infer a live import of blade-structure
+`section_geometry`.
+
+### Evidence
+
+[docs/REFACTOR_PLAN.md](../REFACTOR_PLAN.md) status table already marked steps
+1–8 **Done** and step 9 **Declined**; CHANGELOG 0.7.0 closed the programme.
+`pyproject.toml` runtime deps are numpy and numba only. `SectionGeometry` has
+one definition (`section/spec/runner.py`).
+
+### Root cause
+
+The status table was the source of truth; the body paragraphs and public extras
+diagram were not updated when the work landed. Fork-era names (`section_geometry`,
+Shapely gateway) stayed in live maintainer notes.
+
+### Fix
+
+Align the plan body with the status table (Phase 2d done; GEOS not Shapely; CAD
+shipped). Add a standing-work list (parked G10/G11, gallery ports, no mesh extra).
+Drop `[mesh]` from the public hub mermaid and package README extras table.
+Glossary / catalogue: `SectionCut.layout` is the authored concept; realised W/X
+are `station_webs` / `station_family`.
+
+### Verification
+
+Grep of live docs: no “Today kinds are still”, no “wait until after step 6”, no
+public `mesh extra` edge. One `SectionGeometry` class. No `blade_structure`
+import in `src/`.
+
+## SG-021
+
+**Gallery scripts still constructed `MultiCellSection` instead of `SectionGeometry`**
+
+**Status:** Fixed — 2026-11-09 (insert residual demo still a host extra)
+**Area:** `examples/demos/section/`
+
+### Symptom
+
+Decision 3 of the refactor plan asked to port `examples/demos/` onto
+`SectionSpec` / `SectionGeometry` / `BladeGeometry` / `shell_graph` without
+deleting them. Many gallery scripts still called `MultiCellSection.twin_web` /
+`.torsion_box` / the constructor, so the gallery taught the assemble host as
+the public door.
+
+### Evidence
+
+Scripts including `naca2412_section.py`, `cell_wall_loops_demo.py`,
+`system_types_twist_grid.py`, `geometry_from_design_vector.py` imported
+`MultiCellSection` and built hosts that way. Teaching `01` already used
+`SectionGeometry`.
+
+### Root cause
+
+The worker (`SectionGeometry`) returns the same host on `result.section`. The
+gallery never switched construction to that worker after the tree freeze.
+
+### Fix
+
+Shared [`examples/demos/section/_assemble.py`](../../examples/demos/section/_assemble.py)
+(`layout_token`, `assemble_host`) builds through `SectionGeometry.execute()`.
+Ported gallery builders use catalogue tokens plus `web_offsets` / `web_fracs`.
+`le_te_insert_residual_demo.py` still calls `MultiCellSection.twin_web` because
+LE/TE insert windows are not worker kwargs (CI SKIP). Remaining
+`build_section_view` benches are the assemble helper, not a second worker class.
+
+### Verification
+
+`python -m py_compile` on the ported scripts; smoke `assemble_host` for 0-web
+`0A` and 3-web `3D` (n_webs 0 and 3). Ruff clean on the touched demo files.
+
+## SG-022
+
+**windIO chord windows placed as a pitch-centred half-width pad**
+
+**Status:** Fixed — 2026-11-07
+**Area:** `CapPlacementRule` / `build_spar_caps` / `BladeGeometry.cap_windows`
+
+### Symptom
+
+Example 08 reference blades showed only a thin red “pinstripe” where the spar
+cap should occupy a published chord window (IEA 22 root especially). Cap colour
+was present on the conformal loop but covered ~0.22 m of chord on a ~5.8 m
+section.
+
+### Evidence
+
+IEA 22 `section_at(0)`: painted `spar_cap_*` runs matched the solid bond length
+(~0.23 m), not the YAML `spar_cap_ss` nd_arc window (~0.22–0.27 at 5 % span,
+growing outboard). Legend red was correct; the band was wrong.
+
+### Root cause
+
+`CapPlacementRule.from_chord_windows` discarded `(lo, hi)` and returned
+`fixed_band(anchor="pitching", half_width=0.5*(hi-lo))`. Assemble centred that
+pad on the pitch axis (`extent_anchor="band_center"`), so a published off-pitch
+window collapsed into a small bay.
+
+Distinct from [SG-013](#sg-013) (symmetric recenter of an authored band about
+its centre): here the authored interval itself was never used as `x_start` /
+`x_end`.
+
+### Fix
+
+Store `chord_window=(lo, hi)` on `CapPlacementRule`. When set, `build_spar_caps`
+uses `lo*chord`…`hi*chord` with `extent_anchor="deepest"` (do not shrink toward
+pitch). Catalogue `fixed_band` / `continuous_box` / `per_web_pads` unchanged.
+
+### Verification
+
+`test_from_chord_windows_stores_published_interval`;
+`test_cap_windows_span_published_chord_interval`;
+`test_iea22_painted_cap_matches_yaml_window` (root / max-chord). Regenerated
+example 08 figures show a wide red spar window on IEA 22 root.
+
+## SG-023
+
+**Plots under `src/` tripped Shapely gateway and mypy on 3.11**
+
+**Status:** Fixed — 2026-11-07
+**Area:** `implicit_geometry_kernel.plotting` / import-boundary / mypy
+
+### Symptom
+
+PR #34 (`refactor/plots-into-kernel`) failed CI after the plots tree moved from
+repo-root `plotting/` into `src/implicit_geometry_kernel/plotting` behind
+`[plots]`. `test_only_the_gateway_imports_shapely` reported
+`plotting/plot_section.py` → `shapely.geometry.polygon`. Separately, mypy on
+Python 3.11 failed on `figure_io.py` (`rcParams.update` vs matplotlib stub
+literals) and several `plot_section.py` operator / `LineCollection` sites.
+
+### Evidence
+
+GitHub Actions `pytest (3.11)` on #34: Shapely AssertionError listing
+`plot_section.py`; typecheck exit 1 with 31 errors in two plotting files.
+3.12 / 3.13 pytest and examples were green. Root `import plotting` alias also
+double-loaded submodules until `sys.modules` keys were copied from the
+canonical package (name `plot_section` shadowed the function).
+
+### Root cause
+
+Package gates scanned everything under `src/implicit_geometry_kernel`. Optional
+plotting is allowed to use matplotlib (and at the time Shapely for rings); it
+is not the GEOS / Shapely geometry gateway and is not part of the core mypy
+contract. Moving the tree under `src/` without excluding the extra made those
+gates fire.
+
+### Fix
+
+Exclude `plotting/` from the Shapely import-boundary check; set
+`[tool.mypy] exclude = ["implicit_geometry_kernel/plotting"]`. Alias shim copies
+`implicit_geometry_kernel.plotting.*` into `sys.modules` for root `plotting`
+until the alias drop. Later Shapely removal from plotting made the gateway
+test a full-repo ban (`test_repository_does_not_import_shapely`).
+
+### Verification
+
+PR #34 green (pytest 3.11–3.13, core-install, examples) then merged; mypy no
+longer typechecks the plots extra.
+
+## SG-024
+
+**Layout catalogue 4×4 only placed `0A` / `0B`**
+
+**Status:** Fixed — 2026-11-09
+**Area:** `examples/section/01_layout_catalogue/layout_catalogue.py`
+
+### Symptom
+
+The 40-layout gallery looked empty except the two web-less cells.
+
+### Evidence
+
+Placement used `key.startswith("1A-F")` (and similar short prefixes). Catalogue
+tokens are `1A-F-LC-0R`, so only `0A` / `0B` matched the web-less branches.
+
+### Root cause
+
+The grid seeder assumed the old short layout token, not `{W}{X}-{Y}-{Z}`.
+
+### Fix
+
+Place by `n = int(key[0])`, family `key[1]`, and `F` vs `CN` in the token.
+Web-less keys still use `startswith("0A")` / `0B`.
+
+### Verification
+
+Regenerated `examples/section/01_layout_catalogue/figures/layout_catalogue.png`
+shows all 40 layouts. **Fixed.**
+
+## SG-025
+
+**Catalogue example called `cut.layout.key` on a string**
+
+**Status:** Fixed — 2026-11-09
+**Area:** `examples/catalogue/01_web_count_cascade/web_count_cascade.py`
+
+### Symptom
+
+`AttributeError: 'str' object has no attribute 'key'` when printing assembled
+cuts.
+
+### Evidence
+
+`SectionCut.layout` is the authored concept string (see blade [BG-022](../blade/bug_log.md#bg-022)
+sibling-token rewrite). The example treated it as a layout object.
+
+### Root cause
+
+The gallery lagged the cut contract.
+
+### Fix
+
+Print `real.layout` (the token). Realised W/X stay on `station_webs` /
+`station_family` if needed.
+
+### Verification
+
+`web_count_cascade.py` runs and prints `layout=<token>`. **Fixed.**
+
+## SG-026
+
+**Contract example swapped xy per strip and broke webs**
+
+**Status:** Fixed — 2026-11-09
+**Area:** `examples/contract/01_three_products_dtos/three_products_dtos.py`
+
+### Symptom
+
+Skin midlines looked plausible; webs plotted along the chord (or vanished)
+because each strip chose its own axis swap.
+
+### Evidence
+
+A per-polyline test (`Δy > Δx`) swapped skin and web independently. Webs are
+tall in \(y\), so they swapped when the skin did not.
+
+### Root cause
+
+The twisted pitch-axis DTO can be chord-first; the swap must be one decision
+for the whole figure (from a cell loop or the skin ring), not per artist.
+
+### Fix
+
+One `swap` from the first cell loop (fallback: first strip). Every midline
+and loop uses that pair.
+
+### Verification
+
+Regenerated `three_products_dtos.png`: webs span suction–pressure. **Fixed.**
+
+
+## SG-027
+
+**Family-C pad `*_0` treated as a distinct merge key from the unindexed canonical pad**
+
+**Status:** Fixed — 2026-11-09 (`v0.8.2`)
+**Area:** `build_spar_caps` / `_union_discrete_caps` / conformal loop names
+
+### Symptom
+After SG-019, pad 0 still lived under `spar_cap_{side}` while later pads used
+`spar_cap_{side}_{i}`. Consumers that keyed on the unrotated pad dict, loft
+identity, or loop names saw two identities for the same first pad. Hybrid area
+could pass while span loft and conformal colour still split on the unindexed
+label.
+
+### Evidence
+Catalogue **C** (`2C-CN-LC-0R`): unrotated dict mixed `spar_cap_suction_surface`
+(pad 0) with `spar_cap_suction_surface_1`. Mapped loft and example 09 CSG
+stations treated those as different strips.
+
+### Root cause
+Canonical (unindexed) surface keys were reserved so family **D** would not
+look like pads. Family **C** reused that slot for pad 0 instead of `*_0`.
+
+### Fix
+Store every family-C pad as `spar_cap_{side}_{i}` including `*_0`. Do not emit
+an unindexed sibling. `_union_discrete_caps` unions indexed pads only.
+Family **D** / chord-window labels stay unindexed `spar_cap_{side}`.
+
+### Verification
+`test_family_c_hybrid_cap_area_matches_sdf` (pads `0`–`3`);
+`test_one_web_chord_window_keeps_unindexed_cap_name`;
+`test_iea10_cap_loft_key_stable_along_span`. Package `v0.8.2`
+(`3d7c945`, PR #46).
+
+## SG-028
+
+**`AirfoilSDF.from_naca` via `Airfoil.naca4` broke sdf↔blade and vertex counts**
+
+**Status:** Fixed — 2026-11-06 (0.4.0 airfoil unification)
+**Area:** `sdf.shapes.naca` / `AirfoilSDF.from_naca` / `Airfoil.naca4`
+
+### Symptom
+Unifying the two NACA generators by making `AirfoilSDF.from_naca` wrap
+`Airfoil.naca4(...).to_sdf(...)` failed the sdf import-boundary gate (`sdf`
+must not import `blade`) and changed closed-contour vertex counts relative to
+the historical `from_naca` path, so demo/test graphs no longer matched.
+
+### Evidence
+`tests/test_import_boundary.py::test_sdf_stands_alone` failed when `sdf` pulled
+`blade.Airfoil`. Contour length / TE closure differed from the pre-unification
+`from_naca` sampler. Found during the 0.4.0 contract pass; not shipped broken.
+
+### Root cause
+`Airfoil` lives under `blade`. Routing the SDF adapter through it inverted the
+layer rule. The two generators also disagreed on how `n_points` maps onto a
+closed Selig loop.
+
+### Fix
+One shared leaf: `naca_four_digit_vertices` in `sdf.shapes.naca`. Both
+`Airfoil.naca4` and `AirfoilSDF.from_naca` call it; `sdf` still imports nothing
+from `blade`. Prefer `Airfoil.to_sdf()` at call sites.
+
+### Verification
+`test_sdf_stands_alone`; `tests/sdf/test_naca_single_source.py` (both factories
+call the shared generator). Documented in `CHANGELOG.md` 0.4.0.
 

@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/sdf_operator_algebra_demo.py
+examples/demos/section/sdf_operator_algebra_demo.py
 =====================================
 The whole shape language, one line of numpy per operator.
 
@@ -22,7 +22,7 @@ Writes under ``examples/demos/figures/sdf_operator_algebra/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/sdf_operator_algebra_demo.py
+    python examples/demos/section/sdf_operator_algebra_demo.py
 """
 
 from __future__ import annotations

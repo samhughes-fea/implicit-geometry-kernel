@@ -6,10 +6,13 @@ import matplotlib.pyplot as plt
 
 from implicit_geometry_kernel.section.properties.eval_cache import SectionEvalCache
 from implicit_geometry_kernel.section.boundary.labels import is_core_label
+from implicit_geometry_kernel.integration.quadtree.quadrature import label_boundary_segments
 from .plot_section_axes import (
     _DEFAULT_COLOR,
     _DEFAULT_CORE_ALPHA,
     _component_color,
+    _naca_xy_to_plot_hv,
+    _resolve_section_twist_chord,
     apply_structural_section_axes,
     blade_plot_sampling_grid,
     fit_square_section_axes,
@@ -19,7 +22,6 @@ from .plot_section_axes import (
 from .plot_section_hybrid import (
     plot_section_from_mesh,
     plot_section_hybrid,
-    plot_section_with_quadtree,
 )
 
 
@@ -246,6 +248,128 @@ def plot_section(section_geometry, grid, ax=None, alpha=0.45,
     apply_structural_section_axes(ax, xlabel=xlabel, ylabel=ylabel)
     return fig, ax
 
+
+
+def plot_section_with_quadtree(
+    mesh,
+    labels=None,
+    *,
+    title="Blade section geometry",
+    mesh_title=None,
+    alpha=0.45,
+    show_legend=True,
+    color_fn=_component_color,
+    airfoil_vertices=None,
+    figsize=(20, 6),
+    section=None,
+    twist_rad: float | None = None,
+    chord_m: float | None = None,
+):
+    """Two-panel figure: built geometry (left) and union-refined quadtree mesh (right)."""
+    from matplotlib.collections import LineCollection
+    from matplotlib.patches import Polygon
+
+    if labels is None:
+        labels = list(mesh.phi_by_label.keys())
+    labels = [str(getattr(lbl, "value", lbl)) for lbl in labels]
+
+    twist, chord = _resolve_section_twist_chord(
+        section, mesh, twist_rad=twist_rad, chord_m=chord_m
+    )
+
+    leaves = mesh.leaf_cells()
+    if mesh_title is None:
+        max_depth = max((int(getattr(c, "level", 0)) for c in leaves), default=0)
+        mesh_title = (
+            f"Square union-refined quadtree (depth<={max_depth}, leaves={len(leaves)})"
+        )
+
+    fig, (ax_geom, ax_quad) = plt.subplots(1, 2, figsize=figsize)
+    if section is not None:
+        plot_section_hybrid(
+            section,
+            residual_mesh=mesh,
+            ax=ax_geom,
+            alpha=alpha,
+            title=title,
+            show_legend=show_legend,
+            color_fn=color_fn,
+            twist_rad=twist,
+            chord_m=chord,
+        )
+    else:
+        plot_section_from_mesh(
+            mesh,
+            labels=labels,
+            ax=ax_geom,
+            alpha=alpha,
+            title=title,
+            show_legend=show_legend,
+            color_fn=color_fn,
+            airfoil_vertices=airfoil_vertices,
+            twist_rad=twist,
+            chord_m=chord,
+            section=section,
+        )
+
+    for cell in leaves:
+        corners = _naca_xy_to_plot_hv(
+            np.array(
+                [
+                    [cell.x_min, cell.y_min],
+                    [cell.x_max, cell.y_min],
+                    [cell.x_max, cell.y_max],
+                    [cell.x_min, cell.y_max],
+                ],
+                dtype=float,
+            ),
+            twist_rad=twist,
+            chord_m=chord,
+        )
+        ax_quad.add_patch(
+            Polygon(
+                corners,
+                fill=False,
+                edgecolor="0.6",
+                linewidth=0.3,
+                closed=True,
+            )
+        )
+    for label in labels:
+        segs = label_boundary_segments(mesh, label)
+        if len(segs):
+            segs_p = np.asarray(
+                [_naca_xy_to_plot_hv(s, twist_rad=twist, chord_m=chord) for s in segs],
+                dtype=float,
+            )
+            ax_quad.add_collection(
+                LineCollection(segs_p, colors=[color_fn(label)], linewidths=1.4)
+            )
+
+    spec = mesh.spec
+    corners = _naca_xy_to_plot_hv(
+        np.array(
+            [
+                [spec.x_min, spec.y_min],
+                [spec.x_max, spec.y_min],
+                [spec.x_max, spec.y_max],
+                [spec.x_min, spec.y_max],
+            ],
+            dtype=float,
+        ),
+        twist_rad=twist,
+        chord_m=chord,
+    )
+    ax_quad.set_xlim(float(corners[:, 0].min()), float(corners[:, 0].max()))
+    ax_quad.set_ylim(float(corners[:, 1].min()), float(corners[:, 1].max()))
+    ax_quad.set_title(mesh_title)
+    apply_structural_section_axes(ax_quad)
+    if section is not None:
+        ax_geom.set_xlim(ax_quad.get_xlim())
+        ax_geom.set_ylim(ax_quad.get_ylim())
+        apply_structural_section_axes(ax_geom)
+    fig.tight_layout()
+    return fig, (ax_geom, ax_quad)
 
 __all__ = [
     "_DEFAULT_COLOR",

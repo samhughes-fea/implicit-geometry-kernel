@@ -31,10 +31,13 @@ from implicit_geometry_kernel.integration.quadtree.soa import (
     _active_support_mask_bounds,
     _cell_needs_refine,
     _cells_need_refine_batch,
+    _effective_refine_bands,
     _expand_children_soa,
     _refine_points_for_bounds,
-    _refine_soa,
     _samplers_as_batch,
+)
+from implicit_geometry_kernel.integration.quadtree.soa_build import (
+    _refine_soa,
     _soa_frontier_corners,
     _square_forest_roots,
     build_shared_quadtree,
@@ -72,6 +75,7 @@ __all__ = [
     "_active_support_mask_bounds",
     "_cell_needs_refine",
     "_cells_need_refine_batch",
+    "_effective_refine_bands",
     "_expand_children_soa",
     "_refine_points_for_bounds",
     "_refine_soa",

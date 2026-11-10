@@ -8,6 +8,8 @@ packages, examples, and tests.
 Two audiences share one tree. The **manual** is for library users and developers
 of consuming tools. **Internal** pages are for maintainers of this repository.
 House style: [conventions/DOCUMENTATION_STANDARDS.md](conventions/DOCUMENTATION_STANDARDS.md).
+Optional local HTML: `pip install -e ".[docs]"` then `sphinx-build -b html docs docs/_build/html`
+(`docs/conf.py`, MyST, no autodoc). GitHub Pages is not wired.
 
 ## Manual
 
@@ -22,9 +24,9 @@ Names: [glossary](glossary.md). Frames: [which array](frames/README.md#which-arr
 | Member model | `structure` builders, span laws | wall / branch / region / transverse | [structure](structure/README.md) | [examples/structure](../examples/structure/) | [tests/structure](../tests/structure/) |
 | SDF / CSG | `sdf` | kernels, nodes, `AirfoilSDF`, `GeometrySolver` | [sdf](sdf/README.md) | [examples/sdf](../examples/sdf/) | [tests/sdf](../tests/sdf/) |
 | Frames | `frames` | R / B / S / S′ / C transforms | [frames](frames/README.md) | [examples/frames](../examples/frames/) | [tests/frames](../tests/frames/) |
-| Integration | `integration` | area and second moments | [integration](integration/README.md) | via section properties and sdf | [tests/integration](../tests/integration/) |
-| Hand-off | `contract` | `ShellMidlineStrip`, `LaminateOffsetRegion`, `CellWallLoop` | [contract](contract/README.md) | teaching `05_midline_handoff` | [tests/contract](../tests/contract/) |
-| Extract | `extract` | zero loops, feature curves | [extract](extract/README.md) | (API only) | [tests/extract](../tests/extract/) |
+| Integration | `build_shared_quadtree` | area/moments; CSG occupancy mesh | [integration](integration/README.md) | [examples/integration](../examples/integration/), example 09 `csg_mesh` | [tests/integration](../tests/integration/) |
+| Hand-off | `contract` | `ShellMidlineStrip`, `LaminateOffsetRegion`, `CellWallLoop` | [contract](contract/README.md) | [contract/01](../examples/contract/01_three_products_dtos/), teaching `05` | [tests/contract](../tests/contract/) |
+| Extract | `extract` | zero loops, feature curves | [extract](extract/README.md) | [examples/extract](../examples/extract/) | [tests/extract](../tests/extract/) |
 | Plotting | `plotting` (`[plots]`) | figures | [visualisation](section/visualisation/README.md) | [demos](../examples/demos/) | [tests](../tests/README.md) |
 
 ### Package tree
@@ -44,7 +46,7 @@ flowchart TB
   blade[blade]
   extract[extract]
   plotting[plotting]
-  mesh[mesh]
+  meshPkg[mesh]
   cad[blade.cad]
   sdf --> structure
   frames --> section
@@ -57,7 +59,8 @@ flowchart TB
   sdf --> blade
   blade --> extract
   plotting -.->|plots extra| section
-  extract -.->|mesh extra| mesh
+  integration -.->|shared quadtree| section
+  blade -.->|mesh extra leftover| meshPkg
   blade -.->|cad extra| cad
 ```
 
@@ -118,4 +121,4 @@ Maintainer notes. Style is terse; each page carries an **Audience: internal** ba
 | Architecture steps | [REFACTOR_PLAN.md](REFACTOR_PLAN.md) |
 | Provenance | [FORK.md](FORK.md) |
 | Section-local TOC | [section/docs_index.md](section/docs_index.md) |
-| Reports and ADRs | [section/reports](section/reports/), [ADR_ZERO_WEB_SHELL_MESH](section/reference/ADR_ZERO_WEB_SHELL_MESH.md) |
+| Reports and ADRs | [section/reports](section/reports/README.md), [ADR_ZERO_WEB_SHELL_MESH](section/reference/ADR_ZERO_WEB_SHELL_MESH.md) |

@@ -10,9 +10,10 @@ from implicit_geometry_kernel.blade.topology.graph import (
     WallRegionGraph,
     _cluster_web_members,
     _match_web_indices,
-    _regions_from_ordered,
-    signatures_compatible,
+    live_cap_windows,
 )
+from implicit_geometry_kernel.blade.topology.layout_compile import _regions_from_ordered
+from implicit_geometry_kernel.blade.topology.signatures import signatures_compatible
 
 @dataclass(frozen=True)
 class LoopBranch:
@@ -64,6 +65,7 @@ class ShellTopologyTemplate:
                           live_web_fracs: Sequence[float] | None = None,
                           t_c: float | None = None,
                           dropped_web_indices: Sequence[int] | None = None,
+                          te_blunt: bool | None = None,
                           ) -> "ShellTopologyTemplate":
         n = max(int(n_chord), 2)
         te_arc = float(graph.te_arc)
@@ -90,18 +92,30 @@ class ShellTopologyTemplate:
             ordered = [n for n in fracs if not str(n).startswith("web_") or n in keep_web]
         else:
             ordered = list(fracs)
-        cap_lo, cap_hi = fracs.get("cap_lo"), fracs.get("cap_hi")
-        regions = _regions_from_ordered(ordered, cap_lo=cap_lo, cap_hi=cap_hi)
+        windows = live_cap_windows(
+            graph, fracs, ordered, z=float(z), active_webs=active_webs,
+        )
+        regions = _regions_from_ordered(ordered, fracs=fracs, windows=windows)
         vertices: list[ShellVertexId] = [
             ("TE",), ("TE", "suction"), ("TE", "pressure"), ("anchor", "le"),
         ]
         loop = []
+        wrap_on = True if te_blunt is None else bool(te_blunt)
         for region in regions:
+            start: ShellVertexId
+            end: ShellVertexId
             if region.wrap:
+                if not wrap_on:
+                    continue
                 start, end = ("TE", "suction"), ("TE", "pressure")
             else:
                 start = _loop_vid(region.start, region.side)
                 end = _loop_vid(region.end, region.side)
+                if not wrap_on:
+                    if region.start in ("te", "TE"):
+                        start = ("TE",)
+                    if region.end in ("te", "TE"):
+                        end = ("TE",)
             loop.append(LoopBranch(region.name, start, end, n, region.side, region.wrap))
             for vid in (start, end):
                 if vid not in vertices:
@@ -123,7 +137,10 @@ class ShellTopologyTemplate:
         if vid == ("TE",) or (len(vid) > 0 and vid[0] == "TE") or (
                 vid[0] == "anchor" and len(vid) > 1 and vid[1] == "te"):
             side = vid[1] if len(vid) > 1 and vid[0] == "TE" and vid[1] in ("suction", "pressure") else ""
-            for cand in (("TE", side) if side else None, ("TE", "suction"), ("TE", "pressure"), ("TE",)):
+            te_cands: tuple[ShellVertexId | None, ...] = (
+                ("TE", side) if side else None, ("TE", "suction"), ("TE", "pressure"), ("TE",),
+            )
+            for cand in te_cands:
                 if cand is not None and cand in other.vertices:
                     return cand
             return ("TE",)
@@ -154,9 +171,9 @@ class ShellTopologyTemplate:
                     return min(others, key=lambda v: abs(_idx(v) - idx))
             if name.startswith("cap_"):
                 for wname in ("web_0", "web_1", "le"):
-                    cand = _loop_vid(wname, side)
-                    if cand in other.vertices:
-                        return cand
+                    cap_cand = _loop_vid(wname, side)
+                    if cap_cand in other.vertices:
+                        return cap_cand
             if side and ("TE", side) in other.vertices:
                 return ("TE", side)
             if ("TE",) in other.vertices:

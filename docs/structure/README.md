@@ -55,8 +55,8 @@ beam from all four kinds and adds a new kind this way.
 
 ## Span laws
 
-`ConstantLaw`, `TableLaw` (monotone cubic PCHIP or linear, held constant past the end
-knots), `ScaledLaw`, `SumLaw`, `ProductLaw`. They are picklable objects, not lambdas.
+`ConstantLaw`, `TableLaw` (linear interpolation, held constant past the end knots),
+`ScaledLaw`, `SumLaw`, `ProductLaw`. They are picklable objects, not lambdas.
 
 ## How sections use it
 

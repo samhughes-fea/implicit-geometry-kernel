@@ -66,6 +66,11 @@ def test_lofted_polygon_bvh_matches_unaccelerated_phi():
         atol=1e-12,
         rtol=1e-12,
     )
+    acc = fast.accel_at(4.0)
+    assert acc is not None
+    assert 4.0 in fast.bvh
+    assert slow.accel_at(4.0) is None
+    assert dict(slow.bvh) == {}
 
 
 def test_write_mid_surfaces_obj_and_stl(tmp_path: Path):

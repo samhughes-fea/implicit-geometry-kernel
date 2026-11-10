@@ -14,12 +14,21 @@ python examples/section/02_section_properties/section_properties.py
 
 ```python
 from implicit_geometry_kernel import Airfoil
-from implicit_geometry_kernel.section import SectionGeometry, resolve_system_type
+from implicit_geometry_kernel.section import (
+    SectionGeometry,
+    SectionOptions,
+    SectionSpec,
+    resolve_system_type,
+)
 
-result = SectionGeometry(layout=resolve_system_type("2D-F-LC-0R"),
-                               airfoil=Airfoil.naca4("2412").to_sdf(chord=2.0),
-                               skin_thickness=0.004, spar_cap_thickness=0.012, shear_web_thickness=0.006,
-                               outputs=("properties",)).execute().get_results()
+spec = SectionSpec.from_kwargs(
+    resolve_system_type("2D-F-LC-0R"),
+    Airfoil.naca4("2412").to_sdf(chord=2.0),
+    skin_thickness=0.004,
+    spar_cap_thickness=0.012,
+    shear_web_thickness=0.006,
+)
+result = SectionGeometry(spec, SectionOptions(outputs=("properties",))).execute().get_results()
 result.properties_map["spar_cap_suction_surface"]   # area, cx, cy, Ixx, Iyy, Ixy (about its own centroid)
 ```
 
@@ -67,3 +76,7 @@ reference includes the curvature of the skin's inner face at their ends.
 Below a scale of 1 the solids would reach `section`'s minimum wall thicknesses (2.5 mm
 skin, 4 mm web, 5 mm cap), so the sweep starts there. `BladeGeometry` avoids those
 floors by building thinner sections at a larger scale and scaling back.
+
+Spanwise geometric centroids of the three IGK routes (boundary integral, thin-wall
+strip, area integration) are in
+[blade/14 geometric centroid](../../blade/14_geometric_centroid/).

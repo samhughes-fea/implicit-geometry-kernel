@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/quadtree_union_mesh.py
+examples/demos/section/quadtree_union_mesh.py
 ===============================
 Hybrid demo: build section geometry from the orchestration ``SYSTEM_TYPE_KEYS``
 registry, then build ONE adaptive quadtree refined to the UNION of all
@@ -20,9 +20,9 @@ Outputs under ``examples/demos/figures/quadtree_union/``:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/quadtree_union_mesh.py
-    python examples/demos/section_geometry/quadtree_union_mesh.py 2D-CN 2C-F
-    python examples/demos/section_geometry/quadtree_union_mesh.py --list-keys
+    python examples/demos/section/quadtree_union_mesh.py
+    python examples/demos/section/quadtree_union_mesh.py 2D-CN 2C-F
+    python examples/demos/section/quadtree_union_mesh.py --list-keys
 """
 
 from __future__ import annotations

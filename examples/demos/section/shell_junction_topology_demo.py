@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/shell_junction_topology_demo.py
+examples/demos/section/shell_junction_topology_demo.py
 =======================================
 Demonstrate constructive shell midline junction topology.
 
@@ -13,7 +13,7 @@ cap-web T-junction vertices). Writes:
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/shell_junction_topology_demo.py
+    python examples/demos/section/shell_junction_topology_demo.py
 
 Outputs default to ``examples/demos/figures/shell_junction_topology/``.
 """
@@ -44,9 +44,7 @@ from implicit_geometry_kernel.plotting.figure_io import (
 )
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
-from implicit_geometry_kernel.section import (
-    MultiCellSection,
-)
+from _assemble import assemble_host
 from implicit_geometry_kernel.plotting.plot import (
     plot_shell_midline_strip_topology,
 )
@@ -69,21 +67,19 @@ _KIND_COLOUR = {"skin": "#2196F3", "web": "#4CAF50", "cap": "#F44336"}
 _JUNCTION_COLOUR = "#FFC107"
 
 
-def _build_section(af: AirfoilSDF) -> MultiCellSection:
+def _build_section(af: AirfoilSDF):
     # Three-web family D: outermost webs define the box; the mid web crosses
     # the caps and creates interior cap-web T-junction nodes.
-    return MultiCellSection.torsion_box(
+    return assemble_host(
         af,
-        x_fore=0.15,
-        x_mid=0.35,
-        x_aft=0.55,
+        n_webs=3,
+        family="D",
+        alignment="chord_normal",
+        web_fracs=(0.15, 0.35, 0.55),
         skin_thickness=0.005,
-        web_thickness=0.006,
-        cap_height=(0.014, 0.012),
-        web_alignment="chord_normal",
-        twist_angle=0.0,
-        structural_family="D",
-        core_enabled=False,
+        shear_web_thickness=0.006,
+        cap_height=0.014,
+        twist_rad=0.0,
     )
 
 

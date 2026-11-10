@@ -1,7 +1,8 @@
 """Catalogue blade concepts on a made-up planform (not a published reference blade).
 
 A ``2D-F`` matrix (``LC``/``LE`` × ``0R``/``4R``/``10R``) plus ``PA-10R``,
-three-web ``LC``/``LE``/``PA``, and ``4D-F-PA-10R`` on one synthetic PCHIP loft.
+three-web ``LC``/``LE``/``PA``, ``4D``/``5D-F-PA-10R``, and six extra cores
+(zero-web, one-web, A/C caps, chord-normal) on one synthetic loft.
 Wall strips use the authored ``WallRegionGraph`` and ``loft_mapped_strips``.
 
     python examples/blade/09_blade_concepts/blade_concepts.py
@@ -9,7 +10,9 @@ Wall strips use the authored ``WallRegionGraph`` and ``loft_mapped_strips``.
 
 from __future__ import annotations
 
+import argparse
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -20,21 +23,30 @@ from matplotlib.colors import to_rgba  # noqa: E402
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 
 from _shared.blade_viz import (  # noqa: E402
-    CROSS_SECTIONS,
     FULL_BLADE,
     REGION_CUTAWAYS,
     REGIONS,
     VIEW_LE,
     VIEW_TE,
+    figure_csg_mesh,
     figure_planforms,
+    figure_section_grid,
     is_suction_role,
+    _sample_cuts,
     landmarks,
-    live_web_fracs,
     save_fig as save_viz,
     tidy_legacy_pngs,
 )
 from _shared.debug_mesh import dump_debug_mesh  # noqa: E402
-from _shared.plotting import draw_cap_solids, draw_shell, note, panel_colour, plt  # noqa: E402
+from _shared.plotting import (  # noqa: E402
+    MESH_LW_FLAT,
+    MESH_LW_3D,
+    mesh_edge_rgba,
+    mesh_linewidths,
+    note,
+    panel_colour,
+    plt,
+)
 from implicit_geometry_kernel import (  # noqa: E402
     Airfoil,
     BladeConcept,
@@ -43,43 +55,49 @@ from implicit_geometry_kernel import (  # noqa: E402
     loft_mapped_strips,
 )
 from implicit_geometry_kernel.blade.topology import (  # noqa: E402
-    ShellTopologyTemplate,
-    _cut_tc,
+    _template_from_cut,
     rib_cell_polygons_from_samples,
     sample_region_polylines,
     section_cut_near,
+    te_blunt_flags_for_cuts,
 )
-from implicit_geometry_kernel.contract import InfeasibleSectionGeometry  # noqa: E402
-
+from implicit_geometry_kernel.mesh.polygon import fill_rib_cells  # noqa: E402
 KEYS = (
     "2D-F-LC-0R", "2D-F-LC-4R", "2D-F-LC-10R",
     "2D-F-LE-0R", "2D-F-LE-4R", "2D-F-LE-10R",
     "2D-F-PA-10R",
     "3D-F-LC-10R", "3D-F-LE-10R", "3D-F-PA-10R",
-    "4D-F-PA-10R",
+    "4D-F-PA-10R", "5D-F-PA-10R",
+    "0A-LC-0R", "0B-LC-0R",
+    "1B-F-LC-10R", "2A-F-LC-10R", "2C-F-LC-10R", "2D-CN-LC-10R",
 )
 N_SPAN = 41
 N_CHORD = 24
 CLOSEUP_STRIPS = 8
-SKIN, CAP, WEB_T = 0.004, 0.008, 0.004
+SPAN = 12.0
+REF_SPAN = 20.0
+SCALE = SPAN / REF_SPAN
+SKIN, CAP, WEB_T = 0.004 * SCALE, 0.008 * SCALE, 0.004 * SCALE
 FIGURES = Path(__file__).resolve().parent / "figures"
 SCRIPT = Path(__file__).resolve()
 
 
 def stations() -> list[Station]:
+    """The original 20 m knots, uniformly scaled to ``SPAN`` (chord and z)."""
     root, foil = Airfoil.ellipse(1.0), Airfoil.naca4("0024")
+    s = SCALE
     return [
-        Station(0.0, 1.80, root, twist=12.0, pitch_axis=0.50),
-        Station(1.0, 1.88, Airfoil.blend(root, foil, 0.15), twist=11.5, pitch_axis=0.47),
-        Station(2.5, 2.05, Airfoil.blend(root, foil, 0.50), twist=10.0, pitch_axis=0.40),
-        Station(4.0, 2.28, Airfoil.blend(root, foil, 0.85), twist=8.8, pitch_axis=0.33),
-        Station(5.0, 2.40, foil, twist=8.0, pitch_axis=0.30),
-        Station(6.5, 2.20, Airfoil.naca4("0022"), twist=6.5, pitch_axis=0.30),
-        Station(8.5, 1.85, Airfoil.naca4("0020"), twist=4.8, pitch_axis=0.30),
-        Station(11.0, 1.50, Airfoil.naca4("0018"), twist=2.8, pitch_axis=0.30),
-        Station(14.0, 1.10, Airfoil.naca4("0015"), twist=1.0, pitch_axis=0.30),
-        Station(17.0, 0.90, Airfoil.naca4("0013"), twist=-0.6, pitch_axis=0.30),
-        Station(20.0, 0.75, Airfoil.naca4("0012"), twist=-2.0, pitch_axis=0.30),
+        Station(0.0 * s, 1.80 * s, root, twist=12.0, pitch_axis=0.50),
+        Station(1.0 * s, 1.88 * s, Airfoil.blend(root, foil, 0.15), twist=11.5, pitch_axis=0.47),
+        Station(2.5 * s, 2.05 * s, Airfoil.blend(root, foil, 0.50), twist=10.0, pitch_axis=0.40),
+        Station(4.0 * s, 2.28 * s, Airfoil.blend(root, foil, 0.85), twist=8.8, pitch_axis=0.33),
+        Station(5.0 * s, 2.40 * s, foil, twist=8.0, pitch_axis=0.30),
+        Station(6.5 * s, 2.20 * s, Airfoil.naca4("0022"), twist=6.5, pitch_axis=0.30),
+        Station(8.5 * s, 1.85 * s, Airfoil.naca4("0020"), twist=4.8, pitch_axis=0.30),
+        Station(11.0 * s, 1.50 * s, Airfoil.naca4("0018"), twist=2.8, pitch_axis=0.30),
+        Station(14.0 * s, 1.10 * s, Airfoil.naca4("0015"), twist=1.0, pitch_axis=0.30),
+        Station(17.0 * s, 0.90 * s, Airfoil.naca4("0013"), twist=-0.6, pitch_axis=0.30),
+        Station(20.0 * s, 0.75 * s, Airfoil.naca4("0012"), twist=-2.0, pitch_axis=0.30),
     ]
 
 
@@ -91,7 +109,6 @@ def build(key: str) -> BladeGeometry:
         SKIN,
         spar_cap_thickness=CAP,
         shear_web_thickness=WEB_T,
-        span_kind="pchip",
         pivot_fraction=([s.z for s in st], [s.pitch_axis for s in st]),
     )
 
@@ -110,25 +127,37 @@ def _station_zs(geo: BladeGeometry) -> list[float]:
 
 
 def _wall_stations(geo: BladeGeometry) -> list[tuple[float, object, dict]]:
-    out = []
+    raw = []
     for z in _station_zs(geo):
         cut = section_cut_near(geo, float(z))
-        if cut is None:
-            continue
+        if cut is not None:
+            raw.append(cut)
+    flags = te_blunt_flags_for_cuts(raw)
+    out = []
+    for cut, blunt in zip(raw, flags):
         sg = cut.shell_graph()
-        tmpl = ShellTopologyTemplate.from_region_graph(
-            geo.region_graph, float(z), n_chord=N_CHORD,
-            live_web_fracs=live_web_fracs(cut) or None, t_c=_cut_tc(cut),
-            dropped_web_indices=tuple(cut.dropped_web_indices),
+        tmpl = _template_from_cut(
+            geo.region_graph, cut, float(cut.z), N_CHORD, te_blunt=blunt,
         )
         samples = sample_region_polylines(cut, sg, tmpl, geo.region_graph)
         if samples:
-            out.append((float(z), tmpl, samples))
+            out.append((float(cut.z), tmpl, samples))
     return out
+
+
+_WALL_CACHE: dict[tuple, tuple[list[np.ndarray], list[str]]] = {}
 
 
 def _wall_faces(stations: list, geo: BladeGeometry | None = None, *,
                 skip_suction: bool = False) -> tuple[list[np.ndarray], list[str]]:
+    key = (
+        id(geo) if geo is not None else 0,
+        skip_suction,
+        tuple(round(float(s[0]), 9) for s in stations),
+    )
+    hit = _WALL_CACHE.get(key)
+    if hit is not None:
+        return hit
     faces, roles = [], []
     for (_z0, t0, a), (_z1, t1, b) in zip(stations[:-1], stations[1:]):
         for name, face, _collapsing in loft_mapped_strips(a, b, t0, t1):
@@ -139,19 +168,21 @@ def _wall_faces(stations: list, geo: BladeGeometry | None = None, *,
     if geo is not None and stations:
         z0, z1 = float(stations[0][0]), float(stations[-1][0])
         seen = set()
-        for z, tmpl, samples in stations:
-            if not (z0 - 1e-9 <= float(z) <= z1 + 1e-9):
+        cells: list[tuple[str, np.ndarray]] = []
+        for member in geo.transverse:
+            zm = float(member.z)
+            if not (z0 - 1e-9 <= zm <= z1 + 1e-9):
                 continue
-            for member in geo.transverse:
-                if abs(float(member.z) - float(z)) > 1e-8:
-                    continue
-                key = (str(member.name), round(float(z), 9))
-                if key in seen:
-                    continue
-                seen.add(key)
-                for name, ring in rib_cell_polygons_from_samples(tmpl, samples, member):
-                    faces.append(ring)
-                    roles.append(name)
+            _z, tmpl, samples = min(stations, key=lambda s: abs(float(s[0]) - zm))
+            name = str(member.name)
+            if name in seen:
+                continue
+            seen.add(name)
+            cells.extend(rib_cell_polygons_from_samples(tmpl, samples, member))
+        for name, face in fill_rib_cells(cells):
+            faces.append(face)
+            roles.append(name)
+    _WALL_CACHE[key] = (faces, roles)
     return faces, roles
 
 
@@ -235,8 +266,8 @@ def _draw_walls(ax, faces: list[np.ndarray], kinds: list[str], *,
     try:
         ax.add_collection3d(Poly3DCollection(
             shown, facecolors=rgba, shade=True,
-            edgecolors=np.broadcast_to(to_rgba("#9ca3af", 0.45), (len(shown), 4)).copy(),
-            linewidths=0.12,
+            edgecolors=mesh_edge_rgba(len(shown)),
+            linewidths=mesh_linewidths(kinds, base=MESH_LW_3D),
         ))
     except ValueError:
         pass
@@ -260,28 +291,12 @@ def save_fig(fig, key: str, name: str, *, category: str) -> Path:
     return save_viz(fig, FIGURES, key, category, name, repo=SCRIPT.parents[2])
 
 
-def figure_sections(key: str, geo: BladeGeometry, marks: list) -> None:
-    fig, axes = plt.subplots(1, len(marks), figsize=(15.5, 3.4), sharey=True)
-    print(f"{'station':>12} {'z [m]':>8} {'chord':>8} {'twist':>8} {'walls':>6} {'cells':>6}  layout")
-    for ax, (_k, z, label) in zip(np.atleast_1d(axes), marks):
-        try:
-            cut = geo.section_at(float(z))
-        except InfeasibleSectionGeometry as exc:
-            ax.set_title(f"{label}\ninfeasible", fontsize=8)
-            ax.axis("off")
-            print(f"{label:>12} {z:8.2f}  skipped ({exc})")
-            continue
-        draw_shell(ax, cut)
-        draw_cap_solids(ax, cut)
-        ax.plot(cut.offset[0], cut.offset[1], "k+", ms=5)
-        ax.set_title(f"{label}\nz = {z:.1f} m, c = {cut.chord:.2f} m", fontsize=8)
-        ax.tick_params(labelsize=7)
-        dropped = f", dropped {len(cut.dropped_webs)}" if cut.dropped_webs else ""
-        print(f"{label:>12} {z:8.2f} {cut.chord:8.2f} {cut.twist:8.2f} {len(cut.walls):6d} "
-              f"{len(cut.cells):6d}  {cut.layout}{dropped}")
-    fig.suptitle(f"{key} — synthetic planform, 2-D cuts (skin / cap / web midlines)", fontsize=10)
-    _tight(fig)
-    save_fig(fig, key, "sections", category=CROSS_SECTIONS)
+def figure_sections(key: str, geo: BladeGeometry) -> None:
+    figure_section_grid(
+        key, key, geo, figures=FIGURES, repo=SCRIPT.parents[2],
+        caption="16 equally spaced stations, root to tip, one root-anchored blade-frame window. "
+                "Singles are root window | station window. Manufacturing gauges (skin / cap / web).",
+    )
 
 
 def figure_closeups(key: str, geo: BladeGeometry, walls: list, marks: list) -> None:
@@ -349,7 +364,7 @@ def figure_cutaways(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         _draw_walls(ax, faces, kinds, elev=VIEW_LE[0], azim=VIEW_LE[1])
         ax.set_title(f"{key} — {label}, suction skin removed, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(fig, kinds)
-        note(fig, "Cutaway of mapped region strips (pressure, caps, webs, ribs).")
+        note(fig, "Suction skin omitted; camera on the suction side looking onto inner pressure skin.")
         _tight(fig, rect=(0, 0.10, 1, 0.96))
         save_fig(fig, key, name, category=REGION_CUTAWAYS)
         te = plt.figure(figsize=(8.5, 6.1))
@@ -357,7 +372,7 @@ def figure_cutaways(key: str, geo: BladeGeometry, walls: list, marks: list) -> N
         _draw_walls(ax_te, faces, kinds, elev=VIEW_TE[0], azim=VIEW_TE[1])
         ax_te.set_title(f"{key} — {label} TE, suction skin removed, z = {z0:.2f}–{z1:.2f} m")
         _legend_kinds(te, kinds)
-        note(te, "Cutaway trailing-edge view.")
+        note(te, "Same omitted-suction mesh; trailing-edge corner, still looking from the suction side.")
         _tight(te, rect=(0, 0.10, 1, 0.96))
         save_fig(te, key, f"{name}_te", category=REGION_CUTAWAYS)
 
@@ -403,7 +418,9 @@ def _save_elevation(key: str, name: str, faces: list[np.ndarray], kinds: list[st
     fig, ax = plt.subplots(figsize=(13.0, max(3.2, fig_h)))
     ax.add_collection(PolyCollection(
         [uv[i] for i in order], facecolors=_face_rgba(kinds, 0.92)[order],
-        edgecolors="none", rasterized=True,
+        edgecolors=mesh_edge_rgba(len(order)),
+        linewidths=[mesh_linewidths(kinds, base=MESH_LW_FLAT)[i] for i in order],
+        rasterized=True,
     ))
     ax.set_aspect("equal")
     ax.autoscale_view()
@@ -465,8 +482,9 @@ def _save_corner_cutaway(key: str, name: str, faces: list[np.ndarray], kinds: li
     fig, ax = plt.subplots(figsize=(fig_w, data_h + 0.72))
     ax.add_collection(PolyCollection(
         [uv[i] for i in order], facecolors=_face_rgba(kinds, 0.92)[order],
-        edgecolors=to_rgba("#6b7280", 0.28),
-        linewidths=0.08, rasterized=True,
+        edgecolors=mesh_edge_rgba(len(order)),
+        linewidths=[mesh_linewidths(kinds, base=MESH_LW_FLAT)[i] for i in order],
+        rasterized=True,
     ))
     ax.set_aspect("equal")
     ax.set_xlim(float(stacked[:, 0].min()) - pad_u, float(stacked[:, 0].max()) + pad_u)
@@ -480,7 +498,10 @@ def _save_corner_cutaway(key: str, name: str, faces: list[np.ndarray], kinds: li
 
 def figure_full_cutaway(key: str, faces: list[np.ndarray], kinds: list[str]) -> None:
     """Full-span blade, suction skin omitted, looking down from a corner."""
-    note_txt = "suction skin omitted; pressure, webs, ribs; corner view looking down"
+    note_txt = (
+        "suction skin omitted; camera on the suction side looking onto inner pressure skin; "
+        "pressure, webs, ribs"
+    )
     _save_corner_cutaway(
         key, "cutaway", faces, kinds,
         title=f"{key} — full blade, suction skin removed",
@@ -505,14 +526,52 @@ def figure_elevation(key: str, title: str, faces: list[np.ndarray], kinds: list[
     )
 
 
-def main() -> int:
-    for key in KEYS:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--smoke", action="store_true",
+                        help="one catalogue key (CI). Default is the full KEYS gallery.")
+    parser.add_argument("--keys", nargs="+", metavar="TOKEN",
+                        help="subset of KEYS, e.g. 2D-F-PA-10R 3D-F-LC-10R")
+    parser.add_argument("--cutaway-only", action="store_true",
+                        help="write full_blade/cutaway.png (and TE twin) only")
+    parser.add_argument("--planform-only", action="store_true",
+                        help="write planform/axes.png and planform/structure.png only")
+    parser.add_argument("--csg-mesh-only", action="store_true",
+                        help="write csg_mesh/01.png–16.png only")
+    args = parser.parse_args(argv)
+    keys = list(KEYS)
+    if args.smoke:
+        keys = ["2D-F-PA-10R"]
+    elif args.keys:
+        unknown = [k for k in args.keys if k not in KEYS]
+        if unknown:
+            parser.error(f"unknown key(s) {unknown}; choose from {list(KEYS)}")
+        keys = list(args.keys)
+    for key in keys:
         geo = build(key)
         marks = _marks(geo)
         print(f"\n{key}  regions={len(geo.region_graph.regions)}  "
               f"webs={len(geo.region_graph.webs)}")
+        if args.planform_only:
+            figure_planforms(key, key, geo, marks, figures=FIGURES, repo=SCRIPT.parents[2], n=41)
+            continue
+        if args.csg_mesh_only:
+            zs, cuts, _errors = _sample_cuts(geo)
+            figure_csg_mesh(key, geo, zs, cuts, figures=FIGURES, repo=SCRIPT.parents[2])
+            continue
+        if args.cutaway_only:
+            walls = _wall_stations(geo)
+            if not walls:
+                print(f"{key}: no feasible loft stations")
+                continue
+            print(f"{key}: {len(walls)} loft stations, meshing cutaway", flush=True)
+            t0 = time.perf_counter()
+            cut_faces, cut_kinds = _wall_faces(walls, geo=geo, skip_suction=True)
+            print(f"{key} cutaway: {len(cut_faces)} faces in {time.perf_counter() - t0:.1f}s", flush=True)
+            figure_full_cutaway(key, cut_faces, cut_kinds)
+            continue
         tidy_legacy_pngs(FIGURES / key)
-        figure_sections(key, geo, marks)
+        figure_sections(key, geo)
         figure_planforms(key, key, geo, marks, figures=FIGURES, repo=SCRIPT.parents[2], n=41)
         walls = _wall_stations(geo)
         if not walls:

@@ -1,7 +1,7 @@
 # Extract
 
 ↑ [docs](../README.md) · [src](../../src/implicit_geometry_kernel/extract/README.md) ·
-[tests](../../tests/README.md)
+[examples](../../examples/extract/README.md) · [tests](../../tests/README.md)
 
 In-plane geometry extractors. Import `implicit_geometry_kernel.extract`; the
 symbols are not on the kernel barrel. The package returns **polylines**, not

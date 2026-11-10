@@ -24,6 +24,7 @@ _ensure_mod.ensure_repo_path()
 from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.section import (
     SectionGeometry,
+    SectionSpec,
     resolve_system_type,
 )
 
@@ -51,12 +52,14 @@ def main() -> None:
 
     legacy = (
         SectionGeometry(
-            layout=layout,
-            airfoil=tip,
-            skin_thickness=T_SKIN,
-            spar_cap_thickness=0.0,
-            shear_web_thickness=0.0,
-            # omit web_offsets → frac × local_chord
+            SectionSpec.from_kwargs(
+                layout,
+                tip,
+                skin_thickness=T_SKIN,
+                spar_cap_thickness=0.0,
+                shear_web_thickness=0.0,
+                # omit web_offsets → frac × local_chord
+            ),
         )
         .resolve()
         .get_layout_resolution()
@@ -65,12 +68,14 @@ def main() -> None:
 
     anchored_res = (
         SectionGeometry(
-            layout=layout,
-            airfoil=tip,
-            skin_thickness=T_SKIN,
-            spar_cap_thickness=0.0,
-            shear_web_thickness=0.0,
-            web_offsets=anchored,
+            SectionSpec.from_kwargs(
+                layout,
+                tip,
+                skin_thickness=T_SKIN,
+                spar_cap_thickness=0.0,
+                shear_web_thickness=0.0,
+                web_offsets=anchored,
+            ),
         )
         .resolve()
         .get_layout_resolution()

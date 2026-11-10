@@ -12,7 +12,7 @@ from implicit_geometry_kernel.integration.quadtree.tree import (
     build_root_quadtree,
     build_square_root_forest,
 )
-from implicit_geometry_kernel.integration.quadtree.soa import build_shared_quadtree
+from implicit_geometry_kernel.integration.quadtree.soa_build import build_shared_quadtree
 from implicit_geometry_kernel.integration.quadtree.marching import (
     contour_from_quadtree_marching_squares,
     summarize_quadtree,

@@ -3,14 +3,14 @@
 import numpy as np
 
 from implicit_geometry_kernel.sdf import sdf_circle
-from implicit_geometry_kernel.sdf.nodes.tagged import CircleSDF, FieldOffsetNode, MidSurfaceNode, as_node
+from implicit_geometry_kernel.sdf.nodes.tagged import FieldOffsetNode, MidSurfaceNode, as_node
 from implicit_geometry_kernel.sdf.nodes import Circle, Offset
 from implicit_geometry_kernel.section.walls.base import SectionComponent
 from implicit_geometry_kernel.section.walls.tagged import tagged_component
 
 
 def test_as_xy_matches_primitive():
-    node = CircleSDF(0.0, 0.0, 1.0)
+    node = Circle(0.0, 0.0, 1.0)
     f = node.as_xy(z=4.0)
     x, y = np.linspace(-1.5, 1.5, 7), np.zeros(7)
     np.testing.assert_allclose(f(x, y), sdf_circle(x, y, 0.0, 0.0, 1.0))
@@ -32,7 +32,7 @@ def test_tagged_component_stamps_skin():
 
 
 def test_field_offset_and_mid_surface():
-    oml = CircleSDF(0.0, 0.0, 1.0)
+    oml = Circle(0.0, 0.0, 1.0)
     cavity = FieldOffsetNode(oml, lambda p: np.full(len(p), 0.1), scale=1.0)
     mid = MidSurfaceNode(oml, cavity)
     on_mid = mid.evaluate(np.array([[0.95, 0.0, 0.0]]))

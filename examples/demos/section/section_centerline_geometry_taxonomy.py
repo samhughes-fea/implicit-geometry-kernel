@@ -13,7 +13,7 @@ Outputs (under ``examples/demos/figures/section_centerline_geometry_taxonomy/``)
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/section_centerline_geometry_taxonomy.py
+    python examples/demos/section/section_centerline_geometry_taxonomy.py
     python .../section_centerline_geometry_taxonomy.py 0A 0B 2D-F
 """
 

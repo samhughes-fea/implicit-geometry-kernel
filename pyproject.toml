@@ -33,6 +33,7 @@ contours = ["contourpy"]
 dev = ["scipy>=1.8", "matplotlib>=3.5", "pytest>=7", "build>=1.0", "ruff>=0.6", "mypy>=1.10", "contourpy"]
 reference = ["pyyaml>=6"]
 mesh = ["gmsh"]
+docs = ["sphinx>=7", "myst-parser>=3", "sphinxcontrib-mermaid>=0.9"]
 
 [project.urls]
 Homepage = "https://github.com/samhughes-fea/implicit-geometry-kernel"
@@ -63,13 +64,15 @@ show_error_codes = true
 files = ["src/implicit_geometry_kernel"]
 exclude = ["implicit_geometry_kernel/plotting"]
 
-# Mixins are copied onto BladeGeometry in loft.py; self is that host.
+# Mixins are copied onto BladeGeometry / SectionGeometry; self is that host.
 [[tool.mypy.overrides]]
 module = [
-    "implicit_geometry_kernel.blade.loft_cut",
-    "implicit_geometry_kernel.blade.loft_fields",
+    "implicit_geometry_kernel.blade.loft.loft_cut",
+    "implicit_geometry_kernel.blade.loft.loft_fields",
+    "implicit_geometry_kernel.blade.loft.loft_layout",
+    "implicit_geometry_kernel.section.spec.runner_lifecycle",
 ]
-disable_error_code = ["misc"]
+disable_error_code = ["misc", "attr-defined", "return-value", "has-type"]
 
 [tool.ruff]
 line-length = 120

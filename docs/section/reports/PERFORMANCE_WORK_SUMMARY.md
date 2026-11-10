@@ -5,12 +5,12 @@
 > **Status:** Historical performance handoff. Paths that cite deleted
 > `engine/` / `interface/` / `core/` trees are **stale** — those homes are gone
 > (see [G_ROW_OWNERSHIP_MATRIX](../reference/G_ROW_OWNERSHIP_MATRIX.md)). Prefer
-> live domain homes (`sdf/`, `sections/`, `props_emit/`, …) when following links.
+> live domain homes (`sdf/`, `section.walls`, `section.properties`, …) when following links.
 > Citations of `sdf/ir.py` now mean `sdf/nodes/` (the CSG expression tree).
+> There is no `section_geometry_efficiency_review.md` in this tree; this file is
+> the performance handoff.
 
-Phase timings for computational-efficiency work on `section_geometry`. Short
-handoff:
-section_geometry_efficiency_review.md.
+Phase timings for computational-efficiency work on `section_geometry`.
 
 ↑ [`docs index`](../docs_index.md) · [`section_geometry`](../docs_index.md)
 
@@ -33,6 +33,7 @@ section_geometry_efficiency_review.md.
 15. [Phase 15](#phase-15)
 16. [Phase 16](#phase-16)
 17. [Recommended next steps](#recommended-next-steps)
+18. [Kernel scan 2026-11-10](#kernel-scan-2026-11-10)
 
 ---
 
@@ -239,7 +240,7 @@ change; see `tests/baseline_analytic_bounds.json` and `tests/test_support_bounds
 
 Regression guard + workload bench: `tests/test_support_bounds_regression.py` locks the counters
 and per-label properties (and asserts zero support-sampling);
-`visualisation/demos/manystation_bench.py` reports per-stage wall time across N
+`examples/demos/section/manystation_bench.py` reports per-stage wall time across N
 stations (build / properties / plot / export).
 
 ### Phase 4 — Performance levers
@@ -290,10 +291,11 @@ From the repository root (PowerShell):
 ```powershell
 $env:SECTION_GEOMETRY_PROFILE="1"
 python -c "
-from implicit_geometry_kernel.section.api.factory import build_section_view, resolve_system_type
+from implicit_geometry_kernel.section.assembly import build_section_view
+from implicit_geometry_kernel.catalogue import resolve_system_type
 from implicit_geometry_kernel.section.properties.compute import compute_section_properties
 from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
-from implicit_geometry_kernel.sdf.airfoil import AirfoilSDF
+from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.profiling import reset_stats
 
 airfoil = AirfoilSDF.from_naca('2412', n_points=120, chord=1.0)
@@ -320,8 +322,8 @@ Environment knobs:
 - Recipe-faithful constructive polygons for laminates (`engine/constructive_polygons/`).
 - Residual φ path retained `LEInsert` / `TEInsert` (first-class; less mature).
 - `compute_section_properties(..., backend='hybrid')` merges shoelace + residual-label quadtree.
-- Spike: `visualisation/demos/constructive_vs_quadtree_spike.py`; bench:
-  `visualisation/demos/manystation_bench.py --compare`.
+- Spike: `examples/demos/section/constructive_vs_quadtree_spike.py`; bench:
+  `examples/demos/section/manystation_bench.py --compare`.
 - Parity: `tests/test_hybrid_parity.py`, `tests/test_constructive_polygons.py`.
 
 ### Phase 11 — Constructive sandwich cores
@@ -378,7 +380,7 @@ untwisted and twisted).
 
 ## Per-stage breakdown (many-station, post-Phase-9)
 
-`visualisation/demos/manystation_bench.py --stations 4 --plot --export` (2D-CN,
+`examples/demos/section/manystation_bench.py --stations 4 --plot --export` (2D-CN,
 depth 7, twisted mix), ms/station:
 
 | Stage | pre-Phase-8 | post-Phase-8 | post-Phase-9 | Notes |
@@ -471,7 +473,7 @@ are unchanged (laminate/FI-only trials).
 | — topology_cap_web | 0.008 |
 
 Post-E2, **assemble** dominates; topology is no longer the G7 ~50 ms hotspot.
-**E4 (Shapely cavity/union reuse) skipped** — props/`constructive_s` are not the top stages.
+**E4 (GEOS cavity/union reuse) skipped** — props/`constructive_s` are not the top stages.
 
 <a id="phase-13"></a>
 ## Phase 13 — Assemble substages + batched cap feasibility (A1–A2)
@@ -502,7 +504,7 @@ Family-D flapwise strip endpoints also batch via `inner_y_at_xs`.
 | — topology_split | 0.001 |
 
 Assemble is no longer the wall (~8× down from Phase 12). Topology and properties
-are now co-leading (~8 ms each). **Shapely cavity/`unary_union` reuse still not
+are now co-leading (~8 ms each). **GEOS cavity/`unary_union` reuse still not
 justified** (props remain constructive/hybrid shoelace, not a multi-union spike).
 
 <a id="phase-14"></a>
@@ -565,7 +567,7 @@ Emit Booleans are no longer the bulk of `properties_constructive` (~4–5 ms e
 substages vs ~6 ms total including shoelace/filter). **Next candidate if sizing
 still wall-bound:** laminate polygon construction cost inside `emit_laminates`
 and/or shoelace in `section_properties_from_polygons` — not further union collapse.
-Shapely remains.
+Constructive overlay is GEOS (`PolygonOps`), not Shapely.
 
 <a id="phase-16"></a>
 ## Phase 16 — Shoelace vs laminate split + shared deeper offset (P1–P2)
@@ -608,8 +610,43 @@ track parked** pending evidence that BSP sizing is still wall-bound on geometry
 7. ~~Constructive emit substages + shared cavity/unions~~ **Done (Phase 15).**
 8. ~~Shoelace vs laminate split + shared deeper offset~~ **Done (Phase 16).**
 9. ~~Docs closeout (efficiency review index + README profile note)~~ **Done.**
-10. **Efficiency track parked.** Ship Phases 12–16 as conventional-commit PRs when
-    asked (split listed in
-    section_geometry_efficiency_review.md).
-11. Resume geometry perf only with BSP evidence that cache misses / rebuilds
-    dominate sizing wall time — then profile hit rate, not emit Booleans.
+10. ~~Efficiency track parked.~~ **Superseded** by [kernel scan 2026-11-10](#kernel-scan-2026-11-10).
+    Station wall time (~0.014 s) is not limited by emit Booleans. Do not reopen
+    Phase 15-style micro-opts without a named cache-miss or quadtree timing.
+11. Resume a **code** change only with a named test or `SECTION_GEOMETRY_PROFILE`
+    number that shows the hotspot; goldens must not drift.
+
+---
+
+## Kernel scan 2026-11-10
+
+Graphify-first pass over [`graphify-out/`](../../../graphify-out/GRAPH_REPORT.md)
+(3064 nodes after `--update` on `src/implicit_geometry_kernel`, 2026-11-10).
+Queries used communities Quadtree SOA Refine, Polygon SDF BVH, Mapped Strip Loft,
+GEOS, Section Eval Cache, BladeGeometry Core.
+`graphify path` (EXTRACTED before INFERRED):
+
+- `build_shared_quadtree()` → `_refine_soa()` (1 hop, EXTRACTED).
+- `loft_mapped_strips()` → `_match_open_counts()` → `arc_resample_open()` (2 hops).
+- No graph path `BladeGeometry.section_at` → `geos/lib.py`: `.section_at()` lives in
+  `blade/loft/loft_cut.py` (L87). `CutWallMetaSDF` is EXTRACTED at
+  `blade/topology/fields.py` (L98). Do not treat a missing `blade/fields.py` as a
+  missing call.
+
+No new timing beat station ~0.014 s. **No code change this pass.** Follow-up
+(EXTRACTED only, including god nodes and ``ConstructivePolygons``):
+[GRAPHIFY_EXTRACTED_NEXT.md](../../blade/reports/GRAPHIFY_EXTRACTED_NEXT.md)
+— no kernel restructure scheduled.
+
+| Location | Why the graph flags it | Keep / fix |
+|---|---|---|
+| `BladeGeometry.section_at` LRU 256, `round(z, 9)` | Cut rebuild vs cache | **Keep.** 16-station CSG + loft fits; raise size only if a named miss rate appears. |
+| `LoftedPolygonSDF` `_accel` / `accel_at` | Polygon SDF BVH community | **Keep.** Default `accelerate=True`; BG-015 φ identity. |
+| `build_shared_quadtree` / `_refine_soa` | Quadtree SOA Refine hub | **Keep.** CSG occupancy cap is BG-026 (`max_cells=400_000`), not a Python loop. |
+| `SectionEvalCache` | Grid IR memo | **Keep.** Station-local; do not globalize without miss evidence. |
+| `loft_mapped_strips` Python loops | Mapped Strip Loft hub | **Keep.** Strip count is O(panels); vectorizing without a named loft timing risks goldens. |
+| `geos/` ctypes | GEOS Geometry Types | **Keep.** Bound on constructive/clip; numba is already on `sdf_polygon`. |
+| Constructive emit Booleans | Phase 15–16 closeout | **Keep parked.** No BSP cache-miss evidence. |
+
+Reproduce: `SECTION_GEOMETRY_PROFILE=1` on a many-station `section_geometry` run
+(see [How to reproduce profiling](#how-to-reproduce-profiling)).

@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/quadtree_convergence_study.py
+examples/demos/section/quadtree_convergence_study.py
 ======================================
 Quadtree depth / section-property convergence study.
 
@@ -13,7 +13,7 @@ Default sweep: depth 4..9 for two cases (untwisted and 15 deg twist). Expect
 grid baseline).
 
 Run from the repository root:
-    python examples/demos/section_geometry/quadtree_convergence_study.py
+    python examples/demos/section/quadtree_convergence_study.py
 """
 
 from __future__ import annotations
@@ -48,9 +48,7 @@ from implicit_geometry_kernel.plotting.figure_io import (
 from implicit_geometry_kernel.section.properties.area_mesh import section_properties_via_quadtree
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
-from implicit_geometry_kernel.section import (
-    MultiCellSection,
-)
+from _assemble import assemble_host
 from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.profiling import get_stats, reset_stats
 
@@ -59,15 +57,16 @@ TRACK_LABELS = ("outer_skin", "shear_web_0")
 
 
 def make_section(airfoil, web_x, twist_rad):
-    return MultiCellSection(
-        airfoil_sdf=airfoil,
-        web_x_positions=list(web_x),
-        web_thickness=0.004,
-        web_alignment="chord_normal",
+    return assemble_host(
+        airfoil,
+        n_webs=len(list(web_x)),
+        family="D",
+        alignment="chord_normal",
+        web_offsets=list(web_x),
+        shear_web_thickness=0.004,
         cap_height=0.012,
         skin_thickness=0.003,
-        twist_angle=twist_rad,
-        core_enabled=True,
+        twist_rad=twist_rad,
     )
 
 

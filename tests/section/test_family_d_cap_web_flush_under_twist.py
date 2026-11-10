@@ -14,6 +14,8 @@ import pytest
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     SectionGeometry,
+    SectionOptions,
+    SectionSpec,
     resolve_system_type,
 )
 from implicit_geometry_kernel.section.boundary.polygons import OPS
@@ -27,13 +29,15 @@ def test_family_d_cap_web_solid_flush_under_twist(twist_deg):
     twist_rad = float(np.deg2rad(twist_deg))
     result = (
         SectionGeometry(
-            layout=resolve_system_type("2D-F-LC-0R"),
-            airfoil=AirfoilSDF.from_naca("2412", chord=1.0),
-            skin_thickness=0.003,
-            spar_cap_thickness=0.012,
-            shear_web_thickness=0.004,
-            twist_rad=twist_rad,
-            outputs=("properties",)
+            SectionSpec.from_kwargs(
+                resolve_system_type("2D-F-LC-0R"),
+                AirfoilSDF.from_naca("2412", chord=1.0),
+                skin_thickness=0.003,
+                spar_cap_thickness=0.012,
+                shear_web_thickness=0.004,
+                twist_rad=twist_rad,
+            ),
+            SectionOptions(outputs=("properties",)),
         )
         .execute()
         .get_results()

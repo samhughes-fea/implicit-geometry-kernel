@@ -1,5 +1,25 @@
+# Sphinx HTML (local `make html` / sphinx-build)
+docs/_build/
+
+# LaTeX build artefacts for printable docs companions
+docs/**/*.aux
+docs/**/*.log
+docs/**/*.toc
+docs/**/*.out
+docs/**/*.fls
+docs/**/*.fdb_latexmk
+docs/**/*.synctex.gz
+
 # Private blade catalogue: clone locally, never commit (see that repo's README).
 /reference_blades/
+
+# Graphify cache (repo root and under src/)
+graphify-out/
+**/graphify-out/
+
+# Local GEOS binaries / scratch
+_geos_osgeo/
+_tmp_drops.py
 
 *.egg-info/
 *.py[cod]
@@ -10,7 +30,6 @@ dist/
 # demo figures (PNG, GIF) are committed; their data dumps are regenerated
 examples/demos/figures/**/*.json
 examples/demos/figures/**/*.csv
-examples/09_reference_blades/figures/**/*.msh
 examples/blade/08_reference_blades/figures/**/*.obj
 examples/blade/08_reference_blades/figures/**/*.npz
 examples/blade/08_reference_blades/figures/**/*.vtk

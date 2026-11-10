@@ -5,6 +5,7 @@ from implicit_geometry_kernel.blade.concepts.concept import (
     SpanwiseScheme,
     catalogue_ribs,
 )
+from implicit_geometry_kernel.blade.concepts.planform import read_planform_csv, write_windio
 from implicit_geometry_kernel.blade.concepts.web_anchoring import (
     PaRegions,
     blade_x_le_te,
@@ -33,5 +34,7 @@ __all__ = [
     "le_web_offsets_m",
     "pa_regions",
     "pa_web_x_from_pitch",
+    "read_planform_csv",
     "resolve_system_type",
+    "write_windio",
 ]

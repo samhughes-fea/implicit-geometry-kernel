@@ -22,7 +22,7 @@ Graph types and builders live in :mod:`implicit_geometry_kernel.blade.shell_grap
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 import numpy as np
 
@@ -30,6 +30,7 @@ from implicit_geometry_kernel.blade.stations import Stringer, TransverseMember
 
 if TYPE_CHECKING:
     from implicit_geometry_kernel.blade.shell_graph import MidSurface, ShellGraph
+    from implicit_geometry_kernel.section.midlines.host import SectionMidlineHost
 
 
 @dataclass(frozen=True)
@@ -100,7 +101,7 @@ class SectionCut:
     dropped_webs: Tuple[str, ...] = ()
     transverse: Tuple[TransverseMember, ...] = ()
     stringers: Tuple[Stringer, ...] = ()
-    host: Any = field(default=None, repr=False, compare=False)
+    host: SectionMidlineHost | None = field(default=None, repr=False, compare=False)
     scale: float = 1.0
     dropped_web_indices: Tuple[int, ...] = ()
     station_webs: int = 0
@@ -128,7 +129,8 @@ class SectionCut:
         stack's mid-surface, and is named after the cap. Segments are oriented so that
         z x (end - start), the laminate normal of a shell or thin wall laid along them,
         points out of the section on the skins and towards the trailing edge on the
-        webs. Both ``ThinWalledSection.from_geometry`` and the shell mesher build on it.
+        webs. Shell meshers and an external thin-wall consumer build on it;
+        ``implicit_geometry_kernel`` has no ``thin_wall`` module.
         """
         from implicit_geometry_kernel.blade.shell_graph import _mid_surface
 
@@ -160,25 +162,9 @@ class SectionCut:
 
     def key_points(self) -> dict[str, np.ndarray]:
         """LE, TE, cap-edge vertices and web feet at this station."""
-        oml = np.vstack([w.points for w in self.walls_of("skin")])
-        le = oml[int(np.argmin(oml[:, 0]))]
-        te = oml[int(np.argmax(oml[:, 0]))]
-        out: dict[str, np.ndarray] = {"LE": le, "TE": te}
-        graph = self.shell_graph()
-        from implicit_geometry_kernel.section.assembly.members import wall_type_for_label
+        from implicit_geometry_kernel.blade.topology.map import station_key_points
 
-        def _is_cap(name: str) -> bool:
-            wt = wall_type_for_label(name)
-            return wt is not None and wt.kind == "cap"
-
-        for i, edge in enumerate(graph.partition_edges()):
-            if _is_cap(edge.name_a) or _is_cap(edge.name_b):
-                out[f"cap_edge_{i}"] = np.asarray(edge.point, float)
-        for web in graph.webs:
-            pts = np.asarray(web.points, float)
-            out[f"{web.name}_foot_0"] = pts[0]
-            out[f"{web.name}_foot_1"] = pts[-1]
-        return out
+        return station_key_points(self)
 
 
 def _twist_offset(xy: np.ndarray, twist_deg: float, offset) -> np.ndarray:

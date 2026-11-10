@@ -2,9 +2,131 @@
 
 ## Unreleased
 
+- Stay on ``0.9.0``. Do not tag ``v1.0.0`` until a consumer pin and
+  ``check_consumer.py`` are green (SemVer freeze). Next pin is ``0.9.1`` or
+  ``0.10.0``, maintainer-only. See ``GRAPHIFY_EXTRACTED_NEXT.md``.
+
+- EXTRACTED graphify on ``src/implicit_geometry_kernel`` (3064 nodes): no
+  kernel-wide restructure. Keep ``emit_constructive_polygons`` as
+  ``dict[str, Polygon]``. Note: ``docs/blade/reports/GRAPHIFY_EXTRACTED_NEXT.md``.
+
+- Structure probes 1/3/4: ``shell_graph`` builders call ``_mid_surface(cut)`` /
+  ``shell_graph(cut)``; ``SectionCut.host`` is ``SectionMidlineHost | None``;
+  ``station_key_points`` lives next to ``place_station_keys``. ``STRUCTURE_PROBES.md``
+  findings match those wrappers.
+
+- **BG-027:** planform ``axes.png`` no longer labels a cell-area locus as shear
+  centre. Example 14 compares three geometric-centroid routes (shoelace,
+  thin-wall strip, quadtree).
+
+- ``LoftedPolygonSDF.accel_at`` / ``bvh`` expose the shipped uniform-grid AABB
+  cache (G7 / WP6 docs no longer say there is no BVH).
+
+- G10 closed here: no ``thin_wall`` module; loft/cut docs name ``mid_surface`` /
+  ``shell_graph`` as the handoff. G11 stays out (no PCOMP in ``src/``); G4 ``T``
+  step stays locked (no geometric taper).
+
+- Kernel performance scan (graphify query/path on existing ``graphify-out/``):
+  inventory in ``PERFORMANCE_WORK_SUMMARY.md``. No emit-Boolean micro-opt; no
+  code change without a named timing above station ~0.014 s.
+
+- Sphinx + MyST extra ``[docs]`` builds HTML from the existing Markdown tree
+  (``docs/conf.py``, no autodoc, no ``docs/manual/`` copy). GitHub Pages is not
+  wired.
+
+- Gap-report banners match the table: G10/G11 closed for this kernel; remaining
+  park is the TE classifier on OML (WP6).
+
+- Regenerated example 09 ``csg_mesh`` after BG-025/026 (shared quadtree
+  occupancy). Example 08 skipped (no local ``reference_blades/`` catalogue).
+
+- Kernel station/CSG mesh is ``build_shared_quadtree``; ``[mesh]`` / Gmsh stays
+  unadvertised convenience. Locked loft ``n_held`` is a strip contract, not a
+  Gmsh job.
+
+- CSG property panels reuse occupancy thin-band wall-tube refine (BG-025).
+  Occupancy ``max_cells`` is 400000 so 5D root stations finish (BG-026).
+
+- Docs hygiene: package bug logs (no repo-root ``BL-`` file); section module
+  table uses ``walls/`` / ``boundary/`` / ``properties/``; reports index;
+  span interpolation is linear (PCHIP wording dropped from the refactor plan).
+
+- House-rule splits: ``blade/loft/`` holds the loft façade; ``windio`` nd-arc
+  helpers are ``windio_nd.py``. ``members.py``, ``mesh/polygon``, ``spec/runner``,
+  ``quadtree/soa``, and ``plot_section_hybrid`` stay under 400 lines. Public
+  names are unchanged. ``build_spar_caps`` / ``skin_split`` remain under 400;
+  station network and spanwise SDF fields live in ``blade/topology/``; planform
+  CSV I/O in ``blade/concepts/planform.py``.
+
+- Teaching scripts, section demos, contract 01, feature-field loft and box-beam
+  assemble use ``SectionSpec`` / ``SectionGeometry(spec, options)`` and
+  ``TagNode(Circle|Polygon, …)``.
+
+- Manuals show ``SectionGeometry(spec, options)``; glossary topology homes are
+  ``blade/topology/``. ``graphify-out/`` and local GEOS scratch are gitignored.
+
+- Breaking (0.9.0): ``SectionGeometry`` is ``(spec, options)`` only.
+  Keyword ``layout=`` / ``airfoil=`` and ``SectionGeometry.from_kwargs`` are
+  removed. ``SectionSpec.from_kwargs`` / ``SectionOptions.from_kwargs`` remain.
+  ``ExprSDF``, ``CircleSDF`` and ``PolygonSDF`` are removed; use ``TagNode``.
+  ``WallRegionGraph.cap_mode`` is removed; use ``cap_placement.kind``.
+
+- ``BladeGeometry.section_at`` builds ``SectionSpec`` / ``SectionOptions``;
+  min-thickness scale-up is ``_min_thickness_scale``.
+  ``BladeGeometry.layout`` is typed ``str | SystemLayoutSpec | SectionLayout``.
+
+- Spar-cap construction dispatches ``CapPlacementKind`` through a callable
+  table in ``build_spar_caps``.
+
+- ``WallRegionGraph`` stores ``cap_placement`` (``CapPlacementKind``). Topology
+  compile lives in ``blade/topology/layout_compile.py``; loop signatures in
+  ``signatures.py``.
+
+- Rib mesh patches split only at live web feet (``n_webs + 1``). Cap
+  ``LoopBranch`` breakpoints stay on the skin midsurface and no longer seed
+  extra rings (Family B/C).
+
+- Example 09 lofts 18 catalogue tokens on the scaled 12 m planform (adds
+  ``0A-LC-0R``, ``0B-LC-0R``, ``1B-F-LC-10R``, ``2A-F-LC-10R``, ``2C-F-LC-10R``,
+  ``2D-CN-LC-10R``).
+
+- Example 09 synthetic planform is the original 20 m knots scaled to 12 m
+  (span, chord, and wall gauges × 12/20), not a truncated tip.
+
+- Meshing lives under ``mesh/``: kernel polygonal fill (``mesh/polygon.py``,
+  GEOS Voronoi), numpy Steiner Delaunay (``mesh/delaunay.py``), and Gmsh in
+  ``mesh/gmsh/`` (  ``plane.py`` fills all rib cells in one Gmsh session). Native rib fill uses
+  scipy Qhull when present, else numba Bowyer–Watson. Rib n-gon fill
+  (``mesh/polygon.py``) uses Qhull Voronoi plus a numba clip; faces have more
+  than four nodes. Example 08/09 rib figures use that n-gon fill. OBJ still
+  writes the cell n-gon.
+
+- Rib drawing/STL ear-clips each cell n-gon (same loft nodes, no Steiner
+  points) so matplotlib no longer fans through the LE cell. Rib mesh strokes
+  match loft quads on webs and skins; cutaway captions note the omitted-suction
+  camera.
+
+- Example loft palette ``RETRO_PANELS`` is 32 colours; 08/09 loft quads share
+  a darker ``MESH_EDGE`` stroke.
+
+- Breaking: PA web freeze uses a uniform root-band lattice (up to three
+  interiors of ``[x_LE, x_TE]``); extra webs continue that lattice (first extra
+  at root TE), replacing the authored ``_PA_SLOTS`` fractions. Example 09 adds
+  ``5D-F-PA-10R`` (second secondary at two ``Δx``).
+
+- Breaking: span interpolation is linear only. ``TableLaw(kind=)`` and
+  ``BladeGeometry(span_kind=)`` are removed. Ply-drop gauges are plateaus with
+  linear ramps (``TableLaw`` / ``PlyDrop``); cubic PCHIP is gone.
+
 - ``SectionCut.layout`` is the authored blade concept after web drop, not a
   sibling catalogue token. Realised W and X are ``station_webs`` /
   ``station_family``. Cascade helpers remain assemble recipes for that slice.
+
+- Docs and gallery cleanup after the closed architecture programme: stale
+  Shapely / Phase 2d / CAD-wait wording in maintainer notes; ``[mesh]`` dropped
+  from the public package map; glossary rows for ``station_webs`` /
+  ``station_family``; ``examples/demos/section`` hosts assemble through
+  ``SectionGeometry``.
 
 ## 0.8.2
 
@@ -103,10 +225,10 @@
   ``web_*`` over a nearby ``cap_*``. TE wrap walks include the OML ridge;
   TE metrics use nearest-ridge / max chord-frac, not blade-x.
 
-- TE wrap corners interpolate along the OML-TE ridge at a t/c-scaled chord
-  drop, so the cap width follows the section instead of switching on a y-span
-  threshold (that switch wrinkled IEA 15). Blunt roots still close; sharp TE
-  keeps a short wrap.
+- TE wrap is a loft-zone event from the skin-mid opening (blunt vs sharp).
+  Blunt stations walk the real TE edge; sharp stations share one ridge key
+  and drop wrap. Hysteresis holds the boolean so a station at ε cannot
+  chatter. `_te_frac_drop` is superseded (BG-005).
 
 - Loft VTK writes PNG ``panel_colour`` RGB as ``COLOR_SCALARS`` so ParaView
   shows the same patches; cell field ``role`` keeps the region name.

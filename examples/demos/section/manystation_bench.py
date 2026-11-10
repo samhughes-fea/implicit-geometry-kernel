@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/manystation_bench.py
+examples/demos/section/manystation_bench.py
 =============================
 Many-station throughput benchmark for the section_geometry property backend.
 
@@ -7,9 +7,9 @@ Times the per-station hot path (section build + property integration,
 and optionally plot + JSON export) across ``--stations`` stations.
 
 Run from the repository root:
-    python examples/demos/section_geometry/manystation_bench.py --stations 25
-    python examples/demos/section_geometry/manystation_bench.py --stations 10 --backend hybrid
-    python examples/demos/section_geometry/manystation_bench.py --stations 10 --compare
+    python examples/demos/section/manystation_bench.py --stations 25
+    python examples/demos/section/manystation_bench.py --stations 10 --backend hybrid
+    python examples/demos/section/manystation_bench.py --stations 10 --compare
 """
 
 from __future__ import annotations

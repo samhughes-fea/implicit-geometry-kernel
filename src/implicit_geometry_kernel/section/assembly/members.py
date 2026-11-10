@@ -17,14 +17,15 @@ How each member maps onto ``structure``:
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, ClassVar, Protocol, runtime_checkable
+from typing import Any
 
 import numpy as np
 
 from implicit_geometry_kernel.contract.errors import InfeasibleSectionGeometry
 from implicit_geometry_kernel.profiling import timed_stage
 from implicit_geometry_kernel.sdf.nodes import HalfPlane
-from implicit_geometry_kernel.sdf.nodes.tagged import ExprSDF
+from implicit_geometry_kernel.sdf.nodes.base import NO_FEATURE
+from implicit_geometry_kernel.sdf.nodes.tagged import TagNode
 from implicit_geometry_kernel.section.assembly.build_spar_caps import build_spar_caps
 from implicit_geometry_kernel.section.assembly.clip_algebra import (
     _parallel_web_half_gt,
@@ -32,7 +33,13 @@ from implicit_geometry_kernel.section.assembly.clip_algebra import (
     _parallel_web_strip_clip,
 )
 from implicit_geometry_kernel.section.assembly.labels import ComponentLabel
-from implicit_geometry_kernel.section.assembly.plan import SectionMember, SectionPlan, b_frame_web_search
+from implicit_geometry_kernel.section.assembly.plan import (
+    SectionMember,
+    SectionPlan,
+    WallType,
+    WallTypeMixin,
+    b_frame_web_search,
+)
 from implicit_geometry_kernel.section.assembly.web_layout import flapwise_web_sframe_inputs
 from implicit_geometry_kernel.section.walls.walls import CoreWall, InsertWall, SkinWall, WebWall
 from implicit_geometry_kernel.structure import (
@@ -52,84 +59,6 @@ def _label_str(label) -> str:
 def members_of(contributions: Sequence[Contribution], kind: str) -> list[SectionMember]:
     """The section members of the contributions whose feature kind is ``kind``."""
     return [c.source for c in contributions if c.spec.kind == kind and isinstance(c.source, SectionMember)]
-
-
-@runtime_checkable
-class WallType(Protocol):
-    """One registered wall kind: labels, solids, midlines, and stage hooks."""
-
-    kind: str
-    has_midline: bool
-    has_polygon: bool
-    is_wall_solid: bool
-    is_core: bool
-    is_insert: bool
-    on_shell_product: bool
-    polygon_by_surface: bool
-    cell_face_kind: str | None
-    label_prefixes: ClassVar[tuple[str, ...]]
-    exact_labels: ClassVar[tuple[str, ...]]
-    zone_prefixes: ClassVar[tuple[str, ...]]
-
-    def build(self, ctx: Any, prior: Any) -> list[Any]: ...
-
-
-class WallTypeMixin:
-    """Shared label matching and stage flags for :class:`SECTION_BUILDERS`.
-
-    ``build`` is the only pipeline hook. Stages dispatch on flags
-    (``on_shell_product``, ``polygon_by_surface``, ``has_midline``), not on names.
-    """
-
-    kind: str = ""
-    has_midline: bool = False
-    has_polygon: bool = True
-    is_wall_solid: bool = True
-    is_core: bool = False
-    is_insert: bool = False
-    on_shell_product: bool = True
-    polygon_by_surface: bool = False
-    cell_face_kind: str | None = None
-    label_prefixes: ClassVar[tuple[str, ...]] = ()
-    exact_labels: ClassVar[tuple[str, ...]] = ()
-    zone_prefixes: ClassVar[tuple[str, ...]] = ()
-
-    @classmethod
-    def matches_label(cls, label: Any) -> bool:
-        key = str(getattr(label, "value", label))
-        if key in cls.exact_labels:
-            return True
-        return any(key.startswith(prefix) for prefix in cls.label_prefixes)
-
-    @classmethod
-    def matches_zone_id(cls, zone_id: Any) -> bool:
-        key = str(zone_id)
-        return any(key.startswith(prefix) for prefix in cls.zone_prefixes)
-
-    @classmethod
-    def format_label(cls, index: int) -> str:
-        if cls.label_prefixes:
-            prefix = cls.label_prefixes[0]
-            return f"{prefix}{index}" if prefix.endswith("_") else f"{prefix}_{index}"
-        return f"{cls.kind}_{index}"
-
-    @classmethod
-    def matches_surface(cls, label: Any, surface: str) -> bool:
-        return False
-
-    @classmethod
-    def canonical_surface_label(cls, surface: str) -> str:
-        return f"{cls.kind}_{surface}"
-
-    def midline(self, inst: Any, boundary: Any) -> Any | None:
-        if not self.has_midline:
-            return None
-        if hasattr(inst, "to_midline"):
-            return inst.to_midline(boundary)
-        return None
-
-    def junctions(self, inst: Any, others: Any) -> list[Any]:
-        return []
 
 
 def wall_type_for_label(label: Any) -> type[WallTypeMixin] | None:
@@ -176,7 +105,7 @@ class SkinBuilder(WallTypeMixin, MemberBuilder):
                 out.append(WallContribution(
                     ctx.table.add(_label_str(label), "skin"),
                     ConstantLaw(t),
-                    footprint=None if base else ExprSDF(comp.footprint_expr),
+                    footprint=None if base else TagNode(comp.footprint_expr, NO_FEATURE),
                     source=SectionMember(label, comp, {_label_str(label): wall}),
                 ))
         return out
@@ -222,8 +151,8 @@ class WebBuilder(WallTypeMixin, MemberBuilder):
                 label = self.format_label(int(authored))
                 out.append(BranchContribution(
                     ctx.table.add(label, "web"),
-                    mid=ExprSDF(_axis_line(xt, yt, xb, yb)),
-                    region=ExprSDF(comp.expr),
+                    mid=TagNode(_axis_line(xt, yt, xb, yb), NO_FEATURE),
+                    region=TagNode(comp.expr, NO_FEATURE),
                     thickness=ConstantLaw(t),
                     source=SectionMember(label, comp, {label: wall}),
                 ))
@@ -303,7 +232,7 @@ class CapBuilder(WallTypeMixin, MemberBuilder):
             out.append(WallContribution(
                 ctx.table.add(_label_str(label), "cap"),
                 ConstantLaw(height),
-                footprint=ExprSDF(comp.footprint_expr),
+                footprint=TagNode(comp.footprint_expr, NO_FEATURE),
                 stacked=True,
                 # The recipes and pads ride on the first cap so they are added once.
                 source=SectionMember(label, comp, dict(recipes) if first else {}, dict(pads) if first else {}),
@@ -349,7 +278,7 @@ class CoreBuilder(WallTypeMixin, MemberBuilder):
                     comp = wall.to_sdf_component(ctx.airfoil_sdf, airfoil_expr_node=ctx.airfoil_expr,
                                                  exclusion_exprs=exclusion)
                 label = self.format_label(k)
-                out.append(RegionContribution(ctx.table.add(label, "core"), ExprSDF(comp.expr),
+                out.append(RegionContribution(ctx.table.add(label, "core"), TagNode(comp.expr, NO_FEATURE),
                                               source=SectionMember(label, comp, {label: wall})))
         return out
 
@@ -399,7 +328,7 @@ class InsertBuilder(WallTypeMixin, MemberBuilder):
     @staticmethod
     def _insert(ctx, label, wall) -> RegionContribution:
         comp = wall.to_sdf_component(ctx.airfoil_sdf, airfoil_expr_node=ctx.airfoil_expr)
-        return RegionContribution(ctx.table.add(_label_str(label), "insert"), ExprSDF(comp.expr),
+        return RegionContribution(ctx.table.add(_label_str(label), "insert"), TagNode(comp.expr, NO_FEATURE),
                                   source=SectionMember(label, comp, {_label_str(label): wall}))
 
 

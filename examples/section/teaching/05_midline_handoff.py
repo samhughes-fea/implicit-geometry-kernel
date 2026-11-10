@@ -7,6 +7,9 @@ surface and not a kinked stack midline. This script does not call a mesher.
 Run from the repository root::
 
     python examples/section/teaching/05_midline_handoff.py
+
+Feature ids after midlines: ``examples/blade/11_feature_station_network``.
+DTO fields: ``examples/contract/01_three_products_dtos``.
 """
 
 from __future__ import annotations

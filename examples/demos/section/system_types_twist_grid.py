@@ -1,5 +1,5 @@
 """
-examples/demos/section_geometry/system_types_twist_grid.py
+examples/demos/section/system_types_twist_grid.py
 ===================================
 Visualise section geometry on a **3×4** grid (**chord-fraction presets** × **1…4 webs**)
 and **two** web-alignment panels (**chord-normal** vs **flapwise**) at a fixed twist (default 20°).
@@ -8,7 +8,7 @@ Structural naming (``SystemType{X}{Y}-{Z}``) — *see also each case's* ``struct
 ------------------------------------------------------------------
   **X** = number of webs.  **Y** = spar-cap family per taxonomy.  **Z** = **CN** (chord-normal) or **F** (flapwise).
 
-  This script builds ``MultiCellSection`` with **continuous** upper/lower spar caps (**taxonomy Y = D**, box spar between outermost webs).
+  This script builds each panel through ``SectionGeometry`` with **continuous** upper/lower spar caps (**taxonomy Y = D**, box spar between outermost webs).
   Every panel is labelled **SystemType{X}D-{Z}** in the summary JSON.
 
   **Important:** Column letters **A / B / C** in this file are **only chord-fraction presets** (where webs sit along the chord),
@@ -22,7 +22,7 @@ Chord-fraction presets (columns A / B / C — web positions, LE → TE)
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/system_types_twist_grid.py --out-dir outputs/system_types_twist20
+    python examples/demos/section/system_types_twist_grid.py --out-dir outputs/system_types_twist20
 
 Writes ``system_types_grid_summary.json`` and, by default, one ``sections/<alignment>_<A|B|C>_n<k>.json``
 per subplot (section properties, airfoil vertices; use ``--with-contours`` for φ=0 polylines — slower).
@@ -54,9 +54,7 @@ from implicit_geometry_kernel.plotting.figure_io import (
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
-from implicit_geometry_kernel.section import (
-    MultiCellSection,
-)
+from _assemble import assemble_host
 from implicit_geometry_kernel.section.properties.export import (
     SectionPropertiesReport,
     export_section_json,
@@ -188,15 +186,16 @@ def main() -> int:
                 ax = fig.add_subplot(gs_in[r, c])
                 fracs = web_chord_fracs(letter, n_webs)
                 xs = sorted(float(f) * chord for f in fracs)
-                section = MultiCellSection(
-                    airfoil_sdf=airfoil,
-                    web_x_positions=xs,
-                    web_thickness=0.004,
-                    web_alignment=align_key,
+                section = assemble_host(
+                    airfoil,
+                    n_webs=n_webs,
+                    family="D",
+                    alignment=align_key,
+                    web_offsets=xs,
+                    shear_web_thickness=0.004,
                     cap_height=0.012,
                     skin_thickness=0.003,
-                    twist_angle=twist_rad,
-                    core_enabled=True,
+                    twist_rad=twist_rad,
                 )
 
                 json_rel: str | None = None
@@ -276,15 +275,16 @@ def main() -> int:
     # One shared legend (first section's labels — same for all)
     from matplotlib.patches import Patch
 
-    demo = MultiCellSection(
-        airfoil_sdf=airfoil,
-        web_x_positions=[0.3 * chord, 0.6 * chord],
-        web_thickness=0.004,
-        web_alignment="chord_normal",
+    demo = assemble_host(
+        airfoil,
+        n_webs=2,
+        family="D",
+        alignment="chord_normal",
+        web_offsets=[0.3 * chord, 0.6 * chord],
+        shear_web_thickness=0.004,
         cap_height=0.012,
         skin_thickness=0.003,
-        twist_angle=twist_rad,
-        core_enabled=True,
+        twist_rad=twist_rad,
     )
     handles = [
         Patch(facecolor=_component_color(lbl), alpha=0.48, label=lbl)

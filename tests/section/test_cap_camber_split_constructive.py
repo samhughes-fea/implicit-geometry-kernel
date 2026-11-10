@@ -14,6 +14,8 @@ import pytest
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.section import (
     SectionGeometry,
+    SectionOptions,
+    SectionSpec,
     resolve_system_type,
 )
 from implicit_geometry_kernel.section.boundary.polygons import OPS
@@ -26,13 +28,15 @@ def test_constructive_caps_follow_cavity_midline_not_y0(twist_deg: float) -> Non
     chord = 0.1228
     result = (
         SectionGeometry(
-            layout=resolve_system_type("2D-F-LC-0R"),
-            airfoil=AirfoilSDF.from_naca("2412", chord=chord),
-            skin_thickness=0.003,
-            spar_cap_thickness=0.006125,
-            shear_web_thickness=0.004,
-            twist_rad=float(np.deg2rad(twist_deg)),
-            outputs=("properties",),
+            SectionSpec.from_kwargs(
+                resolve_system_type("2D-F-LC-0R"),
+                AirfoilSDF.from_naca("2412", chord=chord),
+                skin_thickness=0.003,
+                spar_cap_thickness=0.006125,
+                shear_web_thickness=0.004,
+                twist_rad=float(np.deg2rad(twist_deg)),
+            ),
+            SectionOptions(outputs=("properties",)),
         )
         .execute()
         .get_results()

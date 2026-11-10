@@ -1,9 +1,9 @@
 """
-examples/demos/section_geometry/cell_wall_loops_demo.py
+examples/demos/section/cell_wall_loops_demo.py
 =====================================
 Plot constructive cell-wall loops on NACA midlines (0…5 webs).
 
-Builds ``MultiCellSection``, exports B-frame midline strips, then
+Builds the host through ``SectionGeometry``, exports B-frame midline strips, then
 ``build_cell_wall_loops``. Writes **one PNG per case** (no subplot grids):
 
 * ``cell_wall_loops_{name}.png`` — filled cell loops over midlines (family A)
@@ -13,7 +13,7 @@ Builds ``MultiCellSection``, exports B-frame midline strips, then
 
 Run from the repository root::
 
-    python examples/demos/section_geometry/cell_wall_loops_demo.py
+    python examples/demos/section/cell_wall_loops_demo.py
 
 Outputs default to ``examples/demos/figures/cell_wall_loops/``.
 """
@@ -44,9 +44,7 @@ from implicit_geometry_kernel.plotting.figure_io import (
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.kernels.grid import SDFGrid
-from implicit_geometry_kernel.section import (
-    MultiCellSection,
-)
+from _assemble import assemble_host
 # ``interface/`` is a re-export shim and carries none of these any more: the
 # midline builder moved to ``midlines/`` and the loop builder to
 # ``cell_wall_loops/``, alongside the rest of their own stage.
@@ -90,7 +88,7 @@ def _build_section(
     web_fracs: tuple[float, ...],
     *,
     structural_family: str = "A",
-) -> MultiCellSection:
+):
     chord = float(af.chord)
     xs = [f * chord for f in web_fracs]
     # Family D's box spar spans the outermost webs, so it needs two. Follow the
@@ -101,16 +99,16 @@ def _build_section(
     elif len(xs) == 1 and family == "D":
         family = "C"
     # Exaggerated member widths for demo readability (not design values).
-    return MultiCellSection(
+    return assemble_host(
         af,
-        web_x_positions=xs,
-        web_thickness=0.022,
+        n_webs=len(xs),
+        family=family,
+        alignment="chord_normal",
+        web_offsets=xs,
+        shear_web_thickness=0.022,
         skin_thickness=0.016,
-        web_alignment="chord_normal",
-        twist_angle=0.0,
-        structural_family=family,
         cap_height=0.040,
-        core_enabled=False,
+        twist_rad=0.0,
     )
 
 

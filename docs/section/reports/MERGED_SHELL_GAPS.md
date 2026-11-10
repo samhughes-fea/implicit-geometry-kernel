@@ -2,7 +2,11 @@
 
 **Audience: internal.** Maintainer notes; not part of the library manual.
 
-Evidence for G1–G11 and the parked extract/TE/BVH work. Waves 0–7 are shipped; G10/G11 stay parked.
+Evidence for G1–G11 and extract/TE/BVH. Waves 0–7 are shipped. G10/G11 are
+closed for this kernel. Remaining park: TE classifier on OML only (WP6); BVH is
+shipped. Geometry still required before a conformal shell-FE consumer can
+delete its own kernel is a **separate** list (G-TE … G-ACC):
+[`TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md`](TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md).
 Characterization: [`tests/test_shell_graph_gaps.py`](../../../tests/test_shell_graph_gaps.py).
 
 Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm, cap 8 mm, webs 2 mm at chord fractions `(0.18, 0.48)`.
@@ -16,15 +20,15 @@ Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm,
 | **G1** | Wave 3 shipped | `shell_strips_from_graph` = 8 runs; `cut.walls` still 10 (solid caps) |
 | **G2** | Wave 1 shipped | `partition_edges` / `partition_edge_curve`; colouring unchanged |
 | **G3** | Wave 2 shipped | `topology_diff` + `shared_loft_names`; no label lerp |
-| **G4** | Wave 0 shipped | `T` step kept (8 mm); Newton is not a spec at partition vertices |
+| **G4** | locked / closed | `T` step kept (8 mm); no geometric taper; Newton is not a spec at partition vertices |
 | **G5** | Wave 0 shipped | Loft from graph; snap with SDF; joint `|φ| = 4.000 mm` is out of Pass 1 check |
 | **G6** | Wave 4 shipped | `with_web_feet_on_loop`; loft re-resolves / drops webs on flapwise re-anchor |
-| **G7** | Wave 5 shipped | `section_at` LRU 256 per `round(z, 9)`; no BVH |
+| **G7** | Wave 5 shipped | `section_at` LRU 256 per `round(z, 9)`; `LoftedPolygonSDF` BVH on (`accelerate`, `accel_at`) |
 | **G8** | Wave 6 shipped | `web_positions_from_windio_structure`; example 09 no longer hardcodes `(0.22, 0.50)` |
 | **G9** | Wave 7 shipped | Cores / TE inserts stay constructive solids; not on `shell_graph` |
-| **G10** | consumer-only | `ThinWalledSection.from_geometry` is not in this repo |
-| **G11** | kernel-out-of-scope | No PCOMP / ply stagger in `src/implicit_geometry_kernel` |
-| **WP6** | parked | named `feature_curve(geo, name_a, name_b, zs)` exists; TE classifier stays an OML helper; no BVH |
+| **G10** | closed for this kernel | No `thin_wall` module; consumers use `mid_surface` / `shell_graph` |
+| **G11** | closed for this kernel | No PCOMP / ply stagger; bind laminates via `offset_regions` / stacked `layers` |
+| **WP6** | parked | named `feature_curve(geo, name_a, name_b, zs)` exists; TE classifier stays an OML helper; OML BVH shipped |
 
 Implementation sequence is [Waves](#waves) below. **G4 is locked:** keep the `T` step; document Newton limits at partition vertices (no geometric taper).
 
@@ -50,7 +54,7 @@ Oracles (Wave 0): **loft strips** from `shell_graph` polylines; **in-plane snap*
 
 **Status:** Wave 1 shipped (colouring in Pass 1; named edges on `ShellGraph`).
 
-**Today:** `ShellRun.kind` is `cap` on stacked partitions; example 09 and `wall_meta` colour by that. Partition **edges** are only polyline endpoints. [`feature_curve`](../../../src/implicit_geometry_kernel/extract/curves.py) is `(field_a, field_b, zs, guess_xy)` with no names. [`station_network_from_meta`](../../../src/implicit_geometry_kernel/blade/network.py) splits the mid loop by meta id and sets `thickness=0.0`.
+**Today:** `ShellRun.kind` is `cap` on stacked partitions; example 09 and `wall_meta` colour by that. Partition **edges** are only polyline endpoints. [`feature_curve`](../../../src/implicit_geometry_kernel/extract/curves.py) is `(field_a, field_b, zs, guess_xy)` with no names. [`station_network_from_meta`](../../../src/implicit_geometry_kernel/blade/topology/network.py) splits the mid loop by meta id and sets `thickness=0.0`.
 
 **API:** `ShellGraph.partition_edges()` / `.edge(name_a, name_b)` and
 `partition_edge_curve(geo, name_a, name_b, zs)` (omit if missing; no lerp).
@@ -77,9 +81,9 @@ Example 09 uses it. No silent label lerp.
 
 ## G4 — Thickness jumps
 
-**Status:** Wave 0 shipped (keep the step; Newton limits documented).
+**Status:** locked / closed (keep the step; Newton limits documented; no geometric taper).
 
-**Today:** [`StackThickness`](../../../src/implicit_geometry_kernel/blade/fields.py) assigns nearest loop-run `T` (step, not ramp). Not ply stagger.
+**Today:** [`StackThickness`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) assigns nearest loop-run `T` (step, not ramp). Not ply stagger.
 
 **Evidence:** interior cap `T = 11` mm, interior skin `T = 3` mm, jump **8 mm** (`t_cap`). The two endpoints of one cap run evaluate to `{3 mm, 11 mm}` — nearest-run at the shared vertex is discrete. `GeometrySolver` default tolerance is `1e-6` m (`snap_wall_mid` uses `1e-8`); the jump is 8000× that.
 
@@ -113,7 +117,7 @@ Example 09 uses it. No silent label lerp.
 
 **Status:** Wave 5 shipped.
 
-**Today:** [`BladeGeometry.section_at`](../../../src/implicit_geometry_kernel/blade/loft.py) caches cuts per `round(z, 9)` (LRU 256). [`CutWallMetaSDF`](../../../src/implicit_geometry_kernel/blade/fields.py) and `StackThickness` keep derived LRU 256 on that same key. [`LoftedPolygonSDF`](../../../src/implicit_geometry_kernel/sdf/lofted.py) still caches polygons only — **no BVH**.
+**Today:** [`BladeGeometry.section_at`](../../../src/implicit_geometry_kernel/blade/loft/loft.py) caches cuts per `round(z, 9)` (LRU 256). [`CutWallMetaSDF`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) and `StackThickness` keep derived LRU 256 on that same key. [`LoftedPolygonSDF`](../../../src/implicit_geometry_kernel/sdf/nodes/lofted.py) caches station polygons and, with ``accelerate=True`` (default), a uniform-grid AABB (`accel_at` / `bvh`). That is not the cut LRU.
 
 ---
 
@@ -141,19 +145,19 @@ Gauge tables still come from layer names.
 
 ## G10 — Thin-wall vs shell consumers
 
-**Status:** consumer-only.
+**Status:** closed for this kernel.
 
-**Today:** `ThinWalledSection.from_geometry` is named in the README and `SectionCut.mid_surface` docstring; **no** `implicit_geometry_kernel.thin_wall` module. `cut.cells` are built from split **walls**, not from merged loop partitions.
+**Today:** no `implicit_geometry_kernel.thin_wall` module (`test_g10_thin_walled_not_in_this_repo`). Handoff is `SectionCut.mid_surface()` / `shell_graph()` stacked `layers`. `cut.cells` are built from split **walls**, not from merged loop partitions.
 
-**Missing work:** verify the external thin-wall consumer on `layers`; split vs merged cells. No patch in this repo.
+**Not in this repo:** an external thin-wall consumer on `layers`. Verify that consumer separately.
 
 ---
 
 ## G11 — Combined vs tied laminates
 
-**Status:** kernel-out-of-scope.
+**Status:** closed for this kernel.
 
-**Today:** combined `T` is geometry. No `PCOMP` string under `src/implicit_geometry_kernel`. Stays tidalshell / shell-fem.
+**Today:** combined `T` is geometry. Laminate bind is `offset_regions()`, stacked `layers`, `shell_strips_from_graph`. No `PCOMP` string under `src/implicit_geometry_kernel` (`test_g11_no_pcomp_in_kernel_src`). ABD / ply stagger stay tidalshell / shell-fem.
 
 ---
 
@@ -167,7 +171,7 @@ is parked.
 |---|---|
 | Feature-curve keys | named form exists; Newton form stays two SDFs + a guess |
 | TE on merged loop | `classify_trailing_edge(oml)` and on the stacked loop are both `sharp` on this NACA; the helper is still an **OML-ring** API |
-| BVH on `LoftedPolygonSDF` | no `bvh` attribute (G7) |
+| BVH on `LoftedPolygonSDF` | shipped: `accelerate=True`, `accel_at(z)`, `bvh` mapping (BG-015) |
 | IEA 10 tip | G6: loft re-resolves / drops webs (Wave 4) |
 
 ---
@@ -175,11 +179,12 @@ is parked.
 ## Waves
 
 Opening a wave means implementing that row. **Waves 0–7 are shipped.** G10/G11 stay
-parked. No `ShellMidlineStrip` version, no `T` taper, no BVH.
+closed for this kernel (consumer / PCOMP). No `ShellMidlineStrip` version, no `T`
+taper. `LoftedPolygonSDF` BVH is shipped.
 
 ```text
 Wave 0 (G5+G4) → Wave 1 (G2) → Wave 2 (G3) → Wave 3 (G1)
-  → Wave 4 (G6) → Wave 5 (G7) → Wave 6 (G8) → Wave 7 (G9) → park G10/G11
+  → Wave 4 (G6) → Wave 5 (G7) → Wave 6 (G8) → Wave 7 (G9) → G10/G11 closed here
 ```
 
 ### Wave 0 — Oracle honesty (shipped)
@@ -230,7 +235,7 @@ Depends on Waves 0–2.
 
 ### Wave 5 — Cost (G7) (shipped)
 
-- **G7:** `section_at` LRU 256 per `round(z, 9)`. Derived `CutWallMetaSDF` / `StackThickness` caches stay. **No** BVH on `LoftedPolygonSDF`.
+- **G7:** `section_at` LRU 256 per `round(z, 9)`. Derived `CutWallMetaSDF` / `StackThickness` caches stay. `LoftedPolygonSDF` uses `accelerate` BVH (`accel_at` / `bvh`).
 
 ### Wave 6 — WindIO web footprints (G8) (shipped)
 
@@ -244,14 +249,16 @@ Depends on Waves 0–2.
 - `CoreWall.to_midline` stays unimplemented. Properties keep the constructive polygon path.
 - Re-open only if a shell consumer needs those names on the loop.
 
-### Parked
+### Closed here / remaining park
 
-- **G10** thin-wall consumer (other repo).
-- **G11** PCOMP (tidalshell / shell-fem).
+- **G10** closed here (other repo owns the thin-wall adapter).
+- **G11** closed here (PCOMP / ply ABD stay tidalshell / shell-fem).
 - TE classifier on OML vs loop: both `sharp` on the NACA fixture — retarget only if a blunt merged loop appears.
 
 ---
 
 ## What this inventory does not do
 
-This page does not close G10–G11. No DTO version, no taper, no cores on `shell_graph`, no BVH, no Gmsh, no PCOMP, no tidalshell edits — until the matching wave is opened.
+G10/G11 stay out of `src/` (thin-wall consumer; PCOMP). No DTO version, no `T`
+taper, no cores on `shell_graph` by default, no Gmsh driver, no tidalshell edits.
+OML polygon BVH is in `LoftedPolygonSDF`.

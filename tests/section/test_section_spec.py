@@ -53,28 +53,20 @@ def test_build_from_spec_matches_runner():
         assert props["area"] == pytest.approx(via_spec.properties_map[label]["area"], rel=1e-9)
 
 
-def test_circle_sdf_warns():
-    from implicit_geometry_kernel.sdf.nodes.tagged import CircleSDF
+def test_circle_sdf_removed():
+    import implicit_geometry_kernel.sdf.nodes.tagged as tagged
 
-    with pytest.warns(DeprecationWarning, match="CircleSDF"):
-        CircleSDF(0.0, 0.0, 1.0)
+    assert not hasattr(tagged, "CircleSDF")
+    with pytest.raises(ImportError):
+        from implicit_geometry_kernel.sdf.nodes.tagged import CircleSDF  # noqa: F401
 
 
-def test_kwargs_constructor_and_from_kwargs_warn():
+def test_layout_kwargs_and_from_kwargs_removed():
     layout = resolve_system_type("2D-F-LC-0R")
     airfoil = _airfoil()
-    kwargs = dict(
-        layout=layout,
-        airfoil=airfoil,
-        skin_thickness=0.004,
-        spar_cap_thickness=0.012,
-        shear_web_thickness=0.005,
-        outputs=("properties",),
-    )
-    with pytest.warns(DeprecationWarning, match="layout="):
-        SectionGeometry(**kwargs)
-    with pytest.warns(DeprecationWarning, match="from_kwargs"):
-        SectionGeometry.from_kwargs(**kwargs)
+    with pytest.raises(TypeError):
+        SectionGeometry(layout=layout, airfoil=airfoil)
+    assert not hasattr(SectionGeometry, "from_kwargs")
 
 
 def test_from_kwargs_rejects_conflicting_aliases():

@@ -52,6 +52,8 @@ def test_zone_gauges_m_preserve_independent_webs(airfoil=None):
     from implicit_geometry_kernel.section.spec.runner import (
         SectionGeometry,
     )
+    from implicit_geometry_kernel.section.spec.options import SectionOptions
+    from implicit_geometry_kernel.section.spec.section_spec import SectionSpec
     from implicit_geometry_kernel.catalogue.system_layout import (
         resolve_system_type,
     )
@@ -62,17 +64,19 @@ def test_zone_gauges_m_preserve_independent_webs(airfoil=None):
     af = airfoil or AirfoilSDF.from_naca("2412", n_points=80, chord=1.0)
     result = (
         SectionGeometry(
-            layout=resolve_system_type("2D-F-LC-0R"),
-            airfoil=af,
-            zone_gauges_m={
-                "skin:suction": 0.004,
-                "skin:pressure": 0.004,
-                "cap:suction": 0.010,
-                "cap:pressure": 0.010,
-                "web:0": 0.005,
-                "web:1": 0.008,
-            },
-            outputs=("midlines",),
+            SectionSpec.from_kwargs(
+                resolve_system_type("2D-F-LC-0R"),
+                af,
+                zone_gauges_m={
+                    "skin:suction": 0.004,
+                    "skin:pressure": 0.004,
+                    "cap:suction": 0.010,
+                    "cap:pressure": 0.010,
+                    "web:0": 0.005,
+                    "web:1": 0.008,
+                },
+            ),
+            SectionOptions(outputs=("midlines",)),
         )
         .execute()
         .get_results()

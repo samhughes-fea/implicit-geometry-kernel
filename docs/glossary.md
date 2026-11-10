@@ -71,7 +71,6 @@ Not all are on the kernel barrel.
 | `SectionLayout` | Parametric layout (or catalogue preset) | `section/layout/section_layout.py` |
 | `CapPlacementKind` | Cap plan: `none` / `fixed_band` / `per_web_pads` / `continuous_box` | `section/layout/cap_placement.py` |
 | `CapPlacementRule` | Frozen cap kind plus window / pad fields | `section/layout/cap_placement.py` |
-| `cap_mode` | Deprecated `WallRegionGraph` alias of `cap_placement.kind` (`band`/`pads`/`box`) | `blade/topology/graph.py` |
 | `SYSTEM_TYPE_KEYS` | All registered WX-Y-Z-NR tokens | `catalogue/system_layout.py` |
 | `SYSTEM_TYPE_LAYOUT_KEYS` | Forty `*-LC-0R` cores for section goldens | `catalogue/system_layout.py` |
 | `resolve_system_type` | Token → `SystemLayoutSpec` | `catalogue/system_layout.py` |
@@ -104,7 +103,6 @@ Home: [sdf](sdf/README.md). Barrel names:
 | `NO_FEATURE` | Sentinel id |
 | `TagNode` | IR node that stamps a feature id |
 | `Circle` / `Polygon` | Canonical 2-D Expr leaves (`SDFNode`) |
-| `CircleSDF` / `PolygonSDF` / `ExprSDF` | Deprecated `TagNode` wrappers (next minor) |
 | `PriorityUnionNode` | Union resolved by feature priority |
 | `LoftedPolygonSDF` | Polygon SDF that varies along span |
 | `GeometrySolver` | In-plane Newton (`sdf.solve`); not the extract package |
@@ -118,7 +116,7 @@ Home: [sdf](sdf/README.md). Barrel names:
 | `SectionWall` / `ShellMidlineStrip` | Solid midline on the cut; gated emit strip in \(\mathrm{B}\) |
 | `cut.walls` solids / `shell_graph` partitions | Caps listed as solids; conformal skin-mid loop with cap colour |
 | `CapPlacementRule` / `AnchoredWallGeometry` | Plan-form cap policy; through-thickness face offsets |
-| `CapPlacementKind` / `cap_mode` | Canonical kind string; deprecated graph alias (`band`/`pads`/`box`) |
+| `CapPlacementKind` | Kind on `CapPlacementRule`, not a graph alias |
 | `SectionCut` / `SectionGeometryResult` | Loft wrap at \(z\); gated station worker product |
 | `SectionCut.layout` / `station_webs` / `station_family` | Authored concept token; realised W and X after web drop |
 

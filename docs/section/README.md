@@ -87,8 +87,7 @@ result = SectionGeometry(
 ).execute().get_results()
 ```
 
-`SectionGeometry(spec, options)` is the public call path. Keyword `layout=` /
-`airfoil=` still work this minor and are removed in the next.
+`SectionGeometry(spec, options)` is the public call path.
 `build_section_geometry` is a deep import (`section.spec`) for tests.
 Returns `SectionGeometryResult` or raises (e.g. `InfeasibleSectionGeometry`).
 

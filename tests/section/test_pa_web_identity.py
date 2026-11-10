@@ -7,7 +7,7 @@ import pytest
 
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
 from implicit_geometry_kernel.blade.concepts.web_anchoring import pa_web_x_from_pitch
-from implicit_geometry_kernel.section import SectionGeometry, resolve_system_type
+from implicit_geometry_kernel.section import SectionGeometry, SectionOptions, SectionSpec, resolve_system_type
 from implicit_geometry_kernel.section.spec.layout_resolution import resolve_station_layout
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 
@@ -101,13 +101,15 @@ def test_pa_drop_keeps_higher_indices():
     assert 2 in {d.index for d in res.dropped}
     assert tuple(res.web_indices) == (0, 1)
     runner = SectionGeometry(
-        layout=resolve_system_type("3D-F-PA-0R"),
-        airfoil=foil,
-        skin_thickness=0.004,
-        spar_cap_thickness=0.008,
-        shear_web_thickness=0.004,
-        web_offsets=xs,
-        outputs=("midlines",),
+        SectionSpec.from_kwargs(
+            resolve_system_type("3D-F-PA-0R"),
+            foil,
+            skin_thickness=0.004,
+            spar_cap_thickness=0.008,
+            shear_web_thickness=0.004,
+            web_offsets=xs,
+        ),
+        SectionOptions(outputs=("midlines",)),
     ).execute()
     labels = [s.label for s in (runner.get_results().midline_strips or ()) if "web" in str(s.label)]
     assert "shear_web_0" in labels and "shear_web_1" in labels

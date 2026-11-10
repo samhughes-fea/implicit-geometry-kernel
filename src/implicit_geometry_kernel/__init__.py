@@ -99,7 +99,7 @@ from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
 )
 
-__version__ = "0.8.2"
+__version__ = "0.9.0"
 
 __all__ = [
     "Airfoil", "Anchor", "BladeConcept", "BladeGeometry", "CellPolygon", "FeatureTable", "FieldSample", "GeometrySolver",

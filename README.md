@@ -76,8 +76,6 @@ result = SectionGeometry(
 ).execute().get_results()
 ```
 
-Keyword `layout=` / `airfoil=` still work this minor and are removed in the next.
-
 Worked examples: [examples/README.md](examples/README.md). Capability map:
 [docs/README.md](docs/README.md).
 

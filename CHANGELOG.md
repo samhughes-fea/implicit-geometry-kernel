@@ -23,20 +23,20 @@
 - Manuals show ``SectionGeometry(spec, options)``; glossary topology homes are
   ``blade/topology/``. ``graphify-out/`` and local GEOS scratch are gitignored.
 
-- ``SectionGeometry(spec, options)`` is the constructor. Keyword
-  ``layout=`` / ``airfoil=`` and ``from_kwargs`` warn and are removed in the
-  next minor. ``BladeGeometry.section_at`` builds ``SectionSpec`` /
-  ``SectionOptions``; min-thickness scale-up is ``_min_thickness_scale``.
-  ``BladeGeometry.layout`` is typed ``str | SystemLayoutSpec | SectionLayout``.
+- Breaking (0.9.0): ``SectionGeometry`` is ``(spec, options)`` only.
+  Keyword ``layout=`` / ``airfoil=`` and ``SectionGeometry.from_kwargs`` are
+  removed. ``SectionSpec.from_kwargs`` / ``SectionOptions.from_kwargs`` remain.
+  ``ExprSDF``, ``CircleSDF`` and ``PolygonSDF`` are removed; use ``TagNode``.
+  ``WallRegionGraph.cap_mode`` is removed; use ``cap_placement.kind``.
 
-- ``TagNode`` is the only meta stamper. ``ExprSDF``, ``CircleSDF`` and
-  ``PolygonSDF`` wrap ``TagNode`` and warn; removed in the next minor.
+- ``BladeGeometry.section_at`` builds ``SectionSpec`` / ``SectionOptions``;
+  min-thickness scale-up is ``_min_thickness_scale``.
+  ``BladeGeometry.layout`` is typed ``str | SystemLayoutSpec | SectionLayout``.
 
 - Spar-cap construction dispatches ``CapPlacementKind`` through a callable
   table in ``build_spar_caps``.
 
-- ``WallRegionGraph`` stores ``cap_placement`` (``CapPlacementKind``).
-  ``cap_mode`` (``band``/``pads``/``box``) is a deprecated alias. Topology
+- ``WallRegionGraph`` stores ``cap_placement`` (``CapPlacementKind``). Topology
   compile lives in ``blade/topology/layout_compile.py``; loop signatures in
   ``signatures.py``.
 

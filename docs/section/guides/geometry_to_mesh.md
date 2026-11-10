@@ -196,8 +196,6 @@ result = SectionGeometry(
 ).execute().get_results()
 ```
 
-Keyword `layout=` / `airfoil=` still work this minor and are removed in the next.
-
 Layouts `"0A-LC-0R"` / `"0B-LC-0R"` are valid shell-mesh stations (skin ± caps; no web
 junctions). See
 [`ADR_ZERO_WEB_SHELL_MESH.md`](../reference/ADR_ZERO_WEB_SHELL_MESH.md) and

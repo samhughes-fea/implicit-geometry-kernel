@@ -251,7 +251,9 @@ def test_frozen_runner_resolution_does_not_retry_reanchor():
     from implicit_geometry_kernel.contract.errors import (
         InfeasibleSectionGeometry,
     )
+    from implicit_geometry_kernel.section.spec.options import SectionOptions
     from implicit_geometry_kernel.section.spec.runner import SectionGeometry
+    from implicit_geometry_kernel.section.spec.section_spec import SectionSpec
     from implicit_geometry_kernel.section.spec.worker import resolve_station_layout
 
     chord = 0.08775168
@@ -263,15 +265,18 @@ def test_frozen_runner_resolution_does_not_retry_reanchor():
         skin_thickness=0.003536,
         web_x_positions_m=[0.036130035],
     )
-    kwargs = dict(
-        layout=resolve_system_type("1A-F-LC-0R"),
-        airfoil=af,
+    spec = SectionSpec.from_kwargs(
+        resolve_system_type("1A-F-LC-0R"),
+        af,
         skin_thickness=0.007072,
         shear_web_thickness=0.00442,
         spar_cap_thickness=0.0,
         twist_rad=twist_rad,
-            web_offsets=list(frozen.web_x_positions_m),
-        outputs=("midlines", "cell_wall_loops"),
+        web_offsets=list(frozen.web_x_positions_m),
     )
     with pytest.raises(InfeasibleSectionGeometry, match="re-anchor|frozen web_y"):
-        SectionGeometry(**kwargs, resolution=frozen).execute()
+        SectionGeometry(
+            spec,
+            SectionOptions(outputs=("midlines", "cell_wall_loops")),
+            resolution=frozen,
+        ).execute()

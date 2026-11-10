@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import numpy as np
 import pytest
 
-from implicit_geometry_kernel.sdf.nodes.tagged import PolygonSDF
+from implicit_geometry_kernel.sdf.nodes import Polygon
 from implicit_geometry_kernel.sdf.nodes.span import ComplementNode, MaxNode
 from implicit_geometry_kernel.structure import (
     BranchContribution,
@@ -28,7 +28,7 @@ SKIN, CAP, WEB = 0.01, 0.03, 0.008
 
 
 def rect(x0, x1, y0, y1):
-    return PolygonSDF(np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]))
+    return Polygon(((x0, y0), (x1, y0), (x1, y1), (x0, y1)))
 
 
 class Skin(MemberBuilder):

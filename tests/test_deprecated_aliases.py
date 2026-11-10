@@ -46,6 +46,19 @@ def test_station_at_removed() -> None:
     assert not hasattr(geo, "station_at")
 
 
+def test_tag_node_wrappers_removed() -> None:
+    import implicit_geometry_kernel.sdf.nodes.tagged as tagged
+
+    for name in ("CircleSDF", "PolygonSDF", "ExprSDF"):
+        assert not hasattr(tagged, name)
+
+
+def test_wall_region_graph_cap_mode_removed() -> None:
+    from implicit_geometry_kernel.blade.topology.graph import WallRegionGraph
+
+    assert "cap_mode" not in WallRegionGraph.__dict__
+
+
 def test_web_x_positions_m_kwarg_removed() -> None:
     layout = resolve_system_type("2D-F-LC-0R")
     af = Airfoil.naca4("2412").to_sdf(chord=1.0)

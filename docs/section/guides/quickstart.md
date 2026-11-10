@@ -57,8 +57,7 @@ result = SectionGeometry(
 plot_section(result.section)
 ```
 
-`SectionGeometry(spec, options)` is the public call path. Keyword `layout=` /
-`airfoil=` still work this minor and are removed in the next.
+`SectionGeometry(spec, options)` is the public call path.
 `build_section_geometry` is a deep import (`section.spec`) for tests. Gate
 `"cell_wall_loops"` also fills midlines.
 

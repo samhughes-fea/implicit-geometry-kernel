@@ -191,12 +191,14 @@ def test_runner_accepts_section_layout():
     airfoil = AirfoilSDF.from_naca("2412", n_points=80, chord=1.0)
     layout = SectionLayout.from_catalogue_key("2D-F-LC-0R")
     runner = SectionGeometry(
-        layout=layout,
-        airfoil=airfoil,
-        skin_thickness=0.006,
-        spar_cap_thickness=0.012,
-        shear_web_thickness=0.005,
-        outputs=("midlines",),
+        SectionSpec.from_kwargs(
+            layout,
+            airfoil,
+            skin_thickness=0.006,
+            spar_cap_thickness=0.012,
+            shear_web_thickness=0.005,
+        ),
+        SectionOptions(outputs=("midlines",)),
     ).execute()
     res = runner.get_layout_resolution()
     result = runner.get_results()

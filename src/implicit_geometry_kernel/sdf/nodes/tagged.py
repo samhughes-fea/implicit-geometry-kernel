@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Callable, Sequence
 
 import numpy as np
 
 from implicit_geometry_kernel.sdf.kernels.polygon_numba import sdf_polyline_unsigned_numba
 from implicit_geometry_kernel.sdf.nodes.base import EvalCache, FieldSample, LeafNode, NO_FEATURE, SDFNode
-from implicit_geometry_kernel.sdf.nodes.primitives import Circle, Polygon
 
 
 class PolylineBandSDF(LeafNode):
@@ -55,47 +53,6 @@ class TagNode(SDFNode):
     def _evaluate(self, points: np.ndarray, cache: EvalCache) -> FieldSample:
         s = self.node.evaluate(points, cache)
         return FieldSample(s.phi, np.full(s.phi.shape, self.meta_id, dtype=np.int32))
-
-
-class ExprSDF(TagNode):
-    """Deprecated alias of :class:`TagNode`. Removed in the next minor."""
-
-    def __init__(self, expr, meta: int = NO_FEATURE) -> None:
-        warnings.warn(
-            "ExprSDF is deprecated; use TagNode(node, meta). Removed in the next minor.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(expr, meta)
-
-
-class CircleSDF(TagNode):
-    """Deprecated: ``TagNode(Circle(...), meta)``. Removed in the next minor."""
-
-    def __init__(self, cx: float = 0.0, cy: float = 0.0, r: float = 1.0, meta: int = NO_FEATURE) -> None:
-        warnings.warn(
-            "CircleSDF is deprecated; use TagNode(Circle(cx, cy, r), meta). "
-            "Removed in the next minor.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self.cx, self.cy, self.r = float(cx), float(cy), float(r)
-        super().__init__(Circle(self.cx, self.cy, self.r), meta)
-
-
-class PolygonSDF(TagNode):
-    """Deprecated: ``TagNode(Polygon(vertices), meta)``. Removed in the next minor."""
-
-    def __init__(self, vertices: np.ndarray, meta: int = NO_FEATURE) -> None:
-        warnings.warn(
-            "PolygonSDF is deprecated; use TagNode(Polygon(vertices), meta). "
-            "Removed in the next minor.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self.vertices = np.asarray(vertices, dtype=np.float64)
-        verts = tuple((float(p[0]), float(p[1])) for p in self.vertices)
-        super().__init__(Polygon(verts), meta)
 
 
 class PriorityUnionNode(SDFNode):
@@ -182,7 +139,7 @@ class MidSurfaceNode(SDFNode):
 
 
 __all__ = [
-    "CallableSDF", "CircleSDF", "ExprSDF", "FieldOffsetNode", "MidSurfaceNode",
-    "PolygonSDF", "PolylineBandSDF", "PriorityUnionNode",
+    "CallableSDF", "FieldOffsetNode", "MidSurfaceNode",
+    "PolylineBandSDF", "PriorityUnionNode",
     "TagNode", "TrimNode", "as_node",
 ]

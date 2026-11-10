@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementKind, CapPlacementRule
+from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
 
 if TYPE_CHECKING:
     from implicit_geometry_kernel.catalogue.system_layout import SystemLayoutSpec
@@ -18,13 +17,6 @@ if TYPE_CHECKING:
 TE_ARC = 0.03
 MIN_GAP = 0.002
 PER_WEB_PAD = 0.04
-
-_CAP_MODE_LEGACY: dict[CapPlacementKind, str] = {
-    "none": "none",
-    "fixed_band": "band",
-    "per_web_pads": "pads",
-    "continuous_box": "box",
-}
 
 FracLaw = Callable[[float], float]
 ShellVertexId = tuple
@@ -126,17 +118,6 @@ class WallRegionGraph:
     cap_windows: tuple[tuple[float, float], ...] = ()
     cap_placement: CapPlacementRule = field(default_factory=CapPlacementRule.none)
     cap_pad: float | None = None
-
-    @property
-    def cap_mode(self) -> str:
-        """Deprecated alias of :attr:`cap_placement` kind (``band``/``pads``/``box``)."""
-        warnings.warn(
-            "WallRegionGraph.cap_mode is deprecated; use cap_placement.kind "
-            "(CapPlacementKind). Removed in the next minor.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return _CAP_MODE_LEGACY[self.cap_placement.kind]
 
     def evaluate_anchors(self, z: float) -> tuple[tuple[str, float], ...]:
         """Active anchors at ``z``, TE-merged and ``min_gap`` regularised."""

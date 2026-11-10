@@ -5,7 +5,7 @@ import pytest
 
 from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
 from implicit_geometry_kernel.sdf.nodes import Circle
-from implicit_geometry_kernel.sdf.nodes.tagged import ExprSDF
+from implicit_geometry_kernel.sdf.nodes.tagged import TagNode
 from implicit_geometry_kernel.catalogue import resolve_system_type
 from implicit_geometry_kernel.section.assembly import build_section_view
 from implicit_geometry_kernel.section.assembly.members import SECTION_BUILDERS
@@ -73,7 +73,7 @@ def test_webs_are_branches_on_their_axis():
 def test_a_new_member_type_is_one_more_builder():
     class Ballast(MemberBuilder):
         def build(self, ctx, prior):
-            comp = ExprSDF(Circle(cx=0.6, cy=0.0, r=0.01))
+            comp = TagNode(Circle(cx=0.6, cy=0.0, r=0.01), 0)
             spec = ctx.table.add("ballast", "bond")
             return [RegionContribution(spec, comp, source=None)]
 

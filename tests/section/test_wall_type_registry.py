@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.sdf.nodes import HalfPlane
-from implicit_geometry_kernel.sdf.nodes.tagged import ExprSDF
+from implicit_geometry_kernel.sdf.nodes.tagged import TagNode
 from implicit_geometry_kernel.section import SectionOptions, SectionSpec, resolve_system_type
 from implicit_geometry_kernel.section.assembly.members import (
     SECTION_BUILDERS,
@@ -54,8 +54,8 @@ class DummyStiffenerBuilder(WallTypeMixin, MemberBuilder):
         return [
             BranchContribution(
                 ctx.table.add(label, "stiffener"),
-                mid=ExprSDF(mid),
-                region=ExprSDF(comp.expr),
+                mid=TagNode(mid, 0),
+                region=TagNode(comp.expr, 0),
                 thickness=ConstantLaw(t),
                 source=SectionMember(label, comp, {label: wall}),
             )
@@ -109,7 +109,7 @@ def test_bondline_region_builder_emits_only_when_build_is_overridden(monkeypatch
         return [
             RegionContribution(
                 ctx.table.add(label, "bondline"),
-                ExprSDF(comp.expr),
+                TagNode(comp.expr, 0),
                 source=SectionMember(label, comp),
             )
         ]

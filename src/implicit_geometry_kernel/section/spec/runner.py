@@ -13,19 +13,10 @@ product; ``get_results()`` returns the built geometry.
 
 from __future__ import annotations
 
-import warnings
-from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any
-
 from implicit_geometry_kernel.section.spec.runner_lifecycle import RunnerLifecycleMixin
 from implicit_geometry_kernel.section.spec.options import SectionOptions
 from implicit_geometry_kernel.section.spec.section_spec import SectionSpec
 from implicit_geometry_kernel.section.spec.worker import SectionGeometryResult, StationLayoutResolution, build_section_geometry, resolve_station_layout
-
-if TYPE_CHECKING:
-    from implicit_geometry_kernel.catalogue.system_layout import SystemLayoutSpec
-    from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
-    from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
 
 
 class SectionGeometry(RunnerLifecycleMixin):
@@ -35,23 +26,10 @@ class SectionGeometry(RunnerLifecycleMixin):
     ----------
     spec:
         Frozen :class:`SectionSpec` (layout, airfoil, gauges, twist, webs).
+        The *effective* layout may step down if the local cavity cannot
+        anchor every web.
     options:
         :class:`SectionOptions` (output gates, quadtree, sample counts).
-    layout, airfoil:
-        Deprecated keyword construction; use ``spec`` / ``options`` or
-        :meth:`from_kwargs`. Nominal catalogue ``SystemLayoutSpec`` or
-        parametric ``SectionLayout``, and station ``AirfoilSDF``. The
-        *effective* layout may step down if the local cavity cannot anchor
-        every web.
-    skin_thickness, spar_cap_thickness, shear_web_thickness:
-        Design-variable thicknesses [m].
-    twist_rad:
-        Geometric twist [rad] for the S→B map.
-    pivot_fraction:
-        Pitch-axis chord fraction from the LE (S-frame origin). Default: the
-        standalone frame fallback ``0.333``.
-    outputs:
-        Compute-cost gates — ``properties`` / ``midlines`` / ``cell_wall_loops``.
     min_cavity_depth_m:
         Forwarded to layout resolution: a web whose local cavity is too shallow
         to build minimum-gauge caps against is dropped rather than anchored.
@@ -65,123 +43,17 @@ class SectionGeometry(RunnerLifecycleMixin):
 
     def __init__(
         self,
-        spec: SectionSpec | None = None,
+        spec: SectionSpec,
         options: SectionOptions | None = None,
         *,
-        layout: SectionLayout | SystemLayoutSpec | str | None = None,
-        airfoil: AirfoilSDF | None = None,
-        skin_thickness: float | None = None,
-        spar_cap_thickness: float | None = None,
-        shear_web_thickness: float | None = None,
-        twist_rad: float | None = None,
-        twist_angle_rad: float | None = None,
-        twist_angle: float | None = None,
-        outputs: Iterable[str] = ("properties", "midlines", "cell_wall_loops"),
-        web_offsets: Sequence[float] | None = None,
         min_cavity_depth_m: float = 0.0,
-        n_web_samples: int = 20,
-        n_cap_samples: int = 80,
-        retain_mesh: bool = False,
-        props_backend: Any | None = None,
-        quadtree_spec: Any | None = None,
-        airfoil_for_spec: Any | None = None,
         resolution: StationLayoutResolution | None = None,
-        spar_cap_ply_pitch_m: float | None = None,
-        zone_gauges_m: Mapping[str, float] | None = None,
-        pivot_fraction: float | None = None,
     ) -> None:
-        from implicit_geometry_kernel.section.spec.section_spec import resolve_shear_web_thickness, resolve_skin_gauges, resolve_spar_cap_thickness, resolve_twist_rad
-
-        if spec is not None:
-            if layout is not None or airfoil is not None:
-                raise TypeError("SectionGeometry() takes spec/options or layout kwargs, not both")
-            self._bind_spec(
-                spec,
-                options or SectionOptions(),
-                resolution=resolution,
-                min_cavity_depth_m=min_cavity_depth_m,
-            )
-            return
-        if layout is None or airfoil is None:
-            raise TypeError(
-                "SectionGeometry requires a SectionSpec or layout= and airfoil= kwargs"
-            )
-        warnings.warn(
-            "SectionGeometry(layout=..., airfoil=...) is deprecated; "
-            "use SectionGeometry(spec, options) or SectionGeometry.from_kwargs. "
-            "Removed in the next minor.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._layout = layout
-        self._airfoil = airfoil
-        self._zone_gauges_m = None if zone_gauges_m is None else dict(zone_gauges_m)
-        if self._zone_gauges_m is not None:
-            from implicit_geometry_kernel.section.spec.prep import _compat_kwargs_from_zone_gauges
-
-            if any(
-                v is not None
-                for v in (skin_thickness, spar_cap_thickness, shear_web_thickness)
-            ):
-                raise ValueError(
-                    "geometry received both zone_gauges_m and component thickness kwargs"
-                )
-            derived = _compat_kwargs_from_zone_gauges(self._zone_gauges_m)
-            skin_thickness = derived["skin_thickness"]
-            spar_cap_thickness = derived["spar_cap_thickness"]
-            shear_web_thickness = derived["shear_web_thickness"]
-        self._t_skin_gauges = resolve_skin_gauges(
-            skin_thickness=skin_thickness, required=True
-        )
-        self._t_skin = max(self._t_skin_gauges)
-        self._t_spar = resolve_spar_cap_thickness(
-            spar_cap_thickness=spar_cap_thickness,
-            default=0.0,
-        )
-        self._t_web = resolve_shear_web_thickness(
-            shear_web_thickness=shear_web_thickness,
-            default=0.0,
-        )
-        self._twist_rad = resolve_twist_rad(
-            twist_rad=twist_rad,
-            twist_angle_rad=twist_angle_rad,
-            twist_angle=twist_angle,
-        )
-        self._outputs = tuple(outputs)
-        self._web_x_positions_m = web_offsets
-        self._min_cavity_depth_m = float(min_cavity_depth_m)
-        self._n_web_samples = int(n_web_samples)
-        self._n_cap_samples = int(n_cap_samples)
-        self._retain_mesh = bool(retain_mesh)
-        self._props_backend = props_backend
-        self._quadtree_spec = quadtree_spec
-        # Sizes the quadtree domain. Distinct from ``airfoil`` on purpose: the
-        # QT box must be built on the B-frame (twisted) airfoil AABB, because a
-        # chord-frame box clips rotated trailing-edge tips. Expressible here so
-        # the runner is a full facade over ``build_section_geometry`` — a caller
-        # that had to reach past it for one argument would just keep calling the
-        # function.
-        self._airfoil_for_spec = airfoil_for_spec
-        self._executed = False
-        # A caller that has already resolved this station passes the resolution
-        # in rather than the three values derived from it (effective layout, web
-        # x positions, web y coords). Those three can drift apart; a resolution
-        # cannot disagree with itself.
-        #
-        # It also keeps a *frozen* topology frozen. A sizing loop resolves once
-        # at the minimum skin so the design-variable set is fixed for the whole
-        # search; re-resolving at each trial's thickness could hand back a
-        # different web set than the station was frozen against.
-        self._layout_frozen = resolution is not None
-        self._resolution: StationLayoutResolution | None = resolution
-        self._result: SectionGeometryResult | None = None
-        self._spar_cap_ply_pitch_m = (
-            float(spar_cap_ply_pitch_m)
-            if spar_cap_ply_pitch_m is not None
-            else None
-        )
-        self._pivot_fraction = (
-            float(pivot_fraction) if pivot_fraction is not None else None
+        self._bind_spec(
+            spec,
+            options or SectionOptions(),
+            resolution=resolution,
+            min_cavity_depth_m=min_cavity_depth_m,
         )
 
     def _bind_spec(
@@ -217,30 +89,6 @@ class SectionGeometry(RunnerLifecycleMixin):
         self._result: SectionGeometryResult | None = None
         self._spar_cap_ply_pitch_m = spec.spar_cap_ply_pitch_m
         self._pivot_fraction = spec.pivot_fraction
-
-    @classmethod
-    def from_kwargs(cls, **kwargs: Any) -> SectionGeometry:
-        """Deprecated: build from historical layout/airfoil keywords."""
-        warnings.warn(
-            "SectionGeometry.from_kwargs is deprecated; construct "
-            "SectionGeometry(spec, options). Removed in the next minor.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        layout = kwargs.pop("layout", None)
-        airfoil = kwargs.pop("airfoil", None)
-        if layout is None or airfoil is None:
-            raise TypeError("from_kwargs requires layout= and airfoil=")
-        resolution = kwargs.pop("resolution", None)
-        min_cavity_depth_m = kwargs.pop("min_cavity_depth_m", 0.0)
-        spec = SectionSpec.from_kwargs(layout, airfoil, **kwargs)
-        options = SectionOptions.from_kwargs(**kwargs)
-        return cls(
-            spec,
-            options,
-            resolution=resolution,
-            min_cavity_depth_m=min_cavity_depth_m,
-        )
 
     def resolve(self) -> "SectionGeometry":
         """Resolve the effective layout **without building geometry**.

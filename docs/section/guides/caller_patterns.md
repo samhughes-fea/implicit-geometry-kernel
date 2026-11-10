@@ -41,8 +41,6 @@ result = SectionGeometry(
 ).execute().get_results()
 ```
 
-Keyword `layout=` / `airfoil=` still work this minor and are removed in the next.
-
 ## 2. Resolve once, then rebuild (sizing loop)
 
 Freeze which webs fit at a minimum skin, then vary thicknesses without

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- CSG property panels reuse occupancy thin-band wall-tube refine (BG-025).
+
 - Docs hygiene: package bug logs (no repo-root ``BL-`` file); section module
   table uses ``walls/`` / ``boundary/`` / ``properties/``; reports index;
   span interpolation is linear (PCHIP wording dropped from the refactor plan).

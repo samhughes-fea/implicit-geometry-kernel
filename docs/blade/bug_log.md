@@ -48,7 +48,7 @@ entries are from a retired repo-root log.
 | [BG-022](#bg-022) | `SectionCut.layout` became a sibling token after web drop | **Fixed** |
 | [BG-023](#bg-023) | Example 09 mapped loft emitted collapsed or unmatched strip faces | **Fixed** |
 | [BG-024](#bg-024) | Property CSG quadtree was rotated vs wall occupancy | **Fixed** |
-| [BG-025](#bg-025) | Property CSG column 3 undersamples thin wall tubes | **Open** |
+| [BG-025](#bg-025) | Property CSG column 3 undersamples thin wall tubes | **Fixed** |
 | [BG-026](#bg-026) | 5D occupancy QT hits `max_cells=150000` and truncates | **Open** |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
@@ -638,9 +638,12 @@ the cavity from seeing a millimetre-scale web. Occupancy uses
 `thin_band=True`, `refine_band = t/2`, `min_cell ≤ t/4`. Depth 10 does not
 change the band law.
 
-**Fix.** Not applied. Options: `thin_band=True` (and `min_cell ~ t/4`) on
-wall-solid φ only; leave cores on the cavity ceiling; or reuse the occupancy
-spec for the union panel.
+**Fix.** `_property_quadtree_spec` reuses `_csg_quadtree_spec` (`thin_band=True`,
+`refine_band = t/2`, `min_cell ≤ t/4`) so wall-solid φ splits millimetre webs.
+Cores share that tree. [`examples/_shared/blade_viz.py`](../../examples/_shared/blade_viz.py).
+
+**Verification.** `test_csg_property_quadtree_uses_thin_band_wall_tubes`.
+**Fixed.**
 
 ## BG-026
 

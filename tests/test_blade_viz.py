@@ -19,6 +19,7 @@ from _shared.blade_viz import (  # noqa: E402
     _blade_xy_to_host_naca,
     _conformal_samples,
     _csg_mesh_figsize,
+    _csg_quadtree_spec,
     _leaf_rects,
     _map_naca_chord_xy,
     _property_quadtree_spec,
@@ -181,20 +182,23 @@ def test_csg_constructive_polygons_are_wall_solids_not_oml_disk():
     assert sx[:, 0].max() == pytest.approx(float(oml[:, 0].max()), abs=0.02 * cut.chord)
 
 
-def test_csg_property_quadtree_is_filled_solid_not_thin_band():
+def test_csg_property_quadtree_uses_thin_band_wall_tubes():
     geo, cut = _foil_cut()
     assert abs(float(cut.twist)) > 1.0
     spec = _property_quadtree_spec(geo, cut, cut.z)
-    assert spec.thin_band is False
-    assert int(spec.max_depth) == _CSG_QT_DEPTH
-    assert int(spec.max_depth) == 10
+    occ = _csg_quadtree_spec(geo, cut, cut.z)
+    assert spec.thin_band is True
+    assert occ.thin_band is True
+    assert spec.max_depth == occ.max_depth == _CSG_QT_DEPTH
+    assert spec.min_cell_size == pytest.approx(occ.min_cell_size)
+    assert spec.refine_band == pytest.approx(occ.refine_band)
     k = float(getattr(cut, "scale", 1.0) or 1.0)
     naca = np.array([[0.5 * float(cut.chord) * k, 0.0]], float)
     blade = _map_naca_chord_xy(cut, naca)
     back = _blade_xy_to_host_naca(cut, blade)
     assert back == pytest.approx(naca, abs=1e-9)
     mesh = _sample_property_qt(geo, cut, cut.z)
-    assert mesh.spec.thin_band is False
+    assert mesh.spec.thin_band is True
     assert int(mesh.spec.max_depth) == 10
     rects = _leaf_rects(leaf_bounds(mesh))
     assert len(rects) >= 1

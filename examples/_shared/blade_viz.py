@@ -448,13 +448,8 @@ def _blade_xy_to_host_naca(cut, xy: np.ndarray) -> np.ndarray:
 
 
 def _property_quadtree_spec(geo, cut, z):
-    """Same OML box as occupancy; cavity-band refine (not thin-band tubes)."""
-    return quadtree_spec_for_airfoil(
-        _cut_oml_xy(geo, cut, z),
-        chord=float(cut.chord),
-        max_depth=_CSG_QT_DEPTH,
-        thin_band=False,
-    )
+    """Same thin-band wall-tube spec as occupancy (BG-025)."""
+    return _csg_quadtree_spec(geo, cut, z)
 
 
 def _chord_frame_host(host):

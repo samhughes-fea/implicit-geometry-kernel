@@ -155,16 +155,16 @@ Same `h`, three discretisations:
 |---|---|
 | CSG conformal viz | Variable `n` per branch from `h` (no loft contract) |
 | Locked loft / Gmsh | Raw `n(z)` from `h`; **hold** `n_held = max n` in the `shell_loft_zones` band; extra vertices redistributed at fixed `n` |
-| `wall_meta` quadtree | `thin_band` Lipschitz refine; `min_cell ≤ t/4`. Not `n_chord`. Filled-solid property trees keep the cavity band ceiling |
+| `wall_meta` quadtree | `thin_band` Lipschitz refine; `min_cell ≤ t/4`. Not `n_chord`. Property CSG trees use the same wall-tube spec |
 
 Example 09 `csg_mesh/` is a 2×3 of those products in the blade frame (not structural LE-on-right axes):
 
 | | Left | Mid | Right |
 |---|---|---|---|
-| Top | constructive polygons (`emit_constructive_polygons` on `cut.host`, including sandwich cores) | `wall_meta` occupancy (`φ ≤ 0`, thin-band tubes) | property quadtree (union of wall solids, `thin_band=False`) |
+| Top | constructive polygons (`emit_constructive_polygons` on `cut.host`, including sandwich cores) | `wall_meta` occupancy (`φ ≤ 0`, thin-band tubes) | property quadtree (union of wall solids, same thin-band spec) |
 | Bottom | cell bays | mid-surface nodes (`h`) | same property tree, occupancy by label |
 
-The top-left fill is the same polygon set as [`anatomy_on_a_figure.md`](anatomy_on_a_figure.md) / `plot_section_hybrid`, mapped with `cut.place_host_xy`. It is not an OML-disk fill. The two right-hand panels share `build_shared_section_quadtree`: the union panel shows the refine band around the wall solids (coarse cavity leaves); the by-label panel is the layer view the integrator sums.
+The top-left fill is the same polygon set as [`anatomy_on_a_figure.md`](anatomy_on_a_figure.md) / `plot_section_hybrid`, mapped with `cut.place_host_xy`. It is not an OML-disk fill. The two right-hand panels share `build_shared_quadtree` with occupancy: the union panel is wall-solid φ on thin-band tubes; the by-label panel is the layer view the integrator sums.
 
 Do not: one `n_chord` for every bay/LE/TE; κ-only clustering with no `h_max`;
 moving web feet onto a grid or chord-fraction skin keys; feeding variable `n(z)`

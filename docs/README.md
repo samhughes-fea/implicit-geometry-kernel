@@ -8,6 +8,8 @@ packages, examples, and tests.
 Two audiences share one tree. The **manual** is for library users and developers
 of consuming tools. **Internal** pages are for maintainers of this repository.
 House style: [conventions/DOCUMENTATION_STANDARDS.md](conventions/DOCUMENTATION_STANDARDS.md).
+Optional local HTML: `pip install -e ".[docs]"` then `sphinx-build -b html docs docs/_build/html`
+(`docs/conf.py`, MyST, no autodoc). GitHub Pages is not wired.
 
 ## Manual
 

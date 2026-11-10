@@ -19,6 +19,10 @@ or a mesh driver.
 pip install "implicit-geometry-kernel @ git+https://github.com/samhughes-fea/implicit-geometry-kernel"
 # or, from a clone
 pip install -e ".[dev]"
+# local HTML over the same Markdown (optional; not a second manual)
+pip install -e ".[docs]"
+sphinx-build -b html docs docs/_build/html
+# or: make -C docs html
 ```
 
 Python 3.11 or newer. NumPy and Numba are required: the signed-distance kernels

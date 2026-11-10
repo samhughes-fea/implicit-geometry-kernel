@@ -34,7 +34,9 @@ One tree, four kinds of page. Do not duplicate a type across files.
 
 **Completeness:** every name in `src/implicit_geometry_kernel/__init__.py` `__all__` appears in [docs/glossary.md](../glossary.md) with a link to one home page. Do not paste every dataclass into every README.
 
-A later Sphinx, autodoc, or MkDocs site must consume these Markdown files. It must not become a second manual.
+The Sphinx + MyST site (`docs/conf.py`, extra `[docs]`) consumes these Markdown
+files. It must not become a second manual: no `sphinx.ext.autodoc`, no
+`docs/manual/` copy. GitHub still renders the same files in the code tab.
 
 ## Manual writing
 

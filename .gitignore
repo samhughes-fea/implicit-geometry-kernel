@@ -1,3 +1,6 @@
+# Sphinx HTML (local `make html` / sphinx-build)
+docs/_build/
+
 # LaTeX build artefacts for printable docs companions
 docs/**/*.aux
 docs/**/*.log

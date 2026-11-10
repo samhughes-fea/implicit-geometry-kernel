@@ -27,6 +27,12 @@ Guides and reference (overview: package README).
   [`DOCUMENTATION_STANDARDS`](../conventions/DOCUMENTATION_STANDARDS.md);
   do not move it into a subdirectory.
 
+Redirect stubs (`*(moved)*`): `api/` → `spec/`; `placement/` → `layout/`;
+`recipes/` → `section.walls`; `constructive/` → `section.boundary`; `props/` and
+`props_emit/` → `section.properties`; `sections/` → package README;
+`cell_wall_loops/` → `cells/`; `junction_preparation/` → `junctions/`;
+`sdf/` → [`docs/sdf`](../sdf/README.md); `visualisation/` → `plotting` extra.
+
 ## Doc map
 
 ```mermaid
@@ -89,6 +95,8 @@ flowchart TB
 
 ## Reports
 
+Index: [`reports/README.md`](reports/README.md).
+
 | Doc | Contents |
 |-----|----------|
 | [`reports/DUAL_REP_ACCEPTANCE.md`](reports/DUAL_REP_ACCEPTANCE.md) | Polygon vs SDF area acceptance |
@@ -104,9 +112,9 @@ flowchart TB
 | [`spec/`](spec/README.md) | Public runner, caller parameters, feasibility |
 | [`layout/`](layout/README.md) | Layout ids and web cascade |
 | [`assembly/`](assembly/README.md) | `MultiCellSection` |
-| [`recipes/`](recipes/README.md) | Dual-emission wall recipes (code: `section.walls`) |
-| [`constructive/`](constructive/README.md) | Redirect: polygons live in `boundary` |
-| [`props/`](props/README.md) | Redirect: `properties_map` |
+| `walls/` (`section.walls`) | Dual-emission wall recipes. Docs redirect: [recipes](recipes/README.md) |
+| `boundary/` (`section.boundary`) | Polygons. Docs redirect: [constructive](constructive/README.md) |
+| `properties/` (`section.properties`) | `properties_map`. Docs redirect: [props](props/README.md) |
 | [`midlines/`](midlines/README.md) | Centreline strips |
 | [`junctions/`](junctions/README.md) | Junction snap |
 | [`cells/`](cells/README.md) | Cell-wall loops |

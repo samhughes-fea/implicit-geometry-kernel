@@ -72,7 +72,7 @@ cut.shell_graph().loop
 
 | Role | Type | File |
 |---|---|---|
-| Loft owner | class `BladeGeometry` | [`blade/loft.py`](../../src/implicit_geometry_kernel/blade/loft.py) |
+| Loft owner | class `BladeGeometry` | [`blade/loft/loft.py`](../../src/implicit_geometry_kernel/blade/loft/loft.py) |
 | Input station | dataclass `Station` | [`blade/stations.py`](../../src/implicit_geometry_kernel/blade/stations.py) |
 | Cut at \(z\) | frozen dataclass `SectionCut` | [`blade/cut.py`](../../src/implicit_geometry_kernel/blade/cut.py) |
 | Wall / cell | frozen `SectionWall`, `CellPolygon` | same |
@@ -88,7 +88,7 @@ Public attributes on a built `BladeGeometry`:
 - `layout` — catalogue key string when the spec has one
 - `web_offsets` — LE freeze, metres from the leading edge, or `None`
 - `transverse`, `stringers`, `ply_drops` — frozen member tuples
-- `region_graph` — keyed `WallRegionGraph` ([`blade/topology.py`](../../src/implicit_geometry_kernel/blade/topology.py))
+- `region_graph` — keyed `WallRegionGraph` ([`blade/topology/graph.py`](../../src/implicit_geometry_kernel/blade/topology/graph.py))
 - `n_airfoil_points`, `merge_cap_and_skin`
 
 `Station` fields: `z`, `chord`, `airfoil`, `twist`, `pitch_axis`, `offset`.

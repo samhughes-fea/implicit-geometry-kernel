@@ -91,7 +91,7 @@ def write_mid_surfaces(
     path = Path(path)
     if path.suffix.lower() in {".step", ".stp"}:
         from implicit_geometry_kernel.blade.cad import write_mid_surface_step
-        from implicit_geometry_kernel.blade.locked_loft import locked_mid_surface_patches
+        from implicit_geometry_kernel.blade.loft.locked_loft import locked_mid_surface_patches
         from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
 
         z0, z1 = float(geo.stations[0].z), float(geo.stations[-1].z)

@@ -15,7 +15,7 @@ from matplotlib.patches import Patch  # noqa: E402
 from _shared.plotting import SERIES, legend_outside, meta_cmap, note, plt, save  # noqa: E402
 from implicit_geometry_kernel import Airfoil, BladeGeometry, FeatureTable, Station  # noqa: E402
 from implicit_geometry_kernel.sdf import GeometrySolver, LoftedPolygonSDF, PriorityUnionNode, TagNode  # noqa: E402
-from implicit_geometry_kernel.sdf.nodes.tagged import CircleSDF  # noqa: E402
+from implicit_geometry_kernel.sdf.nodes import Circle  # noqa: E402
 
 
 def blade() -> BladeGeometry:
@@ -36,7 +36,7 @@ def main() -> None:
     probe_spec = table.add("probe", "web")
     lofted = LoftedPolygonSDF(lambda z: geo.oml_polyline(float(z))[:, :2], meta=oml_spec.id)
     tagged = TagNode(lofted, oml_spec.id)
-    probe = TagNode(CircleSDF(0.0, 0.0, 0.05), probe_spec.id)
+    probe = TagNode(Circle(0.0, 0.0, 0.05), probe_spec.id)
     union = PriorityUnionNode([tagged, probe], [oml_spec.priority, probe_spec.priority])
     z = 4.0
     ring = geo.oml_polyline(z)
@@ -79,7 +79,7 @@ def main() -> None:
         Patch(facecolor=cmap(0), label="0:oml"),
         Patch(facecolor=cmap(1), label="1:probe"),
     ])
-    note(fig, "Guess is off the leading edge. Probe is a 50 mm CircleSDF at the pitch axis, tagged as web.")
+    note(fig, "Guess is off the leading edge. Probe is a 50 mm Circle at the pitch axis, tagged as web.")
     fig.tight_layout(rect=(0, 0.05, 1, 1))
     save(fig, __file__, "feature_field_loft")
 

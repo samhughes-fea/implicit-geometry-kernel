@@ -67,7 +67,7 @@ def test_intersect_web_and_oml():
     geo = _geo()
     cut = geo.section_at(4.0)
     web = next(w for w in cut.walls if w.kind == "web")
-    from implicit_geometry_kernel.blade.network import wall_meta_from_cut
+    from implicit_geometry_kernel.blade.topology.network import wall_meta_from_cut
     meta, table = wall_meta_from_cut(cut)
     web_id = table.by_name(web.label).id
     # a point on the web near the skin: solver still holds z

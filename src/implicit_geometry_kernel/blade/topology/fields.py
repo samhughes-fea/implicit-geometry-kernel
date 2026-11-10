@@ -108,7 +108,7 @@ class CutWallMetaSDF(SDFNode):
         self._cache_size = int(cache_size)
 
     def _at(self, z: float) -> SDFNode:
-        from implicit_geometry_kernel.blade.network import wall_meta_from_cut
+        from implicit_geometry_kernel.blade.topology.network import wall_meta_from_cut
 
         key = round(float(z), 9)
         hit = self._cache.get(key)

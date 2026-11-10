@@ -11,14 +11,15 @@ The section's structure is built in the chord frame; twist is applied afterwards
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar, Protocol, runtime_checkable
 
 import numpy as np
 
 from implicit_geometry_kernel.contract.errors import InfeasibleSectionGeometry
 from implicit_geometry_kernel.profiling import timed_stage
 from implicit_geometry_kernel.sdf.nodes import Offset
-from implicit_geometry_kernel.sdf.nodes.tagged import ExprSDF
+from implicit_geometry_kernel.sdf.nodes.base import NO_FEATURE
+from implicit_geometry_kernel.sdf.nodes.tagged import TagNode
 from implicit_geometry_kernel.section.assembly.clip_algebra import airfoil_expr, flapwise_web_normal, web_station_projection
 from implicit_geometry_kernel.section.assembly.web_layout import resolve_web_anchors
 from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
@@ -26,6 +27,84 @@ from implicit_geometry_kernel.section.layout.structural import parse_fixed_cap_a
 from implicit_geometry_kernel.section.layout.thickness_limits import clamp_skin_thickness_m, clamp_spar_thickness_m, clamp_web_thickness_m
 from implicit_geometry_kernel.section.walls.base import expr_callable
 from implicit_geometry_kernel.structure import BuildContext
+
+
+@runtime_checkable
+class WallType(Protocol):
+    """One registered wall kind: labels, solids, midlines, and stage hooks."""
+
+    kind: str
+    has_midline: bool
+    has_polygon: bool
+    is_wall_solid: bool
+    is_core: bool
+    is_insert: bool
+    on_shell_product: bool
+    polygon_by_surface: bool
+    cell_face_kind: str | None
+    label_prefixes: ClassVar[tuple[str, ...]]
+    exact_labels: ClassVar[tuple[str, ...]]
+    zone_prefixes: ClassVar[tuple[str, ...]]
+
+    def build(self, ctx: Any, prior: Any) -> list[Any]: ...
+
+
+class WallTypeMixin:
+    """Shared label matching and stage flags for section member builders.
+
+    ``build`` is the only pipeline hook. Stages dispatch on flags
+    (``on_shell_product``, ``polygon_by_surface``, ``has_midline``), not on names.
+    """
+
+    kind: str = ""
+    has_midline: bool = False
+    has_polygon: bool = True
+    is_wall_solid: bool = True
+    is_core: bool = False
+    is_insert: bool = False
+    on_shell_product: bool = True
+    polygon_by_surface: bool = False
+    cell_face_kind: str | None = None
+    label_prefixes: ClassVar[tuple[str, ...]] = ()
+    exact_labels: ClassVar[tuple[str, ...]] = ()
+    zone_prefixes: ClassVar[tuple[str, ...]] = ()
+
+    @classmethod
+    def matches_label(cls, label: Any) -> bool:
+        key = str(getattr(label, "value", label))
+        if key in cls.exact_labels:
+            return True
+        return any(key.startswith(prefix) for prefix in cls.label_prefixes)
+
+    @classmethod
+    def matches_zone_id(cls, zone_id: Any) -> bool:
+        key = str(zone_id)
+        return any(key.startswith(prefix) for prefix in cls.zone_prefixes)
+
+    @classmethod
+    def format_label(cls, index: int) -> str:
+        if cls.label_prefixes:
+            prefix = cls.label_prefixes[0]
+            return f"{prefix}{index}" if prefix.endswith("_") else f"{prefix}_{index}"
+        return f"{cls.kind}_{index}"
+
+    @classmethod
+    def matches_surface(cls, label: Any, surface: str) -> bool:
+        return False
+
+    @classmethod
+    def canonical_surface_label(cls, surface: str) -> str:
+        return f"{cls.kind}_{surface}"
+
+    def midline(self, inst: Any, boundary: Any) -> Any | None:
+        if not self.has_midline:
+            return None
+        if hasattr(inst, "to_midline"):
+            return inst.to_midline(boundary)
+        return None
+
+    def junctions(self, inst: Any, others: Any) -> list[Any]:
+        return []
 
 
 @dataclass(frozen=True)
@@ -218,7 +297,7 @@ def plan_section(
         cap_u, cap_l = float(cap_height[0]), float(cap_height[1])
 
     return SectionPlan(
-        oml=ExprSDF(Offset(poly, amount=0.0)),
+        oml=TagNode(Offset(poly, amount=0.0), NO_FEATURE),
         span=(0.0, 0.0),
         airfoil_sdf=airfoil_sdf,
         airfoil_expr=poly,
@@ -270,4 +349,11 @@ def b_frame_web_search(plan: SectionPlan):
     return phi_inner_b, y_search_b
 
 
-__all__ = ["SectionMember", "SectionPlan", "b_frame_web_search", "plan_section"]
+__all__ = [
+    "SectionMember",
+    "SectionPlan",
+    "WallType",
+    "WallTypeMixin",
+    "b_frame_web_search",
+    "plan_section",
+]

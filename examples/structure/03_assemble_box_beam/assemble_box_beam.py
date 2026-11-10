@@ -12,7 +12,9 @@ import numpy as np  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
 from _shared.plotting import WALL_COLOURS, legend_outside, meta_cmap, note, plt, save  # noqa: E402
-from implicit_geometry_kernel.sdf.nodes.tagged import PolygonSDF  # noqa: E402
+from implicit_geometry_kernel.sdf.nodes import Polygon  # noqa: E402
+from implicit_geometry_kernel.sdf.nodes.base import NO_FEATURE  # noqa: E402
+from implicit_geometry_kernel.sdf.nodes.tagged import TagNode  # noqa: E402
 from implicit_geometry_kernel.structure import (  # noqa: E402
     BranchContribution,
     BuildContext,
@@ -26,8 +28,9 @@ W, H, L = 1.0, 0.2, 6.0
 SKIN, CAP, WEB = 0.01, 0.03, 0.008
 
 
-def rect(x0, x1, y0, y1) -> PolygonSDF:
-    return PolygonSDF(np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]))
+def rect(x0, x1, y0, y1) -> TagNode:
+    verts = ((float(x0), float(y0)), (float(x1), float(y0)), (float(x1), float(y1)), (float(x0), float(y1)))
+    return TagNode(Polygon(verts), NO_FEATURE)
 
 
 def main() -> None:

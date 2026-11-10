@@ -70,7 +70,7 @@ flowchart TB
 | 02 | [Web placement](blade/02_web_placement/) | `web_positions`, `web_offsets`, `dropped_webs` |
 | 03 | [Airfoils and root transition](blade/03_airfoils_and_root_transition/) | `Airfoil`, `Station` |
 | 04 | [Airfoil families](blade/04_airfoil_families/) | `Airfoil.cst`, `with_thickness` |
-| 05 | [Span laws](blade/05_span_laws/) | `TableLaw`, `PlyDrop` |
+| 05 | [Span laws](blade/05_span_laws/) | Linear `TableLaw`, `PlyDrop` |
 | 06 | [Blade queries](blade/06_blade_queries/) | `thickness_at`, `query`, `write_oml`, `validate` |
 | 07 | [Mid-surfaces](blade/07_mid_surfaces/) | `write_mid_surfaces` |
 | 08 | [Reference blades](blade/08_reference_blades/) | windIO → `BladeGeometry` |
@@ -85,7 +85,7 @@ flowchart TB
 | # | Example | Main API |
 |---|---|---|
 | 01 | [Layout catalogue](section/01_layout_catalogue/) | `SYSTEM_TYPE_KEYS`, `resolve_system_type` |
-| 02 | [Section properties](section/02_section_properties/) | `SectionGeometry(outputs=("properties",))` |
+| 02 | [Section properties](section/02_section_properties/) | `SectionGeometry(spec, SectionOptions(outputs=("properties",)))` |
 | 03 | [Mid-surface and cells](section/03_mid_surface_and_cells/) | `SectionCut.walls`, `cells`, `mid_surface()` |
 
 Teaching: [section/teaching/](section/teaching/) (`01_first_station` … `06_consumer_seams`).

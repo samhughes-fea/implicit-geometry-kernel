@@ -26,7 +26,7 @@ def _tapered(key: str, **kwargs):
 
 def test_family_c_regions_are_per_web_pads_not_a_box():
     graph = WallRegionGraph.from_section_layout("2C-F-LC-0R")
-    assert graph.cap_mode == "pads"
+    assert graph.cap_placement.kind == "per_web_pads"
     assert len(graph.cap_windows) == 2
     su = [r for r in graph.regions if r.side == "suction" and r.is_cap]
     assert su
@@ -39,14 +39,14 @@ def test_family_c_regions_are_per_web_pads_not_a_box():
 
 def test_family_d_cap_still_spans_outer_webs():
     graph = WallRegionGraph.from_section_layout("2D-F-LC-0R")
-    assert graph.cap_mode == "box"
+    assert graph.cap_placement.kind == "continuous_box"
     su = [r for r in graph.regions if r.side == "suction" and r.is_cap]
     assert [(r.start, r.end) for r in su] == [("web_0", "web_1")]
 
 
 def test_family_b_cap_is_the_fixed_band():
     graph = WallRegionGraph.from_section_layout("2B-F-LC-0R")
-    assert graph.cap_mode == "band"
+    assert graph.cap_placement.kind == "fixed_band"
     su = [r for r in graph.regions if r.side == "suction" and r.is_cap]
     assert any({r.start, r.end} == {"cap_lo", "cap_hi"} for r in su)
 
@@ -59,7 +59,7 @@ def test_overlapping_family_c_pads_merge_into_one_window():
         structural_family="C",
     )
     graph = WallRegionGraph.from_section_layout(layout)
-    assert graph.cap_mode == "pads"
+    assert graph.cap_placement.kind == "per_web_pads"
     assert len(graph.cap_windows) == 1
     su = [r for r in graph.regions if r.side == "suction" and r.is_cap]
     assert any(r.start.startswith("web_") and r.end.startswith("web_") for r in su)

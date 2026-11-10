@@ -1,6 +1,7 @@
 {
  "implicit_geometry_kernel.Airfoil": {
   "kind": "class",
+  "signature": "(points: 'Sequence[Sequence[float]] | np.ndarray', name: 'str' = 'airfoil')",
   "members": {
    "blend": "",
    "contour_points": "(self, n: 'int' = 161) -> 'np.ndarray'",
@@ -19,28 +20,28 @@
    "to_sdf": "(self, *, chord: 'float' = 1.0, n: 'int' = 161)",
    "with_te_thickness": "(self, te: 'float', n: 'int' = 161) -> \"'Airfoil'\"",
    "with_thickness": "(self, t_c: 'float', n: 'int' = 161) -> \"'Airfoil'\""
-  },
-  "signature": "(points: 'Sequence[Sequence[float]] | np.ndarray', name: 'str' = 'airfoil')"
+  }
  },
  "implicit_geometry_kernel.Anchor": {
   "kind": "class",
+  "signature": "(name: 'str', frac: 'object', z0: 'float | None' = None, z1: 'float | None' = None) -> None",
   "members": {
    "active": "(self, z: 'float') -> 'bool'",
    "at": "(self, z: 'float') -> 'float'"
-  },
-  "signature": "(name: 'str', frac: 'object', z0: 'float | None' = None, z1: 'float | None' = None) -> None"
+  }
  },
  "implicit_geometry_kernel.BladeConcept": {
   "kind": "class",
+  "signature": "(layout: 'LayoutInput', scheme: 'SpanwiseScheme' = SpanwiseScheme(transverse=(), stringers=(), ply_drops=())) -> None",
   "members": {
    "from_key": "",
    "region_graph": "(self, **kwargs)",
    "to_geometry_kwargs": "(self, stations: 'Sequence[Station] | None' = None) -> 'dict'"
-  },
-  "signature": "(layout: 'LayoutInput', scheme: 'SpanwiseScheme' = SpanwiseScheme(transverse=(), stringers=(), ply_drops=())) -> None"
+  }
  },
  "implicit_geometry_kernel.BladeGeometry": {
   "kind": "class",
+  "signature": "(stations: 'Sequence[Station]', layout: 'str | SystemLayoutSpec | SectionLayout', skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, pivot_fraction: 'Optional[Union[float, SpanTable]]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), ply_drops: 'Sequence[PlyDrop]' = (), merge_cap_and_skin: 'bool' = False, region_graph=None)",
   "members": {
    "cavity_sdf": "(self: 'BladeGeometry', meta: 'int' = 0)",
    "concept": "",
@@ -64,58 +65,57 @@
    "wall_mid_sdf": "(self: 'BladeGeometry', meta: 'int' = 0)",
    "write_mid_surfaces": "(self: 'BladeGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81, members=None, include_solids: 'bool' = False) -> 'str'",
    "write_oml": "(self: 'BladeGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81) -> 'str'"
-  },
-  "signature": "(stations: 'Sequence[Station]', layout, skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, pivot_fraction: 'Optional[Union[float, SpanTable]]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), ply_drops: 'Sequence[PlyDrop]' = (), merge_cap_and_skin: 'bool' = False, region_graph=None)"
+  }
  },
  "implicit_geometry_kernel.CellPolygon": {
   "kind": "class",
-  "members": {},
-  "signature": "(id: 'int', points: 'np.ndarray', area: 'float', wall_labels: 'Tuple[str, ...]') -> None"
+  "signature": "(id: 'int', points: 'np.ndarray', area: 'float', wall_labels: 'Tuple[str, ...]') -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.FeatureTable": {
   "kind": "class",
+  "signature": "(_specs: 'list[FeatureSpec]' = <factory>, _by_name: 'dict[str, FeatureSpec]' = <factory>) -> None",
   "members": {
    "add": "(self, name: 'str', kind: 'str' = 'skin', priority: 'int | None' = None) -> 'FeatureSpec'",
    "by_name": "(self, name: 'str') -> 'FeatureSpec'"
-  },
-  "signature": "(_specs: 'list[FeatureSpec]' = <factory>, _by_name: 'dict[str, FeatureSpec]' = <factory>) -> None"
+  }
  },
  "implicit_geometry_kernel.FieldSample": {
   "kind": "class",
-  "members": {},
-  "signature": "(phi: 'np.ndarray', meta: 'np.ndarray') -> None"
+  "signature": "(phi: 'np.ndarray', meta: 'np.ndarray') -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.GeometrySolver": {
   "kind": "class",
+  "signature": "(tolerance: 'float' = 1e-06, max_step: 'float' = 0.02, iterations: 'int' = 12, eps: 'float' = 1e-06) -> None",
   "members": {
    "gradient": "(self, field: 'SDFNode', pts: 'np.ndarray', plane: 'bool' = True) -> 'np.ndarray'",
    "intersect": "(self, a: 'SDFNode', b: 'SDFNode', pts: 'np.ndarray') -> 'SolveResult'",
    "project": "(self, field: 'SDFNode', pts: 'np.ndarray', plane: 'bool' = True) -> 'SolveResult'",
    "zero_along": "(self, field: 'SDFNode', pts: 'np.ndarray', dirs: 'np.ndarray', slope: 'np.ndarray') -> 'SolveResult'"
-  },
-  "signature": "(tolerance: 'float' = 1e-06, max_step: 'float' = 0.02, iterations: 'int' = 12, eps: 'float' = 1e-06) -> None"
+  }
  },
  "implicit_geometry_kernel.LockedLoftPlan": {
   "kind": "class",
+  "signature": "(names: 'Tuple[str, ...]', counts: 'Tuple[int, ...]', loop_names: 'Tuple[str, ...]', web_names: 'Tuple[str, ...]') -> None",
   "members": {
    "count_of": "(self, name: 'str') -> 'int'",
    "from_graph": ""
-  },
-  "signature": "(names: 'Tuple[str, ...]', counts: 'Tuple[int, ...]', loop_names: 'Tuple[str, ...]', web_names: 'Tuple[str, ...]') -> None"
+  }
  },
  "implicit_geometry_kernel.LoftedPolygonSDF": {
   "kind": "class",
+  "signature": "(provider: 'SectionPolygon', meta: 'int' = -1, cache_size: 'int' = 4096, accelerate: 'bool' = True) -> 'None'",
   "members": {
    "polygon_at": "(self, z: 'float') -> 'np.ndarray'"
-  },
-  "signature": "(provider: 'SectionPolygon', meta: 'int' = -1, cache_size: 'int' = 4096, accelerate: 'bool' = True) -> 'None'"
+  }
  },
  "implicit_geometry_kernel.MidSurface": {
   "kind": "class",
+  "signature": "(points: 'np.ndarray', segments: 'Tuple[MidSegment, ...]', z: 'float' = 0.0) -> None",
   "members": {
    "length": ""
-  },
-  "signature": "(points: 'np.ndarray', segments: 'Tuple[MidSegment, ...]', z: 'float' = 0.0) -> None"
+  }
  },
  "implicit_geometry_kernel.NO_FEATURE": {
   "kind": "int",
@@ -123,27 +123,27 @@
  },
  "implicit_geometry_kernel.PartitionEdge": {
   "kind": "class",
-  "members": {},
-  "signature": "(z: 'float', name_a: 'str', name_b: 'str', point: 'np.ndarray') -> None"
+  "signature": "(z: 'float', name_a: 'str', name_b: 'str', point: 'np.ndarray') -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.PlyDrop": {
   "kind": "class",
+  "signature": "(name: 'str', s0: 'float', s1: 'float', z0: 'float', z1: 'float', thickness: 'float', taper: 'float' = 0.05) -> None",
   "members": {
    "extra": "(self, z: 'float', s: 'float') -> 'float'"
-  },
-  "signature": "(name: 'str', s0: 'float', s1: 'float', z0: 'float', z1: 'float', thickness: 'float', taper: 'float' = 0.05) -> None"
+  }
  },
  "implicit_geometry_kernel.PriorityUnionNode": {
   "kind": "class",
+  "signature": "(nodes: 'Sequence[SDFNode]', priorities: 'Sequence[int]') -> 'None'",
   "members": {
    "children": "(self) -> 'tuple[SDFNode, ...]'"
-  },
-  "signature": "(nodes: 'Sequence[SDFNode]', priorities: 'Sequence[int]') -> 'None'"
+  }
  },
  "implicit_geometry_kernel.Region": {
   "kind": "class",
-  "members": {},
-  "signature": "(name: 'str', start: 'str', end: 'str', is_cap: 'bool' = False, side: 'str' = 'suction', wrap: 'bool' = False) -> None"
+  "signature": "(name: 'str', start: 'str', end: 'str', is_cap: 'bool' = False, side: 'str' = 'suction', wrap: 'bool' = False) -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.SYSTEM_TYPE_KEYS": {
   "kind": "tuple",
@@ -155,6 +155,7 @@
  },
  "implicit_geometry_kernel.SectionCut": {
   "kind": "class",
+  "signature": "(z: 'float', chord: 'float', twist: 'float', pitch_axis: 'float', offset: 'Tuple[float, float]', layout: 'str', walls: 'Tuple[SectionWall, ...]', cells: 'Tuple[CellPolygon, ...]', dropped_webs: 'Tuple[str, ...]' = (), transverse: 'Tuple[TransverseMember, ...]' = (), stringers: 'Tuple[Stringer, ...]' = (), host: 'Any' = None, scale: 'float' = 1.0, dropped_web_indices: 'Tuple[int, ...]' = (), station_webs: 'int' = 0, station_family: 'str' = '') -> None",
   "members": {
    "key_points": "(self) -> 'dict[str, np.ndarray]'",
    "mid_surface": "(self) -> \"'MidSurface'\"",
@@ -163,26 +164,26 @@
    "to_blade": "(self, x, y) -> 'np.ndarray'",
    "wall": "(self, label: 'str') -> 'SectionWall'",
    "walls_of": "(self, kind: 'str') -> 'Tuple[SectionWall, ...]'"
-  },
-  "signature": "(z: 'float', chord: 'float', twist: 'float', pitch_axis: 'float', offset: 'Tuple[float, float]', layout: 'str', walls: 'Tuple[SectionWall, ...]', cells: 'Tuple[CellPolygon, ...]', dropped_webs: 'Tuple[str, ...]' = (), transverse: 'Tuple[TransverseMember, ...]' = (), stringers: 'Tuple[Stringer, ...]' = (), host: 'Any' = None, scale: 'float' = 1.0, dropped_web_indices: 'Tuple[int, ...]' = (), station_webs: 'int' = 0, station_family: 'str' = '') -> None"
+  }
  },
  "implicit_geometry_kernel.SectionWall": {
   "kind": "class",
+  "signature": "(label: 'str', kind: 'str', points: 'np.ndarray', thickness: 'float', side: 'Optional[str]' = None, bonds: 'Dict[str, Tuple[np.ndarray, np.ndarray]]' = <factory>) -> None",
   "members": {
    "length": "",
    "lookup_keys": "",
    "region": "",
    "xy": ""
-  },
-  "signature": "(label: 'str', kind: 'str', points: 'np.ndarray', thickness: 'float', side: 'Optional[str]' = None, bonds: 'Dict[str, Tuple[np.ndarray, np.ndarray]]' = <factory>) -> None"
+  }
  },
  "implicit_geometry_kernel.ShearWeb": {
   "kind": "class",
-  "members": {},
-  "signature": "(name: 'str', position: 'float', n: 'int' = 4) -> None"
+  "signature": "(name: 'str', position: 'float', n: 'int' = 4) -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.ShellGraph": {
   "kind": "class",
+  "signature": "(z: 'float', loop: 'Tuple[ShellRun, ...]', webs: 'Tuple[ShellRun, ...]', faces: 'Tuple[ShellRun, ...]' = (), branches: 'Tuple[ShellRun, ...]' = (), solids: 'Tuple[ShellRun, ...]' = ()) -> None",
   "members": {
    "closed_loop_chain": "(self, *, rel_tol: 'float' = 1e-06)",
    "edge": "(self, name_a: 'str', name_b: 'str') -> 'PartitionEdge | None'",
@@ -191,122 +192,91 @@
    "partition_edges": "(self) -> 'Tuple[PartitionEdge, ...]'",
    "runs": "(self) -> 'Tuple[ShellRun, ...]'",
    "with_web_feet_on_loop": "(self) -> \"'ShellGraph'\""
-  },
-  "signature": "(z: 'float', loop: 'Tuple[ShellRun, ...]', webs: 'Tuple[ShellRun, ...]', faces: 'Tuple[ShellRun, ...]' = (), branches: 'Tuple[ShellRun, ...]' = (), solids: 'Tuple[ShellRun, ...]' = ()) -> None"
+  }
  },
  "implicit_geometry_kernel.ShellRun": {
   "kind": "class",
-  "members": {},
-  "signature": "(name: 'str', surface: 'str', kind: 'str', layers: 'Tuple[str, ...]', points: 'np.ndarray', thickness: 'float', requires_eccentricity: 'bool' = False, eccentricity_m: 'float' = 0.0, layer_thicknesses_m: 'Tuple[float, ...]' = (), skin_side: 'str | None' = None, reference_surface: 'str' = 'skin_mid') -> None"
+  "signature": "(name: 'str', surface: 'str', kind: 'str', layers: 'Tuple[str, ...]', points: 'np.ndarray', thickness: 'float', requires_eccentricity: 'bool' = False, eccentricity_m: 'float' = 0.0, layer_thicknesses_m: 'Tuple[float, ...]' = (), skin_side: 'str | None' = None, reference_surface: 'str' = 'skin_mid') -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.ShellTopologyTemplate": {
   "kind": "class",
+  "signature": "(z: 'float', signature: 'tuple', loop: 'tuple[LoopBranch, ...]', webs: 'tuple[WebBranch, ...]', vertices: 'tuple[ShellVertexId, ...]', n_chord: 'int' = 2) -> None",
   "members": {
    "from_region_graph": "",
    "map_vertex": "(self, vid: 'ShellVertexId', other: \"'ShellTopologyTemplate'\") -> 'ShellVertexId'"
-  },
-  "signature": "(z: 'float', signature: 'tuple', loop: 'tuple[LoopBranch, ...]', webs: 'tuple[WebBranch, ...]', vertices: 'tuple[ShellVertexId, ...]', n_chord: 'int' = 2) -> None"
+  }
  },
  "implicit_geometry_kernel.SkinRegion": {
   "kind": "class",
-  "members": {},
-  "signature": "(name: 'str', start: 'float', end: 'float', n: 'int' = 4) -> None"
+  "signature": "(name: 'str', start: 'float', end: 'float', n: 'int' = 4) -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.SpanwiseScheme": {
   "kind": "class",
-  "members": {},
-  "signature": "(transverse: 'tuple[TransverseMember, ...]' = (), stringers: 'tuple[Stringer, ...]' = (), ply_drops: 'tuple[PlyDrop, ...]' = ()) -> None"
+  "signature": "(transverse: 'tuple[TransverseMember, ...]' = (), stringers: 'tuple[Stringer, ...]' = (), ply_drops: 'tuple[PlyDrop, ...]' = ()) -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.Station": {
   "kind": "class",
-  "members": {},
-  "signature": "(z: 'float', chord: 'float', airfoil: 'Airfoil', twist: 'float' = 0.0, pitch_axis: 'float' = 0.25, offset: 'Tuple[float, float]' = (0.0, 0.0)) -> None"
+  "signature": "(z: 'float', chord: 'float', airfoil: 'Airfoil', twist: 'float' = 0.0, pitch_axis: 'float' = 0.25, offset: 'Tuple[float, float]' = (0.0, 0.0)) -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.StationNetwork": {
   "kind": "class",
+  "signature": "(z: 'float', walls: 'tuple[WallBranch, ...]') -> None",
   "members": {
    "loop_features": "",
    "wall_meta_field": "(self) -> 'SDFNode'"
-  },
-  "signature": "(z: 'float', walls: 'tuple[WallBranch, ...]') -> None"
+  }
  },
  "implicit_geometry_kernel.Stringer": {
   "kind": "class",
-  "members": {},
-  "signature": "(name: 'str', position: 'float', thickness: 'float', depth: 'float', extent: 'Optional[Tuple[float, float]]' = None, side: 'str' = 'pressure', free_end: 'bool' = True) -> None"
+  "signature": "(name: 'str', position: 'float', thickness: 'float', depth: 'float', extent: 'Optional[Tuple[float, float]]' = None, side: 'str' = 'pressure', free_end: 'bool' = True) -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.TagNode": {
   "kind": "class",
+  "signature": "(node: 'SDFNode', meta: 'int') -> 'None'",
   "members": {
    "children": "(self) -> 'tuple[SDFNode, ...]'"
-  },
-  "signature": "(node: 'SDFNode', meta: 'int') -> 'None'"
+  }
  },
  "implicit_geometry_kernel.TopologyDiff": {
   "kind": "class",
-  "members": {},
-  "signature": "(shared: 'Tuple[str, ...]', events: 'Tuple[TopologyEvent, ...]') -> None"
+  "signature": "(shared: 'Tuple[str, ...]', events: 'Tuple[TopologyEvent, ...]') -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.TopologyEvent": {
   "kind": "class",
-  "members": {},
-  "signature": "(kind: 'str', name: 'str', side: 'str') -> None"
+  "signature": "(kind: 'str', name: 'str', side: 'str') -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.TransverseMember": {
   "kind": "class",
-  "members": {},
-  "signature": "(name: 'str', z: 'float', thickness: 'float', region: 'str' = 'cavity') -> None"
+  "signature": "(name: 'str', z: 'float', thickness: 'float', region: 'str' = 'cavity') -> None",
+  "members": {}
  },
  "implicit_geometry_kernel.WallRegionGraph": {
   "kind": "class",
+  "signature": "(anchors: 'tuple[Anchor, ...]', regions: 'tuple[Region, ...]', webs: 'tuple[WebMember, ...]', te_arc: 'float' = 0.03, min_gap: 'float' = 0.002, cap_windows: 'tuple[tuple[float, float], ...]' = (), cap_placement: 'CapPlacementRule' = <factory>, cap_pad: 'float | None' = None) -> None",
   "members": {
+   "cap_mode": "",
    "evaluate_anchors": "(self, z: 'float') -> 'tuple[tuple[str, float], ...]'",
    "from_section_layout": "",
    "from_windio_structure": "",
    "regions_at": "(self, z: 'float') -> 'tuple[Region, ...]'",
    "signature_at": "(self, z: 'float', web_fracs: 'Sequence[float] | None' = None) -> 'tuple'",
    "webs_at": "(self, z: 'float') -> 'tuple[WebMember, ...]'"
-  },
-  "signature": "(anchors: 'tuple[Anchor, ...]', regions: 'tuple[Region, ...]', webs: 'tuple[WebMember, ...]', te_arc: 'float' = 0.03, min_gap: 'float' = 0.002) -> None"
+  }
  },
  "implicit_geometry_kernel.WebMember": {
   "kind": "class",
+  "signature": "(index: 'int', frac: 'object', z0: 'float | None' = None, z1: 'float | None' = None, name: 'str' = '') -> None",
   "members": {
    "active": "(self, z: 'float') -> 'bool'",
    "at": "(self, z: 'float') -> 'float'"
-  },
-  "signature": "(index: 'int', frac: 'object', z0: 'float | None' = None, z1: 'float | None' = None, name: 'str' = '') -> None"
- },
- "implicit_geometry_kernel.contract.CellWallLoop": {
-  "kind": "class",
-  "members": {
-   "is_closed": "(self, *, tol: 'float' = 1e-09) -> 'bool'"
-  },
-  "signature": "(id: 'int', polyline_twisted_pitch_axis_blade_frame: 'NDArray[np.float64]', area_m2: 'float', web_labels: 'tuple[str, ...]' = (), piece_labels: 'tuple[str, ...]' = (), wall_labels: 'tuple[str, ...]' = ()) -> None"
- },
- "implicit_geometry_kernel.contract.InfeasibleSectionGeometry": {
-  "kind": "class",
-  "members": {},
-  "signature": "(*args, web_index: 'int | None' = None, web_x: 'float | None' = None)"
- },
- "implicit_geometry_kernel.contract.LaminateOffsetRegion": {
-  "kind": "class",
-  "members": {
-   "id": ""
-  },
-  "signature": "(name: 'str', requires_eccentricity: 'bool', eccentricity_m: 'float', layers: 'tuple[str, ...]', layer_thicknesses_m: 'tuple[float, ...]', skin_side: 'str | None' = None, reference_surface: 'str' = 'skin_mid') -> None"
- },
- "implicit_geometry_kernel.contract.ShellMidlineStrip": {
-  "kind": "class",
-  "members": {
-   "arc_length_m": "(self) -> 'float'"
-  },
-  "signature": "(label: 'str', kind: 'str', midline_twisted_pitch_axis_blade_frame: 'NDArray[np.float64]', thickness_m: 'float', closed: 'bool' = False, surface: 'str | None' = None, alignment: 'str | None' = None, skin_side: 'str | None' = None, skin_arc: 'str | None' = None, bay_index: 'int | None' = None, zone_id: 'str | None' = None, gauge_dof_id: 'str | None' = None, topology_generation: 'int | None' = None, stack_family_digest: 'str | None' = None, repeats_k: 'int | None' = None, placement_policy_id: 'str | None' = None, placement_digest: 'str | None' = None, reference_face: 'str | None' = None, bonds: 'tuple[StripBond, ...]' = (), layers: 'tuple[str, ...]' = (), layer_thicknesses_m: 'tuple[float, ...]' = (), requires_eccentricity: 'bool' = False, eccentricity_m: 'float' = 0.0) -> None"
- },
- "implicit_geometry_kernel.contract.StripBond": {
-  "kind": "class",
-  "members": {},
-  "signature": "(host_label: 'str', points: 'NDArray[np.float64]', host_points: 'NDArray[np.float64]') -> None"
+  }
  },
  "implicit_geometry_kernel.loft_mapped_strips": {
   "kind": "function",
@@ -364,141 +334,6 @@
   "kind": "function",
   "signature": "(wall_mid: 'SDFNode', wall_meta: 'SDFNode', z: 'float', bounds: 'tuple[float, float, float, float]', table: 'FeatureTable', n: 'int' = 48) -> 'StationNetwork'"
  },
- "implicit_geometry_kernel.structure.BranchContribution": {
-  "kind": "class",
-  "members": {
-   "present": "(self, z: 'float', tol: 'float' = 1e-09) -> 'bool'"
-  },
-  "signature": "(spec: 'FeatureSpec', mid: 'SDFNode', region: 'SDFNode', thickness: 'SpanLaw', clip: 'SDFNode | None' = None, depth: 'SpanLaw | None' = None, free_end: 'bool' = False, extent: 'tuple[float, float] | None' = None, source: 'Any' = None) -> None"
- },
- "implicit_geometry_kernel.structure.BranchField": {
-  "kind": "class",
-  "members": {
-   "spec": ""
-  },
-  "signature": "(contribution: 'BranchContribution', mask: 'SDFNode') -> None"
- },
- "implicit_geometry_kernel.structure.BuildContext": {
-  "kind": "class",
-  "members": {},
-  "signature": "(oml: 'SDFNode', span: 'tuple[float, float]', table: 'FeatureTable' = <factory>) -> None"
- },
- "implicit_geometry_kernel.structure.BuilderRegistry": {
-  "kind": "class",
-  "members": {
-   "register": "(self, builder: 'MemberBuilder') -> 'BuilderRegistry'",
-   "run": "(self, ctx: 'BuildContext') -> 'list[Contribution]'"
-  },
-  "signature": "(builders: 'list[MemberBuilder]' = <factory>) -> None"
- },
- "implicit_geometry_kernel.structure.ConstantLaw": {
-  "kind": "class",
-  "members": {},
-  "signature": "(value: 'float') -> 'None'"
- },
- "implicit_geometry_kernel.structure.Contribution": {
-  "kind": "UnionType",
-  "signature": ""
- },
- "implicit_geometry_kernel.structure.MemberBuilder": {
-  "kind": "class",
-  "members": {
-   "build": "(self, ctx: 'BuildContext', prior: 'Sequence[Contribution]') -> 'list[Contribution]'"
-  },
-  "signature": "()"
- },
- "implicit_geometry_kernel.structure.ProductLaw": {
-  "kind": "class",
-  "members": {},
-  "signature": "(a: 'SpanLaw', b: 'SpanLaw') -> 'None'"
- },
- "implicit_geometry_kernel.structure.RegionContribution": {
-  "kind": "class",
-  "members": {
-   "tag_field": ""
-  },
-  "signature": "(spec: 'FeatureSpec', region: 'SDFNode', tag_region: 'SDFNode | None' = None, source: 'Any' = None) -> None"
- },
- "implicit_geometry_kernel.structure.ScaledLaw": {
-  "kind": "class",
-  "members": {},
-  "signature": "(law: 'SpanLaw', factor: 'float' = 1.0, shift: 'float' = 0.0) -> 'None'"
- },
- "implicit_geometry_kernel.structure.SpanLaw": {
-  "kind": "class",
-  "members": {
-   "at": "(self, z: 'float') -> 'float'"
-  },
-  "signature": "()"
- },
- "implicit_geometry_kernel.structure.Structure": {
-  "kind": "class",
-  "members": {
-   "events": "",
-   "forced_stations": "(self) -> 'tuple[float, ...]'",
-   "member_ends": "",
-   "member_starts": "",
-   "members_at": "(self, z: 'float') -> 'tuple[str, ...]'",
-   "transverse_stations": ""
-  },
-  "signature": "(table: 'FeatureTable', span: 'tuple[float, float]', oml: 'SDFNode', thickness: 'WallThickness', wall_mid: 'SDFNode', cavity: 'SDFNode', wall_meta: 'SDFNode', material: 'SDFNode', walls: 'tuple[WallContribution, ...]', branches: 'tuple[BranchField, ...]', regions: 'tuple[RegionContribution, ...]', transverse: 'tuple[TransverseContribution, ...]') -> None"
- },
- "implicit_geometry_kernel.structure.StructureAssembler": {
-  "kind": "class",
-  "members": {
-   "assemble": "(self, ctx: 'BuildContext') -> 'Structure'"
-  },
-  "signature": "(registry: 'BuilderRegistry') -> 'None'"
- },
- "implicit_geometry_kernel.structure.StructureError": {
-  "kind": "class",
-  "members": {},
-  "signature": ""
- },
- "implicit_geometry_kernel.structure.SumLaw": {
-  "kind": "class",
-  "members": {},
-  "signature": "(a: 'SpanLaw', b: 'SpanLaw') -> 'None'"
- },
- "implicit_geometry_kernel.structure.TableLaw": {
-  "kind": "class",
-  "members": {},
-  "signature": "(z: 'Sequence[float]', values: 'Sequence[float]') -> 'None'"
- },
- "implicit_geometry_kernel.structure.ThicknessLaw": {
-  "kind": "class",
-  "members": {
-   "from_span": ""
-  },
-  "signature": "()"
- },
- "implicit_geometry_kernel.structure.TransverseContribution": {
-  "kind": "class",
-  "members": {},
-  "signature": "(spec: 'FeatureSpec', z: 'float', region: 'SDFNode', thickness: 'float', source: 'Any' = None) -> None"
- },
- "implicit_geometry_kernel.structure.WallContribution": {
-  "kind": "class",
-  "members": {
-   "is_base": ""
-  },
-  "signature": "(spec: 'FeatureSpec', thickness: 'SpanLaw', footprint: 'SDFNode | None' = None, stacked: 'bool' = False, source: 'Any' = None) -> None"
- },
- "implicit_geometry_kernel.structure.WallThickness": {
-  "kind": "class",
-  "members": {
-   "up_to": "(self, n_layers: 'int') -> '_PartialThickness'"
-  },
-  "signature": "(walls: 'tuple[WallContribution, ...]') -> 'None'"
- },
- "implicit_geometry_kernel.structure.as_law": {
-  "kind": "function",
-  "signature": "(value: 'float | SpanLaw') -> 'SpanLaw'"
- },
- "implicit_geometry_kernel.structure.assemble": {
-  "kind": "function",
-  "signature": "(ctx: 'BuildContext', contributions: 'list[Contribution]') -> 'Structure'"
- },
  "implicit_geometry_kernel.topology_diff": {
   "kind": "function",
   "signature": "(a: 'ShellGraph', b: 'ShellGraph') -> 'TopologyDiff'"
@@ -518,5 +353,171 @@
  "implicit_geometry_kernel.zone_region_graphs": {
   "kind": "function",
   "signature": "(templates: 'Sequence[ShellTopologyTemplate]') -> 'ZonedShellTopology'"
+ },
+ "implicit_geometry_kernel.contract.CellWallLoop": {
+  "kind": "class",
+  "signature": "(id: 'int', polyline_twisted_pitch_axis_blade_frame: 'NDArray[np.float64]', area_m2: 'float', web_labels: 'tuple[str, ...]' = (), piece_labels: 'tuple[str, ...]' = (), wall_labels: 'tuple[str, ...]' = ()) -> None",
+  "members": {
+   "is_closed": "(self, *, tol: 'float' = 1e-09) -> 'bool'"
+  }
+ },
+ "implicit_geometry_kernel.contract.InfeasibleSectionGeometry": {
+  "kind": "class",
+  "signature": "(*args, web_index: 'int | None' = None, web_x: 'float | None' = None)",
+  "members": {}
+ },
+ "implicit_geometry_kernel.contract.LaminateOffsetRegion": {
+  "kind": "class",
+  "signature": "(name: 'str', requires_eccentricity: 'bool', eccentricity_m: 'float', layers: 'tuple[str, ...]', layer_thicknesses_m: 'tuple[float, ...]', skin_side: 'str | None' = None, reference_surface: 'str' = 'skin_mid') -> None",
+  "members": {
+   "id": ""
+  }
+ },
+ "implicit_geometry_kernel.contract.ShellMidlineStrip": {
+  "kind": "class",
+  "signature": "(label: 'str', kind: 'str', midline_twisted_pitch_axis_blade_frame: 'NDArray[np.float64]', thickness_m: 'float', closed: 'bool' = False, surface: 'str | None' = None, alignment: 'str | None' = None, skin_side: 'str | None' = None, skin_arc: 'str | None' = None, bay_index: 'int | None' = None, zone_id: 'str | None' = None, gauge_dof_id: 'str | None' = None, topology_generation: 'int | None' = None, stack_family_digest: 'str | None' = None, repeats_k: 'int | None' = None, placement_policy_id: 'str | None' = None, placement_digest: 'str | None' = None, reference_face: 'str | None' = None, bonds: 'tuple[StripBond, ...]' = (), layers: 'tuple[str, ...]' = (), layer_thicknesses_m: 'tuple[float, ...]' = (), requires_eccentricity: 'bool' = False, eccentricity_m: 'float' = 0.0) -> None",
+  "members": {
+   "arc_length_m": "(self) -> 'float'"
+  }
+ },
+ "implicit_geometry_kernel.contract.StripBond": {
+  "kind": "class",
+  "signature": "(host_label: 'str', points: 'NDArray[np.float64]', host_points: 'NDArray[np.float64]') -> None",
+  "members": {}
+ },
+ "implicit_geometry_kernel.structure.BranchContribution": {
+  "kind": "class",
+  "signature": "(spec: 'FeatureSpec', mid: 'SDFNode', region: 'SDFNode', thickness: 'SpanLaw', clip: 'SDFNode | None' = None, depth: 'SpanLaw | None' = None, free_end: 'bool' = False, extent: 'tuple[float, float] | None' = None, source: 'Any' = None) -> None",
+  "members": {
+   "present": "(self, z: 'float', tol: 'float' = 1e-09) -> 'bool'"
+  }
+ },
+ "implicit_geometry_kernel.structure.BranchField": {
+  "kind": "class",
+  "signature": "(contribution: 'BranchContribution', mask: 'SDFNode') -> None",
+  "members": {
+   "spec": ""
+  }
+ },
+ "implicit_geometry_kernel.structure.BuildContext": {
+  "kind": "class",
+  "signature": "(oml: 'SDFNode', span: 'tuple[float, float]', table: 'FeatureTable' = <factory>) -> None",
+  "members": {}
+ },
+ "implicit_geometry_kernel.structure.BuilderRegistry": {
+  "kind": "class",
+  "signature": "(builders: 'list[MemberBuilder]' = <factory>) -> None",
+  "members": {
+   "register": "(self, builder: 'MemberBuilder') -> 'BuilderRegistry'",
+   "run": "(self, ctx: 'BuildContext') -> 'list[Contribution]'"
+  }
+ },
+ "implicit_geometry_kernel.structure.ConstantLaw": {
+  "kind": "class",
+  "signature": "(value: 'float') -> 'None'",
+  "members": {}
+ },
+ "implicit_geometry_kernel.structure.Contribution": {
+  "kind": "UnionType",
+  "signature": ""
+ },
+ "implicit_geometry_kernel.structure.MemberBuilder": {
+  "kind": "class",
+  "signature": "()",
+  "members": {
+   "build": "(self, ctx: 'BuildContext', prior: 'Sequence[Contribution]') -> 'list[Contribution]'"
+  }
+ },
+ "implicit_geometry_kernel.structure.ProductLaw": {
+  "kind": "class",
+  "signature": "(a: 'SpanLaw', b: 'SpanLaw') -> 'None'",
+  "members": {}
+ },
+ "implicit_geometry_kernel.structure.RegionContribution": {
+  "kind": "class",
+  "signature": "(spec: 'FeatureSpec', region: 'SDFNode', tag_region: 'SDFNode | None' = None, source: 'Any' = None) -> None",
+  "members": {
+   "tag_field": ""
+  }
+ },
+ "implicit_geometry_kernel.structure.ScaledLaw": {
+  "kind": "class",
+  "signature": "(law: 'SpanLaw', factor: 'float' = 1.0, shift: 'float' = 0.0) -> 'None'",
+  "members": {}
+ },
+ "implicit_geometry_kernel.structure.SpanLaw": {
+  "kind": "class",
+  "signature": "()",
+  "members": {
+   "at": "(self, z: 'float') -> 'float'"
+  }
+ },
+ "implicit_geometry_kernel.structure.Structure": {
+  "kind": "class",
+  "signature": "(table: 'FeatureTable', span: 'tuple[float, float]', oml: 'SDFNode', thickness: 'WallThickness', wall_mid: 'SDFNode', cavity: 'SDFNode', wall_meta: 'SDFNode', material: 'SDFNode', walls: 'tuple[WallContribution, ...]', branches: 'tuple[BranchField, ...]', regions: 'tuple[RegionContribution, ...]', transverse: 'tuple[TransverseContribution, ...]') -> None",
+  "members": {
+   "events": "",
+   "forced_stations": "(self) -> 'tuple[float, ...]'",
+   "member_ends": "",
+   "member_starts": "",
+   "members_at": "(self, z: 'float') -> 'tuple[str, ...]'",
+   "transverse_stations": ""
+  }
+ },
+ "implicit_geometry_kernel.structure.StructureAssembler": {
+  "kind": "class",
+  "signature": "(registry: 'BuilderRegistry') -> 'None'",
+  "members": {
+   "assemble": "(self, ctx: 'BuildContext') -> 'Structure'"
+  }
+ },
+ "implicit_geometry_kernel.structure.StructureError": {
+  "kind": "class",
+  "signature": "",
+  "members": {}
+ },
+ "implicit_geometry_kernel.structure.SumLaw": {
+  "kind": "class",
+  "signature": "(a: 'SpanLaw', b: 'SpanLaw') -> 'None'",
+  "members": {}
+ },
+ "implicit_geometry_kernel.structure.TableLaw": {
+  "kind": "class",
+  "signature": "(z: 'Sequence[float]', values: 'Sequence[float]') -> 'None'",
+  "members": {}
+ },
+ "implicit_geometry_kernel.structure.ThicknessLaw": {
+  "kind": "class",
+  "signature": "()",
+  "members": {
+   "from_span": ""
+  }
+ },
+ "implicit_geometry_kernel.structure.TransverseContribution": {
+  "kind": "class",
+  "signature": "(spec: 'FeatureSpec', z: 'float', region: 'SDFNode', thickness: 'float', source: 'Any' = None) -> None",
+  "members": {}
+ },
+ "implicit_geometry_kernel.structure.WallContribution": {
+  "kind": "class",
+  "signature": "(spec: 'FeatureSpec', thickness: 'SpanLaw', footprint: 'SDFNode | None' = None, stacked: 'bool' = False, source: 'Any' = None) -> None",
+  "members": {
+   "is_base": ""
+  }
+ },
+ "implicit_geometry_kernel.structure.WallThickness": {
+  "kind": "class",
+  "signature": "(walls: 'tuple[WallContribution, ...]') -> 'None'",
+  "members": {
+   "up_to": "(self, n_layers: 'int') -> '_PartialThickness'"
+  }
+ },
+ "implicit_geometry_kernel.structure.as_law": {
+  "kind": "function",
+  "signature": "(value: 'float | SpanLaw') -> 'SpanLaw'"
+ },
+ "implicit_geometry_kernel.structure.assemble": {
+  "kind": "function",
+  "signature": "(ctx: 'BuildContext', contributions: 'list[Contribution]') -> 'Structure'"
  }
 }

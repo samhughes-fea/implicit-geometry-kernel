@@ -10,7 +10,9 @@ Each entry records the **symptom**, **evidence**, **root cause**, and
 [`DOCUMENTATION_STANDARDS`](../conventions/DOCUMENTATION_STANDARDS.md).
 
 **Identifiers.** `BG-nnn` here. Independent of `SG-nnn`
-([`section/bug_log.md`](../section/bug_log.md)) and repo-root `BL-nnn`.
+([`section/bug_log.md`](../section/bug_log.md)) and `CF-nnn`
+([`frames/bug_log.md`](../frames/bug_log.md)). Historical `BL-nnn` ids in closed
+entries are from a retired repo-root log.
 
 **Reference cases.** Example 09 catalogue keys on the synthetic 12 m planform
 (`4D-F-PA-10R` for PA freeze). windIO: IEA 15 / 3.4 / 10 / 22, NREL 5 MW from

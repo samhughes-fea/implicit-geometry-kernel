@@ -20,9 +20,11 @@ import pytest
 from implicit_geometry_kernel.section import (
     resolve_system_type,
 )
+from implicit_geometry_kernel.section.spec.options import SectionOptions
 from implicit_geometry_kernel.section.spec.runner import (
     SectionGeometry,
 )
+from implicit_geometry_kernel.section.spec.section_spec import SectionSpec
 
 
 @pytest.fixture(scope="module")
@@ -35,15 +37,24 @@ def airfoil():
 
 
 def _runner(airfoil, **kw):
-    return SectionGeometry(
-        layout=resolve_system_type(kw.pop("key", "2B-CN-LC-0R")),
-        airfoil=airfoil,
+    layout = resolve_system_type(kw.pop("key", "2B-CN-LC-0R"))
+    resolution = kw.pop("resolution", None)
+    min_cavity_depth_m = kw.pop("min_cavity_depth_m", 0.0)
+    outputs = kw.pop("outputs", ("midlines",))
+    spec = SectionSpec.from_kwargs(
+        layout,
+        airfoil,
         skin_thickness=kw.pop("skin_thickness", 0.004),
         spar_cap_thickness=kw.pop("spar_cap_thickness", 0.008),
         shear_web_thickness=kw.pop("shear_web_thickness", 0.003),
         twist_rad=0.0,
-        outputs=kw.pop("outputs", ("midlines",)),
         **kw,
+    )
+    return SectionGeometry(
+        spec,
+        SectionOptions(outputs=outputs),
+        resolution=resolution,
+        min_cavity_depth_m=min_cavity_depth_m,
     )
 
 

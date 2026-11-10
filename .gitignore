@@ -10,6 +10,14 @@ docs/**/*.synctex.gz
 # Private blade catalogue: clone locally, never commit (see that repo's README).
 /reference_blades/
 
+# Graphify cache (repo root and under src/)
+graphify-out/
+**/graphify-out/
+
+# Local GEOS binaries / scratch
+_geos_osgeo/
+_tmp_drops.py
+
 *.egg-info/
 *.py[cod]
 .pytest_cache/

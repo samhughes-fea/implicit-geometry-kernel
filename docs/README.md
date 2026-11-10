@@ -118,4 +118,4 @@ Maintainer notes. Style is terse; each page carries an **Audience: internal** ba
 | Architecture steps | [REFACTOR_PLAN.md](REFACTOR_PLAN.md) |
 | Provenance | [FORK.md](FORK.md) |
 | Section-local TOC | [section/docs_index.md](section/docs_index.md) |
-| Reports and ADRs | [section/reports](section/reports/), [ADR_ZERO_WEB_SHELL_MESH](section/reference/ADR_ZERO_WEB_SHELL_MESH.md) |
+| Reports and ADRs | [section/reports](section/reports/README.md), [ADR_ZERO_WEB_SHELL_MESH](section/reference/ADR_ZERO_WEB_SHELL_MESH.md) |

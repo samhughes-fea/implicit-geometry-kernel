@@ -2,35 +2,14 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable, Sequence
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.nodes.base import EvalCache, FieldSample, LeafNode, NO_FEATURE, SDFNode
 from implicit_geometry_kernel.sdf.kernels.polygon_numba import sdf_polyline_unsigned_numba
-from implicit_geometry_kernel.sdf.kernels.primitives import sdf_circle, sdf_polygon
-
-
-class CircleSDF(LeafNode):
-    """Exact circle in the section plane (z ignored)."""
-
-    def __init__(self, cx: float = 0.0, cy: float = 0.0, r: float = 1.0, meta: int = NO_FEATURE) -> None:
-        super().__init__(meta)
-        self.cx, self.cy, self.r = float(cx), float(cy), float(r)
-
-    def _phi(self, points: np.ndarray) -> np.ndarray:
-        return np.asarray(sdf_circle(points[:, 0], points[:, 1], self.cx, self.cy, self.r), dtype=np.float64)
-
-
-class PolygonSDF(LeafNode):
-    """Exact closed-polygon SDF in the section plane (z ignored)."""
-
-    def __init__(self, vertices: np.ndarray, meta: int = NO_FEATURE) -> None:
-        super().__init__(meta)
-        self.vertices = np.asarray(vertices, dtype=np.float64)
-
-    def _phi(self, points: np.ndarray) -> np.ndarray:
-        return np.asarray(sdf_polygon(points[:, 0], points[:, 1], self.vertices), dtype=np.float64)
+from implicit_geometry_kernel.sdf.nodes.base import EvalCache, FieldSample, LeafNode, NO_FEATURE, SDFNode
+from implicit_geometry_kernel.sdf.nodes.primitives import Circle, Polygon
 
 
 class PolylineBandSDF(LeafNode):
@@ -67,6 +46,7 @@ class TagNode(SDFNode):
 
     def __init__(self, node: SDFNode, meta: int) -> None:
         self.node = node
+        self.expr = node
         self.meta_id = int(meta)
 
     def children(self) -> tuple[SDFNode, ...]:
@@ -77,23 +57,45 @@ class TagNode(SDFNode):
         return FieldSample(s.phi, np.full(s.phi.shape, self.meta_id, dtype=np.int32))
 
 
-class ExprSDF(SDFNode):
-    """A CSG shape stamped with a feature id (``meta``); ``phi`` unchanged.
-
-    Every shape in :mod:`implicit_geometry_kernel.sdf.nodes` is already an ``SDFNode``;
-    this wrapper only adds the id (without one it behaves as the shape itself).
-    """
+class ExprSDF(TagNode):
+    """Deprecated alias of :class:`TagNode`. Removed in the next minor."""
 
     def __init__(self, expr, meta: int = NO_FEATURE) -> None:
-        self.expr = expr
-        self.meta_id = int(meta)
+        warnings.warn(
+            "ExprSDF is deprecated; use TagNode(node, meta). Removed in the next minor.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(expr, meta)
 
-    def children(self) -> tuple[SDFNode, ...]:
-        return (self.expr,)
 
-    def _evaluate(self, points: np.ndarray, cache: EvalCache) -> FieldSample:
-        s = self.expr.evaluate(points, cache)
-        return FieldSample(s.phi, np.full(s.phi.shape, self.meta_id, dtype=np.int32))
+class CircleSDF(TagNode):
+    """Deprecated: ``TagNode(Circle(...), meta)``. Removed in the next minor."""
+
+    def __init__(self, cx: float = 0.0, cy: float = 0.0, r: float = 1.0, meta: int = NO_FEATURE) -> None:
+        warnings.warn(
+            "CircleSDF is deprecated; use TagNode(Circle(cx, cy, r), meta). "
+            "Removed in the next minor.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.cx, self.cy, self.r = float(cx), float(cy), float(r)
+        super().__init__(Circle(self.cx, self.cy, self.r), meta)
+
+
+class PolygonSDF(TagNode):
+    """Deprecated: ``TagNode(Polygon(vertices), meta)``. Removed in the next minor."""
+
+    def __init__(self, vertices: np.ndarray, meta: int = NO_FEATURE) -> None:
+        warnings.warn(
+            "PolygonSDF is deprecated; use TagNode(Polygon(vertices), meta). "
+            "Removed in the next minor.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.vertices = np.asarray(vertices, dtype=np.float64)
+        verts = tuple((float(p[0]), float(p[1])) for p in self.vertices)
+        super().__init__(Polygon(verts), meta)
 
 
 class PriorityUnionNode(SDFNode):

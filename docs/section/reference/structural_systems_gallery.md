@@ -1,8 +1,9 @@
 # Structural systems gallery
 
-All 40 orientation cores. Pass any key to `resolve_system_type(...)` /
-`SectionGeometry(layout=...)`. Grouped by web count **W** (spar-cap family is
-**X**). Decode: [blade-concept taxonomy](../../blade/concepts/taxonomy.md).
+All 40 orientation cores. Pass any key to `resolve_system_type(...)` and put
+that spec on `SectionSpec.layout` for `SectionGeometry(spec, options)`.
+Keyword `layout=` still works this minor. Grouped by web count **W** (spar-cap
+family is **X**). Decode: [blade-concept taxonomy](../../blade/concepts/taxonomy.md).
 Station figures of the W/X/Y slice; Z and R are loft concerns.
 
 ↑ [`section_geometry`](../README.md) · [`../guides/quickstart.md`](../guides/quickstart.md)
@@ -12,7 +13,7 @@ Figures: NACA 2412 + demo thicknesses from `structural_family_grids_demo.py`
 committed — regenerate to refresh; see
 [`../../examples/demos/section/ARTIFACTS.md`](../../../examples/demos/section/ARTIFACTS.md)).
 Production builds set `skin_thickness` /
-`spar_cap_thickness` / `shear_web_thickness` (optional `web_x_positions_m`).
+`spar_cap_thickness` / `shear_web_thickness` (optional `web_offsets`).
 
 ## Table of contents
 

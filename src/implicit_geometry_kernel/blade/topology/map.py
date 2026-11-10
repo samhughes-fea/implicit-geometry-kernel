@@ -5,7 +5,7 @@ from typing import Sequence
 
 import numpy as np
 
-from implicit_geometry_kernel.blade.locked_loft import arc_resample_open
+from implicit_geometry_kernel.blade.loft.locked_loft import arc_resample_open
 from implicit_geometry_kernel.blade.topology.sizing import resample_open_h, station_live_thickness
 from implicit_geometry_kernel.blade.shell_graph import ShellGraph, ShellRun
 from implicit_geometry_kernel.blade.topology.graph import (

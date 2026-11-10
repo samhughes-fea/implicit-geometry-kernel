@@ -8,7 +8,7 @@ from implicit_geometry_kernel.integration.quadtree.marching import (
     contour_from_quadtree_marching_squares,
     summarize_quadtree,
 )
-from implicit_geometry_kernel.integration.quadtree.soa import build_shared_quadtree
+from implicit_geometry_kernel.integration.quadtree.soa_build import build_shared_quadtree
 from implicit_geometry_kernel.integration.spec import QuadtreeSpec
 from implicit_geometry_kernel.integration.types import AreaMesh2D, FieldMesh2D, PhiSampler
 

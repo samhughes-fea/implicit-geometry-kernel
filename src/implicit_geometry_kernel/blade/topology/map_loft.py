@@ -5,7 +5,7 @@ from typing import Mapping
 
 import numpy as np
 
-from implicit_geometry_kernel.blade.locked_loft import arc_resample_open
+from implicit_geometry_kernel.blade.loft.locked_loft import arc_resample_open
 from implicit_geometry_kernel.blade.topology.sizing import resample_open_h
 from implicit_geometry_kernel.blade.topology.template import (
     LoopBranch,

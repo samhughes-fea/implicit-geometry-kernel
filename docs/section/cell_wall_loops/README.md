@@ -1,5 +1,5 @@
-# cell_wall_loops (renamed)
+# cell_wall_loops (moved)
 
 **Audience: internal.** Maintainer notes; not part of the library manual.
 
-This home is now [`cells/`](../cells/README.md) (`section.cells`).
+Moved to [cells](../cells/README.md).

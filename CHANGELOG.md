@@ -2,6 +2,41 @@
 
 ## Unreleased
 
+- Docs hygiene: package bug logs (no repo-root ``BL-`` file); section module
+  table uses ``walls/`` / ``boundary/`` / ``properties/``; reports index;
+  span interpolation is linear (PCHIP wording dropped from the refactor plan).
+
+- House-rule splits: ``blade/loft/`` holds the loft façade; ``windio`` nd-arc
+  helpers are ``windio_nd.py``. ``members.py``, ``mesh/polygon``, ``spec/runner``,
+  ``quadtree/soa``, and ``plot_section_hybrid`` stay under 400 lines. Public
+  names are unchanged. ``build_spar_caps`` / ``skin_split`` remain under 400;
+  station network and spanwise SDF fields live in ``blade/topology/``; planform
+  CSV I/O in ``blade/concepts/planform.py``.
+
+- Teaching scripts, section demos, contract 01, feature-field loft and box-beam
+  assemble use ``SectionSpec`` / ``SectionGeometry(spec, options)`` and
+  ``TagNode(Circle|Polygon, …)``.
+
+- Manuals show ``SectionGeometry(spec, options)``; glossary topology homes are
+  ``blade/topology/``. ``graphify-out/`` and local GEOS scratch are gitignored.
+
+- ``SectionGeometry(spec, options)`` is the constructor. Keyword
+  ``layout=`` / ``airfoil=`` and ``from_kwargs`` warn and are removed in the
+  next minor. ``BladeGeometry.section_at`` builds ``SectionSpec`` /
+  ``SectionOptions``; min-thickness scale-up is ``_min_thickness_scale``.
+  ``BladeGeometry.layout`` is typed ``str | SystemLayoutSpec | SectionLayout``.
+
+- ``TagNode`` is the only meta stamper. ``ExprSDF``, ``CircleSDF`` and
+  ``PolygonSDF`` wrap ``TagNode`` and warn; removed in the next minor.
+
+- Spar-cap construction dispatches ``CapPlacementKind`` through a callable
+  table in ``build_spar_caps``.
+
+- ``WallRegionGraph`` stores ``cap_placement`` (``CapPlacementKind``).
+  ``cap_mode`` (``band``/``pads``/``box``) is a deprecated alias. Topology
+  compile lives in ``blade/topology/layout_compile.py``; loop signatures in
+  ``signatures.py``.
+
 - Rib mesh patches split only at live web feet (``n_webs + 1``). Cap
   ``LoopBranch`` breakpoints stay on the skin midsurface and no longer seed
   extra rings (Family B/C).

@@ -1,5 +1,6 @@
 """Authored wall-region graph and mapped loft (tidalshell identity, no mesher)."""
 
+from implicit_geometry_kernel.blade.topology.fields import CutWallMetaSDF, StackThickness, span_thickness
 from implicit_geometry_kernel.blade.topology.graph import (
     Anchor,
     Region,
@@ -8,6 +9,8 @@ from implicit_geometry_kernel.blade.topology.graph import (
     _cluster_web_members,
     _cut_tc,
     _regularise_anchors,
+)
+from implicit_geometry_kernel.blade.topology.signatures import (
     role_atom,
     signatures_compatible,
 )
@@ -55,9 +58,20 @@ from implicit_geometry_kernel.blade.topology.ribs import (
 
 # Private helpers used by BladeGeometry.write_mid_surfaces
 from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut  # noqa: F401
+from implicit_geometry_kernel.blade.topology.network import (
+    StationNetwork,
+    WallBranch,
+    station_network,
+    station_network_from_meta,
+    wall_meta_from_cut,
+)
 
 __all__ = [
     "Anchor",
+    "CutWallMetaSDF",
+    "StationNetwork",
+    "StackThickness",
+    "WallBranch",
     "LoopBranch",
     "Region",
     "ShellTopologyTemplate",
@@ -86,9 +100,13 @@ __all__ = [
     "role_atom",
     "sample_region_polylines",
     "size_field_h",
+    "span_thickness",
     "station_live_thickness",
+    "station_network",
+    "station_network_from_meta",
     "section_cut_near",
     "signatures_compatible",
+    "wall_meta_from_cut",
     "te_blunt_eps",
     "te_blunt_flags_for_cuts",
     "te_blunt_of_cut",

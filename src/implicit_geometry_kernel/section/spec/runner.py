@@ -13,24 +13,36 @@ product; ``get_results()`` returns the built geometry.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from implicit_geometry_kernel.section.spec.worker import SectionGeometryResult, StationLayoutResolution, build_section_geometry, resolve_station_layout, section_geometry_prep_key
+from implicit_geometry_kernel.section.spec.runner_lifecycle import RunnerLifecycleMixin
+from implicit_geometry_kernel.section.spec.options import SectionOptions
+from implicit_geometry_kernel.section.spec.section_spec import SectionSpec
+from implicit_geometry_kernel.section.spec.worker import SectionGeometryResult, StationLayoutResolution, build_section_geometry, resolve_station_layout
+
+if TYPE_CHECKING:
+    from implicit_geometry_kernel.catalogue.system_layout import SystemLayoutSpec
+    from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
+    from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
 
 
-class SectionGeometry:
+class SectionGeometry(RunnerLifecycleMixin):
     """Resolve the effective station layout, then build the section geometry.
 
     Parameters
     ----------
-    layout:
-        Nominal catalogue ``SystemLayoutSpec`` or parametric ``SectionLayout``
-        requested for this station. The *effective* layout may step down if the
-        local cavity cannot anchor every web (catalogue rung, or keyless
-        ``N`` webs + ``CapPlacementRule``).
-    airfoil:
-        Station ``AirfoilSDF``.
+    spec:
+        Frozen :class:`SectionSpec` (layout, airfoil, gauges, twist, webs).
+    options:
+        :class:`SectionOptions` (output gates, quadtree, sample counts).
+    layout, airfoil:
+        Deprecated keyword construction; use ``spec`` / ``options`` or
+        :meth:`from_kwargs`. Nominal catalogue ``SystemLayoutSpec`` or
+        parametric ``SectionLayout``, and station ``AirfoilSDF``. The
+        *effective* layout may step down if the local cavity cannot anchor
+        every web.
     skin_thickness, spar_cap_thickness, shear_web_thickness:
         Design-variable thicknesses [m].
     twist_rad:
@@ -53,9 +65,11 @@ class SectionGeometry:
 
     def __init__(
         self,
+        spec: SectionSpec | None = None,
+        options: SectionOptions | None = None,
         *,
-        layout: Any,
-        airfoil: Any,
+        layout: SectionLayout | SystemLayoutSpec | str | None = None,
+        airfoil: AirfoilSDF | None = None,
         skin_thickness: float | None = None,
         spar_cap_thickness: float | None = None,
         shear_web_thickness: float | None = None,
@@ -78,10 +92,27 @@ class SectionGeometry:
     ) -> None:
         from implicit_geometry_kernel.section.spec.section_spec import resolve_shear_web_thickness, resolve_skin_gauges, resolve_spar_cap_thickness, resolve_twist_rad
 
-        if layout is None:
-            raise ValueError("layout is required")
-        if airfoil is None:
-            raise ValueError("airfoil is required")
+        if spec is not None:
+            if layout is not None or airfoil is not None:
+                raise TypeError("SectionGeometry() takes spec/options or layout kwargs, not both")
+            self._bind_spec(
+                spec,
+                options or SectionOptions(),
+                resolution=resolution,
+                min_cavity_depth_m=min_cavity_depth_m,
+            )
+            return
+        if layout is None or airfoil is None:
+            raise TypeError(
+                "SectionGeometry requires a SectionSpec or layout= and airfoil= kwargs"
+            )
+        warnings.warn(
+            "SectionGeometry(layout=..., airfoil=...) is deprecated; "
+            "use SectionGeometry(spec, options) or SectionGeometry.from_kwargs. "
+            "Removed in the next minor.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._layout = layout
         self._airfoil = airfoil
         self._zone_gauges_m = None if zone_gauges_m is None else dict(zone_gauges_m)
@@ -153,6 +184,64 @@ class SectionGeometry:
             float(pivot_fraction) if pivot_fraction is not None else None
         )
 
+    def _bind_spec(
+        self,
+        spec: SectionSpec,
+        options: SectionOptions,
+        *,
+        resolution: StationLayoutResolution | None = None,
+        min_cavity_depth_m: float = 0.0,
+    ) -> None:
+        self._spec = spec
+        self._options = options
+        self._layout = spec.layout
+        self._airfoil = spec.airfoil
+        self._zone_gauges_m = None if spec.zone_gauges_m is None else dict(spec.zone_gauges_m)
+        self._t_skin_gauges = (spec.gauges.skin_ss, spec.gauges.skin_ps)
+        self._t_skin = spec.gauges.skin_max
+        self._t_spar = float(spec.gauges.cap)
+        self._t_web = spec.gauges.web_arg
+        self._twist_rad = spec.twist_rad
+        self._outputs = tuple(options.outputs)
+        self._web_x_positions_m = spec.webs
+        self._min_cavity_depth_m = float(min_cavity_depth_m)
+        self._n_web_samples = int(options.n_web_samples)
+        self._n_cap_samples = int(options.n_cap_samples)
+        self._retain_mesh = bool(options.retain_mesh)
+        self._props_backend = options.props_backend
+        self._quadtree_spec = options.quadtree_spec
+        self._airfoil_for_spec = options.airfoil_for_spec
+        self._executed = False
+        self._layout_frozen = resolution is not None
+        self._resolution: StationLayoutResolution | None = resolution
+        self._result: SectionGeometryResult | None = None
+        self._spar_cap_ply_pitch_m = spec.spar_cap_ply_pitch_m
+        self._pivot_fraction = spec.pivot_fraction
+
+    @classmethod
+    def from_kwargs(cls, **kwargs: Any) -> SectionGeometry:
+        """Deprecated: build from historical layout/airfoil keywords."""
+        warnings.warn(
+            "SectionGeometry.from_kwargs is deprecated; construct "
+            "SectionGeometry(spec, options). Removed in the next minor.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        layout = kwargs.pop("layout", None)
+        airfoil = kwargs.pop("airfoil", None)
+        if layout is None or airfoil is None:
+            raise TypeError("from_kwargs requires layout= and airfoil=")
+        resolution = kwargs.pop("resolution", None)
+        min_cavity_depth_m = kwargs.pop("min_cavity_depth_m", 0.0)
+        spec = SectionSpec.from_kwargs(layout, airfoil, **kwargs)
+        options = SectionOptions.from_kwargs(**kwargs)
+        return cls(
+            spec,
+            options,
+            resolution=resolution,
+            min_cavity_depth_m=min_cavity_depth_m,
+        )
+
     def resolve(self) -> "SectionGeometry":
         """Resolve the effective layout **without building geometry**.
 
@@ -214,124 +303,6 @@ class SectionGeometry:
             airfoil_for_spec=self._airfoil_for_spec,
         )
         return build_section_geometry(spec, options=opts)
-
-    def _assemble_dropping_webs(self, resolution: StationLayoutResolution, last_exc):
-        """Wave 4: step down webs when flapwise re-anchor fails (not a frozen sizing freeze)."""
-        from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
-        from implicit_geometry_kernel.section.spec.layout_resolution import (
-            StationLayoutResolution,
-            _reattach_catalogue_preset,
-            _step_down_section_layout,
-        )
-        from implicit_geometry_kernel.section.spec.results import DroppedWeb
-
-        xs = list(resolution.web_x_positions_m)
-        idx = list(resolution.web_indices or range(len(xs)))
-        dropped = list(resolution.dropped)
-        while len(xs) > 1:
-            fail_i = getattr(last_exc, "web_index", None)
-            fail_x = getattr(last_exc, "web_x", None)
-            if fail_i is not None and fail_i in idx:
-                pos = idx.index(fail_i)
-            elif fail_x is not None:
-                pos = min(range(len(xs)), key=lambda j: abs(xs[j] - float(fail_x)))
-            else:
-                pos = 0
-            lost = float(xs.pop(pos))
-            lost_i = int(idx.pop(pos))
-            dropped.append(
-                DroppedWeb(
-                    lost,
-                    "flapwise web cannot re-anchor under twist; dropped at this station",
-                    index=lost_i,
-                )
-            )
-            sl = _step_down_section_layout(
-                resolution.nominal_layout, len(xs), indices=idx,
-            )
-            sl = _reattach_catalogue_preset(sl, resolution.nominal_layout)
-            new_res = StationLayoutResolution(
-                sl, tuple(xs), tuple(dropped), resolution.nominal_layout,
-                web_y_coords=(), web_indices=tuple(idx),
-            )
-            try:
-                result = self._assemble(new_res, live_y=True)
-                self._resolution = new_res
-                return result
-            except InfeasibleSectionGeometry as exc:
-                last_exc = exc
-        raise last_exc
-
-    def execute(self) -> "SectionGeometry":
-        """Resolve layout then build geometry. Idempotent; returns ``self``."""
-        from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
-
-        if self._executed:
-            return self
-        self.resolve()
-        resolution = self._resolution
-        assert resolution is not None  # set by resolve()
-        # Build against the *effective* layout: the nominal one may name webs
-        # this station cannot anchor, and sizing must not allocate design
-        # variables for components the section does not have.
-        try:
-            self._result = self._assemble(resolution)
-        except InfeasibleSectionGeometry as exc:
-            if self._layout_frozen or "re-anchor" not in str(exc).lower():
-                raise
-            try:
-                self._result = self._assemble(resolution, live_y=True)
-            except InfeasibleSectionGeometry:
-                self._result = self._assemble_dropping_webs(resolution, exc)
-        self._executed = True
-        return self
-
-    def get_results(self) -> SectionGeometryResult:
-        """Return the built :class:`SectionGeometryResult`. Requires :meth:`execute`."""
-        if not self._executed or self._result is None:
-            raise RuntimeError(
-                "SectionGeometry.execute() must be called before get_results()"
-            )
-        return self._result
-
-    def get_layout_resolution(self) -> StationLayoutResolution:
-        """Return the effective layout (anchored webs, drops).
-
-        Requires :meth:`resolve` **or** :meth:`execute` — the resolution is the
-        cheap first product and does not depend on the build.
-        """
-        if self._resolution is None:
-            raise RuntimeError(
-                "SectionGeometry.resolve() or .execute() must be called "
-                "before get_layout_resolution()"
-            )
-        return self._resolution
-
-    @property
-    def prep_key(self) -> tuple[Any, ...]:
-        """Cache key for this station's geometry inputs.
-
-        Uses the **anchored** web positions once executed, falling back to the
-        requested ones before that. Anchored positions change the built section
-        without changing the layout key or any thickness, so a key built from the
-        requested positions alone would let two different sections collide.
-        """
-        web_x = (
-            self._resolution.web_x_positions_m
-            if self._resolution is not None
-            else self._web_x_positions_m
-        )
-        return section_geometry_prep_key(
-            self._layout,
-            self._airfoil,
-            skin_thickness=self._t_skin,
-            spar_cap_thickness=self._t_spar,
-            shear_web_thickness=self._t_web,  # type: ignore
-            twist_rad=self._twist_rad,
-            outputs=self._outputs,
-            web_x_positions_m=web_x,
-            zone_gauges_m=self._zone_gauges_m,
-        )
 
 
 __all__ = ["SectionGeometry"]

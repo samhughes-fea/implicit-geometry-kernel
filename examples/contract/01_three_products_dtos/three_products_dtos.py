@@ -19,17 +19,24 @@ from implicit_geometry_kernel.contract import (  # noqa: E402
     LaminateOffsetRegion,
     ShellMidlineStrip,
 )
-from implicit_geometry_kernel.section import SectionGeometry  # noqa: E402
+from implicit_geometry_kernel.section import (  # noqa: E402
+    SectionGeometry,
+    SectionOptions,
+    SectionSpec,
+)
 
 
 def main() -> None:
-    result = SectionGeometry(
-        layout=resolve_system_type("2D-F-LC-0R"),
-        airfoil=Airfoil.naca4("2412").to_sdf(chord=1.0),
+    spec = SectionSpec.from_kwargs(
+        resolve_system_type("2D-F-LC-0R"),
+        Airfoil.naca4("2412").to_sdf(chord=1.0),
         skin_thickness=0.004,
         spar_cap_thickness=0.012,
         shear_web_thickness=0.005,
-        outputs=("properties", "midlines", "cell_wall_loops"),
+    )
+    result = SectionGeometry(
+        spec,
+        SectionOptions(outputs=("properties", "midlines", "cell_wall_loops")),
     ).execute().get_results()
     strips = result.midline_strips or ()
     loops = result.cell_wall_loops or ()

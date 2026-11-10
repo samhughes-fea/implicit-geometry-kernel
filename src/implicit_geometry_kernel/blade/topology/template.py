@@ -10,10 +10,10 @@ from implicit_geometry_kernel.blade.topology.graph import (
     WallRegionGraph,
     _cluster_web_members,
     _match_web_indices,
-    _regions_from_ordered,
     live_cap_windows,
-    signatures_compatible,
 )
+from implicit_geometry_kernel.blade.topology.layout_compile import _regions_from_ordered
+from implicit_geometry_kernel.blade.topology.signatures import signatures_compatible
 
 @dataclass(frozen=True)
 class LoopBranch:

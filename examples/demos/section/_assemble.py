@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from implicit_geometry_kernel.catalogue import resolve_system_type
-from implicit_geometry_kernel.section import SectionGeometry
+from implicit_geometry_kernel.section import SectionGeometry, SectionOptions, SectionSpec
 
 
 def layout_token(
@@ -67,17 +67,17 @@ def assemble_host(
             n = 0 if xs is None else len(xs)
         layout = resolve_system_type(layout_token(int(n), family, alignment=alignment))
     cap = _cap_m(cap_height, spar_cap_thickness)
+    spec = SectionSpec.from_kwargs(
+        layout,
+        airfoil,
+        skin_thickness=skin_thickness,
+        spar_cap_thickness=cap,
+        shear_web_thickness=shear_web_thickness,
+        twist_rad=float(twist_rad),
+        web_offsets=xs,
+    )
     return (
-        SectionGeometry(
-            layout=layout,
-            airfoil=airfoil,
-            skin_thickness=skin_thickness,
-            spar_cap_thickness=cap,
-            shear_web_thickness=shear_web_thickness,
-            twist_rad=float(twist_rad),
-            web_offsets=xs,
-            outputs=tuple(outputs),
-        )
+        SectionGeometry(spec, SectionOptions(outputs=tuple(outputs)))
         .execute()
         .get_results()
         .section

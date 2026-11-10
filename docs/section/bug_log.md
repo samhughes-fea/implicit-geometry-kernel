@@ -14,10 +14,11 @@ superseded conclusions are struck through or narrated rather than deleted,
 because several of these were mis-attributed on first pass and the correction is
 the useful part.
 
-**Identifiers.** Entries here are `SG-nnn`, local to this package. `BL-nnn`
-refers to the repo-root `docs/bug_log.md`,
-which tracks the section-selection sizing chain; the two numbering spaces are
-independent.
+**Identifiers.** Entries here are `SG-nnn`, local to this package. Sibling logs
+are [`blade/bug_log.md`](../blade/bug_log.md) (`BG-nnn`) and
+[`frames/bug_log.md`](../frames/bug_log.md) (`CF-nnn`). Historical `BL-nnn`
+ids in closed entries are from a retired repo-root log; they are not a live
+numbering space.
 
 **Reference case throughout:** NACA 2412, 1.0 m chord, 200 airfoil points,
 6 mm skin / 14 mm spar cap / 8 mm shear web, layouts named by the

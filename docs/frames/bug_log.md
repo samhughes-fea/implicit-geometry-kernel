@@ -6,8 +6,9 @@
 
 ## Role
 
-Package debug log. Identifiers are `CF-nnn`. Cross-link repo-root `BL-nnn` and
-sibling package logs (`SG-`, `SL-`, …) when a defect spans packages.
+Package debug log. Identifiers are `CF-nnn`. Cross-link
+[`section/bug_log.md`](../section/bug_log.md) (`SG-`) and
+[`blade/bug_log.md`](../blade/bug_log.md) (`BG-`) when a defect spans packages.
 
 ## Index
 

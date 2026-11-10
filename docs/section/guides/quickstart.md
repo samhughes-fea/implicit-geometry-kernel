@@ -32,27 +32,33 @@ One station. Runnable twin:
 from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.section import (
     SectionGeometry,
+    SectionOptions,
+    SectionSpec,
     resolve_system_type,
 )
 from implicit_geometry_kernel.plotting import plot_section
 
 layout = resolve_system_type("2D-F-LC-0R")
 airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)
-
-result = SectionGeometry(
-    layout=layout,
-    airfoil=airfoil,
+spec = SectionSpec.from_kwargs(
+    layout,
+    airfoil,
     skin_thickness=0.004,
     spar_cap_thickness=0.012,
     shear_web_thickness=0.005,
     twist_rad=0.0,
-    outputs=("properties", "midlines", "cell_wall_loops"),
+)
+
+result = SectionGeometry(
+    spec,
+    SectionOptions(outputs=("properties", "midlines", "cell_wall_loops")),
 ).execute().get_results()
 
 plot_section(result.section)
 ```
 
-`SectionGeometry` is the public call path.
+`SectionGeometry(spec, options)` is the public call path. Keyword `layout=` /
+`airfoil=` still work this minor and are removed in the next.
 `build_section_geometry` is a deep import (`section.spec`) for tests. Gate
 `"cell_wall_loops"` also fills midlines.
 
@@ -125,18 +131,21 @@ skin ± optional caps (no web junctions). See
 
 ## 4. Thickness-driven build
 
-Thicknesses are metres on `SectionGeometry`
+Thicknesses are metres on `SectionSpec`
 (`skin_thickness`, `spar_cap_thickness`, `shear_web_thickness`).
 Same layout, different stacks:
 
 ```python
-result = SectionGeometry(
-    layout=resolve_system_type("2D-F-LC-0R"),
-    airfoil=AirfoilSDF.from_naca("2412", chord=1.0),
+spec = SectionSpec.from_kwargs(
+    resolve_system_type("2D-F-LC-0R"),
+    Airfoil.naca4("2412").to_sdf(chord=1.0),
     skin_thickness=0.006,
     spar_cap_thickness=0.020,
     shear_web_thickness=0.008,
-    outputs=("properties", "midlines"),
+)
+result = SectionGeometry(
+    spec,
+    SectionOptions(outputs=("properties", "midlines")),
 ).execute().get_results()
 ```
 
@@ -156,21 +165,23 @@ Feasibility notes: [`feasibility_and_drops.md`](feasibility_and_drops.md).
 
 ```python
 frozen = SectionGeometry(
-    layout=layout,
-    airfoil=airfoil,
-    skin_thickness=t_skin_min,
-    spar_cap_thickness=0.0,
-    shear_web_thickness=0.0,
+    SectionSpec.from_kwargs(
+        layout, airfoil,
+        skin_thickness=t_skin_min,
+        spar_cap_thickness=0.0,
+        shear_web_thickness=0.0,
+    ),
 ).resolve().get_layout_resolution()
 
 result = SectionGeometry(
-    layout=frozen.layout,
-    airfoil=airfoil,
-    skin_thickness=skin_thickness,
-    spar_cap_thickness=spar_cap_thickness,
-    shear_web_thickness=shear_web_thickness,
+    SectionSpec.from_kwargs(
+        frozen.layout, airfoil,
+        skin_thickness=skin_thickness,
+        spar_cap_thickness=spar_cap_thickness,
+        shear_web_thickness=shear_web_thickness,
+    ),
+    SectionOptions(outputs=("properties",)),
     resolution=frozen,
-    outputs=("properties",),
 ).execute().get_results()
 ```
 
@@ -189,15 +200,18 @@ Runnable twin:
 
 ```python
 result = SectionGeometry(
-    layout=layout,
-    airfoil=airfoil_at_station,
-    skin_thickness=0.004,
-    web_x_positions_m=(0.15, 0.50),  # metres from LE
-    outputs=("midlines",),
+    SectionSpec.from_kwargs(
+        layout, airfoil_at_station,
+        skin_thickness=0.004,
+        spar_cap_thickness=0.0,
+        shear_web_thickness=0.0,
+        web_offsets=(0.15, 0.50),  # metres from LE
+    ),
+    SectionOptions(outputs=("midlines",)),
 ).execute().get_results()
 ```
 
-**Local fractions** (legacy): omit `web_x_positions_m`. Positions become
+**Local fractions** (legacy): omit `web_offsets`. Positions become
 `layout.web_chord_fracs × local_chord`.
 
 ---

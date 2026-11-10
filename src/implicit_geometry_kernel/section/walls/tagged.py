@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from implicit_geometry_kernel.sdf.nodes.base import FeatureTable, SDFNode
-from implicit_geometry_kernel.sdf.nodes.tagged import CallableSDF, ExprSDF, TagNode
+from implicit_geometry_kernel.sdf.nodes.tagged import CallableSDF, TagNode
 from implicit_geometry_kernel.section.walls.base import SectionComponent
 
 def kind_from_label(label: str) -> str:
@@ -21,5 +21,5 @@ def tagged_component(comp: SectionComponent, table: FeatureTable | None = None) 
     label = str(getattr(comp, "label", None) or type(comp).__name__)
     spec = table.add(label, kind_from_label(label))
     expr = getattr(comp, "expr", None)
-    node: SDFNode = ExprSDF(expr, spec.id) if expr is not None else CallableSDF(comp, spec.id)
-    return TagNode(node, spec.id), table
+    node: SDFNode = TagNode(expr, spec.id) if expr is not None else CallableSDF(comp, spec.id)
+    return node, table

@@ -64,29 +64,35 @@ flowchart LR
 from implicit_geometry_kernel import Airfoil
 from implicit_geometry_kernel.section import (
     SectionGeometry,
+    SectionOptions,
+    SectionSpec,
     resolve_system_type,
 )
 from implicit_geometry_kernel.plotting import plot_section
 
 layout = resolve_system_type("2D-F-LC-0R")
 airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)
-
-result = SectionGeometry(
-    layout=layout,
-    airfoil=airfoil,
+spec = SectionSpec.from_kwargs(
+    layout,
+    airfoil,
     skin_thickness=0.004,
     spar_cap_thickness=0.012,
     shear_web_thickness=0.005,
     twist_rad=0.0,
-    outputs=("properties", "midlines", "cell_wall_loops"),
+)
+
+result = SectionGeometry(
+    spec,
+    SectionOptions(outputs=("properties", "midlines", "cell_wall_loops")),
 ).execute().get_results()
 ```
 
-`SectionGeometry` is the public call path. `build_section_geometry` is a deep
-import (`section.spec`) for tests.
+`SectionGeometry(spec, options)` is the public call path. Keyword `layout=` /
+`airfoil=` still work this minor and are removed in the next.
+`build_section_geometry` is a deep import (`section.spec`) for tests.
 Returns `SectionGeometryResult` or raises (e.g. `InfeasibleSectionGeometry`).
 
-Guided paths: [`docs/guides/quickstart.md`](guides/quickstart.md).
+Guided paths: [`guides/quickstart.md`](guides/quickstart.md).
 Runnable twins: [`examples/section/teaching/`](../../examples/section/teaching/).
 
 ### Using the result
@@ -111,7 +117,8 @@ To resolve which webs fit the local cavity without assembling solids:
 
 ```python
 resolution = SectionGeometry(
-    layout=layout, airfoil=airfoil, skin_thickness=0.004,
+    SectionSpec.from_kwargs(layout, airfoil, skin_thickness=0.004,
+                            spar_cap_thickness=0.0, shear_web_thickness=0.0),
 ).resolve().get_layout_resolution()
 # resolution.layout          — effective SystemLayoutSpec
 # resolution.dropped         — webs that did not fit
@@ -124,11 +131,11 @@ resolution = SectionGeometry(
 |------|--------|
 | Teaching `01`–`06` | [`examples/section/teaching/`](../../examples/section/teaching/) |
 | Numbered section examples | [`examples/section/`](../../examples/section/) |
-| Progressive recipes | [`docs/guides/quickstart.md`](guides/quickstart.md) |
+| Progressive recipes | [`guides/quickstart.md`](guides/quickstart.md) |
 | All 40 layout figures | [`docs/reference/structural_systems_gallery.md`](reference/structural_systems_gallery.md) |
-| Labels on a `"2D-F-LC-0R"` figure | [`docs/guides/anatomy_on_a_figure.md`](guides/anatomy_on_a_figure.md) |
-| Drops / infeasible / `0A`/`0B` | [`docs/guides/feasibility_and_drops.md`](guides/feasibility_and_drops.md) |
-| Midlines → mesh | [`docs/guides/geometry_to_mesh.md`](guides/geometry_to_mesh.md) |
+| Labels on a `"2D-F-LC-0R"` figure | [`guides/anatomy_on_a_figure.md`](guides/anatomy_on_a_figure.md) |
+| Drops / infeasible / `0A`/`0B` | [`guides/feasibility_and_drops.md`](guides/feasibility_and_drops.md) |
+| Midlines → mesh | [`guides/geometry_to_mesh.md`](guides/geometry_to_mesh.md) |
 
 ## Example figure
 
@@ -327,9 +334,9 @@ section/
 | [`layout/`](layout/README.md) | Catalogue ids, parametric `SectionLayout`, web-drop rules |
 | `implicit_geometry_kernel.sdf` | Domain-agnostic shape kernel (not under `section/`) |
 | [`assembly/`](assembly/README.md) | Blade recipes → `MultiCellSection` |
-| [`recipes/`](recipes/README.md) | One wall description → SDF / polygon / midline projections (`section.walls`) |
-| [`constructive/`](constructive/README.md) | Historical pointer to the polygon path (`section.boundary`) |
-| [`props/`](props/README.md) | Orchestrates `properties_map` (`section.properties`) |
+| `walls/` (`section.walls`) | One wall description → SDF / polygon / midline. Docs redirect: [recipes](recipes/README.md) |
+| `boundary/` (`section.boundary`) | Polygons for area / inertia. Docs redirect: [constructive](constructive/README.md) |
+| `properties/` (`section.properties`) | Orchestrates `properties_map`. Docs redirect: [props](props/README.md) |
 | [`midlines/`](midlines/README.md) | Wall → centreline polyline |
 | [`junctions/`](junctions/README.md) | Snap strip endpoints for meshing |
 | [`cells/`](cells/README.md) | Closed loops around empty cells |
@@ -452,7 +459,7 @@ This is per-region 2-D geometry, not beam `EA` / `EI` / `GJ`
   solids — is exact with respect to that polyline. Default NACA
   `n_points=200` is ~62 µm from the analytic LE at 1 m chord; that gap is
   discretisation of the generator, not a junction bug. See
-  [`docs/bug_log.md`](bug_log.md) SG-008 and [`sdf/README.md`](sdf/README.md).
+  [`bug_log.md`](bug_log.md) SG-008 and [`sdf/README.md`](sdf/README.md).
 
 ## See also
 
@@ -461,15 +468,15 @@ This is per-region 2-D geometry, not beam `EA` / `EI` / `GJ`
 - Loft wrap: [blade](../blade/README.md#loft-cut-versus-station-result)
 - Module pages linked under [Package structure](#package-structure)
 - `examples/` — runnable teaching scripts `01`–`06`
-- [`docs/guides/quickstart.md`](guides/quickstart.md) — progressive guided paths
-- [`docs/reference/structural_systems_gallery.md`](reference/structural_systems_gallery.md) — all 40 layout figures
-- [`docs/guides/anatomy_on_a_figure.md`](guides/anatomy_on_a_figure.md) — labels / midlines / cells on a figure
-- [`docs/guides/feasibility_and_drops.md`](guides/feasibility_and_drops.md) — drops vs `InfeasibleSectionGeometry`
-- [`docs/guides/geometry_to_mesh.md`](guides/geometry_to_mesh.md) — midlines → `ShellMeshInputs`
+- [`guides/quickstart.md`](guides/quickstart.md) — progressive guided paths
+- [`reference/structural_systems_gallery.md`](reference/structural_systems_gallery.md) — all 40 layout figures
+- [`guides/anatomy_on_a_figure.md`](guides/anatomy_on_a_figure.md) — labels / midlines / cells on a figure
+- [`guides/feasibility_and_drops.md`](guides/feasibility_and_drops.md) — drops vs `InfeasibleSectionGeometry`
+- [`guides/geometry_to_mesh.md`](guides/geometry_to_mesh.md) — midlines → `ShellMeshInputs`
 - [`spec/`](spec/README.md) — caller parameters and feasibility
-- [`docs/guides/caller_patterns.md`](guides/caller_patterns.md) — sizing loop and spanwise webs
-- `sections/components/` — skin / web / cap recipes
-- [`docs/`](docs_index.md) — docs index (taxonomy, patterns, gallery)
+- [`guides/caller_patterns.md`](guides/caller_patterns.md) — sizing loop and spanwise webs
+- `section.walls` — skin / web / cap recipes
+- [`docs_index.md`](docs_index.md) — docs index (taxonomy, patterns, gallery)
 - Tests: `tests/` —
 
   ```bash

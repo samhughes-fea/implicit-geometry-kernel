@@ -34,6 +34,7 @@ _ensure_mod.ensure_repo_path()
 
 from implicit_geometry_kernel.section import (
     SectionGeometry,
+    SectionSpec,
 )
 from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
@@ -287,12 +288,14 @@ def main(argv: list[str] | None = None) -> int:
 
     resolution = (
         SectionGeometry(
-            layout=layout,
-            airfoil=airfoil,
-            skin_thickness=_SKIN_THICKNESS_M,
-            spar_cap_thickness=_SPAR_CAP_THICKNESS_M,
-            shear_web_thickness=_SHEAR_WEB_THICKNESS_M,
-            twist_rad=twist_rad,
+            SectionSpec.from_kwargs(
+                layout,
+                airfoil,
+                skin_thickness=_SKIN_THICKNESS_M,
+                spar_cap_thickness=_SPAR_CAP_THICKNESS_M,
+                shear_web_thickness=_SHEAR_WEB_THICKNESS_M,
+                twist_rad=twist_rad,
+            ),
         )
         .resolve()
         .get_layout_resolution()

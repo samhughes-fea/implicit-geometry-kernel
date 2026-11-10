@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
-from implicit_geometry_kernel.blade.fields import StackThickness
+from implicit_geometry_kernel.blade.topology.fields import StackThickness
 from implicit_geometry_kernel.contract import ShellMidlineStrip
 from implicit_geometry_kernel.extract import classify_trailing_edge
 from implicit_geometry_kernel.sdf import LoftedPolygonSDF
@@ -77,7 +77,7 @@ def test_g1_solids_keep_caps_shell_adapter_does_not_duplicate():
 def test_g2_from_meta_is_not_thickness_source():
     """D1.3: station_network_from_meta still carries thickness 0 (Wave 1)."""
     cut = _geo().section_at(4.0)
-    from implicit_geometry_kernel.blade.network import station_network_from_meta
+    from implicit_geometry_kernel.blade.topology.network import station_network_from_meta
 
     geo = _geo()
     field = geo.wall_meta()
@@ -177,7 +177,7 @@ def test_g6_iea10_tip_section_at_builds_or_drops_web():
 # --- G7 ----------------------------------------------------------------------
 
 def test_g7_section_at_lru_no_bvh():
-    from implicit_geometry_kernel.blade.fields import CutWallMetaSDF
+    from implicit_geometry_kernel.blade.topology.fields import CutWallMetaSDF
 
     geo = _geo()
     assert geo._section_cache_size == 256

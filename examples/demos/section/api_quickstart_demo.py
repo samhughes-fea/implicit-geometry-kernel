@@ -67,21 +67,26 @@ def run_quickstart():
     from implicit_geometry_kernel import Airfoil
     from implicit_geometry_kernel.section import (
         SectionGeometry,
+        SectionOptions,
+        SectionSpec,
         resolve_system_type,
     )
 
     layout = resolve_system_type("2D-F-LC-0R")
     airfoil = Airfoil.naca4("2412").to_sdf(chord=1.0)
+    spec = SectionSpec.from_kwargs(
+        layout,
+        airfoil,
+        skin_thickness=0.004,
+        spar_cap_thickness=0.012,
+        shear_web_thickness=0.005,
+        twist_rad=0.0,
+    )
 
     result = (
         SectionGeometry(
-            layout=layout,
-            airfoil=airfoil,
-            skin_thickness=0.004,
-            spar_cap_thickness=0.012,
-            shear_web_thickness=0.005,
-            twist_rad=0.0,
-            outputs=("properties", "midlines", "cell_wall_loops"),
+            spec,
+            SectionOptions(outputs=("properties", "midlines", "cell_wall_loops")),
         )
         .execute()
         .get_results()

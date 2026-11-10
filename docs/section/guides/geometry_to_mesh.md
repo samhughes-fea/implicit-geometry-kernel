@@ -185,14 +185,18 @@ Include `"midlines"` (or `"cell_wall_loops"`, which also fills midlines):
 
 ```python
 result = SectionGeometry(
-    layout=resolve_system_type("2D-F-LC-0R"),
-    airfoil=airfoil,
-    skin_thickness=0.004,
-    spar_cap_thickness=0.012,
-    shear_web_thickness=0.005,
-    outputs=("midlines",),
+    SectionSpec.from_kwargs(
+        resolve_system_type("2D-F-LC-0R"),
+        airfoil,
+        skin_thickness=0.004,
+        spar_cap_thickness=0.012,
+        shear_web_thickness=0.005,
+    ),
+    SectionOptions(outputs=("midlines",)),
 ).execute().get_results()
 ```
+
+Keyword `layout=` / `airfoil=` still work this minor and are removed in the next.
 
 Layouts `"0A-LC-0R"` / `"0B-LC-0R"` are valid shell-mesh stations (skin ± caps; no web
 junctions). See

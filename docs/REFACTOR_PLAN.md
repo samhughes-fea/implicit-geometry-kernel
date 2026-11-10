@@ -38,7 +38,7 @@ the same work; they are not extra steps.
 | 5 | Move to the target tree, one PR per top-level package; then `SectionSpec` and `SectionOptions` | **Done** — tagged `v0.5.0` |
 | 6 | Seams with materials and meshing (thickness law protocol, named edges, forced stations, size fields, merged cap and skin option) | **Done.** Seams in this kernel; Gmsh and constitutive plies stay in consumers |
 | 7 | Completeness (Phase 5 list below) | **Done** (7.1–7.10). Mid-surface patches and optional STEP (`[cad]`) shipped |
-| 8 | Exactness (Phase 4 below). Tag 0.6.0 after mid-surface, plots extra, and alias removal | **Done.** Nose, insert polygons, PCHIP loft scalars, mid-surface field from `shell_graph`, plots extra, and 0.5.x alias removal |
+| 8 | Exactness (Phase 4 below). Tag 0.6.0 after mid-surface, plots extra, and alias removal | **Done.** Nose, insert polygons, linear loft scalars (`TableLaw`; PCHIP removed), mid-surface field from `shell_graph`, plots extra, and 0.5.x alias removal |
 | 9 | Separate blade-model package | **Declined.** Consumers keep their own adapters |
 
 Step 5 breakdown (Phase 2 complete; tagged `v0.5.0`):
@@ -217,7 +217,7 @@ Large modules and where they go:
 | `integration/quadrature.py` | Done: `quadtree/moments.py`, `quadtree/quadrature.py` |
 | `section/api/worker.py` | Done: `spec/build.py` (emit), `spec/prep.py` (cache key / sized assemble), `spec/worker.py` facade |
 | `blade/cut.py` | Done: `cut.py` (SectionCut, walls, cells) and `shell_graph.py` (graph, partitions, topology diff) |
-| `blade/loft.py` | Done: façade plus `loft_tables` / `loft_cut` / `loft_fields` |
+| `blade/loft.py` | Done: façade in `blade/loft/` (`loft.py`, `loft_tables`, `loft_cut`, `loft_fields`, `locked_loft`) |
 | `blade/topology/map.py` | Done: `map.py` plus `map_walk` / `map_loft` |
 | `blade/shell_graph.py` | Done: product plus `shell_graph_build` |
 | `section/assembly/build_spar_caps.py` | Done: peel into `build_spar_caps_pads` |
@@ -324,7 +324,7 @@ Each gap is closed with a worked example and a test. Order of need:
 2. **Done.** Branches with free ends and partial span (stringers).
 3. **Done.** CST airfoils, thickness-ratio families about the camber line, flatback/blunt TE with
    a set TE thickness, Selig and Lednicer readers, interpolation by t/c.
-4. **Done.** Span laws with PCHIP for planform; root cylinder to airfoil transition as a named law.
+4. **Done.** Span laws linear (`TableLaw` / `np.interp`); PCHIP removed. Root cylinder to airfoil transition as a named law.
 5. **Done.** Thickness fields over (z, s) with ply-drop ramps as geometry (law plus taper length).
 6. **Done.** Named key points (LE, TE, cap edges, web feet) at every station.
 7. **Done (OML).** Watertight OML surface mesh (STL/OBJ) from a quad span grid.
@@ -348,14 +348,15 @@ reference. Golden numbers are regenerated in these PRs with the change stated.
 | Airfoil nose | surfaces looked up by x after a cubic resample, split at the smallest-x vertex (NACA 0015 upper surface 8e-5 c off at x = 0) | **Done.** split at the true LE (farthest from TE); NACA 4-digit thickness from the formula | error against analytic NACA thickness at x/c 0 to 0.01 below 1e-8 |
 | Mid-surface field | `(outer + cavity) / 2`, only a true mid-surface where thickness is uniform | **Done.** signed SDF of the `shell_graph` skin loop | `|phi|` at loop-run interiors vs graph midpoints on all 40 layouts below 5e-4 |
 | Quadtree remainder | LE/TE inserts still integrated on a depth-7 quadtree | **Done.** emit inserts as polygons; keep the quadtree as a test cross-check | insert area and moments match shoelace sums to 1e-12 |
-| Loft scalars | chord, twist, pitch axis, offset linear between stations | **Done.** optional PCHIP (monotone, no overshoot); airfoils stay linear blends | reference planforms match their tables with smooth first derivatives |
+| Loft scalars | chord, twist, pitch axis, offset linear between stations | **Done.** linear only (`TableLaw` / `np.interp`); PCHIP removed — sparse knots invented curvature. Airfoils stay linear blends | golden `blade.json` stations match linear tables |
 
 Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays.
 
 ## Standing work (not new steps)
 
-- Port older `examples/demos/` scripts onto `SectionSpec` / `SectionGeometry` /
-  `BladeGeometry` / `shell_graph`. Do not delete the gallery (decision 3).
+- Older `examples/demos/` stay on the gallery (decision 3). Teaching, section
+  demos, contract 01, feature-field loft and box-beam assemble use `SectionSpec`
+  / `TagNode`.
 - Do not advertise `[mesh]` (`gmsh`). Consumers own mesher jobs and ply ABD/PCOMP.
 - Parked shell-graph items stay parked: G10 (thin-wall adapter, other repo),
   G11 (PCOMP), TE classifier on OML only, no BVH, no `T` taper, no cores on

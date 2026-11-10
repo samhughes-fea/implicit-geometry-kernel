@@ -9,12 +9,27 @@ if TYPE_CHECKING:
     from implicit_geometry_kernel.blade.loft import BladeGeometry
 
 from implicit_geometry_kernel.blade.cut import CellPolygon, SectionCut, SectionWall, _twist_offset
-from implicit_geometry_kernel.blade.loft_tables import _FORK_TWIST_SIGN, _match, _morph_surfaces
+from implicit_geometry_kernel.blade.loft.loft_tables import _FORK_TWIST_SIGN, _match, _morph_surfaces
 from implicit_geometry_kernel.section.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M as _MIN_SKIN,
     MIN_REALISTIC_SPAR_WALL_THICKNESS_M as _MIN_CAP,
     MIN_REALISTIC_WEB_WALL_THICKNESS_M as _MIN_WEB,
 )
+
+
+def _min_thickness_scale(t_skin: float, t_cap: float, t_web: float) -> float:
+    """Scale-up so manufacturing minima are met; the cut is placed back by ``1/k``."""
+    k = max(
+        1.0,
+        *(
+            lo / t
+            for lo, t in ((_MIN_SKIN, t_skin), (_MIN_WEB, t_web), (_MIN_CAP, t_cap))
+            if t > 0.0
+        ),
+    )
+    if k > 1.0:
+        k *= 1.0 + 1e-9
+    return k
 
 
 class LoftCutMixin:
@@ -77,7 +92,7 @@ class LoftCutMixin:
         """
         from implicit_geometry_kernel.frames import twisted_pitch_axis_blade_frame_to_naca
         from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
-        from implicit_geometry_kernel.section import SectionGeometry
+        from implicit_geometry_kernel.section.spec import SectionGeometry, SectionOptions, SectionSpec
 
         z = round(float(z), 9)
         hit = self._section_cache.get(z)
@@ -91,24 +106,26 @@ class LoftCutMixin:
         # (2.5 mm skin, 4 mm web, 5 mm cap). The geometry is similar under scaling, so a
         # thinner-walled section is built k times larger and scaled back: exact, and the
         # frozen geometry code is used as it is.
-        k = max(1.0, *(lo / t for lo, t in ((_MIN_SKIN, t_skin), (_MIN_WEB, t_web), (_MIN_CAP, t_cap)) if t > 0.0))
-        if k > 1.0:
-            k *= 1.0 + 1e-9
-        kwargs = dict(
-            layout=layout,
-            airfoil=AirfoilSDF.from_surface_graphs(x, upper, lower, chord * k),
+        k = _min_thickness_scale(t_skin, t_cap, t_web)
+        twist_rad = _FORK_TWIST_SIGN * np.radians(twist)
+        web_offsets = None
+        if self.web_offsets is not None:
+            web_offsets = tuple(v * k for v in self.web_offsets)
+        elif self._web_x_from_pitch is not None:
+            web_offsets = tuple((x + pitch * chord) * k for x in self._web_x_from_pitch)
+        spec = SectionSpec.from_kwargs(
+            layout,
+            AirfoilSDF.from_surface_graphs(x, upper, lower, chord * k),
             skin_thickness=t_skin * k,
             spar_cap_thickness=t_cap * k,
             shear_web_thickness=t_web * k,
-            twist_rad=_FORK_TWIST_SIGN * np.radians(twist),
+            twist_rad=twist_rad,
             pivot_fraction=pitch,
-            outputs=("midlines", "cell_wall_loops"),
+            web_offsets=web_offsets,
         )
-        if self.web_offsets is not None:
-            kwargs["web_offsets"] = tuple(v * k for v in self.web_offsets)
-        elif self._web_x_from_pitch is not None:
-            kwargs["web_offsets"] = tuple((x + pitch * chord) * k for x in self._web_x_from_pitch)
-        runner = SectionGeometry(**kwargs).execute()
+        runner = SectionGeometry(
+            spec, SectionOptions(outputs=("midlines", "cell_wall_loops"))
+        ).execute()
         result = runner.get_results()
         resolution = runner.get_layout_resolution()
 
@@ -132,7 +149,7 @@ class LoftCutMixin:
         mesh_strips = tuple(result.midline_strips or ())
         cap_strips = build_solid_cap_strips(
             result.section,
-            twist_rad=float(kwargs["twist_rad"]),
+            twist_rad=float(twist_rad),
             chord_m=float(chord * k),
             pivot_fraction=pitch,
         )

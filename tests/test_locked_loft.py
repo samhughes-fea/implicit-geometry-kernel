@@ -12,7 +12,7 @@ from implicit_geometry_kernel import (
     resample_locked,
     shell_loft_zones,
 )
-from implicit_geometry_kernel.blade.locked_loft import locked_mid_surface_patches
+from implicit_geometry_kernel.blade.loft.locked_loft import locked_mid_surface_patches
 from implicit_geometry_kernel.blade.shell_graph import partition_edge_curve
 
 

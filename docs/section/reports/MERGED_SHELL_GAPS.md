@@ -50,7 +50,7 @@ Oracles (Wave 0): **loft strips** from `shell_graph` polylines; **in-plane snap*
 
 **Status:** Wave 1 shipped (colouring in Pass 1; named edges on `ShellGraph`).
 
-**Today:** `ShellRun.kind` is `cap` on stacked partitions; example 09 and `wall_meta` colour by that. Partition **edges** are only polyline endpoints. [`feature_curve`](../../../src/implicit_geometry_kernel/extract/curves.py) is `(field_a, field_b, zs, guess_xy)` with no names. [`station_network_from_meta`](../../../src/implicit_geometry_kernel/blade/network.py) splits the mid loop by meta id and sets `thickness=0.0`.
+**Today:** `ShellRun.kind` is `cap` on stacked partitions; example 09 and `wall_meta` colour by that. Partition **edges** are only polyline endpoints. [`feature_curve`](../../../src/implicit_geometry_kernel/extract/curves.py) is `(field_a, field_b, zs, guess_xy)` with no names. [`station_network_from_meta`](../../../src/implicit_geometry_kernel/blade/topology/network.py) splits the mid loop by meta id and sets `thickness=0.0`.
 
 **API:** `ShellGraph.partition_edges()` / `.edge(name_a, name_b)` and
 `partition_edge_curve(geo, name_a, name_b, zs)` (omit if missing; no lerp).
@@ -79,7 +79,7 @@ Example 09 uses it. No silent label lerp.
 
 **Status:** Wave 0 shipped (keep the step; Newton limits documented).
 
-**Today:** [`StackThickness`](../../../src/implicit_geometry_kernel/blade/fields.py) assigns nearest loop-run `T` (step, not ramp). Not ply stagger.
+**Today:** [`StackThickness`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) assigns nearest loop-run `T` (step, not ramp). Not ply stagger.
 
 **Evidence:** interior cap `T = 11` mm, interior skin `T = 3` mm, jump **8 mm** (`t_cap`). The two endpoints of one cap run evaluate to `{3 mm, 11 mm}` — nearest-run at the shared vertex is discrete. `GeometrySolver` default tolerance is `1e-6` m (`snap_wall_mid` uses `1e-8`); the jump is 8000× that.
 
@@ -113,7 +113,7 @@ Example 09 uses it. No silent label lerp.
 
 **Status:** Wave 5 shipped.
 
-**Today:** [`BladeGeometry.section_at`](../../../src/implicit_geometry_kernel/blade/loft.py) caches cuts per `round(z, 9)` (LRU 256). [`CutWallMetaSDF`](../../../src/implicit_geometry_kernel/blade/fields.py) and `StackThickness` keep derived LRU 256 on that same key. [`LoftedPolygonSDF`](../../../src/implicit_geometry_kernel/sdf/lofted.py) still caches polygons only — **no BVH**.
+**Today:** [`BladeGeometry.section_at`](../../../src/implicit_geometry_kernel/blade/loft/loft.py) caches cuts per `round(z, 9)` (LRU 256). [`CutWallMetaSDF`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) and `StackThickness` keep derived LRU 256 on that same key. [`LoftedPolygonSDF`](../../../src/implicit_geometry_kernel/sdf/lofted.py) still caches polygons only — **no BVH**.
 
 ---
 

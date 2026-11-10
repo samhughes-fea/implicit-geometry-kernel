@@ -5,12 +5,12 @@
 > **Status:** Historical performance handoff. Paths that cite deleted
 > `engine/` / `interface/` / `core/` trees are **stale** — those homes are gone
 > (see [G_ROW_OWNERSHIP_MATRIX](../reference/G_ROW_OWNERSHIP_MATRIX.md)). Prefer
-> live domain homes (`sdf/`, `sections/`, `props_emit/`, …) when following links.
+> live domain homes (`sdf/`, `section.walls`, `section.properties`, …) when following links.
 > Citations of `sdf/ir.py` now mean `sdf/nodes/` (the CSG expression tree).
+> There is no `section_geometry_efficiency_review.md` in this tree; this file is
+> the performance handoff.
 
-Phase timings for computational-efficiency work on `section_geometry`. Short
-handoff:
-section_geometry_efficiency_review.md.
+Phase timings for computational-efficiency work on `section_geometry`.
 
 ↑ [`docs index`](../docs_index.md) · [`section_geometry`](../docs_index.md)
 

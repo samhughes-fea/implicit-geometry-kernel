@@ -21,7 +21,7 @@ class LoftFieldsMixin:
 
     def cavity_sdf(self: BladeGeometry, meta: int = 0):
         """Inner mould line: ``oml + T``. ``T`` is a step (skin, plus cap inside footprints); no taper."""
-        from implicit_geometry_kernel.blade.fields import StackThickness
+        from implicit_geometry_kernel.blade.topology.fields import StackThickness
         from implicit_geometry_kernel.sdf.nodes.tagged import FieldOffsetNode
 
         return FieldOffsetNode(self.oml_sdf(meta), StackThickness(self), scale=1.0)
@@ -45,7 +45,7 @@ class LoftFieldsMixin:
 
     def wall_meta(self: BladeGeometry, table=None):
         """Tagged wall-strip DAG: ``evaluate((x,y,z)).meta`` is the region at that ``z``."""
-        from implicit_geometry_kernel.blade.fields import CutWallMetaSDF
+        from implicit_geometry_kernel.blade.topology.fields import CutWallMetaSDF
         from implicit_geometry_kernel.sdf.nodes.base import FeatureTable
 
         return CutWallMetaSDF(self, table if table is not None else FeatureTable())

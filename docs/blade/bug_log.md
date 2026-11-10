@@ -50,6 +50,7 @@ entries are from a retired repo-root log.
 | [BG-024](#bg-024) | Property CSG quadtree was rotated vs wall occupancy | **Fixed** |
 | [BG-025](#bg-025) | Property CSG column 3 undersamples thin wall tubes | **Fixed** |
 | [BG-026](#bg-026) | 5D occupancy QT hits `max_cells=150000` and truncates | **Fixed** |
+| [BG-027](#bg-027) | Planform `axes.png` labelled cell-area locus as shear centre | **Fixed** |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -666,5 +667,27 @@ per-token branch. [`examples/_shared/blade_viz.py`](../../examples/_shared/blade
 **Verification.** `test_csg_quadtree_max_cells_covers_five_web_root`.
 Regenerated example 09 `5D-F-PA-10R` `csg_mesh/01.png`–`16.png` after
 `max_cells=400000` (no truncation in the gallery pass).
+**Fixed.**
+
+## BG-027
+
+**Symptom.** Example 08/09 `planform/axes.png` drew a purple dotted “shear centre”
+next to the geometric centroid. The kernel has no materials or loads.
+
+**Evidence.** [`5D-F-PA-10R/planform/axes.png`](../../examples/blade/09_blade_concepts/figures/5D-F-PA-10R/planform/axes.png)
+legend: pitch axis, centroid, shear centre. Code: `_cell_centroid_x` in
+[`examples/_shared/blade_viz.py`](../../examples/_shared/blade_viz.py) area-weighted
+cell-polygon \(x\), plotted as `label="shear centre"`.
+
+**Root cause.** A cell-bay geometric proxy was misnamed. Enclosed-cell centroids
+are not a thin-wall shear centre.
+
+**Fix.** Drop `_cell_centroid_x` and the shear series. `axes.png` keeps LE/TE,
+pitch, and the thin-wall (midline × thickness) geometric centroid. The three
+geometric-centroid routes (boundary integral, thin-wall strip, area integration)
+are compared in [`examples/blade/14_geometric_centroid`](../../examples/blade/14_geometric_centroid/).
+
+**Verification.** `test_sample_planform_includes_rib_lines` asserts `"shear" not
+in data`. Regenerated example 09 `planform/axes.png`.
 **Fixed.**
 

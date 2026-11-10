@@ -195,6 +195,7 @@ Public names: [glossary](../glossary.md) (loft group). On this package:
 | [11_feature_station_network](../../examples/blade/11_feature_station_network/) | `station_network`, `FeatureTable` |
 | [12_locked_loft_zones](../../examples/blade/12_locked_loft_zones/) | `LockedLoftPlan`, `resample_locked` |
 | [13_planform_csv_roundtrip](../../examples/blade/13_planform_csv_roundtrip/) | `read_planform_csv`, `write_windio` |
+| [14_geometric_centroid](../../examples/blade/14_geometric_centroid/) | Geometric centroid of the walls (three routes) |
 
 ---
 

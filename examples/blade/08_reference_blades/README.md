@@ -51,9 +51,10 @@ Not the optional IEA 15 Gmsh `mesh_closeup.png`.
 Regen also writes debug dumps `mids.obj` / `mids.vtk` / `samples.npz` at the stem root
 (gitignored). PNGs stay committed.
 
-**Planform** splits outline vs structure: `axes.png` is LE/TE plus pitch, wall-midline
-centroid, and cell-area shear-centre proxy; `structure.png` is LE/TE plus live web
-loci from `shell_graph()`.
+**Planform** splits outline vs structure: `axes.png` is LE/TE plus pitch and the
+thin-wall geometric centroid (midline × thickness); `structure.png` is LE/TE plus live web
+loci from `shell_graph()`. A comparison of centroid routes is
+[14 geometric centroid](../14_geometric_centroid/).
 
 **Coloured wall strips** (`full_blade` elevation / plan / iso, region close-ups,
 region cutaways) loft the **authored `WallRegionGraph`** with `loft_mapped_strips`.

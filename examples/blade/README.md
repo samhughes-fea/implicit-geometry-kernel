@@ -19,3 +19,4 @@ Span loft, airfoils, queries, catalogue concepts, and published blades.
 | 11 | [11_feature_station_network](11_feature_station_network/) | `station_network`, `FeatureTable` |
 | 12 | [12_locked_loft_zones](12_locked_loft_zones/) | `LockedLoftPlan`, `resample_locked` |
 | 13 | [13_planform_csv_roundtrip](13_planform_csv_roundtrip/) | `read_planform_csv`, `write_windio` |
+| 14 | [14_geometric_centroid](14_geometric_centroid/) | wall geometric centroid (shoelace / strip / quadtree) |

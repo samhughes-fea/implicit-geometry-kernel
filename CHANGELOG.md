@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **BG-027:** planform ``axes.png`` no longer labels a cell-area locus as shear
+  centre. Example 14 compares three geometric-centroid routes (shoelace,
+  thin-wall strip, quadtree).
+
 - ``LoftedPolygonSDF.accel_at`` / ``bvh`` expose the shipped uniform-grid AABB
   cache (G7 / WP6 docs no longer say there is no BVH).
 

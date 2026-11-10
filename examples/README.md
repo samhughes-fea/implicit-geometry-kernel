@@ -79,6 +79,7 @@ flowchart TB
 | 11 | [Feature station network](blade/11_feature_station_network/) | `FeatureTable`, `station_network` |
 | 12 | [Locked loft zones](blade/12_locked_loft_zones/) | `LockedLoftPlan`, `resample_locked` |
 | 13 | [Planform CSV](blade/13_planform_csv_roundtrip/) | `read_planform_csv`, `write_windio` |
+| 14 | [Geometric centroid](blade/14_geometric_centroid/) | shoelace / thin-wall strip / quadtree |
 
 ### section
 
@@ -156,7 +157,7 @@ On-ramp: [section/teaching](section/teaching/) (`01`–`05`) → [blade/01](blad
 [blade/02](blade/02_web_placement/) → [section/teaching/06](section/teaching/06_consumer_seams.py) →
 [blade/10](blade/10_loft_oracles/) → [blade/11](blade/11_feature_station_network/) →
 [structure/03](structure/03_assemble_box_beam/) → [extract/01](extract/01_zero_loops_and_features/) →
-[blade/09](blade/09_blade_concepts/) → [blade/08](blade/08_reference_blades/) → [demos](demos/).
+[blade/09](blade/09_blade_concepts/) → [blade/14](blade/14_geometric_centroid/) → [blade/08](blade/08_reference_blades/) → [demos](demos/).
 
 ## Layout
 

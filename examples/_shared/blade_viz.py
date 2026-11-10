@@ -752,27 +752,10 @@ def _midline_centroid_x(cut) -> float | None:
     return sx / a_sum
 
 
-def _cell_centroid_x(cut) -> float | None:
-    if not cut.cells:
-        return None
-    area = 0.0
-    sx = 0.0
-    for cell in cut.cells:
-        a = abs(float(cell.area))
-        if a <= 1e-18:
-            continue
-        xy = np.asarray(cell.points, float)[:, :2]
-        area += a
-        sx += a * float(np.mean(xy[:, 0]))
-    if area <= 1e-18:
-        return None
-    return sx / area
-
-
 def sample_planform(geo, n: int = 80) -> dict:
     z0, z1 = float(geo.stations[0].z), float(geo.stations[-1].z)
     zs = np.linspace(z0, z1, n)
-    le, te, pitch, centroid, shear = [], [], [], [], []
+    le, te, pitch, centroid = [], [], [], []
     webs: dict[str, list[tuple[float, float]]] = {}
     for zi in zs:
         ring = geo.oml_polyline(float(zi))
@@ -787,9 +770,6 @@ def sample_planform(geo, n: int = 80) -> dict:
         cx = _midline_centroid_x(cut)
         if cx is not None:
             centroid.append((cx, float(zi)))
-        sc = _cell_centroid_x(cut)
-        if sc is not None:
-            shear.append((sc, float(zi)))
         for run in cut.shell_graph().webs:
             xy = np.asarray(run.points, float)[:, :2]
             webs.setdefault(str(run.name), []).append((float(np.mean(xy[:, 0])), float(zi)))
@@ -806,7 +786,6 @@ def sample_planform(geo, n: int = 80) -> dict:
         "te": np.asarray(te),
         "pitch": np.asarray(pitch),
         "centroid": np.asarray(centroid) if centroid else np.zeros((0, 2)),
-        "shear": np.asarray(shear) if shear else np.zeros((0, 2)),
         "webs": {k: np.asarray(v) for k, v in webs.items()},
         "ribs": ribs,
     }
@@ -861,9 +840,6 @@ def figure_planform_axes(stem: str, title: str, marks, data: dict, *, figures: P
     if len(data["centroid"]):
         ax.plot(data["centroid"][:, 1], data["centroid"][:, 0], color="#c45c26", lw=1.0,
                 label="centroid")
-    if len(data["shear"]):
-        ax.plot(data["shear"][:, 1], data["shear"][:, 0], color="#6e4a7a", lw=1.0, ls=":",
-                label="shear centre")
     _finish_planform(ax, fig, f"{title} — planform axes (blade-frame x–z)", marks, te[:, 0])
     save_fig(fig, figures, stem, PLANFORM, "axes", repo=repo)
 

@@ -64,7 +64,7 @@ regions/{root,transition,max_chord,span70,tip}.png
 regions/{root,transition,max_chord,span70,tip}_te.png
 region_cutaways/{root,transition,max_chord,span70,tip}.png
 region_cutaways/{root,transition,max_chord,span70,tip}_te.png
-planform/{axes,structure}.png   (structure: web loci + chordwise rib lines)
+planform/{axes,structure}.png   (axes: LE/TE, pitch, thin-wall geometric centroid; structure: web loci + chordwise rib lines)
 full_blade/{elevation,closeups,closeups_te,cutaway,cutaway_te}.png
 ```
 

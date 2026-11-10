@@ -76,3 +76,7 @@ reference includes the curvature of the skin's inner face at their ends.
 Below a scale of 1 the solids would reach `section`'s minimum wall thicknesses (2.5 mm
 skin, 4 mm web, 5 mm cap), so the sweep starts there. `BladeGeometry` avoids those
 floors by building thinner sections at a larger scale and scaling back.
+
+Spanwise geometric centroids of the three IGK routes (boundary integral, thin-wall
+strip, area integration) are in
+[blade/14 geometric centroid](../../blade/14_geometric_centroid/).

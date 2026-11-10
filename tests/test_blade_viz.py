@@ -87,6 +87,8 @@ def test_sample_planform_includes_rib_lines():
     ]
     geo = BladeGeometry(stations, "2D-F-LC-4R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004, pivot_fraction=0.3)
     data = sample_planform(geo, n=11)
+    assert "shear" not in data
+    assert len(data["centroid"]) >= 1
     assert len(data["ribs"]) == 4
     zs = [row[0] for row in data["ribs"]]
     assert min(zs) > 0.0

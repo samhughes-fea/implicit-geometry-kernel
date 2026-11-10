@@ -309,4 +309,4 @@ def test_prismatic_loft_reproduces_its_sections():
             pts = np.asarray(w.points)[:, :2]
             ref = root[str(w.label)]
             assert pts.shape == ref.shape
-            assert np.abs(pts - ref).max() < 1e-7, (w.label, z)
+            assert np.abs(pts - ref).max() < 1e-12, (w.label, z)

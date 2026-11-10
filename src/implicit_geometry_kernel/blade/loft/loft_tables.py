@@ -99,10 +99,13 @@ def _morph_surfaces(fa, fb, w: float, x: np.ndarray) -> tuple[np.ndarray, np.nda
     else:
         # Lerp the surfaces in t/c, then scale thickness about the camber line so the
         # peak t/c is the lerped one (Airfoil.interpolate_by_thickness, evaluated at x).
-        ta, tb = float(fa.max_thickness), float(fb.max_thickness)
+        # Peaks come from the sampled surfaces themselves, not Airfoil.max_thickness
+        # (analytic for NACA sections), so equal parents give a scale of exactly 1.
+        dense = np.linspace(0.0, 1.0, 401)  # the grid Airfoil.max_thickness uses
+        ta = float(np.max(np.asarray(fa.surface("upper", dense)) - np.asarray(fa.surface("lower", dense))))
+        tb = float(np.max(np.asarray(fb.surface("upper", dense)) - np.asarray(fb.surface("lower", dense))))
         t_c = (1.0 - w) * ta + w * tb
         s = 0.0 if abs(tb - ta) < 1e-15 else (t_c - ta) / (tb - ta)
-        dense = np.linspace(0.0, 1.0, 401)  # the grid Airfoil.max_thickness uses
         du, dl = lerp(s, dense)
         peak = float(np.max(du - dl))
         scale = t_c / peak if peak > 0.0 else 1.0

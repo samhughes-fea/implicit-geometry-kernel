@@ -15,6 +15,7 @@ sibling package logs (`SG-`, `SL-`, …) when a defect spans packages.
 |---|---|---|
 | [CF-001](#cf-001) | No shared planar rotation harness for B-consuming packages | **Fixed** (2026-09-25) |
 | [CF-002](#cf-002) | `transform_stiffness_B_to_Sprime` invented 1e-6 / 1e-12 EI | **Fixed** (2026-09-26) |
+| [CF-003](#cf-003) | `transform_second_moments_S_to_B` wrong Ixy sign on `Ixx_B` | **Fixed** (2026-11-05) |
 
 ---
 
@@ -66,4 +67,38 @@ No 1e-12 clamp.
 
 ### Verification
 `tests/test_cf002_sp001_exactness.py`
+
+---
+
+<a id="cf-003"></a>
+## CF-003 — Wrong Ixy sign in `Ixx_B` / `Iyy_B` under twist
+
+**Status:** Fixed — 2026-11-05
+**Area:** `frames.tensors.inertia` (`transform_second_moments_S_to_B` /
+`transform_second_moments_B_to_S`)
+
+### Symptom
+Rotating second moments S→B did not match integrating the outline after
+`rotate_S_to_B`. `Ixx_B + Iyy_B` drifted with twist (trace not invariant).
+
+### Evidence
+`tests/frames/unit/test_second_moments_rotate_with_points.py` (added with the
+fix): five twists on a NACA 2418 outline; tensor transform must agree with
+shoelace on the rotated polygon, and `Ixx + Iyy` must match the S-frame sum.
+Logged in `CHANGELOG.md` 0.4.0; missing from this package log until now.
+
+### Root cause
+Point rotation is \(X_B = c X_S + s Y_S\), \(Y_B = -s X_S + c Y_S\). Substituting
+into \(I_{xx}=\int Y^2\) gives a **minus** \(2 I_{xy} s c\) term. The transform
+used **plus** \(2 I_{xy} \sin\cos\) on `Ixx_B` (and the opposite error on
+`Iyy_B`), so the product-moment contribution had the wrong sign.
+
+### Fix
+`Ixx_B = Ixx_S cos² + Iyy_S sin² − 2 Ixy_S sin cos` (and the matching `Iyy_B` /
+`Ixy_B` forms) in `inertia.py`. Inverse `B→S` uses the same convention.
+Commit `52aa320`.
+
+### Verification
+`pytest tests/frames/unit/test_second_moments_rotate_with_points.py` green;
+`Ixx_B + Iyy_B ≈ Ixx_S + Iyy_S` at every twist in that suite.
 

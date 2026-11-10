@@ -98,8 +98,33 @@ three-dimensional mesh is downstream.
 
 ## Bug logs
 
-`docs/section/bug_log.md` and `docs/blade/bug_log.md` stay at that level (not nested
-further). They are internal.
+Package logs stay at that level (not nested further). They are internal:
+
+| Defect lives in | Log | ID |
+|---|---|---|
+| Span loft, mapped strips, station CSG viz | [`docs/blade/bug_log.md`](../blade/bug_log.md) | `BG-nnn` |
+| Section geometry, midlines, junctions | [`docs/section/bug_log.md`](../section/bug_log.md) | `SG-nnn` |
+| Frames / transforms | [`docs/frames/bug_log.md`](../frames/bug_log.md) | `CF-nnn` |
+
+A confirmed defect is not closed until the matching log has an index row and a
+body. Chat, `CHANGELOG.md`, and a guide are not a substitute.
+
+Write the entry **when the bug is found**, not after the patch. Update the same
+entry with evidence from the fix, then mark it resolved. Do not delete closed
+entries; if a first diagnosis was wrong, strike or narrate it.
+
+| When | Required fields |
+|---|---|
+| Found | Next ID; index row **Open**; **Symptom**; **Evidence** (figure, station `z`, test, metric) |
+| Fix in hand | **Root cause**; **Fix** (behaviour and files); tests or figures named |
+| Resolved | Status **Fixed**; **Verification** (the test or regenerated figure that proves it) |
+
+A follow-on of the same mechanism updates that ID. A distinct symptom gets a new
+ID (do not bury 5D CSG hold under an IEA wrap rewrite). Do not log an intended
+design change or a figure regen that was not a defect.
+
+Agents bound by this file must open or update the log in the same change set as
+the code fix.
 
 ## Consumer names
 

@@ -75,7 +75,7 @@ flowchart TB
 | [`guides/caller_patterns.md`](guides/caller_patterns.md) | Simple build, sizing loop, spanwise webs |
 | [`guides/anatomy_on_a_figure.md`](guides/anatomy_on_a_figure.md) | Labels / midlines / cells on a `"2D-F-LC-0R"` figure |
 | [`guides/feasibility_and_drops.md`](guides/feasibility_and_drops.md) | `InfeasibleSectionGeometry` vs dropped webs; `0A`/`0B` handoff |
-| [`guides/geometry_to_mesh.md`](guides/geometry_to_mesh.md) | Midlines → `ShellMidlineStrip` → downstream mesher |
+| [`guides/geometry_to_mesh.md`](guides/geometry_to_mesh.md) | Midlines → `ShellMidlineStrip` → downstream mesher; in-plane `h` sizing |
 
 ## Reference
 

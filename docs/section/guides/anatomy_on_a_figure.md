@@ -93,6 +93,8 @@ Gate `"cell_wall_loops"`. Closed loops of the structural cavities, LE → TE:
 
 ---
 
+Example 09 `csg_mesh` (top-left) uses the same `emit_constructive_polygons` fill in blade \(xy\), including sandwich cores.
+
 ## See also
 
 - Gallery of all keys: [`../reference/structural_systems_gallery.md`](../reference/structural_systems_gallery.md)

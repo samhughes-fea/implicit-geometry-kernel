@@ -1,26 +1,26 @@
-# Blade-concept tokens
+# Blade Concept Matrix
 
-A catalogue token names a **blade concept**, not only a station layout. W, X,
+A catalogue key names a **blade concept**, not only a station layout. W, X,
 and Y are the station slice; Z is span web freeze; R is transverse faces.
 Example: `"2D-F-LC-0R"`. Authoring: `blade.concepts.BladeConcept`. Spec:
 `implicit_geometry_kernel.catalogue`.
 
 ```text
 [W][X]-[Y]-[Z]-[R]     e.g.  2D-F-LC-0R    2D-F-LE-10R    2D-F-PA-10R
- │ │  │  │   └─ rib count (required): 0R none | 10R ten faces
- │ │  │  └───── web anchoring (required): LC | LE | PA
- │ │  └──────── web orientation: F flapwise | CN chord-normal
- │ └─────────── spar-cap family: A B C D
- └───────────── web count: 0..5
+ |  |   |   |   └─ rib count (required NR): n = 0…10 (figures: 0R · 4R · 10R)
+ |  |   |   └───── web anchoring (required): LC | LE | PA
+ |  |   └────────── web orientation: F flapwise | CN chord-normal
+ |  └────────────── spar-cap family: A B C D
+ └───────────────── web count: 0..5
 ```
 
 ```mermaid
 flowchart LR
-  Token["2D-F-PA-10R"] --> W["W=2 webs"]
-  Token --> X["X=D box cap"]
-  Token --> Y["Y=F flapwise"]
-  Token --> Z["Z=PA pitch axis"]
-  Token --> R["R=10 ribs"]
+  Concept["2D-F-PA-10R"] --> W["W=2 webs"]
+  Concept --> X["X=D box cap"]
+  Concept --> Y["Y=F flapwise"]
+  Concept --> Z["Z=PA pitch axis"]
+  Concept --> R["R=10 ribs"]
 ```
 
 Zero-web cores omit `[Y]`: `0A-LC-0R`, `0A-LE-10R`. Bare `2D-F` and omitted `0R` are invalid.
@@ -31,9 +31,9 @@ Zero-web cores omit `[Y]`: `0A-LC-0R`, `0A-LE-10R`. Bare `2D-F` and omitted `0R`
 | **X** | Spar-cap family (`StructuralFamily`) | `A` none · `B` one band · `C` per-web bands · `D` continuous box |
 | **Y** | Web orientation | `CN` chord-normal · `F` flapwise (omit when W = 0) |
 | **Z** | Web anchoring | `LC` local chord · `LE` leading edge · `PA` pitch axis |
-| **R** | Rib count | `0R` none · `10R` ten faces |
+| **R** | Rib count (required `NR`) | integer `0`…`10`; figures use `0R`, `4R`, `10R` |
 
-Display form: `SystemType[W][X]-[Y]-[Z]-[R]`. `resolve_system_type("2D-F-LC-0R")` → frozen
+`BladeConcept.from_key("2D-F-LC-0R")` / `resolve_system_type(...)` → frozen
 `SystemLayoutSpec`. `SYSTEM_TYPE_LAYOUT_KEYS` is the 40 `*-LC-0R` cores used for section goldens.
 
 ↑ [blade](../README.md) · [catalogue](../../catalogue/README.md) ·
@@ -44,7 +44,7 @@ Display form: `SystemType[W][X]-[Y]-[Z]-[R]`. `resolve_system_type("2D-F-LC-0R")
 1. [X — spar-cap families](#x--spar-cap-families)
 2. [Y — web orientation](#y--web-orientation)
 3. [Z — web anchoring](#z--web-anchoring)
-4. [Layout registry (`resolve_system_type`)](#layout-registry-resolve_system_type)
+4. [Stationwise, spanwise, transverse](#stationwise-spanwise-transverse)
 5. [Spanwise step-down cascade](#spanwise-step-down-cascade)
 6. [Reference axes and kwargs (advanced)](#reference-axes-and-kwargs-advanced)
 7. [Downstream handoff](#downstream-handoff)
@@ -121,24 +121,33 @@ Worked loft: [example 09](../../../examples/blade/09_blade_concepts/).
 
 ---
 
-## Layout registry (`resolve_system_type`)
+## Stationwise, spanwise, transverse
+
+A concept has three axes. `resolve_system_type` / `BladeConcept.from_key` return
+that whole spec.
+
+| Axis | Letters | Fixes |
+|------|---------|-------|
+| **Stationwise** | `WXY` | Web count, cap family, tilt at a cut. |
+| **Spanwise** | `Z` | Web $x(z)$: `LC` slides, `LE`/`PA` freeze. |
+| **Transverse** | `R` | Rib-face count 0…10. |
 
 Source of truth:
 [`catalogue/system_layout.py`](../../../src/implicit_geometry_kernel/catalogue/system_layout.py)
-(`SYSTEM_TYPE_KEYS`, `_LAYOUT_REGISTRY`). The cap-family letter of each key is
-taxonomy **X** and matches `structural_family` on the spec.
+(`SYSTEM_TYPE_KEYS`, `_LAYOUT_REGISTRY`). The cap-family letter is taxonomy **X**
+and matches `structural_family` on the spec.
 
 - **0-web cores:** only **`0A`** and **`0B`** (no orientation letter). Public
-  tokens still require anchoring: `0A-LC-0R`, `0A-LE-0R`, `0A-LC-10R`. Both cores
+  keys still require anchoring: `0A-LC-0R`, `0A-LE-0R`, `0A-LC-10R`. Both cores
   build `MultiCellSection` with empty webs (family A / B). Catalogue
   field `geometry_mode="zero_web_catalogue"` is metadata only — it does not
   select a separate host class.
-- **No `0C` / `0D`:** **Y = C** and **Y = D** need webs (`W ≥ 1`).
+- **No `0C` / `0D`:** **X = C** and **X = D** need webs (`W ≥ 1`).
 - **Multicell cores:** for **W = 1..5**, **X = A, B, C, D**, **Y = CN, F** — all
   combinations except **`1D-CN`** and **`1D-F`**.
-- Total: **40** orientation cores (`SYSTEM_TYPE_LAYOUT_KEYS` is those cores with
+- Total: **40** station cores (`SYSTEM_TYPE_LAYOUT_KEYS` is those cores with
   `-LC-0R`); **120** `SYSTEM_TYPE_KEYS` (each core × `{LC,LE,PA}` × `0R`). Other rib
-  counts (`-10R`) resolve but are not enumerated in the 120.
+  counts (`1R`…`10R`) resolve but are not enumerated in the 120.
 
 ---
 
@@ -147,9 +156,9 @@ taxonomy **X** and matches `structural_family` on the spec.
 Construction narrative: [station layout](../../section/layout/README.md).
 Assemble recipes: [catalogue](../../catalogue/README.md).
 
-A token such as `4D-F-PA-10R` is the **blade concept** (station W/X/Y, span Z,
+A key such as `4D-F-PA-10R` is the **blade concept** (station W/X/Y, span Z,
 transverse R). Webs that no longer fit are **dropped**, not slid. The cut keeps
-that parent token on `SectionCut.layout`. Live web count (W) and cap family (X)
+that parent concept on `SectionCut.layout`. Live web count (W) and cap family (X)
 are the **station slice** (`station_webs`, `station_family`); they are not a
 new concept. Display: `4D-F-PA-10R | W=1 X=C dropped=(0,1,2)`.
 
@@ -188,9 +197,9 @@ These axes are not interchangeable.
 | Axis / locus | Role |
 |--------------|------|
 | **Pitching axis** | Stacking / twist reference; often ~⅓·c from LE. Not elastic axis or shear centre. |
-| **Max-thickness locus** | Optional **Y = B** anchor from `AirfoilSDF.thickness_distribution`. |
+| **Max-thickness locus** | Optional **X = B** anchor from `AirfoilSDF.thickness_distribution`. |
 | **Elastic / centroid / shear centre** | Not used for cap placement in v1. |
-| **Web-local reference** | **Y = C** caps centred on each web chord station ([SG-013](../../section/bug_log.md#sg-013)). |
+| **Web-local reference** | **X = C** caps centred on each web chord station ([SG-013](../../section/bug_log.md#sg-013)). |
 
 | `structural_family` | Behaviour |
 |---------------------|-----------|

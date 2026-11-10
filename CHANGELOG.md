@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Rib mesh patches split only at live web feet (``n_webs + 1``). Cap
+  ``LoopBranch`` breakpoints stay on the skin midsurface and no longer seed
+  extra rings (Family B/C).
+
 - Example 09 lofts 18 catalogue tokens on the scaled 12 m planform (adds
   ``0A-LC-0R``, ``0B-LC-0R``, ``1B-F-LC-10R``, ``2A-F-LC-10R``, ``2C-F-LC-10R``,
   ``2D-CN-LC-10R``).
@@ -141,10 +145,10 @@
   ``web_*`` over a nearby ``cap_*``. TE wrap walks include the OML ridge;
   TE metrics use nearest-ridge / max chord-frac, not blade-x.
 
-- TE wrap corners interpolate along the OML-TE ridge at a t/c-scaled chord
-  drop, so the cap width follows the section instead of switching on a y-span
-  threshold (that switch wrinkled IEA 15). Blunt roots still close; sharp TE
-  keeps a short wrap.
+- TE wrap is a loft-zone event from the skin-mid opening (blunt vs sharp).
+  Blunt stations walk the real TE edge; sharp stations share one ridge key
+  and drop wrap. Hysteresis holds the boolean so a station at ε cannot
+  chatter. `_te_frac_drop` is superseded (BG-005).
 
 - Loft VTK writes PNG ``panel_colour`` RGB as ``COLOR_SCALARS`` so ParaView
   shows the same patches; cell field ``role`` keeps the region name.

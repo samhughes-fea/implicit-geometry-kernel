@@ -130,5 +130,6 @@ Home: [sdf](sdf/README.md). Barrel names:
 | `wall_meta_from_cut` | Feature meta from a cut | [blade](blade/README.md) |
 | `zone_region_graphs` | Region graphs per loft zone | [blade](blade/README.md) |
 | `topology_diff` | Diff two graph signatures | [blade](blade/README.md) |
+| `emit_constructive_polygons` | Wall solids + sandwich cores as polygons (hybrid anatomy / example 09 `csg_mesh`) | [constructive](section/constructive/README.md) |
 | `read_planform_csv` / `write_windio` | Planform I/O | [blade](blade/README.md) |
 | `transverse_members_from_windio` | Ribs from a windIO structure | [blade](blade/README.md) |

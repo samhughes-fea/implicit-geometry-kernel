@@ -14,7 +14,8 @@ Turn gated midlines into downstream mesh inputs. Overview:
 4. [What `ShellMeshInputs` carries](#what-shellmeshinputs-carries)
 5. [Optional coarse strip mesh](#optional-coarse-strip-mesh)
 6. [Oracle policy](#oracle-policy-wave-0)
-7. [What next](#what-next)
+7. [Sizing policy](#sizing-policy)
+8. [What next](#what-next)
 
 ---
 
@@ -44,7 +45,7 @@ Sandwich cores and trailing-edge inserts stay constructive solids (not loop runs
 | `graph.partition_edges()` / `partition_edge_curve` | Named feature lines `(z, name_a, name_b) → xy`; omit if a name is missing |
 | `topology_diff` / `shared_loft_names` | Cap runout, dropped web, bay split; loft intersection only (no lerp) |
 | `shell_loft_zones` | Maximal span bands of constant loftable run-name signature |
-| `LockedLoftPlan` | Held point count per run (same `n_chord` on every name in the graph) |
+| `LockedLoftPlan` | Held point count per run (derived `n_held` from `h`, not an authored 8) |
 | `resample_locked` | Resample a station onto that plan; shared partition vertices; web feet on the loop |
 | `WallRegionGraph` | Authored loop regions + webs (`from_section_layout` / `from_windio_structure`) |
 | `ShellTopologyTemplate` / `map_vertex` / `zone_region_graphs` | Identity + compatible zones; 1-station paint blip is a transition band |
@@ -95,6 +96,86 @@ Numbers and parked G10/G11 notes: [`MERGED_SHELL_GAPS.md`](../reports/MERGED_SHE
 `shared_loft_names` omits that strip (`topology_diff` records the event).
 `shell_loft_zones` records those events as span bands. `resample_locked` holds
 counts and shared partition vertices; surviving names loft through the band.
+
+---
+
+## Sizing policy
+
+**Audience: internal.** Authored `n_chord` per region (CSG viz 8, example 09 loft 24)
+cannot resolve LE/TE smoothness, wall tubes, and long bays together. Counts and
+quadtrees are consequences of an in-plane size field `h` on `shell_graph`
+polylines. Density never relocates a topology key (SG-002).
+
+| Feature | Length | Failure if undersampled |
+|---|---|---|
+| Wall tube / `wall_meta` | manufacturing `t` | occupancy gaps (chord-scaled min cell) |
+| Web foot on skin mid | SG-002 emit; 0° kink | last-segment dog-leg if the node moves off-axis |
+| Cap–web join | SG-004 shared vertex | gap vs clustering tolerance |
+| LE / TE / root circle | local radius `R = 1/κ` | polygonal OML |
+| Long box bay | modest κ, large `L` | visible chords if `n` is shared with the LE D-cell |
+| Span loft | same `n` per named run in a zone | `loft_mapped_strips` / Gmsh quads break |
+
+Pinned keys: LE, TE, web feet, cap–web nodes. TE keys come from the skin-mid
+opening, not from `h` or `_te_frac_drop`: blunt OML → two real edge corners plus
+wrap; sharp OML → one shared ridge, no wrap. Density only spaces between those
+keys. Caps stay partitions plus OFFSET, not extra midlines.
+
+Between keys:
+
+```
+h = max(h_min, min(h_max, h_sagitta))
+h_sagitta = sqrt(8 ε / max(κ, κ_floor))   # chord-to-curve height ≤ ε
+h_max     = 0.04 c                        # long flats still get nodes
+h_min     = t / 8                         # cost floor (does not densify flats)
+ε         ≈ 0.0015 c
+```
+
+`t/4` is the `wall_meta` quadtree `min_cell`, not a midline spacing cap. Putting
+it in `min(h_max, t/4, sagitta)` makes `t/4` win everywhere (~1 mm) and the
+conformal nodes smear. Webs have κ ≈ 0, so `h = h_max`. TE bunching is
+unnecessary: TE κ already shrinks `h`. Do not cluster on κ alone (that starves
+long box bays).
+
+```mermaid
+flowchart TB
+  keys["Pinned keys: LE TE web feet cap-web"]
+  h["h = max h_min, min of h_max, sagitta"]
+  viz["CSG conformal: variable n per branch"]
+  loft["LockedLoftPlan: n_held = max n over the zone"]
+  qt["wall_meta QT: min_cell = t/4, thin_band Lipschitz"]
+  keys --> h
+  h --> viz
+  h --> loft
+  h --> qt
+```
+
+Same `h`, three discretisations:
+
+| Product | Discretisation |
+|---|---|
+| CSG conformal viz | Variable `n` per branch from `h` (no loft contract) |
+| Locked loft / Gmsh | Raw `n(z)` from `h`; **hold** `n_held = max n` in the `shell_loft_zones` band; extra vertices redistributed at fixed `n` |
+| `wall_meta` quadtree | `thin_band` Lipschitz refine; `min_cell ≤ t/4`. Not `n_chord`. Filled-solid property trees keep the cavity band ceiling |
+
+Example 09 `csg_mesh/` is a 2×3 of those products in the blade frame (not structural LE-on-right axes):
+
+| | Left | Mid | Right |
+|---|---|---|---|
+| Top | constructive polygons (`emit_constructive_polygons` on `cut.host`, including sandwich cores) | `wall_meta` occupancy (`φ ≤ 0`, thin-band tubes) | property quadtree (union of wall solids, `thin_band=False`) |
+| Bottom | cell bays | mid-surface nodes (`h`) | same property tree, occupancy by label |
+
+The top-left fill is the same polygon set as [`anatomy_on_a_figure.md`](anatomy_on_a_figure.md) / `plot_section_hybrid`, mapped with `cut.place_host_xy`. It is not an OML-disk fill. The two right-hand panels share `build_shared_section_quadtree`: the union panel shows the refine band around the wall solids (coarse cavity leaves); the by-label panel is the layer view the integrator sums.
+
+Do not: one `n_chord` for every bay/LE/TE; κ-only clustering with no `h_max`;
+moving web feet onto a grid or chord-fraction skin keys; feeding variable `n(z)`
+into `loft_mapped_strips`; using the filled-airfoil refine ceiling on wall tubes.
+Held count is a lock derived from `h`, not an authored 8.
+
+CSG conformal viz (`_paint_mesh_nodes`) uses `h` (`sample_region_polylines(...,
+size_field=True)`). `LockedLoftPlan` still holds an authored `n_chord`. Next:
+promote `h` into that plan as derived `n_held`; keep the quadtree on `t` /
+Lipschitz. Downstream rib/tip rings seed from these skin/web nodes; interior
+rib meshing is not sized here.
 
 ---
 
@@ -185,6 +266,7 @@ equals intercept `DroppedWeb.index` ([blade bug log](../../blade/bug_log.md)).
 |------|--------|
 | Midline emit details | [`../midlines/`](../midlines/README.md) |
 | Mapped loft freeze | [`../../blade/bug_log.md`](../../blade/bug_log.md) |
+| Junction kinks (SG-002 / SG-004) | [`../bug_log.md`](../bug_log.md) |
 
 G10/G11 stay out of this kernel
 ([`MERGED_SHELL_GAPS.md#waves`](../reports/MERGED_SHELL_GAPS.md#waves)).

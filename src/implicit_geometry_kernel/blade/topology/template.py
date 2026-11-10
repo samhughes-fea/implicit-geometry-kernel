@@ -102,6 +102,8 @@ class ShellTopologyTemplate:
         loop = []
         wrap_on = True if te_blunt is None else bool(te_blunt)
         for region in regions:
+            start: ShellVertexId
+            end: ShellVertexId
             if region.wrap:
                 if not wrap_on:
                     continue
@@ -135,7 +137,10 @@ class ShellTopologyTemplate:
         if vid == ("TE",) or (len(vid) > 0 and vid[0] == "TE") or (
                 vid[0] == "anchor" and len(vid) > 1 and vid[1] == "te"):
             side = vid[1] if len(vid) > 1 and vid[0] == "TE" and vid[1] in ("suction", "pressure") else ""
-            for cand in (("TE", side) if side else None, ("TE", "suction"), ("TE", "pressure"), ("TE",)):
+            te_cands: tuple[ShellVertexId | None, ...] = (
+                ("TE", side) if side else None, ("TE", "suction"), ("TE", "pressure"), ("TE",),
+            )
+            for cand in te_cands:
                 if cand is not None and cand in other.vertices:
                     return cand
             return ("TE",)
@@ -166,9 +171,9 @@ class ShellTopologyTemplate:
                     return min(others, key=lambda v: abs(_idx(v) - idx))
             if name.startswith("cap_"):
                 for wname in ("web_0", "web_1", "le"):
-                    cand = _loop_vid(wname, side)
-                    if cand in other.vertices:
-                        return cand
+                    cap_cand = _loop_vid(wname, side)
+                    if cap_cand in other.vertices:
+                        return cap_cand
             if side and ("TE", side) in other.vertices:
                 return ("TE", side)
             if ("TE",) in other.vertices:

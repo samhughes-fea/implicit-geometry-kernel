@@ -141,7 +141,7 @@ def triangulate_rings(rings, *, size: float | None = None) -> list[list[np.ndarr
     """One Gmsh session for many planar rings."""
     gmsh, own = _gmsh_start()
     try:
-        out = []
+        out: list[list[np.ndarray]] = []
         for i, ring in enumerate(rings):
             gmsh.model.add(f"rib_{i}")
             gmsh.model.setCurrent(f"rib_{i}")

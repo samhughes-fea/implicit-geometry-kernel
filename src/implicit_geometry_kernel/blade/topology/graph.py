@@ -19,7 +19,7 @@ MIN_GAP = 0.002
 PER_WEB_PAD = 0.04
 
 FracLaw = Callable[[float], float]
-ShellVertexId = tuple
+ShellVertexId = tuple[str, ...]
 
 
 def _interp_table(z: float, zs: Sequence[float], vs: Sequence[float]) -> float:

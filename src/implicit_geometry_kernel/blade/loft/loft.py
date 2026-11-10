@@ -157,6 +157,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
             raise ValueError("a blade needs at least two stations")
         if np.any(np.diff([s.z for s in self.stations]) <= 0.0):
             raise ValueError("stations need distinct z")
+        spec: Union["SystemLayoutSpec", "SectionLayout"]
         if isinstance(layout, str):
             spec = resolve_system_type(layout)
         else:
@@ -224,8 +225,9 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         self._offset = _as_span_table(offset, "offset", cols=2)
         self.n_airfoil_points = int(n_airfoil_points)
         self.transverse = tuple(transverse)
-        if int(getattr(spec, "n_ribs", 0) or 0) > 0 and not self.transverse:
-            self.transverse = catalogue_ribs(self.stations, spec.n_ribs)
+        n_ribs = int(getattr(spec, "n_ribs", 0) or 0)
+        if n_ribs > 0 and not self.transverse:
+            self.transverse = catalogue_ribs(self.stations, n_ribs)
         self.stringers = tuple(stringers)
         self.ply_drops = tuple(ply_drops)
         self.merge_cap_and_skin = bool(merge_cap_and_skin)

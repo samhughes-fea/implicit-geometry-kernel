@@ -12,6 +12,10 @@ if TYPE_CHECKING:
 
 
 class RunnerLifecycleMixin:
+    _resolution: StationLayoutResolution | None
+    _executed: bool
+    _result: SectionGeometryResult | None
+
     def _assemble_dropping_webs(self, resolution: StationLayoutResolution, last_exc):
         """Wave 4: step down webs when flapwise re-anchor fails (not a frozen sizing freeze)."""
         from implicit_geometry_kernel.contract import InfeasibleSectionGeometry

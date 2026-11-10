@@ -7,7 +7,8 @@ from collections.abc import Callable, Sequence
 import numpy as np
 
 from implicit_geometry_kernel.sdf.nodes.base import EvalCache, FieldSample, LeafNode, NO_FEATURE, SDFNode
-from implicit_geometry_kernel.sdf.kernels.primitives import sdf_circle, sdf_polygon, sdf_segment
+from implicit_geometry_kernel.sdf.kernels.polygon_numba import sdf_polyline_unsigned_numba
+from implicit_geometry_kernel.sdf.kernels.primitives import sdf_circle, sdf_polygon
 
 
 class CircleSDF(LeafNode):
@@ -37,15 +38,11 @@ class PolylineBandSDF(LeafNode):
 
     def __init__(self, vertices: np.ndarray, radius: float, meta: int = NO_FEATURE) -> None:
         super().__init__(meta)
-        self.vertices = np.asarray(vertices, dtype=np.float64)
+        self.vertices = np.ascontiguousarray(vertices, dtype=np.float64)
         self.radius = float(radius)
 
     def _phi(self, points: np.ndarray) -> np.ndarray:
-        x, y = points[:, 0], points[:, 1]
-        d = np.full(points.shape[0], np.inf)
-        verts = self.vertices
-        for a, b in zip(verts[:-1], verts[1:]):
-            d = np.minimum(d, sdf_segment(x, y, a[0], a[1], b[0], b[1]))
+        d = sdf_polyline_unsigned_numba(points[:, 0], points[:, 1], self.vertices)
         return np.asarray(d, dtype=np.float64) - self.radius
 
 

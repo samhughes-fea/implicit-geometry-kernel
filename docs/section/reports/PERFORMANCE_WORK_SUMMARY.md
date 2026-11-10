@@ -33,6 +33,7 @@ Phase timings for computational-efficiency work on `section_geometry`.
 15. [Phase 15](#phase-15)
 16. [Phase 16](#phase-16)
 17. [Recommended next steps](#recommended-next-steps)
+18. [Kernel scan 2026-11-10](#kernel-scan-2026-11-10)
 
 ---
 
@@ -609,7 +610,38 @@ track parked** pending evidence that BSP sizing is still wall-bound on geometry
 7. ~~Constructive emit substages + shared cavity/unions~~ **Done (Phase 15).**
 8. ~~Shoelace vs laminate split + shared deeper offset~~ **Done (Phase 16).**
 9. ~~Docs closeout (efficiency review index + README profile note)~~ **Done.**
-10. **Efficiency track parked.** Prefer product/API/docs cleanup and gallery
-    ports onto `SectionSpec` / `SectionGeometry` / `BladeGeometry` / `shell_graph`.
-11. Resume geometry perf only with BSP evidence that cache misses / rebuilds
-    dominate sizing wall time — then profile hit rate, not emit Booleans.
+10. ~~Efficiency track parked.~~ **Superseded** by [kernel scan 2026-11-10](#kernel-scan-2026-11-10).
+    Station wall time (~0.014 s) is not limited by emit Booleans. Do not reopen
+    Phase 15-style micro-opts without a named cache-miss or quadtree timing.
+11. Resume a **code** change only with a named test or `SECTION_GEOMETRY_PROFILE`
+    number that shows the hotspot; goldens must not drift.
+
+---
+
+## Kernel scan 2026-11-10
+
+Graphify-first pass over existing [`graphify-out/`](../../../graphify-out/GRAPH_REPORT.md)
+(2943 nodes; no `--update`). Queries used communities Quadtree SOA Refine,
+Polygon SDF BVH, Mapped Strip Loft, GEOS, Section Eval Cache, BladeGeometry Core.
+`graphify path` (EXTRACTED before INFERRED):
+
+- `build_shared_quadtree()` → `_refine_soa()` (1 hop, EXTRACTED).
+- `loft_mapped_strips()` → `_match_open_counts()` → `arc_resample_open()` (2 hops).
+- No graph path `BladeGeometry.section_at` → `geos/lib.py`: `section_at` lives in
+  `blade/loft/loft_cut.py` after the loft split; the graph still labels
+  `blade/fields.py` for `CutWallMetaSDF`. Do not treat that as a missing call.
+
+No new timing beat station ~0.014 s. **No code change this pass.**
+
+| Location | Why the graph flags it | Keep / fix |
+|---|---|---|
+| `BladeGeometry.section_at` LRU 256, `round(z, 9)` | Cut rebuild vs cache | **Keep.** 16-station CSG + loft fits; raise size only if a named miss rate appears. |
+| `LoftedPolygonSDF` `_accel` / `accel_at` | Polygon SDF BVH community | **Keep.** Default `accelerate=True`; BG-015 φ identity. |
+| `build_shared_quadtree` / `_refine_soa` | Quadtree SOA Refine hub | **Keep.** CSG occupancy cap is BG-026 (`max_cells=400_000`), not a Python loop. |
+| `SectionEvalCache` | Grid IR memo | **Keep.** Station-local; do not globalize without miss evidence. |
+| `loft_mapped_strips` Python loops | Mapped Strip Loft hub | **Keep.** Strip count is O(panels); vectorizing without a named loft timing risks goldens. |
+| `geos/` ctypes | GEOS Geometry Types | **Keep.** Bound on constructive/clip; numba is already on `sdf_polygon`. |
+| Constructive emit Booleans | Phase 15–16 closeout | **Keep parked.** No BSP cache-miss evidence. |
+
+Reproduce: `SECTION_GEOMETRY_PROFILE=1` on a many-station `section_geometry` run
+(see [How to reproduce profiling](#how-to-reproduce-profiling)).

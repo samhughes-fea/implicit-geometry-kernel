@@ -365,7 +365,10 @@ Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays
   `LoftedPolygonSDF` BVH (`accelerate` / `accel_at`) is shipped.
 - Mapped loft freeze: loft webs follow intercept `DroppedWeb.index`; no
   per-blade branches in loft code ([blade bug log](blade/bug_log.md)).
-- Efficiency track parked ([PERFORMANCE_WORK_SUMMARY](section/reports/PERFORMANCE_WORK_SUMMARY.md)).
+- Efficiency is an **open scan**, not an infinite emit track
+  ([PERFORMANCE_WORK_SUMMARY](section/reports/PERFORMANCE_WORK_SUMMARY.md)
+  kernel scan 2026-11-10). Resume code only with a named timing; do not reopen
+  Phase 15 Boolean shaving.
 
 ## Risks
 

@@ -7,7 +7,7 @@ import numpy as np
 
 from implicit_geometry_kernel.blade.loft.locked_loft import arc_resample_open
 from implicit_geometry_kernel.blade.topology.sizing import resample_open_h, station_live_thickness
-from implicit_geometry_kernel.blade.shell_graph import ShellGraph, ShellRun
+from implicit_geometry_kernel.blade.shell_graph import ShellGraph, ShellRun, shell_graph
 from implicit_geometry_kernel.blade.topology.graph import (
     ShellVertexId,
     WallRegionGraph,
@@ -36,6 +36,30 @@ from implicit_geometry_kernel.blade.topology.map_walk import (
 from implicit_geometry_kernel.blade.topology.map_loft import (
     _resample_keys,
 )
+
+
+def station_key_points(cut) -> dict[str, np.ndarray]:
+    """LE, TE, cap-edge vertices and web feet at this station."""
+    from implicit_geometry_kernel.section.assembly.members import wall_type_for_label
+
+    oml = np.vstack([w.points for w in cut.walls_of("skin")])
+    le = oml[int(np.argmin(oml[:, 0]))]
+    te = oml[int(np.argmax(oml[:, 0]))]
+    out: dict[str, np.ndarray] = {"LE": le, "TE": te}
+    graph = shell_graph(cut)
+
+    def _is_cap(name: str) -> bool:
+        wt = wall_type_for_label(name)
+        return wt is not None and wt.kind == "cap"
+
+    for i, edge in enumerate(graph.partition_edges()):
+        if _is_cap(edge.name_a) or _is_cap(edge.name_b):
+            out[f"cap_edge_{i}"] = np.asarray(edge.point, float)
+    for web in graph.webs:
+        pts = np.asarray(web.points, float)
+        out[f"{web.name}_foot_0"] = pts[0]
+        out[f"{web.name}_foot_1"] = pts[-1]
+    return out
 
 
 def place_station_keys(cut, graph: ShellGraph, region_graph: WallRegionGraph, z: float,

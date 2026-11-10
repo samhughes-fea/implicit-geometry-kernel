@@ -180,6 +180,12 @@ def test_mid_surface_graph(cut):
     assert len(starts) == len(set(starts))
 
 
+def test_cut_host_is_section_midline_host(cut):
+    from implicit_geometry_kernel.section.midlines.host import SectionMidlineHost
+
+    assert isinstance(cut.host, SectionMidlineHost)
+
+
 def test_oml_polyline_closed_and_contains_skin():
     from implicit_geometry_kernel.section.boundary import LineString, OPS, Polygon
 

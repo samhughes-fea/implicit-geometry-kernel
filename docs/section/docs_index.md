@@ -103,6 +103,7 @@ Index: [`reports/README.md`](reports/README.md).
 | [`reports/PERFORMANCE_WORK_SUMMARY.md`](reports/PERFORMANCE_WORK_SUMMARY.md) | Hybrid / quadtree performance notes |
 | [`reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md`](reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md) | SG-009 design spike — post-resample axis×cap junctions |
 | [`reports/MERGED_SHELL_GAPS.md`](reports/MERGED_SHELL_GAPS.md) | Pass 2 shell-graph gaps G1–G11 (G10/G11 closed here; G4 `T` locked) |
+| [`reports/TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md`](reports/TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md) | G-TE … G-ACC to retire a shell-FE consumer’s native kernel |
 | [`bug_log.md`](bug_log.md) | Debug log — junction/tolerance findings and the standing invariant |
 
 ## Module pages

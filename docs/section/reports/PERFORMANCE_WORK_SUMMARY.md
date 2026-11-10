@@ -620,16 +620,18 @@ track parked** pending evidence that BSP sizing is still wall-bound on geometry
 
 ## Kernel scan 2026-11-10
 
-Graphify-first pass over existing [`graphify-out/`](../../../graphify-out/GRAPH_REPORT.md)
-(2943 nodes; no `--update`). Queries used communities Quadtree SOA Refine,
-Polygon SDF BVH, Mapped Strip Loft, GEOS, Section Eval Cache, BladeGeometry Core.
+Graphify-first pass over [`graphify-out/`](../../../graphify-out/GRAPH_REPORT.md)
+(3064 nodes after `--update` on `src/implicit_geometry_kernel`, 2026-11-10).
+Queries used communities Quadtree SOA Refine, Polygon SDF BVH, Mapped Strip Loft,
+GEOS, Section Eval Cache, BladeGeometry Core.
 `graphify path` (EXTRACTED before INFERRED):
 
 - `build_shared_quadtree()` → `_refine_soa()` (1 hop, EXTRACTED).
 - `loft_mapped_strips()` → `_match_open_counts()` → `arc_resample_open()` (2 hops).
-- No graph path `BladeGeometry.section_at` → `geos/lib.py`: `section_at` lives in
-  `blade/loft/loft_cut.py` after the loft split; the graph still labels
-  `blade/fields.py` for `CutWallMetaSDF`. Do not treat that as a missing call.
+- No graph path `BladeGeometry.section_at` → `geos/lib.py`: `.section_at()` lives in
+  `blade/loft/loft_cut.py` (L87). `CutWallMetaSDF` is EXTRACTED at
+  `blade/topology/fields.py` (L98). Do not treat a missing `blade/fields.py` as a
+  missing call.
 
 No new timing beat station ~0.014 s. **No code change this pass.**
 

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Structure probes 1/3/4: ``shell_graph`` builders call ``_mid_surface(cut)`` /
+  ``shell_graph(cut)``; ``SectionCut.host`` is ``SectionMidlineHost | None``;
+  ``station_key_points`` lives next to ``place_station_keys``. ``STRUCTURE_PROBES.md``
+  findings match those wrappers.
+
 - **BG-027:** planform ``axes.png`` no longer labels a cell-area locus as shear
   centre. Example 14 compares three geometric-centroid routes (shoelace,
   thin-wall strip, quadtree).

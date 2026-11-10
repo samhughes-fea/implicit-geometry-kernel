@@ -25,6 +25,7 @@ from implicit_geometry_kernel.blade.topology.map import (
     _key_name,
     place_station_keys,
     sample_region_polylines,
+    station_key_points,
 )
 from implicit_geometry_kernel.blade.topology.sizing import (
     resample_open_h,
@@ -96,6 +97,7 @@ __all__ = [
     "rib_face_polygons",
     "rib_face_triangles",
     "place_station_keys",
+    "station_key_points",
     "resample_open_h",
     "role_atom",
     "sample_region_polylines",

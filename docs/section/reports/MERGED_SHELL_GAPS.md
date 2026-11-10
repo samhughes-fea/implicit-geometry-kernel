@@ -4,7 +4,9 @@
 
 Evidence for G1–G11 and extract/TE/BVH. Waves 0–7 are shipped. G10/G11 are
 closed for this kernel. Remaining park: TE classifier on OML only (WP6); BVH is
-shipped.
+shipped. Geometry still required before a conformal shell-FE consumer can
+delete its own kernel is a **separate** list (G-TE … G-ACC):
+[`TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md`](TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md).
 Characterization: [`tests/test_shell_graph_gaps.py`](../../../tests/test_shell_graph_gaps.py).
 
 Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm, cap 8 mm, webs 2 mm at chord fractions `(0.18, 0.48)`.

@@ -34,7 +34,8 @@ imports every non-plotting module because extras are lazy at the call site.
 Kernel polygon fill lives in `mesh/polygon.py` (Qhull Voronoi + numba clip;
 faces have more than four nodes). Numpy Steiner Delaunay is `mesh/delaunay.py`.
 The Gmsh backend is `mesh/gmsh/` (`shell.py` mapped strips, `plane.py` planar
-cells).
+cells). That extra is leftover convenience. The kernel station/CSG mesh is
+`integration/quadtree` (`build_shared_quadtree`).
 
 ## House-rule splits
 

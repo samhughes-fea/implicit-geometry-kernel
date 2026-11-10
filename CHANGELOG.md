@@ -23,6 +23,10 @@
 - Regenerated example 09 ``csg_mesh`` after BG-025/026 (shared quadtree
   occupancy). Example 08 skipped (no local ``reference_blades/`` catalogue).
 
+- Kernel station/CSG mesh is ``build_shared_quadtree``; ``[mesh]`` / Gmsh stays
+  unadvertised convenience. Locked loft ``n_held`` is a strip contract, not a
+  Gmsh job.
+
 - CSG property panels reuse occupancy thin-band wall-tube refine (BG-025).
   Occupancy ``max_cells`` is 400000 so 5D root stations finish (BG-026).
 

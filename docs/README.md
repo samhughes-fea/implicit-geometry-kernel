@@ -24,7 +24,7 @@ Names: [glossary](glossary.md). Frames: [which array](frames/README.md#which-arr
 | Member model | `structure` builders, span laws | wall / branch / region / transverse | [structure](structure/README.md) | [examples/structure](../examples/structure/) | [tests/structure](../tests/structure/) |
 | SDF / CSG | `sdf` | kernels, nodes, `AirfoilSDF`, `GeometrySolver` | [sdf](sdf/README.md) | [examples/sdf](../examples/sdf/) | [tests/sdf](../tests/sdf/) |
 | Frames | `frames` | R / B / S / S′ / C transforms | [frames](frames/README.md) | [examples/frames](../examples/frames/) | [tests/frames](../tests/frames/) |
-| Integration | `integration` | area and second moments | [integration](integration/README.md) | [examples/integration](../examples/integration/) | [tests/integration](../tests/integration/) |
+| Integration | `build_shared_quadtree` | area/moments; CSG occupancy mesh | [integration](integration/README.md) | [examples/integration](../examples/integration/), example 09 `csg_mesh` | [tests/integration](../tests/integration/) |
 | Hand-off | `contract` | `ShellMidlineStrip`, `LaminateOffsetRegion`, `CellWallLoop` | [contract](contract/README.md) | [contract/01](../examples/contract/01_three_products_dtos/), teaching `05` | [tests/contract](../tests/contract/) |
 | Extract | `extract` | zero loops, feature curves | [extract](extract/README.md) | [examples/extract](../examples/extract/) | [tests/extract](../tests/extract/) |
 | Plotting | `plotting` (`[plots]`) | figures | [visualisation](section/visualisation/README.md) | [demos](../examples/demos/) | [tests](../tests/README.md) |
@@ -59,7 +59,8 @@ flowchart TB
   sdf --> blade
   blade --> extract
   plotting -.->|plots extra| section
-  blade -.->|mesh extra| meshPkg
+  integration -.->|shared quadtree| section
+  blade -.->|mesh extra leftover| meshPkg
   blade -.->|cad extra| cad
 ```
 

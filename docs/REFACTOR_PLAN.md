@@ -86,8 +86,9 @@ Decisions already made by the maintainer:
 - Public docs describe the three geometry products and roles. `src/` and `tests/`
   must not name consumer packages (`tests/test_consumer_names.py`). Scripts and
   `docs/FORK.md` may name checkouts.
-- Optional extra `[mesh]` (`gmsh`) is not advertised. `[cad]` / STEP patches shipped
-  after step 6.
+- Kernel mesh is `build_shared_quadtree`. Optional extra `[mesh]` (`gmsh`) is
+  leftover convenience, not advertised. `[cad]` / STEP patches shipped after
+  step 6.
 - 0.6.0 closes the deprecation window: mid-surface exactness, plots extra,
   alias removal. Maintainer tags it.
 
@@ -135,9 +136,10 @@ Layers, with imports pointing down only:
 contract  <-  sdf / integration / frames  <-  structure  <-  catalogue  <-  section  <-  blade  <-  extract
 ```
 
-Extras (`plotting` `[plots]`, `mesh` `[mesh]`, `blade.cad` `[cad]`, `profiling.py`)
-are not layers. Geometry modules must not import them. Consumers still own real
-Gmsh jobs; `mesh/gmsh/` is a convenience.
+Extras (`plotting` `[plots]`, leftover `mesh` `[mesh]`, `blade.cad` `[cad]`,
+`profiling.py`) are not layers. Geometry modules must not import them. The
+in-kernel mesh is `integration/quadtree`. Consumers own shell mesher jobs;
+`mesh/gmsh/` is unadvertised convenience.
 
 - `catalogue/` holds WX-Y-Z-NR tokens; it imports only itself (and `contract`).
 - `structure/` defines what members exist (wall partitions, branches, regions,
@@ -192,7 +194,7 @@ implicit_geometry_kernel/
   extract/         marching (zero loops), curves (feature curves)
 extras (not layers):
   plotting/        [plots]
-  mesh/            [mesh] convenience helper
+  mesh/            leftover [mesh] convenience (not the kernel mesh)
   blade/cad.py     [cad] STEP writer
   profiling.py     optional timers, not on root __all__
 ```
@@ -357,7 +359,9 @@ Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays
 - Older `examples/demos/` stay on the gallery (decision 3). Teaching, section
   demos, contract 01, feature-field loft and box-beam assemble use `SectionSpec`
   / `TagNode`.
-- Do not advertise `[mesh]` (`gmsh`). Consumers own mesher jobs and ply ABD/PCOMP.
+- Kernel station/CSG mesh is `build_shared_quadtree` (`integration/quadtree`).
+  Do not advertise `[mesh]` (`gmsh`); it is leftover convenience. Consumers own
+  shell mesher jobs and ply ABD/PCOMP.
 - G10/G11 are **closed for this kernel** (thin-wall adapter and PCOMP stay in
   consumers). Remaining park: TE classifier on OML only, no `T` taper, no cores
   on `shell_graph` unless a shell consumer needs them

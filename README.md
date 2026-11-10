@@ -149,11 +149,11 @@ src/implicit_geometry_kernel/
 ├── structure/      thin-wall member assembler (span laws, four contribution kinds)
 ├── sdf/            2-D signed-distance modelling: primitives, CSG, offsets, Numba kernels
 ├── frames/         geometric coordinate frames (R, B, S, S′, C) and point transforms
-├── integration/    quadtree and shoelace area and moment integrals
+├── integration/    shared quadtree mesh (area/moments, CSG occupancy); shoelace
 ├── contract/       the hand-off types (ShellMidlineStrip, CellWallLoop)
 ├── geos/           ctypes libgeos_c, WKB, kernel Polygon
 ├── extract/        in-plane zero loops and feature curves (not a mesh)
-├── mesh/           polygonal fill; Gmsh backend in mesh/gmsh/ (optional extra)
+├── mesh/           optional `[mesh]` polygonal fill / Gmsh convenience (not advertised)
 ├── plotting/       Matplotlib figures (needs the [plots] extra)
 └── profiling.py    optional timers (SECTION_GEOMETRY_PROFILE=1)
 tests/              one folder per subpackage, plus loft and import-rule tests

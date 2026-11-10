@@ -113,7 +113,7 @@ polylines. Density never relocates a topology key (SG-002).
 | Cap–web join | SG-004 shared vertex | gap vs clustering tolerance |
 | LE / TE / root circle | local radius `R = 1/κ` | polygonal OML |
 | Long box bay | modest κ, large `L` | visible chords if `n` is shared with the LE D-cell |
-| Span loft | same `n` per named run in a zone | `loft_mapped_strips` / Gmsh quads break |
+| Span loft | same `n` per named run in a zone | `loft_mapped_strips` quads break |
 
 Pinned keys: LE, TE, web feet, cap–web nodes. TE keys come from the skin-mid
 opening, not from `h` or `_te_frac_drop`: blunt OML → two real edge corners plus
@@ -149,13 +149,16 @@ flowchart TB
   h --> qt
 ```
 
-Same `h`, three discretisations:
+Same `h`, three discretisations. The **in-kernel mesh** is the shared quadtree
+(`build_shared_quadtree` / `quadtree_spec_for_airfoil`): occupancy and property
+union on thin-band wall tubes. Locked loft `n_held` is a loft-strip contract,
+not a Gmsh job. Downstream shell meshing stays in consumers.
 
 | Product | Discretisation |
 |---|---|
 | CSG conformal viz | Variable `n` per branch from `h` (no loft contract) |
-| Locked loft / Gmsh | Raw `n(z)` from `h`; **hold** `n_held = max n` in the `shell_loft_zones` band; extra vertices redistributed at fixed `n` |
-| `wall_meta` quadtree | `thin_band` Lipschitz refine; `min_cell ≤ t/4`. Not `n_chord`. Property CSG trees use the same wall-tube spec |
+| Locked loft | Raw `n(z)` from `h`; **hold** `n_held = max n` in the `shell_loft_zones` band; extra vertices redistributed at fixed `n` |
+| `wall_meta` / property quadtree | `thin_band` Lipschitz refine; `min_cell ≤ t/4`. Not `n_chord`. This is the kernel area/CSG mesh |
 
 Example 09 `csg_mesh/` is a 2×3 of those products in the blade frame (not structural LE-on-right axes):
 

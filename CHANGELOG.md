@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Loft morph: interior stations blend the parent surfaces directly at each
+  chord position instead of refitting an intermediate aerofoil. A prismatic
+  loft now reproduces its end sections to round-off (it drifted by up to
+  0.7 mm at the leading edge after 0.2.0, which was exact). The blade
+  golden numbers moved at interior cuts only (z = 0.5, 2, 4.5): most values by
+  under 1e-4 relative, the largest by 0.5 % (a web end point, 0.27 mm).
+
 - Release notes: 0.9.0 gets its own section with a Breaking list;
   ``docs/MIGRATING.md`` maps every 0.2.x call to its 0.9 form, and
   ``tests/test_compat_0_2.py`` checks the migrated call reproduces 0.2.0 geometry.

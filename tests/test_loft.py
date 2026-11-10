@@ -291,3 +291,22 @@ def test_cut_keeps_parent_concept_when_webs_drop():
 def test_missing_pivot_fraction_raises():
     with pytest.raises(TypeError, match="pivot_fraction is required"):
         BladeGeometry(_prismatic(), "0A-LC-0R", 0.003)
+
+
+def test_prismatic_loft_reproduces_its_sections():
+    """Equal parent aerofoils: every interior cut matches the end cut exactly."""
+    import numpy as np
+
+    from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
+
+    af = Airfoil.naca4("0024")
+    stations = [Station(0.0, 1.0, af, pitch_axis=0.3), Station(4.0, 1.0, af, pitch_axis=0.3)]
+    blade = BladeGeometry(stations, "2D-F-LC-0R", 0.003, spar_cap_thickness=0.008,
+                          shear_web_thickness=0.002, web_positions=(0.18, 0.48), pivot_fraction=0.3)
+    root = {str(w.label): np.asarray(w.points)[:, :2] for w in blade.section_at(0.0).walls}
+    for z in (4.0 / 3.0, 8.0 / 3.0):
+        for w in blade.section_at(z).walls:
+            pts = np.asarray(w.points)[:, :2]
+            ref = root[str(w.label)]
+            assert pts.shape == ref.shape
+            assert np.abs(pts - ref).max() < 1e-7, (w.label, z)

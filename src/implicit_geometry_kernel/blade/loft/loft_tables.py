@@ -75,23 +75,40 @@ def _near_circle(foil) -> bool:
 
 
 def _morph_surfaces(fa, fb, w: float, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """TE-preserving morph: smoothstep blend on circle roots, else thickness blend."""
-    from implicit_geometry_kernel.blade.airfoil import Airfoil
+    """TE-preserving morph: smoothstep blend on circle roots, else thickness blend.
 
+    Surfaces are blended where they are sampled (``x``), from the parents' own
+    splines. No intermediate airfoil is refitted, so a loft between equal
+    airfoils reproduces them exactly at every ``z``.
+    """
     w = float(np.clip(w, 0.0, 1.0))
-    n = max(int(len(x)), 5)
+    x = np.asarray(x, float)
     if w <= 1e-15:
         return np.asarray(fa.surface("upper", x), float), np.asarray(fa.surface("lower", x), float)
     if w >= 1.0 - 1e-15:
         return np.asarray(fb.surface("upper", x), float), np.asarray(fb.surface("lower", x), float)
+
+    def lerp(s: float, xs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        yu = (1.0 - s) * np.asarray(fa.surface("upper", xs), float) + s * np.asarray(fb.surface("upper", xs), float)
+        yl = (1.0 - s) * np.asarray(fa.surface("lower", xs), float) + s * np.asarray(fb.surface("lower", xs), float)
+        return yu, yl
+
     if _near_circle(fa) or _near_circle(fb):
         s = _smoothstep(w) if _near_circle(fa) != _near_circle(fb) else w
-        foil = Airfoil.blend(fa, fb, s, n=n)
+        upper, lower = lerp(s, x)
     else:
-        t_c = (1.0 - w) * float(fa.max_thickness) + w * float(fb.max_thickness)
-        foil = Airfoil.interpolate_by_thickness(fa, fb, t_c, n=n)
-    upper = np.asarray(foil.surface("upper", x), float)
-    lower = np.asarray(foil.surface("lower", x), float)
+        # Lerp the surfaces in t/c, then scale thickness about the camber line so the
+        # peak t/c is the lerped one (Airfoil.interpolate_by_thickness, evaluated at x).
+        ta, tb = float(fa.max_thickness), float(fb.max_thickness)
+        t_c = (1.0 - w) * ta + w * tb
+        s = 0.0 if abs(tb - ta) < 1e-15 else (t_c - ta) / (tb - ta)
+        dense = np.linspace(0.0, 1.0, 401)  # the grid Airfoil.max_thickness uses
+        du, dl = lerp(s, dense)
+        peak = float(np.max(du - dl))
+        scale = t_c / peak if peak > 0.0 else 1.0
+        yu, yl = lerp(s, x)
+        camber, thick = 0.5 * (yu + yl), yu - yl
+        upper, lower = camber + 0.5 * thick * scale, camber - 0.5 * thick * scale
     gap_a = abs(float(np.asarray(fa.surface("upper", 1.0)) - np.asarray(fa.surface("lower", 1.0))))
     gap_b = abs(float(np.asarray(fb.surface("upper", 1.0)) - np.asarray(fb.surface("lower", 1.0))))
     gap = (1.0 - w) * gap_a + w * gap_b

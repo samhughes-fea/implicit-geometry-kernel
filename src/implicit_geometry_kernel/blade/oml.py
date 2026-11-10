@@ -95,7 +95,7 @@ def write_mid_surfaces(
         from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
 
         z0, z1 = float(geo.stations[0].z), float(geo.stations[-1].z)
-        zs = list(np.linspace(z0, z1, int(n_span)))
+        zs: list[float] = [float(z) for z in np.linspace(z0, z1, int(n_span))]
         for z in geo.forced_stations():
             if z0 - 1e-12 <= float(z) <= z1 + 1e-12:
                 zs.append(float(z))
@@ -111,7 +111,7 @@ def write_mid_surfaces(
 
     want = None if members is None else set(members)
     z0, z1 = float(geo.stations[0].z), float(geo.stations[-1].z)
-    zs = list(np.linspace(z0, z1, int(n_span)))
+    zs = [float(z) for z in np.linspace(z0, z1, int(n_span))]
     for z in geo.forced_stations():
         if z0 - 1e-12 <= float(z) <= z1 + 1e-12:
             zs.append(float(z))

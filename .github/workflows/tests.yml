@@ -24,7 +24,7 @@ jobs:
       - name: Lint
         run: ruff check src tests examples scripts
       - name: Typecheck
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version != '3.12'
         run: mypy src/implicit_geometry_kernel
       - name: Run tests
         run: pytest -q

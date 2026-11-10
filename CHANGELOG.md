@@ -18,6 +18,9 @@
   docstrings describe consumers generically. ``tests/test_consumer_names.py``
   now also scans ``examples/`` and checks that no private consumer is named
   anywhere in the repository.
+- Tooling: ``ruff`` and ``mypy`` are pinned in ``[dev]``; mypy runs on Python
+  3.11 and 3.13; a weekly ``tool-drift`` workflow tries the newest releases.
+  Fixed the numpy-typing errors those releases report.
 
 ## 0.9.0 (2026-11-10)
 

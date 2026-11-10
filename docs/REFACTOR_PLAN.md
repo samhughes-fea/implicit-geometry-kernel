@@ -13,6 +13,27 @@ The architecture programme is **closed**. Steps 1–8 are done; step 9 was decli
 Standing work is product/API/docs cleanup, demo ports onto the public entry points,
 and parked consumer items — not a new numbered step.
 
+### 1.0 plan (after 0.9.0)
+
+The next programme takes the kernel to 1.0: consumers pin it, the kernel ships
+the analysis shell mesh, and the public API is frozen. Kernel PRs:
+
+| Id | What | State |
+|----|------|-------|
+| K1 | 0.9.0 release notes, `docs/MIGRATING.md`, 0.2 compat check | Done (this PR) |
+| K2 | Reference-catalogue tests (`-m reference`), stable cap names at family-C stations, `pyyaml` in `[dev]` | Done (this PR) |
+| K3 | No consumer names in the public repo; report renamed `SHELL_FE_REPLACEMENT_GAPS.md` | Done (this PR) |
+| K4 | Pinned `ruff`/`mypy`, weekly `tool-drift` workflow | Done (this PR) |
+| K6 | Tip closure on every blade: closes the skin shell at z/L = 1 with the polygon mesher, skin partition; `nR` counts interior ribs only | Next |
+| K7 | Mesh product: skin/web quads, polygonal ribs and tip, arrays with partition and thickness, no Gmsh | After K6 |
+| K8 | Leading-edge and spanwise refinement controls | After K7 |
+| K5 | 1.0 scope: trimmed top-level API, internal docs to `docs/internal/` | After consumers move |
+
+Maintainer decisions (10 Nov): the kernel produces the analysis shell mesh and
+consumers use it without remeshing (Gmsh only for comparison in consumers);
+skin and web mid-surfaces are quad patches, ribs and the tip closure polygonal
+meshes; the tip closure is part of the skin shell, not a rib.
+
 Status keys are **Steps 1–9**. Phase numbers in the body are historical names for
 the same work; they are not extra steps.
 

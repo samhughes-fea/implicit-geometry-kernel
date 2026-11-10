@@ -17,6 +17,9 @@
   (``docs/conf.py``, no autodoc, no ``docs/manual/`` copy). GitHub Pages is not
   wired.
 
+- Gap-report banners match the table: G10/G11 closed for this kernel; remaining
+  park is the TE classifier on OML (WP6).
+
 - CSG property panels reuse occupancy thin-band wall-tube refine (BG-025).
   Occupancy ``max_cells`` is 400000 so 5D root stations finish (BG-026).
 

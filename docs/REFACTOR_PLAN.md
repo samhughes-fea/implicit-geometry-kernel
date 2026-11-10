@@ -358,9 +358,9 @@ Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays
   demos, contract 01, feature-field loft and box-beam assemble use `SectionSpec`
   / `TagNode`.
 - Do not advertise `[mesh]` (`gmsh`). Consumers own mesher jobs and ply ABD/PCOMP.
-- Parked shell-graph items stay parked: G10 (thin-wall adapter, other repo),
-  G11 (PCOMP), TE classifier on OML only, no `T` taper, no cores on
-  `shell_graph` unless a shell consumer needs them
+- G10/G11 are **closed for this kernel** (thin-wall adapter and PCOMP stay in
+  consumers). Remaining park: TE classifier on OML only, no `T` taper, no cores
+  on `shell_graph` unless a shell consumer needs them
   ([MERGED_SHELL_GAPS](section/reports/MERGED_SHELL_GAPS.md)).
   `LoftedPolygonSDF` BVH (`accelerate` / `accel_at`) is shipped.
 - Mapped loft freeze: loft webs follow intercept `DroppedWeb.index`; no

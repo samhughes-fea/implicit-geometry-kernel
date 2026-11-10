@@ -2,7 +2,9 @@
 
 **Audience: internal.** Maintainer notes; not part of the library manual.
 
-Evidence for G1–G11 and the parked extract/TE/BVH work. Waves 0–7 are shipped; G10/G11 stay parked.
+Evidence for G1–G11 and extract/TE/BVH. Waves 0–7 are shipped. G10/G11 are
+closed for this kernel. Remaining park: TE classifier on OML only (WP6); BVH is
+shipped.
 Characterization: [`tests/test_shell_graph_gaps.py`](../../../tests/test_shell_graph_gaps.py).
 
 Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm, cap 8 mm, webs 2 mm at chord fractions `(0.18, 0.48)`.
@@ -180,7 +182,7 @@ taper. `LoftedPolygonSDF` BVH is shipped.
 
 ```text
 Wave 0 (G5+G4) → Wave 1 (G2) → Wave 2 (G3) → Wave 3 (G1)
-  → Wave 4 (G6) → Wave 5 (G7) → Wave 6 (G8) → Wave 7 (G9) → park G10/G11
+  → Wave 4 (G6) → Wave 5 (G7) → Wave 6 (G8) → Wave 7 (G9) → G10/G11 closed here
 ```
 
 ### Wave 0 — Oracle honesty (shipped)
@@ -245,7 +247,7 @@ Depends on Waves 0–2.
 - `CoreWall.to_midline` stays unimplemented. Properties keep the constructive polygon path.
 - Re-open only if a shell consumer needs those names on the loop.
 
-### Parked
+### Closed here / remaining park
 
 - **G10** closed here (other repo owns the thin-wall adapter).
 - **G11** closed here (PCOMP / ply ABD stay tidalshell / shell-fem).

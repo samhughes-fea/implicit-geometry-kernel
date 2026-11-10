@@ -128,7 +128,8 @@ class SectionCut:
         stack's mid-surface, and is named after the cap. Segments are oriented so that
         z x (end - start), the laminate normal of a shell or thin wall laid along them,
         points out of the section on the skins and towards the trailing edge on the
-        webs. Both ``ThinWalledSection.from_geometry`` and the shell mesher build on it.
+        webs. Shell meshers and an external thin-wall consumer build on it;
+        ``implicit_geometry_kernel`` has no ``thin_wall`` module.
         """
         from implicit_geometry_kernel.blade.shell_graph import _mid_surface
 

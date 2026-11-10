@@ -22,7 +22,7 @@ Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm,
 | **G7** | Wave 5 shipped | `section_at` LRU 256 per `round(z, 9)`; `LoftedPolygonSDF` BVH on (`accelerate`, `accel_at`) |
 | **G8** | Wave 6 shipped | `web_positions_from_windio_structure`; example 09 no longer hardcodes `(0.22, 0.50)` |
 | **G9** | Wave 7 shipped | Cores / TE inserts stay constructive solids; not on `shell_graph` |
-| **G10** | consumer-only | `ThinWalledSection.from_geometry` is not in this repo |
+| **G10** | closed for this kernel | No `thin_wall` module; consumers use `mid_surface` / `shell_graph` |
 | **G11** | kernel-out-of-scope | No PCOMP / ply stagger in `src/implicit_geometry_kernel` |
 | **WP6** | parked | named `feature_curve(geo, name_a, name_b, zs)` exists; TE classifier stays an OML helper; OML BVH shipped |
 
@@ -141,11 +141,11 @@ Gauge tables still come from layer names.
 
 ## G10 — Thin-wall vs shell consumers
 
-**Status:** consumer-only.
+**Status:** closed for this kernel.
 
-**Today:** `ThinWalledSection.from_geometry` is named in the README and `SectionCut.mid_surface` docstring; **no** `implicit_geometry_kernel.thin_wall` module. `cut.cells` are built from split **walls**, not from merged loop partitions.
+**Today:** no `implicit_geometry_kernel.thin_wall` module (`test_g10_thin_walled_not_in_this_repo`). Handoff is `SectionCut.mid_surface()` / `shell_graph()` stacked `layers`. `cut.cells` are built from split **walls**, not from merged loop partitions.
 
-**Missing work:** verify the external thin-wall consumer on `layers`; split vs merged cells. No patch in this repo.
+**Not in this repo:** an external thin-wall consumer on `layers`. Verify that consumer separately.
 
 ---
 
@@ -247,7 +247,7 @@ Depends on Waves 0–2.
 
 ### Parked
 
-- **G10** thin-wall consumer (other repo).
+- **G10** closed here (other repo owns the thin-wall adapter).
 - **G11** PCOMP (tidalshell / shell-fem).
 - TE classifier on OML vs loop: both `sharp` on the NACA fixture — retarget only if a blunt merged loop appears.
 

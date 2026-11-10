@@ -24,7 +24,8 @@ chord-normal webs (``"-CN"``) turn with the chord; the two are the same untwiste
 Wall thicknesses are geometry, not material: they set where each wall's midline lies
 (skins grow inward from the outer mould line, caps sit inside the skin, webs end on the
 skin midline). Give each as a number or as a function of z. Laminates are bound to the
-walls by label downstream (``ThinWalledSection.from_geometry``).
+walls by label downstream (``mid_surface`` / ``shell_graph`` ``layers``; the
+thin-wall consumer is not in this package).
 
 Web positions are hard-coded in each mode's native unit (see
 ``blade.concepts.web_anchoring``). ``LC`` is authored chord fractions at every

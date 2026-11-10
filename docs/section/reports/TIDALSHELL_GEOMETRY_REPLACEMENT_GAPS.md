@@ -176,7 +176,7 @@ supersedes those done-when criteria.
 | Dual contouring 3D | Not in this repo | Consumer, or port if non-planar features are required |
 | Cores / TE inserts on loop | G9 opt-in | Default `shell_graph` may omit solids |
 | Versioned `ShellMidlineStrip` | Parked | Not required |
-| Pre-1.0 API | `0.9.0` breaking | Pin tags; freeze a replacement tag before the consumer deletes its kernel |
+| Pre-1.0 API | `0.9.0` breaking | **Do not tag `v1.0.0`.** SemVer 1.0 is a freeze; G-ACC (`check_consumer.py` green) is not met. Pin **0.9.1** / **0.10.0** (maintainer) before the consumer deletes its kernel |
 
 ## Explicit non-gaps (do not add here)
 

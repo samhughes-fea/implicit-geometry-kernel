@@ -633,7 +633,10 @@ GEOS, Section Eval Cache, BladeGeometry Core.
   `blade/topology/fields.py` (L98). Do not treat a missing `blade/fields.py` as a
   missing call.
 
-No new timing beat station ~0.014 s. **No code change this pass.**
+No new timing beat station ~0.014 s. **No code change this pass.** Follow-up
+(EXTRACTED only, including god nodes and ``ConstructivePolygons``):
+[GRAPHIFY_EXTRACTED_NEXT.md](../../blade/reports/GRAPHIFY_EXTRACTED_NEXT.md)
+— no kernel restructure scheduled.
 
 | Location | Why the graph flags it | Keep / fix |
 |---|---|---|

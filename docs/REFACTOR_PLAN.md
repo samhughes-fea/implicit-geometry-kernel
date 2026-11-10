@@ -155,7 +155,7 @@ in-kernel mesh is `integration/quadtree`. Consumers own shell mesher jobs;
 |------|------|-------------|
 | Agnostic | No consumer names, paths or special cases in `src/` or tests. Docs describe products and roles | `tests/test_consumer_names.py` (src and tests) |
 | Public API | Only names in the top-level `__all__` and `contract/` are public | API snapshot test |
-| Versioning | Semantic versions; removals only in a minor release (pre-1.0) after one release of deprecation warnings; tags never move | Changelog; tags by the maintainer |
+| Versioning | Semantic versions; removals only in a minor release (pre-1.0) after one release of deprecation warnings; tags never move. Do not tag `v1.0.0` until a consumer pin and `check_consumer.py` are green; stay on 0.9.x / 0.10.x until then | Changelog; tags by the maintainer |
 | Main branch | Every change through a PR with green CI (lint, tests on Python 3.11 to 3.13, examples, wheel build) | Branch protection on `main` |
 | Numbers | Results reproducible between releases unless the changelog says otherwise | Golden-number test |
 | Dependencies | Runtime: numpy, numba. Offset/overlay: ctypes ``libgeos_c`` (system/conda GEOS). Extras: scipy, matplotlib, cadquery, gmsh, pyyaml, contourpy | Core-install CI job |

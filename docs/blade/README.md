@@ -209,3 +209,4 @@ Public names: [glossary](../glossary.md) (loft group). On this package:
 - Geometry to mesh: [geometry_to_mesh.md](../section/guides/geometry_to_mesh.md)
 - Loft bug log: [bug_log.md](bug_log.md)
 - Structure probes: [reports/STRUCTURE_PROBES.md](reports/STRUCTURE_PROBES.md)
+- Graphify EXTRACTED (no next kernel step): [reports/GRAPHIFY_EXTRACTED_NEXT.md](reports/GRAPHIFY_EXTRACTED_NEXT.md)

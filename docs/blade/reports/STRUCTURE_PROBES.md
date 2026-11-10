@@ -11,6 +11,8 @@ bisector station networks
 source of truth).
 
 Canonical modules are under `blade/loft/` and `blade/topology/`.
+Graphify EXTRACTED follow-up (no further kernel step):
+[GRAPHIFY_EXTRACTED_NEXT.md](GRAPHIFY_EXTRACTED_NEXT.md).
 
 ## 1. SRP — `SectionCut` snapshot vs graph builders
 

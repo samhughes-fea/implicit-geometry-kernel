@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Stay on ``0.9.0``. Do not tag ``v1.0.0`` until a consumer pin and
+  ``check_consumer.py`` are green (SemVer freeze). Next pin is ``0.9.1`` or
+  ``0.10.0``, maintainer-only. See ``GRAPHIFY_EXTRACTED_NEXT.md``.
+
+- EXTRACTED graphify on ``src/implicit_geometry_kernel`` (3064 nodes): no
+  kernel-wide restructure. Keep ``emit_constructive_polygons`` as
+  ``dict[str, Polygon]``. Note: ``docs/blade/reports/GRAPHIFY_EXTRACTED_NEXT.md``.
+
 - Structure probes 1/3/4: ``shell_graph`` builders call ``_mid_surface(cut)`` /
   ``shell_graph(cut)``; ``SectionCut.host`` is ``SectionMidlineHost | None``;
   ``station_key_points`` lives next to ``place_station_keys``. ``STRUCTURE_PROBES.md``

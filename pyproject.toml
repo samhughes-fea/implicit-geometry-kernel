@@ -30,7 +30,7 @@ splines = ["scipy>=1.8"]
 plots = ["matplotlib>=3.5"]
 cad = ["cadquery>=2.4"]
 contours = ["contourpy"]
-dev = ["scipy>=1.8", "matplotlib>=3.5", "pytest>=7", "build>=1.0", "ruff>=0.6", "mypy>=1.10", "contourpy"]
+dev = ["scipy>=1.8", "matplotlib>=3.5", "pytest>=7", "build>=1.0", "ruff>=0.6", "mypy>=1.10", "contourpy", "pyyaml>=6"]
 reference = ["pyyaml>=6"]
 mesh = ["gmsh"]
 docs = ["sphinx>=7", "myst-parser>=3", "sphinxcontrib-mermaid>=0.9"]
@@ -55,7 +55,10 @@ exclude = ["tests*", "examples*", "docs*", "scripts*", "reference_blades*"]
 addopts = "--import-mode=importlib"
 testpaths = ["tests"]
 pythonpath = ["."]
-markers = ["frame_comparison: coordinate-frame convention checks from the forked geometry"]
+markers = [
+    "frame_comparison: coordinate-frame convention checks from the forked geometry",
+    "reference: needs the private reference-blades catalogue cloned beside the kernel",
+]
 
 [tool.mypy]
 python_version = "3.11"

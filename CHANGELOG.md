@@ -7,6 +7,13 @@
   ``tests/test_compat_0_2.py`` checks the migrated call reproduces 0.2.0 geometry.
   0.7.0 now records the layout-code change it shipped.
 
+- A lone family-C cap pad is published under its surface's canonical label
+  (``spar_cap_suction_surface``), as before 0.8.2, so cap names stay stable
+  where the family changes along the span (root and tip of IEA 10 MW).
+- Reference-catalogue tests: marked ``reference`` (``pytest -m reference``),
+  honour ``REFERENCE_BLADES_DIR``, and no longer read a helper example 08
+  dropped. ``pyyaml`` is in ``[dev]``.
+
 ## 0.9.0 (2026-11-10)
 
 ### Breaking

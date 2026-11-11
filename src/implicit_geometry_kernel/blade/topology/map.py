@@ -267,7 +267,8 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
         n_use = _count(branch, _odd_count(n + n // 2) if branch.name.startswith("te_") else n)
         out[branch.name] = _resample_keys(
             p0, p1, arcs[side], n_use,
-            bunch_end=False if size_field else branch.name.startswith("te_"),
+            # a region sized from h has evenly spaced nodes; only n_chord sampling bunches at the TE
+            bunch_end=False if size_field or branch.sized else branch.name.startswith("te_"),
             size_field=size_field, chord=c_h, t=t_live,
         )
 

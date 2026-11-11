@@ -31,8 +31,15 @@
   transition. ``mesh.write_vtk`` writes it with polygons kept whole.
   ``mesh_stations`` adds forced stations, the tip, and the spans where a cap
   edge passes a web foot (``key_crossing_stations``).
-  ``topology.zones.zone_sized_templates`` sets node counts per zone from region
-  length. Example 15.
+  ``topology.region_counts.region_counts`` sets each region's node count from
+  its length at each station, holding it while the element size stays between
+  ``h / 2`` and ``h``. Example 15.
+- Mesh refinement controls (K8): ``shell_mesh(..., region_h={"le_su": ..,
+  "le_pr": ..})`` sets the element size of named regions (leading-edge
+  refinement), and ``refine=[(z0, z1, dz)]`` (also on ``mesh_stations``) adds
+  span stations in a window. Regions sized from ``h`` have evenly spaced nodes
+  (no TE bunching), and the all-quad transition zips its two stations the same
+  way whichever one is finer (bug log BG-034).
 - Regions now have an odd node count. ``sample_region_polylines`` with
   ``n_chord`` even returns ``n_chord + 1`` nodes per region (TE regions and
   the wrap likewise round up to odd).

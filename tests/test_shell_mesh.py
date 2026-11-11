@@ -18,7 +18,10 @@ def _geo(key="2D-F-LC-4R"):
                          spar_cap_thickness=0.008, shear_web_thickness=0.004)
 
 
-@pytest.fixture(scope="module", params=[{"n_span": 11}, {"h": 0.08}], ids=["n_span", "h"])
+_REFINED = {"h": 0.1, "region_h": {"le_su": 0.05, "le_pr": 0.05}, "refine": [(0.0, 2.0, 0.05)]}
+
+
+@pytest.fixture(scope="module", params=[{"n_span": 11}, {"h": 0.08}, _REFINED], ids=["n_span", "h", "refined"])
 def mesh(request):
     return _geo(), shell_mesh(_geo(), **request.param)
 
@@ -137,3 +140,41 @@ def test_gmsh_path_is_deprecated():
 
     with pytest.deprecated_call():
         triangulate_ring(np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]]))
+
+
+def _corner_angles(face):
+    out = []
+    for i in range(len(face)):
+        a, b = face[i - 1] - face[i], face[(i + 1) % len(face)] - face[i]
+        out.append(np.degrees(np.arccos(np.clip(a @ b / np.linalg.norm(a) / np.linalg.norm(b), -1.0, 1.0))))
+    return out
+
+
+def test_sized_quads_have_no_slivers():
+    m = shell_mesh(_geo(), h=0.08)
+    angles = [a for i in m.quads for a in _corner_angles(m.nodes[list(m.elements[i])])]
+    assert min(angles) > 20.0 and max(angles) < 160.0
+
+
+def test_leading_edge_and_span_refinement():
+    geo = _geo()
+    m = shell_mesh(geo, **_REFINED)
+    zs = np.array(m.stations)
+    assert np.all(np.diff(zs[zs <= 2.0 + 1e-9]) <= 0.05 + 1e-9)
+    assert np.diff(zs[zs >= 2.0]).max() > 0.05
+    def root_edges(prefix):
+        out = []
+        for i in m.quads:
+            if m.name[i].startswith(prefix):
+                e = m.nodes[list(m.elements[i])]
+                for k in range(4):
+                    if e[k, 2] == 0.0 and e[k - 1, 2] == 0.0:
+                        out.append(float(np.linalg.norm(e[k] - e[k - 1])))
+        return out
+
+    le, cap = root_edges("le_"), root_edges("cap_")
+    assert le and max(le) <= 0.05 * (1 + 1e-9) and max(cap) > 0.05
+    with pytest.raises(ValueError):
+        shell_mesh(geo, n_span=5, region_h={"le_su": 0.05})
+    with pytest.raises(ValueError):
+        mesh_stations(geo, 5, refine=[(0.0, 1.0, 0.0)])

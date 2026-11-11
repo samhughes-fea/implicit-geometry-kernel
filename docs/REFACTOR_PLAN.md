@@ -26,8 +26,8 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | K3 | No consumer names in the public repo; report renamed `SHELL_FE_REPLACEMENT_GAPS.md` | Done (#52, 0.9.1) |
 | K4 | Pinned `ruff`/`mypy`, weekly `tool-drift` workflow | Done (#52, 0.9.1) |
 | K6 | Tip closure on every blade: closes the skin shell at z/L = 1 with the polygon mesher, skin partition; `nR` counts interior ribs only | Done (#54, 0.9.2) |
-| K7 | Mesh product: skin/web quads, polygonal ribs and tip, arrays with partition and thickness, no Gmsh | In review (0.9.2) |
-| K8 | Leading-edge and spanwise refinement controls | After K7 |
+| K7 | Mesh product: skin/web quads, polygonal ribs and tip, arrays with partition and thickness, no Gmsh | Done (#55) |
+| K8 | Leading-edge and spanwise refinement controls | In review (0.9.2) |
 | K5 | Trimmed top-level API (deprecate first), internal docs to `docs/internal/`; still 0.9.x | After consumers move |
 
 Maintainer decisions (10 Nov): the kernel produces the analysis shell mesh and

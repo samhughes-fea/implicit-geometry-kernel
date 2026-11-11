@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.9.2 (2026-11-11)
+
 - Tip closure on every blade (``TipClosure``). Every ``BladeGeometry`` closes
   its skin at the tip station, whether it comes from a catalogue layout, a
   concept or windIO. The closure is part of the skin: its faces carry the skin

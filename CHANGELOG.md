@@ -2,18 +2,53 @@
 
 ## Unreleased
 
-- Stay on ``0.9.0``. Do not tag ``v1.0.0`` until a consumer pin and
-  ``check_consumer.py`` are green (SemVer freeze). Next pin is ``0.9.1`` or
-  ``0.10.0``, maintainer-only. See ``GRAPHIFY_EXTRACTED_NEXT.md``.
+- ``SectionCut.mid_surface()`` docstring: a capped run stays on the skin
+  mid-surface (since 0.7.0; 0.2.0 moved it to the stack's mid-surface).
+  Consumers carry the cap eccentricity in their laminate. ``docs/MIGRATING.md``
+  has the row.
 
-- EXTRACTED graphify on ``src/implicit_geometry_kernel`` (3064 nodes): no
-  kernel-wide restructure. Keep ``emit_constructive_polygons`` as
-  ``dict[str, Polygon]``. Note: ``docs/blade/reports/GRAPHIFY_EXTRACTED_NEXT.md``.
+- Loft morph: interior stations blend the parent surfaces directly at each
+  chord position instead of refitting an intermediate aerofoil. A prismatic
+  loft now reproduces its end sections exactly (it drifted by up to
+  0.7 mm at the leading edge after 0.2.0, which was exact). The blade
+  golden numbers moved at interior cuts only (z = 0.5, 2, 4.5): two thirds by
+  under 1e-4 relative, the largest by 0.5 % (a web end point, 0.27 mm).
 
-- Structure probes 1/3/4: ``shell_graph`` builders call ``_mid_surface(cut)`` /
-  ``shell_graph(cut)``; ``SectionCut.host`` is ``SectionMidlineHost | None``;
-  ``station_key_points`` lives next to ``place_station_keys``. ``STRUCTURE_PROBES.md``
-  findings match those wrappers.
+- Release notes: 0.9.0 gets its own section with a Breaking list;
+  ``docs/MIGRATING.md`` maps every 0.2.x call to its 0.9 form, and
+  ``tests/test_compat_0_2.py`` checks the migrated call reproduces 0.2.0 geometry.
+  0.7.0 now records the layout-code change it shipped.
+
+- A lone family-C cap pad is published under its surface's canonical label
+  (``spar_cap_suction_surface``), as before 0.8.2, so cap names stay stable
+  where the family changes along the span (root and tip of IEA 10 MW).
+- Reference-catalogue tests: marked ``reference`` (``pytest -m reference``),
+  honour ``REFERENCE_BLADES_DIR``, and no longer read a helper example 08
+  dropped. ``pyyaml`` is in ``[dev]``.
+- Consumer names: the shell-FE replacement gap report is
+  ``docs/section/reports/SHELL_FE_REPLACEMENT_GAPS.md``; docs, examples and
+  docstrings describe consumers generically. ``tests/test_consumer_names.py``
+  now also scans ``examples/`` and checks that no private consumer is named
+  anywhere in the repository.
+- Tooling: ``ruff`` and ``mypy`` are pinned in ``[dev]``; mypy runs on Python
+  3.11 and 3.13; a weekly ``tool-drift`` workflow tries the newest releases.
+  Fixed the numpy-typing errors those releases report.
+
+## 0.9.0 (2026-11-10)
+
+### Breaking
+
+Moving from 0.2.x? Follow [`docs/MIGRATING.md`](docs/MIGRATING.md).
+
+- ``SectionGeometry`` takes ``(spec, options)`` only; ``SectionGeometry.from_kwargs``
+  and keyword ``layout=`` / ``airfoil=`` are removed.
+- ``ExprSDF``, ``CircleSDF`` and ``PolygonSDF`` are removed; use ``TagNode``.
+- ``WallRegionGraph.cap_mode`` is removed; use ``cap_placement.kind``.
+- Span interpolation is linear only: ``TableLaw(kind=)`` and
+  ``BladeGeometry(span_kind=)`` are removed.
+- PA web freeze uses a uniform root-band lattice in place of the authored slots.
+
+### Changes
 
 - **BG-027:** planform ``axes.png`` no longer labels a cell-area locus as shear
   centre. Example 14 compares three geometric-centroid routes (shoelace,
@@ -26,16 +61,9 @@
   ``shell_graph`` as the handoff. G11 stays out (no PCOMP in ``src/``); G4 ``T``
   step stays locked (no geometric taper).
 
-- Kernel performance scan (graphify query/path on existing ``graphify-out/``):
-  inventory in ``PERFORMANCE_WORK_SUMMARY.md``. No emit-Boolean micro-opt; no
-  code change without a named timing above station ~0.014 s.
-
 - Sphinx + MyST extra ``[docs]`` builds HTML from the existing Markdown tree
   (``docs/conf.py``, no autodoc, no ``docs/manual/`` copy). GitHub Pages is not
   wired.
-
-- Gap-report banners match the table: G10/G11 closed for this kernel; remaining
-  park is the TE classifier on OML (WP6).
 
 - Regenerated example 09 ``csg_mesh`` after BG-025/026 (shared quadtree
   occupancy). Example 08 skipped (no local ``reference_blades/`` catalogue).
@@ -64,12 +92,6 @@
 
 - Manuals show ``SectionGeometry(spec, options)``; glossary topology homes are
   ``blade/topology/``. ``graphify-out/`` and local GEOS scratch are gitignored.
-
-- Breaking (0.9.0): ``SectionGeometry`` is ``(spec, options)`` only.
-  Keyword ``layout=`` / ``airfoil=`` and ``SectionGeometry.from_kwargs`` are
-  removed. ``SectionSpec.from_kwargs`` / ``SectionOptions.from_kwargs`` remain.
-  ``ExprSDF``, ``CircleSDF`` and ``PolygonSDF`` are removed; use ``TagNode``.
-  ``WallRegionGraph.cap_mode`` is removed; use ``cap_placement.kind``.
 
 - ``BladeGeometry.section_at`` builds ``SectionSpec`` / ``SectionOptions``;
   min-thickness scale-up is ``_min_thickness_scale``.
@@ -109,15 +131,6 @@
 - Example loft palette ``RETRO_PANELS`` is 32 colours; 08/09 loft quads share
   a darker ``MESH_EDGE`` stroke.
 
-- Breaking: PA web freeze uses a uniform root-band lattice (up to three
-  interiors of ``[x_LE, x_TE]``); extra webs continue that lattice (first extra
-  at root TE), replacing the authored ``_PA_SLOTS`` fractions. Example 09 adds
-  ``5D-F-PA-10R`` (second secondary at two ``Δx``).
-
-- Breaking: span interpolation is linear only. ``TableLaw(kind=)`` and
-  ``BladeGeometry(span_kind=)`` are removed. Ply-drop gauges are plateaus with
-  linear ramps (``TableLaw`` / ``PlyDrop``); cubic PCHIP is gone.
-
 - ``SectionCut.layout`` is the authored blade concept after web drop, not a
   sibling catalogue token. Realised W and X are ``station_webs`` /
   ``station_family``. Cascade helpers remain assemble recipes for that slice.
@@ -150,6 +163,9 @@
   deprecated alias in 0.7.0.
 
 ## 0.7.0
+
+- Breaking: layout codes need web anchoring and rib count. ``"2D-F"`` is
+  rejected; write ``"2D-F-LC-0R"`` (or ``-LE-`` / ``-PA-``, and ``nR`` ribs).
 
 - CI after the tree freeze: mypy on loft mixins and GEOS ctypes; named
   ``feature_curve`` passes all four ``partition_edge_curve`` arguments;

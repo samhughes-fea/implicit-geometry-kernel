@@ -493,7 +493,7 @@ z ≈ 17.5 m; 294 misses on `rear_web` / `web_te` from z ≈ 1.2–89 m). Catalo
 lofted. Web keys were projected onto the geometric loop, but `le_su` was
 resampled LE→TE without holding those keys, so the nearest skin sample sat up
 to ~one chord step away. Not a T-joint / web-foot issue: contract is SHARED
-nodes (tidalshell `JunctionPolicy.SHARED`).
+nodes (a shared-junction policy).
 
 **Root cause.** Authored windIO regions stayed LE–TE; live web anchors were
 not loop partition vertices. Distinct from [BG-007](#bg-007) (keep-set /

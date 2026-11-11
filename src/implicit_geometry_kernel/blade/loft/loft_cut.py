@@ -1,6 +1,8 @@
 """Interpolate, OML polyline and section_at for BladeGeometry."""
 from __future__ import annotations
 
+import re
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -165,6 +167,7 @@ class LoftCutMixin:
         else:
             strips = list(mesh_strips)
         by_label = {s.label: s for s in strips}
+        name = _lone_pad_names(by_label)
         walls = []
         for s in strips:
             pts = place(s.midline_twisted_pitch_axis_blade_frame)
@@ -175,14 +178,15 @@ class LoftCutMixin:
                 host = by_label.get(bond.host_label)
                 if host is None:
                     continue
-                bonds[bond.host_label] = (
+                bonds[name.get(bond.host_label, bond.host_label)] = (
                     _match(s.midline_twisted_pitch_axis_blade_frame, bond.points),
                     _match(host.midline_twisted_pitch_axis_blade_frame, bond.host_points),
                 )
-            walls.append(SectionWall(s.label, s.kind, pts, float(s.thickness_m) / k, side, bonds))
+            label = name.get(s.label, s.label)
+            walls.append(SectionWall(label, s.kind, pts, float(s.thickness_m) / k, side, bonds))
         cells = tuple(
             CellPolygon(int(c.id), place(c.polyline_twisted_pitch_axis_blade_frame), float(c.area_m2) / k**2,
-                     tuple(c.wall_labels))
+                     tuple(name.get(w, w) for w in c.wall_labels))
             for c in (result.cell_wall_loops or ())
         )
         dropped = tuple(f"web at {d.x_m / k:.6g} m from the LE: {d.reason}" for d in resolution.dropped)
@@ -221,3 +225,22 @@ class LoftCutMixin:
         while len(self._section_cache) > self._section_cache_size:
             self._section_cache.popitem(last=False)
         return cut
+
+
+_PAD = {side: re.compile(rf"^spar_cap_{side}_surface_(\d+)$") for side in ("suction", "pressure")}
+
+
+def _lone_pad_names(by_label) -> dict[str, str]:
+    """Publish a lone indexed cap pad under its surface's canonical label.
+
+    Family C stores pads as ``spar_cap_<side>_surface_<i>``. When a surface has
+    one pad and no canonical cap, that pad is the surface's cap, so it keeps the
+    name a family-D box uses at neighbouring stations and loft keys stay stable.
+    """
+    out: dict[str, str] = {}
+    for side, pattern in _PAD.items():
+        canon = f"spar_cap_{side}_surface"
+        pads = [str(lb) for lb in by_label if pattern.match(str(lb))]
+        if len(pads) == 1 and canon not in by_label:
+            out[pads[0]] = canon
+    return out

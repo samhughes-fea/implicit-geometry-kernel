@@ -2,9 +2,8 @@
 
 **Audience: internal.** Maintainer notes; not part of the library manual.
 
-Dated 2026-11-10. Same inventory as the sibling tidalshell report
-[`docs/igk_geometry_replacement_gaps.md`](https://github.com/samhughes-fea/tidalshell/blob/wind/docs/igk_geometry_replacement_gaps.md)
-(keep gap IDs in sync). This page is the kernel view: published products a
+Dated 2026-11-10. The consumer keeps its own copy of this inventory with the
+same gap IDs. This page is the kernel view: published products a
 shell-FE consumer uses after it deletes its own `kernel` / `structure` /
 `extract`. [Source of truth](#source-of-truth-2026-11-10) supersedes the
 inventory done-when rows.

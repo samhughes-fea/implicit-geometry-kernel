@@ -31,10 +31,10 @@ def build_polygon_accel(verts: np.ndarray, nx: int = 16, ny: int = 16) -> dict:
     by[:-1] = ay[1:]
     bx[-1] = ax[0]
     by[-1] = ay[0]
-    xmin = float(min(ax.min(), bx.min()))
-    xmax = float(max(ax.max(), bx.max()))
-    ymin = float(min(ay.min(), by.min()))
-    ymax = float(max(ay.max(), by.max()))
+    xmin = float(min(np.min(ax), np.min(bx)))
+    xmax = float(max(np.max(ax), np.max(bx)))
+    ymin = float(min(np.min(ay), np.min(by)))
+    ymax = float(max(np.max(ay), np.max(by)))
     pad = 1e-12 * max(1.0, xmax - xmin, ymax - ymin)
     dx = (xmax - xmin + 2.0 * pad) / float(nx) if nx else 1.0
     dy = (ymax - ymin + 2.0 * pad) / float(ny) if ny else 1.0

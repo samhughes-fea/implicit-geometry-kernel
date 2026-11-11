@@ -1,0 +1,33 @@
+name: tool-drift
+
+# Weekly lint and typecheck with the newest ruff and mypy. The tests workflow pins
+# them in [dev]; this job shows when a new release would break main, without
+# blocking pull requests.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  latest-tools:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install GEOS
+        run: sudo apt-get update && sudo apt-get install -y libgeos-dev
+      - name: Install package with the newest tools
+        run: |
+          pip install -e ".[dev]"
+          pip install -U ruff mypy numpy
+      - name: Lint
+        run: ruff check src tests examples scripts
+      - name: Typecheck
+        run: mypy src/implicit_geometry_kernel

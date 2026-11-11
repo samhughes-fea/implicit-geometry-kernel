@@ -5,6 +5,7 @@ Loft from ``shell_graph``; snap with ``wall_mid_sdf`` (signed SDF of the
 skin loop). Partition vertices lie on that loop.
 """
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -29,7 +30,9 @@ def _geo():
 
 
 def _catalogue():
-    for path in (ROOT / "reference_blades", ROOT.parent / "reference-blades"):
+    env = os.environ.get("REFERENCE_BLADES_DIR")
+    roots = ([Path(env)] if env else []) + [ROOT / "reference_blades", ROOT.parent / "reference-blades"]
+    for path in roots:
         if (path / "wind" / "iea3.4_iea10" / "IEA-10-198-RWT.yaml").is_file() or (
             path / "iea3.4_iea10" / "IEA-10-198-RWT.yaml"
         ).is_file():

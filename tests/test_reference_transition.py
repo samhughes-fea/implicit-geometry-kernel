@@ -1,5 +1,6 @@
 """Published blades: cylinder–airfoil stations should cut after plateau collapse."""
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -10,7 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _catalogue():
-    for path in (ROOT / "reference_blades", ROOT.parent / "reference-blades"):
+    env = os.environ.get("REFERENCE_BLADES_DIR")
+    roots = ([Path(env)] if env else []) + [ROOT / "reference_blades", ROOT.parent / "reference-blades"]
+    for path in roots:
         if (path / "wind" / "nrel5mw" / "nrel5mw.yaml").is_file() or (
             path / "nrel5mw" / "nrel5mw.yaml"
         ).is_file():
@@ -204,10 +207,11 @@ def test_iea10_cylinder_has_spar_webs_not_te_plug():
         live = []
         cut = geo.section_at(float(z))
         from implicit_geometry_kernel.blade.topology import _cut_tc
+        from implicit_geometry_kernel.blade.topology.ribs import _live_web_fracs
 
         t = ShellTopologyTemplate.from_region_graph(
             geo.region_graph, float(z), n_chord=8,
-            live_web_fracs=ns["live_web_fracs"](cut) or None, t_c=_cut_tc(cut),
+            live_web_fracs=_live_web_fracs(cut) or None, t_c=_cut_tc(cut),
         )
         names.append(tuple(w.name for w in t.webs))
     assert names[0] == ("fore_web",)

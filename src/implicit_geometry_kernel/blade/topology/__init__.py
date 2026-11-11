@@ -1,4 +1,4 @@
-"""Authored wall-region graph and mapped loft (tidalshell identity, no mesher)."""
+"""Authored wall-region graph and mapped loft: named regions keep their identity along the span."""
 
 from implicit_geometry_kernel.blade.topology.fields import CutWallMetaSDF, StackThickness, span_thickness
 from implicit_geometry_kernel.blade.topology.graph import (

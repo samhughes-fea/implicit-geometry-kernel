@@ -125,8 +125,10 @@ class SectionCut:
 
         Skins and webs become one segment per midline segment, joined where they meet.
         A spar cap is merged with the skin it is bonded to: along the bond the segment
-        is the cap and skin stacked (``layers`` = (cap, skin), inside first), on the
-        stack's mid-surface, and is named after the cap. Segments are oriented so that
+        is the cap and skin stacked (``layers`` = (cap, skin), inside first) and is
+        named after the cap. It stays on the skin mid-surface: a consumer carries the
+        stack's eccentricity (half the cap thickness, inward) in its laminate, as
+        ``shell_graph().offset_regions()`` reports it. Segments are oriented so that
         z x (end - start), the laminate normal of a shell or thin wall laid along them,
         points out of the section on the skins and towards the trailing edge on the
         webs. Shell meshers and an external thin-wall consumer build on it;

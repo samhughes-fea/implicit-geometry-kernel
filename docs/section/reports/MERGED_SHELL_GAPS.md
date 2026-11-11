@@ -6,7 +6,7 @@ Evidence for G1–G11 and extract/TE/BVH. Waves 0–7 are shipped. G10/G11 are
 closed for this kernel. Remaining park: TE classifier on OML only (WP6); BVH is
 shipped. Geometry still required before a conformal shell-FE consumer can
 delete its own kernel is a **separate** list (G-TE … G-ACC):
-[`TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md`](TIDALSHELL_GEOMETRY_REPLACEMENT_GAPS.md).
+[`SHELL_FE_REPLACEMENT_GAPS.md`](SHELL_FE_REPLACEMENT_GAPS.md).
 Characterization: [`tests/test_shell_graph_gaps.py`](../../../tests/test_shell_graph_gaps.py).
 
 Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm, cap 8 mm, webs 2 mm at chord fractions `(0.18, 0.48)`.
@@ -157,7 +157,7 @@ Gauge tables still come from layer names.
 
 **Status:** closed for this kernel.
 
-**Today:** combined `T` is geometry. Laminate bind is `offset_regions()`, stacked `layers`, `shell_strips_from_graph`. No `PCOMP` string under `src/implicit_geometry_kernel` (`test_g11_no_pcomp_in_kernel_src`). ABD / ply stagger stay tidalshell / shell-fem.
+**Today:** combined `T` is geometry. Laminate bind is `offset_regions()`, stacked `layers`, `shell_strips_from_graph`. No `PCOMP` string under `src/implicit_geometry_kernel` (`test_g11_no_pcomp_in_kernel_src`). ABD / ply stagger stay in the shell-FE consumers.
 
 ---
 
@@ -252,7 +252,7 @@ Depends on Waves 0–2.
 ### Closed here / remaining park
 
 - **G10** closed here (other repo owns the thin-wall adapter).
-- **G11** closed here (PCOMP / ply ABD stay tidalshell / shell-fem).
+- **G11** closed here (PCOMP / ply ABD stay in the shell-FE consumers).
 - TE classifier on OML vs loop: both `sharp` on the NACA fixture — retarget only if a blunt merged loop appears.
 
 ---
@@ -260,5 +260,5 @@ Depends on Waves 0–2.
 ## What this inventory does not do
 
 G10/G11 stay out of `src/` (thin-wall consumer; PCOMP). No DTO version, no `T`
-taper, no cores on `shell_graph` by default, no Gmsh driver, no tidalshell edits.
+taper, no cores on `shell_graph` by default, no Gmsh driver, no consumer edits.
 OML polygon BVH is in `LoftedPolygonSDF`.

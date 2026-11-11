@@ -66,6 +66,16 @@ part of the skin, not a rib.
 | tip face in `shell_graph().faces` with `surface="rib"` | `surface="skin"`, `kind="tip_closure"`, `layers=("skin",)` |
 | `rib_face_polygons(geo)` included the tip | ribs only; `tip_closure_polygons(geo)` gives the tip closure |
 
+## 0.9.1 to 0.9.2: the shell mesh
+
+| 0.9.1 | 0.9.2 |
+|---|---|
+| `mesh.gmsh.mesh_shell` / `write_shell_msh` (quads plus triangles, own nodes per strip) | `mesh.shell_mesh(geo, n_span \| h=)`: one conforming sheet, all-quad skin and webs, polygon ribs and tip; `mesh.write_vtk` to write it. The Gmsh calls warn `DeprecationWarning` |
+| `mesh.gmsh.triangulate_ring`, `fill_rib_cells`, `mesh_rib_cells` (triangles) | `mesh.polygon_mesh_ring` (cells of 5 or more nodes), or the rib elements of `shell_mesh` |
+| `sample_region_polylines` gave `n_chord` nodes per region | the next odd count: `n_chord + 1` when `n_chord` is even (TE regions and the wrap round up likewise) |
+| mesh `cap_*` regions bounded by one chord window on both sides | bounded by each side's cap edges in the cut; on a twisted blade the region keys move by up to ~0.1 chord |
+| a cap whose skin is concave under it could be missing from `shell_graph().loop` | it is always there (SG-029) |
+
 ## Checking a consumer
 
 Run the consumer's tests against a kernel checkout:

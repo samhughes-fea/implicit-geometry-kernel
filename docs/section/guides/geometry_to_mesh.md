@@ -50,7 +50,7 @@ Sandwich cores and trailing-edge inserts stay constructive solids (not loop runs
 | `WallRegionGraph` | Authored loop regions + webs (`from_section_layout` / `from_windio_structure`) |
 | `ShellTopologyTemplate` / `map_vertex` / `zone_region_graphs` | Identity + compatible zones; 1-station paint blip is a transition band |
 | `loft_mapped_strips` | Quad or collapsing strip between templates; omit one-sided webs only |
-| `transverse_members_from_windio` | `tip_closure` at last span plus YAML ribs/bulkheads; draw, do not loft |
+| `transverse_members_from_windio` | YAML ribs/bulkheads only (the tip closure is `BladeGeometry.tip_closure`); draw, do not loft |
 | `shell_strips_from_graph(cut)` | Shell `ShellMidlineStrip`s from the graph (no extra cap loop) |
 | `graph.offset_regions()` | Cap footprints that need constitutive OFFSET (`LaminateOffsetRegion`) |
 | `ShellGraph.with_web_feet_on_loop()` | Web endpoints on the skin-mid loop (applied by `shell_graph`) |

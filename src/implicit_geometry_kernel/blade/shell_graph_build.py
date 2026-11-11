@@ -257,8 +257,16 @@ def _skin_loop_polyline(graph: ShellGraph) -> np.ndarray:
 
 
 def _rib_faces(cut: SectionCut, graph: ShellGraph) -> Tuple[ShellRun, ...]:
+    """Rib faces at this station, then the tip closure on the tip station.
+
+    Each fills the cut's cells (or the skin loop when there are none), so a face
+    meets every web that reaches the station. Rib faces are ``surface="rib"``. The
+    tip closure is part of the skin: ``surface="skin"``, ``kind="tip_closure"`` and
+    the skin partition in ``layers``.
+    """
     members = tuple(getattr(cut, "transverse", ()) or ())
-    if not members:
+    tip = getattr(cut, "tip_closure", None)
+    if not members and tip is None:
         return ()
     loops: list[tuple[str | None, np.ndarray]] = []
     if cut.cells:
@@ -273,6 +281,10 @@ def _rib_faces(cut: SectionCut, graph: ShellGraph) -> Tuple[ShellRun, ...]:
         for cell_id, pts in loops:
             name = member.name if len(loops) == 1 else f"{member.name}:cell_{cell_id}"
             faces.append(ShellRun(name, "rib", member.name, (name,), pts, float(member.thickness)))
+    if tip is not None:
+        for cell_id, pts in loops:
+            name = tip.name if len(loops) == 1 else f"{tip.name}:cell_{cell_id}"
+            faces.append(ShellRun(name, "skin", "tip_closure", (tip.partition,), pts, float(tip.thickness)))
     return tuple(faces)
 
 

@@ -37,7 +37,7 @@
    "region_graph": "(self, **kwargs)",
    "to_geometry_kwargs": "(self, stations: 'Sequence[Station] | None' = None) -> 'dict'"
   },
-  "signature": "(layout: 'LayoutInput', scheme: 'SpanwiseScheme' = SpanwiseScheme(transverse=(), stringers=(), ply_drops=())) -> None"
+  "signature": "(layout: 'LayoutInput', scheme: 'SpanwiseScheme' = SpanwiseScheme(transverse=(), stringers=(), ply_drops=(), tip_closure=None)) -> None"
  },
  "implicit_geometry_kernel.BladeGeometry": {
   "kind": "class",
@@ -59,13 +59,15 @@
    "snap_wall_mid": "(self: 'BladeGeometry', points, solver=None)",
    "thickness_at": "(self: 'BladeGeometry', z, s) -> 'np.ndarray'",
    "thickness_law": "(self: 'BladeGeometry')",
+   "tip_closure_thickness": "(self) -> 'float'",
+   "tip_closure_z": "",
    "validate": "(self: 'BladeGeometry') -> 'list[str]'",
    "wall_meta": "(self: 'BladeGeometry', table=None)",
    "wall_mid_sdf": "(self: 'BladeGeometry', meta: 'int' = 0)",
    "write_mid_surfaces": "(self: 'BladeGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81, members=None, include_solids: 'bool' = False) -> 'str'",
    "write_oml": "(self: 'BladeGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81) -> 'str'"
   },
-  "signature": "(stations: 'Sequence[Station]', layout: 'str | SystemLayoutSpec | SectionLayout', skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, pivot_fraction: 'Optional[Union[float, SpanTable]]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), ply_drops: 'Sequence[PlyDrop]' = (), merge_cap_and_skin: 'bool' = False, region_graph=None)"
+  "signature": "(stations: 'Sequence[Station]', layout: 'str | SystemLayoutSpec | SectionLayout', skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness' = 0.0, shear_web_thickness: 'Thickness' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, pivot_fraction: 'Optional[Union[float, SpanTable]]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), ply_drops: 'Sequence[PlyDrop]' = (), merge_cap_and_skin: 'bool' = False, region_graph=None, tip_closure: 'Optional[TipClosure]' = None)"
  },
  "implicit_geometry_kernel.CellPolygon": {
   "kind": "class",
@@ -166,7 +168,7 @@
    "wall": "(self, label: 'str') -> 'SectionWall'",
    "walls_of": "(self, kind: 'str') -> 'Tuple[SectionWall, ...]'"
   },
-  "signature": "(z: 'float', chord: 'float', twist: 'float', pitch_axis: 'float', offset: 'Tuple[float, float]', layout: 'str', walls: 'Tuple[SectionWall, ...]', cells: 'Tuple[CellPolygon, ...]', dropped_webs: 'Tuple[str, ...]' = (), transverse: 'Tuple[TransverseMember, ...]' = (), stringers: 'Tuple[Stringer, ...]' = (), host: 'SectionMidlineHost | None' = None, scale: 'float' = 1.0, dropped_web_indices: 'Tuple[int, ...]' = (), station_webs: 'int' = 0, station_family: 'str' = '') -> None"
+  "signature": "(z: 'float', chord: 'float', twist: 'float', pitch_axis: 'float', offset: 'Tuple[float, float]', layout: 'str', walls: 'Tuple[SectionWall, ...]', cells: 'Tuple[CellPolygon, ...]', dropped_webs: 'Tuple[str, ...]' = (), transverse: 'Tuple[TransverseMember, ...]' = (), stringers: 'Tuple[Stringer, ...]' = (), host: 'SectionMidlineHost | None' = None, scale: 'float' = 1.0, dropped_web_indices: 'Tuple[int, ...]' = (), station_webs: 'int' = 0, station_family: 'str' = '', tip_closure: 'Optional[TipClosure]' = None) -> None"
  },
  "implicit_geometry_kernel.SectionWall": {
   "kind": "class",
@@ -217,7 +219,7 @@
  "implicit_geometry_kernel.SpanwiseScheme": {
   "kind": "class",
   "members": {},
-  "signature": "(transverse: 'tuple[TransverseMember, ...]' = (), stringers: 'tuple[Stringer, ...]' = (), ply_drops: 'tuple[PlyDrop, ...]' = ()) -> None"
+  "signature": "(transverse: 'tuple[TransverseMember, ...]' = (), stringers: 'tuple[Stringer, ...]' = (), ply_drops: 'tuple[PlyDrop, ...]' = (), tip_closure: 'TipClosure | None' = None) -> None"
  },
  "implicit_geometry_kernel.Station": {
   "kind": "class",
@@ -243,6 +245,11 @@
    "children": "(self) -> 'tuple[SDFNode, ...]'"
   },
   "signature": "(node: 'SDFNode', meta: 'int') -> 'None'"
+ },
+ "implicit_geometry_kernel.TipClosure": {
+  "kind": "class",
+  "members": {},
+  "signature": "(name: 'str' = 'tip_closure', thickness: 'Optional[float]' = None, partition: 'str' = 'skin') -> None"
  },
  "implicit_geometry_kernel.TopologyDiff": {
   "kind": "class",
@@ -500,6 +507,10 @@
  "implicit_geometry_kernel.structure.assemble": {
   "kind": "function",
   "signature": "(ctx: 'BuildContext', contributions: 'list[Contribution]') -> 'Structure'"
+ },
+ "implicit_geometry_kernel.tip_closure_polygons": {
+  "kind": "function",
+  "signature": "(geo, *, n_chord: 'int' = 12) -> 'list[tuple[str, np.ndarray]]'"
  },
  "implicit_geometry_kernel.topology_diff": {
   "kind": "function",

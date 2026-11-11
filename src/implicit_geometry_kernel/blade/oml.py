@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
+    from implicit_geometry_kernel.blade.stations import TransverseMember
     from implicit_geometry_kernel.blade.topology.template import ShellTopologyTemplate
 
 
@@ -145,12 +146,18 @@ def write_mid_surfaces(
                 idx.append(tuple(base + i for i in range(n)))
         if verts:
             chunks.append((name, np.vstack(verts), idx))
+    # rib faces (a "rib" member filter keeps them all) and the tip closure, which is
+    # part of the skin (a "skin" or "tip_closure" filter keeps it)
+    tip = getattr(geo, "tip_closure", None)
     for z, tmpl, samp in samples:
-        for member in geo.transverse:
-            if abs(float(member.z) - float(z)) > 1e-8:
-                continue
+        closures: list[tuple[TransverseMember | str, tuple[str, ...]]] = [
+            (m, ("rib",)) for m in geo.transverse if abs(float(m.z) - float(z)) <= 1e-8
+        ]
+        if tip is not None and abs(float(geo.tip_closure_z) - float(z)) <= 1e-8:
+            closures.append((str(tip.name), ("tip_closure", "skin")))
+        for member, filters in closures:
             for name, ring in rib_cell_polygons_from_samples(tmpl, samp, member):
-                if want is not None and name not in want and "rib" not in want:
+                if want is not None and name not in want and not want.intersection(filters):
                     continue
                 n = len(ring)
                 if n < 3:

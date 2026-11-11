@@ -245,20 +245,41 @@ def rib_cell_triangles_from_samples(
 
 
 def rib_face_polygons(geo, *, n_chord: int = 12) -> list[tuple[str, np.ndarray]]:
-    """Rib/tip n-gons at each ``TransverseMember.z``, vertices from the mapped loft."""
+    """Rib n-gons at each ``TransverseMember.z``, vertices from the mapped loft.
+
+    The tip closure is not a rib: see :func:`tip_closure_polygons`.
+    """
     out: list[tuple[str, np.ndarray]] = []
     graph = getattr(geo, "region_graph", None)
     if graph is None:
         return out
     for member in getattr(geo, "transverse", ()) or ():
-        cut = section_cut_near(geo, float(member.z))
-        if cut is None:
-            continue
-        sg = cut.shell_graph()
-        tmpl = _template_from_cut(graph, cut, float(member.z), int(n_chord))
-        samples = sample_region_polylines(cut, sg, tmpl, graph)
-        out.extend(rib_cell_polygons_from_samples(tmpl, samples, member))
+        out.extend(_face_polygons_at(geo, graph, float(member.z), member, int(n_chord)))
     return out
+
+
+def tip_closure_polygons(geo, *, n_chord: int = 12) -> list[tuple[str, np.ndarray]]:
+    """The tip closure's n-gons on the tip station, vertices from the mapped loft.
+
+    Its perimeter vertices are the skin (and any live web) samples of the tip
+    station, so it closes the skin mid-surface loop. One n-gon per web-bounded
+    cell, named ``tip_closure`` or ``tip_closure:cell_k``.
+    """
+    graph = getattr(geo, "region_graph", None)
+    tip = getattr(geo, "tip_closure", None)
+    if graph is None or tip is None:
+        return []
+    return _face_polygons_at(geo, graph, float(geo.tip_closure_z), str(tip.name), int(n_chord))
+
+
+def _face_polygons_at(geo, graph, z: float, member, n_chord: int) -> list[tuple[str, np.ndarray]]:
+    cut = section_cut_near(geo, z)
+    if cut is None:
+        return []
+    sg = cut.shell_graph()
+    tmpl = _template_from_cut(graph, cut, z, n_chord)
+    samples = sample_region_polylines(cut, sg, tmpl, graph)
+    return rib_cell_polygons_from_samples(tmpl, samples, member)
 
 
 def rib_face_triangles(geo, *, n_chord: int = 12) -> list[tuple[str, np.ndarray]]:

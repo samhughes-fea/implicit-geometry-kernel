@@ -1,5 +1,8 @@
 """BladeConcept still compiles to BladeGeometry kwargs from blade.concepts."""
 
+import numpy as np
+import pytest
+
 from implicit_geometry_kernel.blade.airfoil import Airfoil
 from implicit_geometry_kernel.blade.concepts import BladeConcept, SpanwiseScheme
 from implicit_geometry_kernel.blade.concepts import resolve_system_type
@@ -29,4 +32,6 @@ def test_from_key_fills_ribs_when_stations_given():
     ]
     kw = BladeConcept.from_key("2D-F-LC-10R").to_geometry_kwargs(stations=stations)
     assert len(kw["transverse"]) == 10
-    assert kw["transverse"][-1].name == "tip_closure"
+    assert [m.name for m in kw["transverse"]] == [f"rib_{i}" for i in range(1, 11)]
+    zs = [m.z for m in kw["transverse"]]
+    assert zs == pytest.approx(np.linspace(0.0, 10.0, 12)[1:-1])

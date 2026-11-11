@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- Tip closure on every blade (``TipClosure``). Every ``BladeGeometry`` closes
+  its skin at the tip station, whether it comes from a catalogue layout, a
+  concept or windIO. The closure is part of the skin: its faces carry the skin
+  partition (``layers=("skin",)``, ``kind="tip_closure"``) and the skin
+  thickness law at the tip, and they fill the skin mid-surface loop, split at
+  any web that reaches the tip. ``tip_closure_polygons(geo)`` gives its n-gons
+  from the mapped loft, with the skin's tip-ring nodes as the perimeter. OBJ/STL
+  export writes it. ``docs/MIGRATING.md`` has the rows.
+- ``nR`` counts interior ribs only. ``-10R`` places 10 ribs evenly between root
+  and tip (``z0 + k L / 11``), plus the tip closure; it used to place 9 ribs and
+  make the 10th the tip closure. Rib ``k`` moves by ``k L / 110`` towards the
+  root (rib 9: 8.2 % of the span). ``transverse_members_from_windio`` no longer
+  adds a tip rib. The blade and section golden numbers do not change.
+- ``TransverseMember("tip_closure", ...)`` is deprecated: at the tip it becomes
+  the blade's ``TipClosure`` with its thickness and a ``DeprecationWarning``;
+  anywhere else it is an error.
+- CI takes ``libgeos_c`` (GEOS 3.14.1) from the pinned Shapely 2.2.0 wheel on
+  PyPI through ``GEOS_LIBRARY_PATH``, instead of apt ``libgeos-dev`` (3.12.1),
+  so an Ubuntu mirror outage no longer fails every job. The suite gives the
+  same result on both GEOS versions.
+
 ## 0.9.1 (2026-11-11)
 
 - ``SectionCut.mid_surface()`` docstring: a capped run stays on the skin

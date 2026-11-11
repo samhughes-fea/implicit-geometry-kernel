@@ -33,8 +33,9 @@ SciPy (`[splines]`) is used for spline-resampled airfoils, and Matplotlib
 
 ### GEOS
 
-- Ubuntu: `sudo apt-get install libgeos-dev` (CI installs this for pytest,
-  core-install, and examples).
+- Ubuntu: `sudo apt-get install libgeos-dev`.
+- From PyPI: the Shapely wheel ships `libgeos_c` in `shapely.libs/`; point
+  `GEOS_LIBRARY_PATH` at it. CI does this, so it needs no apt mirror.
 - Conda: `conda install -c conda-forge geos`, then `pip install`.
 - Any OS: set `GEOS_LIBRARY_PATH` to `geos_c.dll` (Windows) or `libgeos_c.so`
   (Linux). The kernel does not vendor a DLL.

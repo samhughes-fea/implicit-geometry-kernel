@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 import numpy as np
 
-from implicit_geometry_kernel.blade.stations import Stringer, TransverseMember
+from implicit_geometry_kernel.blade.stations import Stringer, TipClosure, TransverseMember
 
 if TYPE_CHECKING:
     from implicit_geometry_kernel.blade.shell_graph import MidSurface, ShellGraph
@@ -87,7 +87,8 @@ class SectionCut:
     ``layout`` is the authored **concept** token (W/X/Y, span Z, transverse R).
     Webs that no longer fit are listed on ``dropped_web_indices``; the realised
     station slice is ``station_webs`` (W) and ``station_family`` (X). Those two
-    are not a new catalogue token.
+    are not a new catalogue token. ``tip_closure`` is set on the tip station's cut
+    only, with its thickness resolved.
     """
 
     z: float
@@ -106,6 +107,7 @@ class SectionCut:
     dropped_web_indices: Tuple[int, ...] = ()
     station_webs: int = 0
     station_family: str = ""
+    tip_closure: Optional[TipClosure] = None
 
     def wall(self, label: str) -> SectionWall:
         for w in self.walls:

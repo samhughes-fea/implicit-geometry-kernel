@@ -44,6 +44,8 @@ so a PA web walks with the pitch axis until that intercept fails.
 
 from __future__ import annotations
 
+import warnings
+
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Optional, Sequence, Union
 
@@ -51,7 +53,7 @@ import numpy as np
 
 from implicit_geometry_kernel.blade.concepts.concept import catalogue_ribs
 from implicit_geometry_kernel.blade.cut import SectionCut
-from implicit_geometry_kernel.blade.stations import PlyDrop, Station, Stringer, TransverseMember
+from implicit_geometry_kernel.blade.stations import PlyDrop, Station, Stringer, TipClosure, TransverseMember
 from implicit_geometry_kernel.blade.loft.loft_tables import (
     SpanTable,
     Thickness,
@@ -117,6 +119,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
     transverse:
         Ribs, bulkheads and frames at fixed ``z``. A member appears as a closed
         rib face on ``section_at(z).shell_graph().faces`` at that station only.
+        A layout's ``nR`` fills this with ``nR`` interior ribs when it is empty.
     stringers:
         Partial-span or free-end branches. Present on ``shell_graph().branches``
         inside ``extent``; ends are topology events.
@@ -126,6 +129,10 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         If True, ``section_at`` walls follow ``shell_graph`` runs (caps as
         partitions, combined thickness). Default False keeps stacked cap solids
         (golden numbers).
+    tip_closure:
+        The face that closes the skin at the tip station. Every blade has one
+        (default ``TipClosure()``: skin partition, skin thickness at the tip). It
+        is not a rib and not in ``transverse``.
     """
 
     def __init__(
@@ -149,6 +156,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         ply_drops: Sequence[PlyDrop] = (),
         merge_cap_and_skin: bool = False,
         region_graph=None,
+        tip_closure: Optional[TipClosure] = None,
     ):
         from implicit_geometry_kernel.catalogue import resolve_system_type
 
@@ -224,7 +232,9 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         self._twist = _as_span_table(twist, "twist")
         self._offset = _as_span_table(offset, "offset", cols=2)
         self.n_airfoil_points = int(n_airfoil_points)
-        self.transverse = tuple(transverse)
+        self.transverse, self.tip_closure = _split_tip_closure(
+            tuple(transverse), tip_closure, float(self.stations[-1].z)
+        )
         n_ribs = int(getattr(spec, "n_ribs", 0) or 0)
         if n_ribs > 0 and not self.transverse:
             self.transverse = catalogue_ribs(self.stations, n_ribs)
@@ -268,8 +278,20 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
                 transverse=self.transverse,
                 stringers=self.stringers,
                 ply_drops=self.ply_drops,
+                tip_closure=self.tip_closure,
             ),
         )
+
+    @property
+    def tip_closure_z(self) -> float:
+        """Span position of the tip closure: the last station."""
+        return float(self.stations[-1].z)
+
+    def tip_closure_thickness(self) -> float:
+        """The tip closure's thickness: its own, or the skin thickness law at the tip."""
+        if self.tip_closure.thickness is not None:
+            return float(self.tip_closure.thickness)
+        return float(self._skin(self.tip_closure_z))
 
     def forced_stations(self) -> tuple[float, ...]:
         """Sorted unique member stations (ribs and stringer ends; mesh hint)."""
@@ -289,6 +311,35 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
     def __repr__(self) -> str:
         return f"BladeGeometry({self.layout!r}, z = {self.stations[0].z:g} to {self.stations[-1].z:g})"
 
+
+
+def _split_tip_closure(
+    transverse: tuple[TransverseMember, ...], tip_closure: Optional[TipClosure], z_tip: float
+) -> tuple[tuple[TransverseMember, ...], TipClosure]:
+    """Separate a legacy ``TransverseMember("tip_closure")`` from the ribs.
+
+    Before 0.9.2 the tip closure was a transverse member. A member of that name at
+    the tip becomes the :class:`TipClosure` (keeping its thickness), with a
+    ``DeprecationWarning``; one anywhere else is an error.
+    """
+    legacy = [m for m in transverse if str(m.name) == "tip_closure"]
+    if not legacy:
+        return transverse, tip_closure if tip_closure is not None else TipClosure()
+    if tip_closure is not None:
+        raise ValueError("give tip_closure= or a transverse member named 'tip_closure', not both")
+    if len(legacy) > 1 or abs(float(legacy[0].z) - z_tip) > 1e-9:
+        raise ValueError(
+            f"a transverse member named 'tip_closure' must sit at the tip (z = {z_tip:g}); "
+            "the tip closure is now BladeGeometry(tip_closure=TipClosure(...))"
+        )
+    warnings.warn(
+        "TransverseMember('tip_closure') is deprecated: every BladeGeometry has a tip closure; "
+        "pass tip_closure=TipClosure(thickness=...) to set its thickness",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+    ribs = tuple(m for m in transverse if str(m.name) != "tip_closure")
+    return ribs, TipClosure(thickness=float(legacy[0].thickness))
 
 
 for _mixin in (LoftCutMixin, LoftFieldsMixin):

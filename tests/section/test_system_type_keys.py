@@ -93,4 +93,6 @@ def test_ribs_suffix_plants_transverse_members():
     ribbed = BladeGeometry(stations, "2D-F-LC-10R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004, pivot_fraction=0.3)
     assert plain.transverse == ()
     assert len(ribbed.transverse) == 10
-    assert any(abs(z - 10.0) < 1e-9 for z in ribbed.forced_stations())
+    assert all(m.name != "tip_closure" for m in ribbed.transverse)
+    assert max(ribbed.forced_stations()) < 10.0
+    assert plain.tip_closure == ribbed.tip_closure

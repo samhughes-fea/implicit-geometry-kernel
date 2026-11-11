@@ -20,7 +20,7 @@ flowchart LR
   Concept --> X["X=D box cap"]
   Concept --> Y["Y=F flapwise"]
   Concept --> Z["Z=PA pitch axis"]
-  Concept --> R["R=10 ribs"]
+  Concept --> R["R=10 interior ribs"]
 ```
 
 Zero-web cores omit `[Y]`: `0A-LC-0R`, `0A-LE-10R`. Bare `2D-F` and omitted `0R` are invalid.

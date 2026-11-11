@@ -64,6 +64,30 @@ class TransverseMember:
 
 
 @dataclass(frozen=True)
+class TipClosure:
+    """The face that closes the skin shell at the blade tip (z/L = 1).
+
+    Every ``BladeGeometry`` has one. It is part of the skin, not a rib: its faces
+    carry the skin partition (``partition``) and so the skin's material, and it is
+    not counted in a layout's ``nR``. It fills the skin mid-surface loop at the tip
+    station, split at any web that reaches the tip. ``thickness`` of ``None`` takes
+    the skin thickness law at the tip.
+    """
+
+    name: str = "tip_closure"
+    thickness: Optional[float] = None
+    partition: str = "skin"
+
+    def __post_init__(self):
+        if not str(self.name).strip():
+            raise ValueError("name is required")
+        if self.thickness is not None and self.thickness <= 0.0:
+            raise ValueError("thickness must be positive")
+        if not str(self.partition).strip():
+            raise ValueError("partition is required")
+
+
+@dataclass(frozen=True)
 class SkinRegion:
     """Skin between chord fractions ``start`` and ``end`` on both surfaces, with ``n`` elements."""
 

@@ -245,7 +245,7 @@ def _loft_quads(faces: list[np.ndarray], kinds: list[str]) -> tuple[np.ndarray, 
 
 
 def _rib_ngons(walls: list, geo) -> tuple[list[np.ndarray], list[str]]:
-    """Authored rib n-gons at loft stations (OBJ/VTK; figures may ear-clip)."""
+    """Authored rib n-gons and the tip closure at loft stations (OBJ/VTK; figures may ear-clip)."""
     from implicit_geometry_kernel.blade.topology import rib_cell_polygons_from_samples
 
     out_f, out_k = [], []
@@ -253,12 +253,12 @@ def _rib_ngons(walls: list, geo) -> tuple[list[np.ndarray], list[str]]:
         return out_f, out_k
     z0, z1 = float(walls[0][0]), float(walls[-1][0])
     seen: set[str] = set()
-    for member in geo.transverse:
-        zm = float(member.z)
+    faces = [(float(m.z), m, str(m.name)) for m in geo.transverse]
+    faces.append((float(geo.tip_closure_z), str(geo.tip_closure.name), str(geo.tip_closure.name)))
+    for zm, member, key in faces:
         if not (z0 - 1e-9 <= zm <= z1 + 1e-9):
             continue
         _z, tmpl, samples = min(walls, key=lambda s, z=zm: abs(float(s[0]) - z))
-        key = str(member.name)
         if key in seen:
             continue
         seen.add(key)

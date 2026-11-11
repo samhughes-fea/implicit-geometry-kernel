@@ -23,7 +23,8 @@ The short form is rejected with `KeyError`.
 
 Anchoring is `LC` (local chord fraction), `LE` (distance from the leading
 edge) or `PA` (blade-x from the pitch axis). Web positions given as chord
-fractions match 0.2.x with `LC`. `0R` means no ribs; `10R` adds ten ribs.
+fractions match 0.2.x with `LC`. `0R` means no ribs; `10R` adds ten interior
+ribs. Every blade also has a tip closure, which is not a rib (0.9.2).
 
 ## BladeGeometry
 
@@ -50,6 +51,20 @@ fractions match 0.2.x with `LC`. `0R` means no ribs; `10R` adds ten ribs.
 
 Changes made after 0.2 and removed again before 0.9 (`span_kind`, `SpanWeb`,
 `ExprSDF`, `WallRegionGraph.cap_mode`) are listed in the changelog.
+
+## 0.9.1 to 0.9.2: the tip closure
+
+Every `BladeGeometry` now closes its skin at the tip with a `TipClosure`. It is
+part of the skin, not a rib.
+
+| 0.9.1 | 0.9.2 |
+|---|---|
+| `-10R` gave 9 ribs plus a `tip_closure` rib at the tip | 10 interior ribs at `z0 + k (z1 - z0) / 11`, plus the tip closure |
+| `TransverseMember("tip_closure", z_tip, t)` | `BladeGeometry(..., tip_closure=TipClosure(thickness=t))`. The old member still works at the tip, with a `DeprecationWarning` |
+| tip closure thickness 0.012 m (catalogue) or the windIO skin/TE gauge | the skin thickness law at the tip, unless `TipClosure(thickness=...)` sets it |
+| `transverse_members_from_windio` returned a `tip_closure` member first | it returns the YAML ribs/bulkheads only |
+| tip face in `shell_graph().faces` with `surface="rib"` | `surface="skin"`, `kind="tip_closure"`, `layers=("skin",)` |
+| `rib_face_polygons(geo)` included the tip | ribs only; `tip_closure_polygons(geo)` gives the tip closure |
 
 ## Checking a consumer
 

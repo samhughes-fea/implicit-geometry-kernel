@@ -18,7 +18,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install GEOS
-        run: sudo apt-get update && sudo apt-get install -y libgeos-dev
+        # libgeos_c from the Shapely wheel on PyPI: no apt mirror in the path.
+        # Shapely is used only to fetch the library; the kernel never imports it.
+        run: |
+          python -m pip install "shapely==2.2.0"
+          python -c "import glob, os, shapely; d = os.path.join(os.path.dirname(shapely.__file__), os.pardir, 'shapely.libs'); print('GEOS_LIBRARY_PATH=' + os.path.abspath(sorted(glob.glob(os.path.join(d, 'libgeos_c*')))[0]))" >> "$GITHUB_ENV"
       - name: Install package
         run: pip install -e ".[dev]"
       - name: Lint
@@ -40,7 +44,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install GEOS
-        run: sudo apt-get update && sudo apt-get install -y libgeos-dev
+        # libgeos_c from the Shapely wheel on PyPI: no apt mirror in the path.
+        # Shapely is used only to fetch the library; the kernel never imports it.
+        run: |
+          python -m pip install "shapely==2.2.0"
+          python -c "import glob, os, shapely; d = os.path.join(os.path.dirname(shapely.__file__), os.pardir, 'shapely.libs'); print('GEOS_LIBRARY_PATH=' + os.path.abspath(sorted(glob.glob(os.path.join(d, 'libgeos_c*')))[0]))" >> "$GITHUB_ENV"
       - name: Install the package alone
         run: pip install .
       - name: Import every non-plotting module
@@ -65,7 +73,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install GEOS
-        run: sudo apt-get update && sudo apt-get install -y libgeos-dev
+        # libgeos_c from the Shapely wheel on PyPI: no apt mirror in the path.
+        # Shapely is used only to fetch the library; the kernel never imports it.
+        run: |
+          python -m pip install "shapely==2.2.0"
+          python -c "import glob, os, shapely; d = os.path.join(os.path.dirname(shapely.__file__), os.pardir, 'shapely.libs'); print('GEOS_LIBRARY_PATH=' + os.path.abspath(sorted(glob.glob(os.path.join(d, 'libgeos_c*')))[0]))" >> "$GITHUB_ENV"
       - name: Install package
         run: pip install -e ".[dev]"
       - name: Run every example and demo

@@ -59,8 +59,8 @@ loci from `shell_graph()`. A comparison of centroid routes is
 **Coloured wall strips** (`full_blade` elevation / plan / iso, region close-ups,
 region cutaways) loft the **authored `WallRegionGraph`** with `loft_mapped_strips`.
 `shell_graph()` is still the 2-D assemble view. Colour on loft views is **region role**
-(`RETRO_PANELS`); `cross_sections/sections.png` is a 4×4 span grid (navy/red/teal by kind). A compiled
-`tip_closure` plate is drawn at the tip. Region cutaways drop suction-side loop
+(`RETRO_PANELS`); `cross_sections/sections.png` is a 4×4 span grid (navy/red/teal by kind). The blade's
+tip closure (part of the skin) is drawn at the tip. Region cutaways drop suction-side loop
 roles (`bay_su_*` included). Cross-section exaggeration on the orthographic views is
 **stated in the title**.
 
@@ -98,7 +98,7 @@ Gmsh. Small worked examples: [10 loft oracles](../10_loft_oracles/),
 | shell / skin / triax, any `spar_cap`, glass layers tagged `web:` | geometric wall gauges `f(z)` |
 | `structure.webs` + `anchors` `start_nd_arc` / `end_nd_arc` | span table `web_positions` (`x/c` at each `z`; no 2D-F overlay) |
 | spar/cap layer `nd_arc` windows | span table `cap_windows` and `WallRegionGraph` cap anchors |
-| (no tip block in the file) | `tip_closure` `TransverseMember` at last span |
+| (no tip block in the file) | `BladeGeometry.tip_closure`, standard on every blade (skin partition and skin gauge at the tip) |
 
 `section_at(z)` and `oml_polyline(z)` share `interpolate`. Chord/twist/offset follow the
 YAML tables, not only the airfoil-change stations. Airfoils are not 3-D-morphed.

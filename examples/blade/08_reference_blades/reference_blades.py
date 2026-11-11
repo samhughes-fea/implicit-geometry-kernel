@@ -436,12 +436,13 @@ def _wall_faces(stations: list, *, skip_suction: bool = False, geo: BladeGeometr
         z0, z1 = float(stations[0][0]), float(stations[-1][0])
         seen = set()
         cells: list[tuple[str, np.ndarray]] = []
-        for member in geo.transverse:
-            zm = float(member.z)
+        # interior ribs, then the tip closure (part of the skin, drawn as a station face)
+        members = [(float(m.z), m, str(m.name)) for m in geo.transverse]
+        members.append((float(geo.tip_closure_z), str(geo.tip_closure.name), str(geo.tip_closure.name)))
+        for zm, member, name in members:
             if not (z0 - 1e-9 <= zm <= z1 + 1e-9):
                 continue
             _z, tmpl, samples = min(stations, key=lambda s: abs(float(s[0]) - zm))
-            name = str(member.name)
             if name in seen:
                 continue
             seen.add(name)

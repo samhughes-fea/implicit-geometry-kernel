@@ -163,12 +163,9 @@ def test_windio_graph_names_do_not_flicker_with_moving_cap():
     assert len(set(sigs)) == 1
 
 
-def test_transverse_members_tip_closure_and_yaml_bulkheads():
+def test_transverse_members_from_windio_are_yaml_ribs_only():
     z_of_s = np.column_stack([[0.0, 1.0], [0.0, 80.0]])
-    members = transverse_members_from_windio(_iea_shaped_structure(), z_of_s)
-    assert [m.name for m in members] == ["tip_closure"]
-    assert members[0].z == 80.0
+    assert transverse_members_from_windio(_iea_shaped_structure(), z_of_s) == ()
     extra = transverse_members_from_windio(_iea_shaped_structure(bulkheads=True), z_of_s)
-    names = {m.name for m in extra}
-    assert names == {"tip_closure", "rib_root", "rib_mid"}
-    assert {round(m.z, 6) for m in extra if m.name != "tip_closure"} == {8.0, 50.0}
+    assert {m.name for m in extra} == {"rib_root", "rib_mid"}
+    assert {round(m.z, 6) for m in extra} == {8.0, 50.0}

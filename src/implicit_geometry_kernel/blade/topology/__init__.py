@@ -55,6 +55,7 @@ from implicit_geometry_kernel.blade.topology.ribs import (
     rib_face_triangles,
     section_cut_near,
     templates_along,
+    tip_closure_polygons,
 )
 
 # Private helpers used by BladeGeometry.write_mid_surfaces
@@ -96,6 +97,7 @@ __all__ = [
     "rib_cell_triangles_from_samples",
     "rib_face_polygons",
     "rib_face_triangles",
+    "tip_closure_polygons",
     "place_station_keys",
     "station_key_points",
     "resample_open_h",

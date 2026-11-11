@@ -193,6 +193,8 @@ class LoftFieldsMixin:
                 issues.append(f"transverse {member.name!r} at z={member.z:g} leaves the blade")
             if member.thickness < 1e-6:
                 issues.append(f"transverse {member.name!r}: too thin")
+        if self.tip_closure_thickness() < 1e-6:
+            issues.append(f"tip closure {self.tip_closure.name!r}: too thin")
         for stringer in self.stringers:
             if stringer.extent is not None:
                 if stringer.extent[0] < zs[0] - 1e-9 or stringer.extent[1] > zs[-1] + 1e-9:

@@ -202,10 +202,11 @@ def transverse_members_from_windio(
     structure: Mapping[str, Any],
     z_of_s: np.ndarray | Sequence | None = None,
 ) -> tuple[TransverseMember, ...]:
-    """Tip-closure plate plus any YAML ``ribs`` / ``bulkheads`` / ``transverse`` rows.
+    """The YAML ``ribs`` / ``bulkheads`` / ``transverse`` rows as interior ribs.
 
-    windIO files typically omit a tip block. The plate sits at last span and takes
-    the tip skin / TE gauge (geometry thickness only).
+    The tip is closed by the blade's :class:`TipClosure`, so no tip rib is added
+    (windIO files typically omit a tip block). A row without a thickness takes the
+    skin / TE gauge at the tip (geometry thickness only).
     """
     z_table = None if z_of_s is None else np.asarray(z_of_s, float)
     if z_table is not None and z_table.size:
@@ -216,7 +217,7 @@ def transverse_members_from_windio(
     t_tip = _layer_thickness_at_z(structure, z_tip, z_table, _is_skin_or_te_layer)
     if t_tip <= 0.0:
         t_tip = 0.012
-    members = [TransverseMember("tip_closure", float(z_tip), float(t_tip))]
+    members: list[TransverseMember] = []
     for row in _yaml_transverse_rows(structure):
         name = str(row.get("name", "rib")).strip() or "rib"
         z = row.get("z")
@@ -231,7 +232,7 @@ def transverse_members_from_windio(
             table = _nd_table(block) if isinstance(block, Mapping) else None
             thick = float(table[1][0]) if table is not None else t_tip
         members.append(TransverseMember(name, float(z), float(thick)))
-    # unique z, tip_closure kept even if a YAML rib shares the tip
+    # unique (name, z)
     by_key: dict[tuple[str, float], TransverseMember] = {}
     for m in members:
         by_key[(m.name, round(float(m.z), 9))] = m

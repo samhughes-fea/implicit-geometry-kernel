@@ -202,6 +202,7 @@ class LoftCutMixin:
             dropped_web_indices=dropped_idx,
             station_webs=n_live,
             station_family=fam,
+            tip_closure=self._tip_closure_at(z),
         )
         if self.merge_cap_and_skin:
             from implicit_geometry_kernel.blade.shell_graph import shell_strips_from_graph

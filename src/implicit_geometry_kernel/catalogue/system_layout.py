@@ -43,8 +43,8 @@ class SystemLayoutSpec:
 
     ``key`` is the full token (``2D-F-LC-0R``, ``2D-F-PA-10R``). ``layout_key``
     is the orientation core (``2D-F``). ``web_anchoring`` is local-chord, leading
-    edge, or pitch-axis. ``n_ribs`` is the required ``-NR`` count (``0R`` when
-    there are no ribs).
+    edge, or pitch-axis. ``n_ribs`` is the required ``-NR`` count of interior
+    ribs (``0R`` when there are none). The tip closure is not counted.
     """
 
     key: str

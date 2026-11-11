@@ -61,6 +61,7 @@ from implicit_geometry_kernel.blade import (
     StationNetwork,
     Stringer,
     SpanwiseScheme,
+    TipClosure,
     TransverseMember,
     WallRegionGraph,
     WebMember,
@@ -82,6 +83,7 @@ from implicit_geometry_kernel.blade import (
     zone_region_graphs,
     station_network,
     station_network_from_meta,
+    tip_closure_polygons,
     wall_meta_from_cut,
 )
 from implicit_geometry_kernel.sdf import (
@@ -108,11 +110,11 @@ __all__ = [
     "PartitionEdge", "Region", "SectionCut", "SectionWall", "ShearWeb", "ShellGraph", "ShellRun",
     "ShellTopologyTemplate", "SkinRegion",
     "Station", "StationNetwork", "Stringer", "TagNode", "TopologyDiff", "TopologyEvent",
-    "SpanwiseScheme", "TransverseMember", "WallRegionGraph", "WebMember", "PlyDrop",
+    "SpanwiseScheme", "TipClosure", "TransverseMember", "WallRegionGraph", "WebMember", "PlyDrop",
     "loft_mapped_strips", "partition_edge_curve", "read_planform_csv", "write_windio", "resolve_system_type",
     "resample_locked", "rib_face_polygons",
     "section_at",
     "shared_loft_names", "signatures_compatible", "shell_graph", "shell_loft_zones",
-    "shell_strips_from_graph",     "station_network", "station_network_from_meta", "topology_diff",
+    "shell_strips_from_graph",     "station_network", "station_network_from_meta", "tip_closure_polygons", "topology_diff",
     "transverse_members_from_windio", "wall_meta_from_cut", "zone_region_graphs",
 ]

@@ -91,8 +91,7 @@ def test_sample_planform_includes_rib_lines():
     assert len(data["centroid"]) >= 1
     assert len(data["ribs"]) == 4
     zs = [row[0] for row in data["ribs"]]
-    assert min(zs) > 0.0
-    assert max(zs) == pytest.approx(10.0)
+    assert zs == pytest.approx([2.0, 4.0, 6.0, 8.0])  # interior ribs; the tip closure is not one
     for z, x_le, x_te, name in data["ribs"]:
         assert x_te > x_le
         assert name

@@ -45,6 +45,7 @@ from implicit_geometry_kernel.blade.topology import (
     rib_cell_triangles_from_samples,
     rib_face_polygons,
     rib_face_triangles,
+    tip_closure_polygons,
     place_station_keys,
     sample_region_polylines,
     signatures_compatible,
@@ -63,7 +64,15 @@ from implicit_geometry_kernel.blade.windio import (
     web_positions_from_windio_structure,
     web_span_windows_from_windio_structure,
 )
-from implicit_geometry_kernel.blade.stations import PlyDrop, ShearWeb, SkinRegion, Station, Stringer, TransverseMember
+from implicit_geometry_kernel.blade.stations import (
+    PlyDrop,
+    ShearWeb,
+    SkinRegion,
+    Station,
+    Stringer,
+    TipClosure,
+    TransverseMember,
+)
 
 __all__ = [
     "Airfoil",
@@ -90,6 +99,7 @@ __all__ = [
     "SpanwiseScheme",
     "Stringer",
     "Thickness",
+    "TipClosure",
     "TransverseMember",
     "WallBranch",
     "WallRegionGraph",
@@ -107,6 +117,7 @@ __all__ = [
     "rib_cell_triangles_from_samples",
     "rib_face_polygons",
     "rib_face_triangles",
+    "tip_closure_polygons",
     "sample_region_polylines",
     "section_at",
     "shared_loft_names",

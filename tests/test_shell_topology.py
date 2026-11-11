@@ -12,6 +12,7 @@ from implicit_geometry_kernel import (
     loft_mapped_strips,
     rib_face_polygons,
     signatures_compatible,
+    tip_closure_polygons,
     transverse_members_from_windio,
     zone_region_graphs,
 )
@@ -149,20 +150,23 @@ def test_te_wrap_collapsing_patch():
     assert mapped == ("TE",) or mapped in t1.vertices
 
 
-def test_write_mid_surfaces_obj_region_groups_and_rib(tmp_path: Path):
+def test_write_mid_surfaces_obj_region_groups_and_tip_closure(tmp_path: Path):
     from implicit_geometry_kernel.blade.stations import TransverseMember
 
-    geo = _geo(web_positions=(0.18, 0.48),
-               transverse=(TransverseMember("tip_closure", 10.0, 0.012),))
+    geo = _geo(web_positions=(0.18, 0.48), transverse=(TransverseMember("rib_mid", 5.0, 0.012),))
     obj = Path(geo.write_mid_surfaces(tmp_path / "mids.obj", n_span=5, n_chord=8)).read_text(
         encoding="utf-8")
     assert "g " in obj and "v " in obj
-    assert "tip_closure" in obj or "rib" in obj
+    groups = {ln.split()[1] for ln in obj.splitlines() if ln.startswith("g ")}
+    assert any(g.startswith("tip_closure") for g in groups)
+    assert any(g.startswith("rib_mid") for g in groups)
     n_gons = [ln for ln in obj.splitlines() if ln.startswith("f ") and len(ln.split()) > 5]
-    assert n_gons, "rib OBJ groups must keep n-gon faces (n>4)"
+    assert n_gons, "rib and tip OBJ groups must keep n-gon faces (n>4)"
     ribs = rib_face_polygons(geo, n_chord=8)
-    assert ribs
-    assert all(abs(float(ring[0, 2]) - 10.0) < 1e-6 for _n, ring in ribs)
+    assert ribs and all(abs(float(ring[0, 2]) - 5.0) < 1e-6 for _n, ring in ribs)
+    tips = tip_closure_polygons(geo, n_chord=8)
+    assert tips and all(abs(float(ring[0, 2]) - 10.0) < 1e-6 for _n, ring in tips)
+    assert all(n.startswith("tip_closure") for n, _r in tips)
 
 
 def test_mapped_loft_omits_rib_strips():
@@ -182,13 +186,13 @@ def test_mapped_loft_omits_rib_strips():
              "thickness": {"grid": [0.0, 1.0], "values": [0.004, 0.003]}},
         ],
     }
-    members = transverse_members_from_windio(structure, z_of_s)
-    assert members[0].name == "tip_closure"
-    geo = _geo(web_positions=(0.18, 0.48), transverse=members)
-    tpls, samples = _templates(geo, [2.0, 8.0])
+    assert transverse_members_from_windio(structure, z_of_s) == ()
+    geo = _geo(web_positions=(0.18, 0.48))
+    tpls, samples = _templates(geo, [8.0, 10.0])
     strips = loft_mapped_strips(samples[0], samples[1], tpls[0], tpls[1])
-    assert all("rib" not in n and n != "tip_closure" for n, _f, _c in strips)
-    assert rib_face_polygons(geo)
+    assert all("rib" not in n and not n.startswith("tip_closure") for n, _f, _c in strips)
+    assert rib_face_polygons(geo) == []
+    assert tip_closure_polygons(geo)
 
 
 def _assert_keyed_seams(geo, z, n_chord=10):
@@ -525,10 +529,7 @@ def _ptset(pts) -> set[tuple]:
 
 
 def test_rib_ngons_use_loft_skin_and_web_nodes():
-    from implicit_geometry_kernel.blade.stations import TransverseMember
-
-    geo = _geo(web_positions=(0.18, 0.48),
-               transverse=(TransverseMember("tip_closure", 10.0, 0.012),))
+    geo = _geo(web_positions=(0.18, 0.48))
     tpls, samples = _templates(geo, [10.0], n_chord=8)
     rings = rib_cell_polygons_from_samples(tpls[0], samples[0], "tip_closure")
     assert rings
@@ -566,10 +567,7 @@ def test_rib_ngons_use_loft_skin_and_web_nodes():
 
 
 def test_rib_triangles_use_only_ngon_vertices():
-    from implicit_geometry_kernel.blade.stations import TransverseMember
-
-    geo = _geo(web_positions=(0.18, 0.48),
-               transverse=(TransverseMember("tip_closure", 10.0, 0.012),))
+    geo = _geo(web_positions=(0.18, 0.48))
     tpls, samples = _templates(geo, [10.0], n_chord=8)
     rings = dict(rib_cell_polygons_from_samples(tpls[0], samples[0], "tip_closure"))
     tris = rib_cell_triangles_from_samples(tpls[0], samples[0], "tip_closure")
@@ -590,7 +588,7 @@ def test_ear_clip_le_cell_stays_inside_ngon():
     geo = _09_geo("5D-F-PA-10R")
     member = next(m for m in geo.transverse if str(m.name) == "rib_1")
     z = float(member.z)
-    assert z == pytest.approx(np.linspace(0.0, 12.0, 11)[1])
+    assert z == pytest.approx(np.linspace(0.0, 12.0, 12)[1])  # 10 interior ribs
     tpls, samples = _templates(geo, [z], n_chord=24)
     samp = samples[0]
     z_loft = float(next(iter(samp.values()))[0, 2])

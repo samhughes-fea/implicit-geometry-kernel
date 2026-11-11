@@ -80,8 +80,9 @@ class PartitionEdge:
 class ShellGraph:
     """Loftable shell: one skin loop of partitions, web branches, and rib faces.
 
-    Rib faces sit in ``faces`` at the member's ``z`` only. They are not lofted
-    with the skin loop.
+    Rib faces sit in ``faces`` at the member's ``z`` only, and the tip closure
+    (``kind="tip_closure"``, skin partition) on the tip station only. They are not
+    lofted with the skin loop.
     """
 
     z: float
@@ -213,6 +214,8 @@ def shared_loft_names(names_a, names_b) -> Tuple[str, ...]:
 def _event_kind(run: ShellRun, side: str) -> str:
     if run.surface == "rib":
         return "lost_rib" if side == "lost" else "gained_rib"
+    if run.kind == "tip_closure":
+        return "lost_tip_closure" if side == "lost" else "gained_tip_closure"
     if run.surface == "stringer":
         return "lost_stringer" if side == "lost" else "gained_stringer"
     if run.surface == "web" or run.kind == "web":
@@ -238,8 +241,8 @@ def _events_for(a_runs, b_runs) -> list:
 def topology_diff(a: ShellGraph, b: ShellGraph) -> TopologyDiff:
     """Compare two shell graphs. Loft ``shared``; do not invent missing strips.
 
-    Rib faces and partial-span stringers are topology events when present on
-    only one station; they are not lofted (``shared`` is skin and web names).
+    Rib faces, the tip closure and partial-span stringers are topology events when
+    present on only one station; they are not lofted (``shared`` is skin and web names).
     """
     shared = shared_loft_names([r.name for r in a.runs()], [r.name for r in b.runs()])
     events = _events_for(a.runs(), b.runs())

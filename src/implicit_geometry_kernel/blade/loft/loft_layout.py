@@ -73,6 +73,14 @@ class LoftLayoutMixin:
         key = round(float(z), 9)
         return tuple(m for m in self.transverse if round(float(m.z), 9) == key)
 
+    def _tip_closure_at(self, z: float):
+        """The tip closure, with its thickness resolved, on the tip station only."""
+        from dataclasses import replace as _replace
+
+        if round(float(z), 9) != round(float(self.tip_closure_z), 9):
+            return None
+        return _replace(self.tip_closure, thickness=self.tip_closure_thickness())
+
     def _stringers_at(self, z: float) -> tuple[Stringer, ...]:
         key = round(float(z), 9)
         out = []

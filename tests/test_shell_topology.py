@@ -763,17 +763,27 @@ def test_09_pa_4d_web3_onset_and_drop_are_skin_ruled():
     faces = loft_mapped_strips(samples[0], samples[1], tpls[0], tpls[1])
     names = {n for n, _f, _c in faces}
     assert any(n.startswith("bay_pr") or n.startswith("te") for n in names)
-    ruled = [c for n, _f, c in faces if n.startswith("bay_pr") or n in ("te", "te_pr")]
+    ruled = [f for n, f, _c in faces if n.startswith("bay_pr") or n in ("te", "te_pr")]
     assert ruled
-    assert sum(1 for c in ruled if not c) >= max(1, len(ruled) // 2)
+    _assert_all_quad_and_shared(faces, samples)
     live0 = [0 not in geo.section_at(float(z)).dropped_web_indices for z in zs]
     assert live0[0] and not live0[-1]
     i_off = next(i for i in range(1, len(live0)) if not live0[i])
     tpls, samples = _templates(geo, [zs[i_off - 1], zs[i_off]], n_chord=8)
     faces = loft_mapped_strips(samples[0], samples[1], tpls[0], tpls[1])
-    te = [c for n, _f, c in faces if n in ("te_pr", "te") or n.startswith("bay_pr")]
+    te = [f for n, f, _c in faces if n in ("te_pr", "te") or n.startswith("bay_pr")]
     assert te
-    assert sum(1 for c in te if not c) >= max(1, len(te) // 2)
+    _assert_all_quad_and_shared(faces, samples)
+
+
+def _assert_all_quad_and_shared(faces, samples):
+    """A web onset or drop band is all quads and uses every skin node of both stations."""
+    assert all(len(f) == 4 for _n, f, _c in faces)
+    used = {tuple(np.round(p, 9)) for _n, f, _c in faces for p in f}
+    for smp in samples:
+        skin = {tuple(np.round(p, 9)) for name, pts in smp.items() if not name.startswith("web")
+                for p in np.asarray(pts, float)}
+        assert skin <= used
 
 
 def test_09_pa_4d_pressure_skin_covers_web_events():
@@ -817,24 +827,24 @@ def test_09_le_loft_tracks_web_indices():
                 assert label in names, (z, names, cut.dropped_web_indices)
 
 
-def test_strip_faces_resample_unequal_counts_and_drop_nonfinite():
-    from implicit_geometry_kernel.blade.topology.map_loft import (
-        _finite_loft_face,
-        _strip_faces,
-    )
-    from implicit_geometry_kernel.blade.topology.template import LoopBranch
+def test_transition_quads_keep_both_stations_and_drop_nonfinite():
+    from implicit_geometry_kernel.blade.topology.map_loft import _finite_loft_face, _transition_quads
 
-    t0 = ShellTopologyTemplate(z=0.0, signature=(), loop=(), webs=(), vertices=(), n_chord=2)
-    t1 = t0
-    branch = LoopBranch(
-        "te_pr", ("TE", "pressure"), ("anchor", "web_0", "pressure"), n=8, side="pressure",
-    )
     pa = np.column_stack([np.linspace(0.0, 1.0, 3), np.zeros(3), np.zeros(3)])
-    pb = np.column_stack([np.linspace(0.0, 1.0, 8), np.zeros(8), np.ones(8)])
-    faces = _strip_faces("te_pr", pa, pb, t0, t1, branch)
+    pb = np.column_stack([np.linspace(0.0, 1.0, 9), np.zeros(9), np.ones(9)])
+    faces = _transition_quads("te_pr", pa, pb)
     assert faces
     assert all(len(face) == 4 for _n, face, _c in faces)
     assert all(_finite_loft_face(face) for _n, face, _c in faces)
+    used = {tuple(p) for _n, face, _c in faces for p in face}
+    # both stations keep their own nodes: no resampling, no hanging node
+    assert {tuple(p) for p in pa} <= used and {tuple(p) for p in pb} <= used
+    on_station = {p for p in used if p[2] in (0.0, 1.0)}
+    assert on_station == {tuple(p) for p in pa} | {tuple(p) for p in pb}
+    area = sum(0.5 * np.linalg.norm(np.cross(f[2] - f[0], f[3] - f[1])) for _n, f, _c in faces)
+    assert area == pytest.approx(1.0)
+    with pytest.raises(ValueError, match="even number"):
+        _transition_quads("te_pr", pa[:2], pb)
     nan_face = np.array([[np.nan, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]])
     assert not _finite_loft_face(nan_face)
     assert not _finite_loft_face(np.zeros((4, 3)))

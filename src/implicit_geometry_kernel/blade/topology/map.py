@@ -108,6 +108,16 @@ def _key_name(vid: ShellVertexId) -> str:
     return "te"
 
 
+def _odd_count(n: int) -> int:
+    """Nodes per region: odd, so each region has an even number of edges.
+
+    An all-quad mesh needs an even number of edges on each station side of a
+    transition strip (see ``loft_mapped_strips``); the next odd count up keeps
+    every region and every sum of regions even.
+    """
+    return int(n) if int(n) % 2 else int(n) + 1
+
+
 def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTemplate,
                             region_graph: WallRegionGraph, *,
                             size_field: bool = False) -> dict[str, np.ndarray]:
@@ -116,7 +126,7 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
     Default holds ``n_chord``. ``size_field=True`` spaces nodes by in-plane ``h``
     (CSG viz); template ``n_chord`` is unused then.
     """
-    n = max(int(template.n_chord), 2)
+    n = _odd_count(max(int(template.n_chord), 2))
     z = float(template.z)
     wrap_on = any(b.wrap for b in template.loop)
     keys = place_station_keys(cut, graph, region_graph, z, te_blunt=wrap_on)
@@ -149,7 +159,7 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
             if size_field:
                 sampled = resample_open_h(wrap_arc, c_h, t_live)
             else:
-                sampled = arc_resample_open(wrap_arc, max(n, 4))
+                sampled = arc_resample_open(wrap_arc, _odd_count(max(n, 4)))
             sampled[0], sampled[-1] = a, b
             out[branch.name] = sampled
             continue
@@ -161,7 +171,7 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
             continue
         if float(np.linalg.norm(p0 - p1)) < 1e-6 * chord:
             continue
-        n_use = n + n // 2 if branch.name.startswith("te_") else n
+        n_use = _odd_count(n + n // 2) if branch.name.startswith("te_") else n
         out[branch.name] = _resample_keys(
             p0, p1, arcs[side], n_use,
             bunch_end=False if size_field else branch.name.startswith("te_"),

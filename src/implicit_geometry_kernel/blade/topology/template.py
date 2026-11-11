@@ -40,6 +40,8 @@ class LoopBranch:
     n: int
     side: str
     wrap: bool = False
+    sized: bool = False
+    """``n`` was set for this branch (zone sizing), not taken from ``n_chord``."""
 
 
 def _loop_vid(name: str, side: str = "") -> ShellVertexId:
@@ -64,6 +66,7 @@ class WebBranch:
     suction: ShellVertexId
     pressure: ShellVertexId
     n: int
+    sized: bool = False
 
 
 @dataclass(frozen=True)

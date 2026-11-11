@@ -215,6 +215,10 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
     (CSG viz); template ``n_chord`` is unused then.
     """
     n = _odd_count(max(int(template.n_chord), 2))
+
+    def _count(branch, default: int) -> int:
+        # a branch sized on its own (zone sizing) keeps its count
+        return _odd_count(max(int(branch.n), 3)) if branch.sized else default
     z = float(template.z)
     wrap_on = any(b.wrap for b in template.loop)
     keys = place_station_keys(cut, graph, region_graph, z, te_blunt=wrap_on)
@@ -248,7 +252,7 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
             if size_field:
                 sampled = resample_open_h(wrap_arc, c_h, t_live)
             else:
-                sampled = arc_resample_open(wrap_arc, _odd_count(max(n, 4)))
+                sampled = arc_resample_open(wrap_arc, _count(branch, _odd_count(max(n, 4))))
             sampled[0], sampled[-1] = a, b
             out[branch.name] = sampled
             continue
@@ -260,7 +264,7 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
             continue
         if float(np.linalg.norm(p0 - p1)) < 1e-6 * chord:
             continue
-        n_use = _odd_count(n + n // 2) if branch.name.startswith("te_") else n
+        n_use = _count(branch, _odd_count(n + n // 2) if branch.name.startswith("te_") else n)
         out[branch.name] = _resample_keys(
             p0, p1, arcs[side], n_use,
             bunch_end=False if size_field else branch.name.startswith("te_"),
@@ -278,10 +282,10 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
         match = name_to_run.get(f"web_{web.index}") or name_to_run.get(su_name)
         ends = np.vstack([su_ft, pr_ft])
         if match is None:
-            sampled = resample_open_h(ends, c_h, t_live) if size_field else arc_resample_open(ends, n)
+            sampled = resample_open_h(ends, c_h, t_live) if size_field else arc_resample_open(ends, _count(web, n))
         else:
             mid = _as_xyz(np.asarray(match.points, float), z)
-            sampled = resample_open_h(mid, c_h, t_live) if size_field else arc_resample_open(mid, n)
+            sampled = resample_open_h(mid, c_h, t_live) if size_field else arc_resample_open(mid, _count(web, n))
         if np.linalg.norm(sampled[0] - su_ft) <= np.linalg.norm(sampled[0] - pr_ft):
             sampled[0], sampled[-1] = su_ft, pr_ft
         else:

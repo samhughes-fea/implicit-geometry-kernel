@@ -18,6 +18,10 @@
 - ``TransverseMember("tip_closure", ...)`` is deprecated: at the tip it becomes
   the blade's ``TipClosure`` with its thickness and a ``DeprecationWarning``;
   anywhere else it is an error.
+- CI takes ``libgeos_c`` (GEOS 3.14.1) from the pinned Shapely 2.2.0 wheel on
+  PyPI through ``GEOS_LIBRARY_PATH``, instead of apt ``libgeos-dev`` (3.12.1),
+  so an Ubuntu mirror outage no longer fails every job. The suite gives the
+  same result on both GEOS versions.
 
 ## 0.9.1 (2026-11-11)
 

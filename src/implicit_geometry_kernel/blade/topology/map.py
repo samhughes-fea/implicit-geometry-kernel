@@ -175,6 +175,27 @@ def _key_name(vid: ShellVertexId) -> str:
     return "te"
 
 
+def _merge_met_keys(keys: dict, template: ShellTopologyTemplate, tol: float) -> None:
+    """Keys that bound a region of no length become one point (in place).
+
+    Where two keys meet (a cap edge passing a web foot) the region between
+    them has no nodes; its neighbours must end on the same node, or the
+    station line keeps a sliver gap there.
+    """
+    for branch in template.loop:
+        if branch.wrap or branch.side not in ("suction", "pressure"):
+            continue
+        k0 = (_key_name(branch.start), branch.side)
+        k1 = (_key_name(branch.end), branch.side)
+        if k0 == k1 or k0 not in keys or k1 not in keys or k0[0] == "te" or k1[0] == "te":
+            continue
+        p0, p1 = keys[k0], keys[k1]
+        if 0.0 < float(np.linalg.norm(p0 - p1)) < tol:
+            mid = 0.5 * (np.asarray(p0, float) + np.asarray(p1, float))
+            keys[k0] = mid
+            keys[k1] = mid.copy()
+
+
 def _odd_count(n: int) -> int:
     """Nodes per region: odd, so each region has an even number of edges.
 
@@ -210,6 +231,7 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
 
     chord = max(float(np.linalg.norm(su[0] - su[-1])), 1e-9)
     c_h = max(float(getattr(cut, "chord", 0.0) or 0.0), chord)
+    _merge_met_keys(keys, template, 1e-6 * chord)
     t_live = station_live_thickness(cut) if size_field else 0.0
     for branch in template.loop:
         if branch.wrap:

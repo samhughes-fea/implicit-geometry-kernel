@@ -94,3 +94,53 @@ def test_iea22_cap_keys_are_the_cut_cap_edges():
         assert cap_keys, z
         for p in cap_keys:
             assert min(np.linalg.norm(e - p[:2]) for e in edges) < 1e-9, z
+
+
+def _iea34_catalogue():
+    cat = _catalogue()
+    if cat is None:
+        return None
+    for rel in ("wind/iea3.4_iea10/IEA-3.4-130-RWT.yaml", "iea3.4_iea10/IEA-3.4-130-RWT.yaml"):
+        if (cat / rel).is_file():
+            return cat
+    return None
+
+
+@pytest.mark.skipif(_iea34_catalogue() is None, reason="reference-blades catalogue not cloned")
+def test_iea34_cap_edge_passing_a_web_gets_a_station_and_stays_conforming():
+    import runpy
+    from collections import Counter
+
+    from implicit_geometry_kernel.blade.topology import (
+        _template_from_cut,
+        loft_mapped_strips,
+        sample_region_polylines,
+        section_cut_near,
+    )
+    from implicit_geometry_kernel.blade.topology.crossings import key_crossing_stations
+
+    ns = runpy.run_path(str(ROOT / "examples" / "blade" / "08_reference_blades" / "reference_blades.py"))
+    _name, geo, _ = ns["load_windio"](ns["catalogue_yaml"](_iea34_catalogue(), "iea3.4_iea10/IEA-3.4-130-RWT.yaml"))
+    zs = [3.15, 4.725]
+    extra = key_crossing_stations(geo, zs)
+    assert len(extra) == 1 and zs[0] < extra[0] < zs[1]
+    stations = []
+    for z in sorted(zs + list(extra)):
+        cut = section_cut_near(geo, z)
+        tmpl = _template_from_cut(geo.region_graph, cut, z, 8)
+        stations.append((tmpl, sample_region_polylines(cut, cut.shell_graph(), tmpl, geo.region_graph)))
+    webs = {w.name for t, _s in stations for w in t.webs}
+    edges: Counter = Counter()
+    for (t0, s0), (t1, s1) in zip(stations, stations[1:]):
+        for name, face, _c in loft_mapped_strips(s0, s1, t0, t1):
+            if name in webs:
+                continue
+            assert len(face) == 4, name
+            ks = [tuple(np.round(p, 9)) for p in face]
+            for a, b in zip(ks, ks[1:] + ks[:1]):
+                if a != b:
+                    edges[tuple(sorted((a, b)))] += 1
+    # skin strips are open only along the first and last station lines
+    for (a, b), n in edges.items():
+        if n == 1:
+            assert a[2] == b[2] and a[2] in (zs[0], zs[1])

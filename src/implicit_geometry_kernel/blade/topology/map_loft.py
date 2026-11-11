@@ -51,6 +51,11 @@ def _band_pairs(s0: Mapping[str, np.ndarray], s1: Mapping[str, np.ndarray],
     """``(name, t0 nodes, t1 nodes)`` for every strip of the band."""
     raw: list[tuple[str, np.ndarray, np.ndarray]] = []
     t0_wraps = any(b.wrap for b in t0.loop)
+    groups = _met_key_groups(s1, t1)
+    for branch in t0.loop:
+        apex = _dies_at(branch, s0, s1, t0, t1, groups)
+        if apex is not None:
+            raw.append((branch.name, np.asarray(s0[branch.name], float), apex.reshape(1, -1)))
     for branch in t1.loop:
         if branch.wrap and not t0_wraps and branch.name in s1:
             ridge0 = _sample_te_ridge(s0)
@@ -60,7 +65,7 @@ def _band_pairs(s0: Mapping[str, np.ndarray], s1: Mapping[str, np.ndarray],
         if branch.wrap or branch.name not in s1:
             continue
         pb = np.asarray(s1[branch.name], float)
-        pa = _skin_parent(branch, s0, t0, t1, pb)
+        pa = _skin_parent(_outer_ends(branch, s0, t0, groups), s0, t0, t1, pb)
         if pa is not None:
             raw.append((branch.name, pa, pb))
     for branch in t0.loop:
@@ -90,6 +95,96 @@ def _band_pairs(s0: Mapping[str, np.ndarray], s1: Mapping[str, np.ndarray],
             continue
         out.append((name, pa, pb))
     return out
+
+
+def _met_key_groups(s1: Mapping[str, np.ndarray], t1: ShellTopologyTemplate) -> list[set]:
+    """Sets of t1 keys that meet at one point: the ends of each region with no length.
+
+    The sampler gives a region with no length no nodes (its two keys meet, for
+    example where a cap edge passes a web foot); the keys of each set are one
+    point on the t1 station.
+    """
+    groups: list[set] = []
+    for b in t1.loop:
+        if b.wrap or b.name in s1 or b.start == b.end:
+            continue
+        q0, q1 = _xyz_of_vid(s1, t1, b.start), _xyz_of_vid(s1, t1, b.end)
+        if q0 is None or q1 is None or float(np.linalg.norm(q0 - q1)) > 0.0:
+            continue
+        merged = {(b.start, b.side), (b.end, b.side)}
+        for g in [g for g in groups if g & merged]:
+            merged |= g
+            groups.remove(g)
+        groups.append(merged)
+    return groups
+
+
+def _group_of(groups: list[set], vid, side: str) -> set | None:
+    for g in groups:
+        if (vid, side) in g:
+            return g
+    return None
+
+
+def _le_order(s0: Mapping[str, np.ndarray], t0: ShellTopologyTemplate, side: str, vid) -> float | None:
+    """Arc distance of a t0 key from the LE end of its side (orders the keys of a group)."""
+    chain = _concat_side_samples(s0, t0, side)
+    p = _te_key_xyz(s0, t0, vid, side)
+    if chain is None or p is None:
+        return None
+    seg = np.linalg.norm(np.diff(chain, axis=0), axis=1)
+    arc = np.concatenate([[0.0], np.cumsum(seg)])
+    i = int(np.argmin(np.linalg.norm(chain - p, axis=1)))
+    le = _xyz_of_vid(s0, t0, ("anchor", "le"))
+    i_le = 0 if le is None else int(np.argmin(np.linalg.norm(chain - le, axis=1)))
+    return float(abs(arc[i] - arc[i_le]))
+
+
+def _outer_ends(branch: LoopBranch, s0: Mapping[str, np.ndarray], t0: ShellTopologyTemplate,
+                groups: list[set]) -> LoopBranch:
+    """A t1 branch whose end keys meet others on t1 takes the outer t0 key of each set.
+
+    Branches run LE to TE on their side, so a branch ending in a set ends at the
+    set's most LE-ward key on t0 and one starting in a set starts at its most
+    TE-ward key. The t0 regions between the keys of a set are left to die at
+    the meeting point (:func:`_dies_at`), so no t0 node is covered twice.
+    """
+    from dataclasses import replace
+
+    def pick(vid, last: bool):
+        g = _group_of(groups, vid, branch.side)
+        if g is None:
+            return vid
+        ranked: list[tuple[float, object]] = []
+        for v, side in g:
+            d = _le_order(s0, t0, side, v) if side == branch.side else None
+            if d is not None:
+                ranked.append((d, v))
+        if not ranked:
+            return vid
+        ranked.sort(key=lambda dv: dv[0])
+        return ranked[-1][1] if last else ranked[0][1]
+
+    start, end = pick(branch.start, True), pick(branch.end, False)
+    if start == branch.start and end == branch.end:
+        return branch
+    return replace(branch, start=start, end=end)
+
+
+def _dies_at(branch: LoopBranch, s0: Mapping[str, np.ndarray], s1: Mapping[str, np.ndarray],
+             t0: ShellTopologyTemplate, t1: ShellTopologyTemplate, groups: list[set]
+             ) -> np.ndarray | None:
+    """The t1 point a t0 region shrinks to, when both its keys meet on t1."""
+    if branch.wrap or branch.name not in s0 or not len(s0[branch.name]):
+        return None
+    g = _group_of(groups, branch.start, branch.side)
+    if g is None or (branch.end, branch.side) not in g:
+        return None
+    for vid, _side in g:
+        p = _xyz_of_vid(s1, t1, vid)
+        if p is not None:
+            return p
+    return None
 
 
 def _ruled_quads(name: str, pa: np.ndarray, pb: np.ndarray) -> list[tuple[str, np.ndarray, bool]]:

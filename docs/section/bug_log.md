@@ -57,6 +57,8 @@ Deviations are stated per entry.
 | [SG-026](#sg-026) | Contract example swapped xy per strip and broke webs | **Fixed** |
 | [SG-027](#sg-027) | Family-C pad `*_0` treated as a distinct merge key from the unindexed canonical pad | **Fixed** — `v0.8.2` index-0 only; no unindexed sibling |
 | [SG-028](#sg-028) | `AirfoilSDF.from_naca` via `Airfoil.naca4` broke sdf↔blade and vertex counts | **Fixed** — shared `naca_four_digit_vertices` |
+| [SG-029](#sg-029) | A spar cap was silently dropped from the skin loop at a concave skin vertex | **Fixed** — shared feet spread by cap arc length |
+| [SG-030](#sg-030) | The skin mid-line folds back on itself at a blunt trailing edge (IEA 15 ~16 % span) | **Open** |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -1678,3 +1680,54 @@ from `blade`. Prefer `Airfoil.to_sdf()` at call sites.
 `test_sdf_stands_alone`; `tests/sdf/test_naca_single_source.py` (both factories
 call the shared generator). Documented in `CHANGELOG.md` 0.4.0.
 
+## SG-029
+
+**A spar cap was silently dropped from the skin loop at a concave skin vertex**
+
+**Status:** Fixed — 2026-11-11 (K7, commit a4096d1)
+**Area:** `section.junctions.cap_skin_bonds`
+
+### Symptom
+IEA 22 at 9–10 % span (z = 12.4, 13.8 m): the cut had a pressure cap wall, but
+the shell graph's skin loop had no `spar_cap_pressure_surface` run.
+
+### Evidence
+The cap's `bonds` were empty. `_bond_one_cap` raised "does not run monotonically
+along its skin" (one zero step in the feet) and `bond_caps_to_skin` caught the
+error and skipped the cap's bonds.
+
+### Root cause
+Where the skin is concave seen from the cap, the normal projection is
+many-to-one: two cap vertices share one foot at a skin vertex. The strict
+monotone check refused it, and the caller swallowed the error.
+
+### Fix
+Runs of shared feet are spread along the skin by cap arc length between the
+feet either side (`_spread_shared_feet`); geometry does not move. A run at a cap
+end is still refused. The catch in `bond_caps_to_skin` remains for genuinely
+non-monotone caps; no reference blade hits it at 41 stations (scan 2026-11-11).
+
+### Verification
+`test_shared_feet_are_spread_by_cap_arc_length`,
+`test_cap_bonds_round_a_concave_skin_vertex`, `test_iea22_cap_keys_are_the_cut_cap_edges`.
+
+## SG-030
+
+**The skin mid-line folds back on itself at a blunt trailing edge**
+
+**Status:** Open — logged 2026-11-11
+**Area:** skin mid-surface at the TE (section midlines)
+
+### Symptom
+IEA 15 at 16.3 % span: the skin mid loop across the TE runs down, back up and
+down again (offsets 0.002, −0.073 → 0.012, −0.055 → 0.008, −0.079 m from the
+suction corner); at 16.9 % it also repeats a vertex.
+
+### Evidence
+`_te_wrap_arc` polylines along 15–17 % span; wrap length jumps between
+stations; folded loft quads in the TE wrap ([BG-035](../blade/bug_log.md#bg-035)).
+
+### Root cause
+Not established. Likely the inward half-thickness offset at the TE corners
+forming a swallowtail where the laminate is thick against the flatback height,
+near the moving suction/pressure TE partition point.

@@ -25,8 +25,8 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | K2 | Reference-catalogue tests (`-m reference`), stable cap names at family-C stations, `pyyaml` in `[dev]` | Done (#52, 0.9.1) |
 | K3 | No consumer names in the public repo; report renamed `SHELL_FE_REPLACEMENT_GAPS.md` | Done (#52, 0.9.1) |
 | K4 | Pinned `ruff`/`mypy`, weekly `tool-drift` workflow | Done (#52, 0.9.1) |
-| K6 | Tip closure on every blade: closes the skin shell at z/L = 1 with the polygon mesher, skin partition; `nR` counts interior ribs only | In review (0.9.2) |
-| K7 | Mesh product: skin/web quads, polygonal ribs and tip, arrays with partition and thickness, no Gmsh | After K6 |
+| K6 | Tip closure on every blade: closes the skin shell at z/L = 1 with the polygon mesher, skin partition; `nR` counts interior ribs only | Done (#54, 0.9.2) |
+| K7 | Mesh product: skin/web quads, polygonal ribs and tip, arrays with partition and thickness, no Gmsh | In review (0.9.2) |
 | K8 | Leading-edge and spanwise refinement controls | After K7 |
 | K5 | Trimmed top-level API (deprecate first), internal docs to `docs/internal/`; still 0.9.x | After consumers move |
 

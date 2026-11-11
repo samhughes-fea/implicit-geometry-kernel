@@ -9,7 +9,6 @@ import numpy as np
 from implicit_geometry_kernel.geos.geom import Polygon
 from implicit_geometry_kernel.mesh.polygon import (
     _area2,
-    _clip_convex_to_ring,
     _closed_xy,
     _geos_clip,
     _hex_seeds,
@@ -104,58 +103,198 @@ def _cell_centroid(xy: np.ndarray) -> np.ndarray:
     return np.array([float(cx), float(cy)], float)
 
 
-def _clip_one(cell: np.ndarray, ring: np.ndarray, seed: np.ndarray, domain: Polygon) -> np.ndarray:
-    if len(cell) < 3:
-        return np.zeros((0, 2), float)
-    inside = points_in_ring(ring, cell)
-    if bool(np.all(inside)):
-        return cell
-    got = _clip_convex_to_ring(np.ascontiguousarray(cell, np.float64),
-                               np.ascontiguousarray(ring, np.float64),
-                               float(seed[0]), float(seed[1]))
-    if len(got) >= 3:
-        return got
-    repaired = _geos_clip(cell, domain)
-    return repaired[0] if repaired else np.zeros((0, 2), float)
+def _clip_cells(raw: list[np.ndarray], ring: np.ndarray, domain: Polygon) -> list[np.ndarray]:
+    """Exact GEOS intersection of each Voronoi cell with the ring (CCW pieces).
+
+    A cell cut by a concave ring can fall in more than one piece; each piece is
+    its own cell. An angle sort about the seed is only right for star-shaped
+    pieces, which thin trailing-edge cells are not.
+    """
+    out: list[np.ndarray] = []
+    for cell in raw:
+        if len(cell) < 3:
+            continue
+        if bool(np.all(points_in_ring(ring, cell))):
+            pieces = [cell]
+            if not _inside_exactly(cell, domain):
+                pieces = _geos_clip(cell, domain)
+        else:
+            pieces = _geos_clip(cell, domain)
+        for piece in pieces:
+            piece = np.asarray(piece, float)
+            if len(piece) >= 3 and abs(_area2(piece)) > 1e-300:
+                out.append(piece if _area2(piece) > 0.0 else piece[::-1].copy())
+    return out
 
 
-def _merge_small(cells: list[np.ndarray], seeds: np.ndarray, ring: np.ndarray) -> list[np.ndarray]:
-    """Absorb 3-gons and 4-gons into the nearest face with more than 4 nodes."""
-    big: list[tuple[np.ndarray, np.ndarray]] = []
-    small: list[np.ndarray] = []
-    for cell, seed in zip(cells, seeds):
-        if len(cell) > 4 and abs(_area2(cell)) > 1e-16:
-            big.append((cell, seed))
-        elif len(cell) >= 3 and abs(_area2(cell)) > 1e-16:
-            small.append(cell)
-    if not big:
-        return [c for c in cells if len(c) > 4]
-    for sm in small:
-        c = _cell_centroid(sm)
-        j = int(np.argmin([np.linalg.norm(_cell_centroid(b[0]) - c) for b in big]))
-        cell, seed = big[j]
-        merged = np.vstack([cell, sm])
-        ang = np.arctan2(merged[:, 1] - seed[1], merged[:, 0] - seed[0])
-        order = np.argsort(ang)
-        uniq = [merged[order[0]]]
-        for i in order[1:]:
-            if float(np.linalg.norm(merged[i] - uniq[-1])) > 1e-12:
-                uniq.append(merged[i])
-        arr = np.asarray(uniq, float)
-        if len(arr) > 2 and float(np.linalg.norm(arr[0] - arr[-1])) < 1e-12:
-            arr = arr[:-1]
-        clipped = _clip_convex_to_ring(
-            np.ascontiguousarray(arr, np.float64),
-            np.ascontiguousarray(ring, np.float64),
-            float(seed[0]), float(seed[1]),
-        )
-        if len(clipped) > 4:
-            big[j] = (clipped, seed)
-    return [c for c, _s in big if len(c) > 4]
+def _inside_exactly(cell: np.ndarray, domain: Polygon) -> bool:
+    """All vertices inside is not enough: a concave ring can cut an edge."""
+    got = _geos_clip(cell, domain)
+    return len(got) == 1 and abs(abs(_area2(got[0])) - abs(_area2(cell))) <= 1e-12 * abs(_area2(cell))
+
+
+def _ring_hit(p: np.ndarray, a: np.ndarray, ab: np.ndarray, l2: np.ndarray, tol: float) -> tuple[int, float] | None:
+    t = np.clip(((p - a) * ab).sum(axis=1) / l2, 0.0, 1.0)
+    d = np.linalg.norm(a + t[:, None] * ab - p, axis=1)
+    i = int(np.argmin(d))
+    return (i, float(t[i])) if d[i] <= tol else None
+
+
+def _snap_to_ring(cells: list[np.ndarray], ring: np.ndarray) -> tuple[np.ndarray, list[list[int]]]:
+    """Cells as vertex indices whose boundary nodes are exactly the ring nodes.
+
+    A clipped cell meets the ring at points along ring edges. Each such point
+    moves to the nearer ring node, and the cell takes every ring node between
+    its entry and exit, so a cell and the skin beside it share nodes and edges:
+    no hanging node on the ring. Neighbouring cells snap a shared point the
+    same way, so they stay conforming. Indices ``0 .. n-1`` are the ring nodes.
+    """
+    n = len(ring)
+    a = ring
+    ab = np.roll(ring, -1, axis=0) - ring
+    l2 = np.maximum((ab * ab).sum(axis=1), 1e-300)
+    tol = 1e-9 * max(float(np.sqrt(l2.max())), 1e-300)
+    verts: list[np.ndarray] = [p for p in ring]
+    index: dict[tuple[float, float], int] = {}
+
+    def interior(p: np.ndarray) -> int:
+        key = (round(float(p[0]), 12), round(float(p[1]), 12))
+        if key not in index:
+            index[key] = len(verts)
+            verts.append(np.asarray(p, float))
+        return index[key]
+
+    faces: list[list[int]] = []
+    for cell in cells:
+        m = len(cell)
+        tokens: list[int] = []
+        on: list[bool] = []
+        for p in cell:
+            hit = _ring_hit(p, a, ab, l2, tol)
+            if hit is None:
+                tokens.append(interior(p))
+                on.append(False)
+            else:
+                tokens.append(hit[0] if hit[1] < 0.5 else (hit[0] + 1) % n)
+                on.append(True)
+        seq: list[int] = []
+        for k in range(m):
+            seq.append(tokens[k])
+            j = (k + 1) % m
+            if on[k] and on[j] and tokens[k] != tokens[j]:
+                mid = 0.5 * (cell[k] + cell[j])
+                if _ring_hit(mid, a, ab, l2, tol) is not None:
+                    r = (tokens[k] + 1) % n
+                    while r != tokens[j]:
+                        seq.append(r)
+                        r = (r + 1) % n
+        face: list[int] = []
+        for v in seq:
+            if not face or face[-1] != v:
+                face.append(v)
+        while len(face) > 1 and face[0] == face[-1]:
+            face.pop()
+        if len(face) >= 3:
+            faces.append(face)
+    return np.asarray(verts, float), faces
+
+
+def _face_area(verts: np.ndarray, face: list[int]) -> float:
+    return 0.5 * _area2(verts[face])
+
+
+def _tiles(verts: np.ndarray, faces: list[list[int]], ring_area: float) -> bool:
+    """Positive cells whose areas add up to the ring: an exact, unfolded tiling."""
+    if not faces:
+        return False
+    areas = np.array([_face_area(verts, f) for f in faces])
+    return bool(np.all(areas > 0.0)) and abs(float(areas.sum()) - ring_area) <= 1e-9 * ring_area
+
+
+def _merge_edge_neighbour(faces: list[list[int]], k: int, verts: np.ndarray) -> bool:
+    """Merge face ``k`` into the neighbour it shares the longest edge run with."""
+    edges_k = {(face_a, face_b) for face_a, face_b in zip(faces[k], faces[k][1:] + faces[k][:1])}
+    best, best_len = -1, 0.0
+    for j, other in enumerate(faces):
+        if j == k:
+            continue
+        shared = [(b, a) for a, b in zip(other, other[1:] + other[:1]) if (b, a) in edges_k]
+        if not shared:
+            continue
+        length = sum(float(np.linalg.norm(verts[a] - verts[b])) for a, b in shared)
+        if length > best_len:
+            best, best_len = j, length
+    if best < 0:
+        return False
+    merged = _union_walk(faces[k], faces[best])
+    if merged is None or _face_area(verts, merged) <= 0.0:
+        return False
+    keep = [f for i, f in enumerate(faces) if i not in (k, best)]
+    faces[:] = keep + [merged]
+    return True
+
+
+def _union_walk(f: list[int], g: list[int]) -> list[int] | None:
+    """Boundary of two CCW faces that share a run of edges."""
+    edges = list(zip(f, f[1:] + f[:1])) + list(zip(g, g[1:] + g[:1]))
+    es = set(edges)
+    outer = [(a, b) for a, b in edges if (b, a) not in es]
+    nxt: dict[int, int] = {}
+    for a, b in outer:
+        if a in nxt:
+            return None
+        nxt[a] = b
+    if not outer:
+        return None
+    start = outer[0][0]
+    walk = [start]
+    v = nxt[start]
+    while v != start:
+        if v not in nxt or len(walk) > len(outer):
+            return None
+        walk.append(v)
+        v = nxt[v]
+    return walk if len(walk) == len(outer) else None
+
+
+def _absorb_small(faces: list[list[int]], verts: np.ndarray) -> None:
+    """3- and 4-node cells join an edge neighbour, so every cell has more than 4 nodes."""
+    changed = True
+    while changed:
+        changed = False
+        for k, face in enumerate(faces):
+            if len(face) <= 4 and len(faces) > 1 and _merge_edge_neighbour(faces, k, verts):
+                changed = True
+                break
+
+
+def _conforming_cells(xy: np.ndarray, h: float, lloyd: int, domain: Polygon) -> tuple[np.ndarray, list[list[int]]] | None:
+    seeds = _hex_seeds(xy, h)
+    if len(seeds) < 3:
+        return None
+    cells = _clip_cells(_voronoi_cells(seeds), xy, domain)
+    for _ in range(max(int(lloyd), 0)):
+        nxt = [c for c in (_cell_centroid(cell) for cell in cells) if point_in_ring(c, xy)]
+        if len(nxt) < 3:
+            break
+        cells = _clip_cells(_voronoi_cells(np.asarray(nxt, float)), xy, domain)
+    verts, faces = _snap_to_ring(cells, xy)
+    if not _tiles(verts, faces, 0.5 * _area2(xy)):
+        return None
+    _absorb_small(faces, verts)
+    return verts, faces
 
 
 def polygon_mesh_ring(ring: np.ndarray, *, size: float | None = None, lloyd: int = 0) -> list[np.ndarray]:
-    """Fill a planar 3-D n-gon with unstructured n-gons (more than 4 nodes)."""
+    """Fill a planar 3-D n-gon with unstructured n-gons (more than 4 nodes).
+
+    The fill conforms to the ring: its boundary nodes are exactly the ring's
+    nodes (returned bit for bit), and every ring edge is an edge of one cell.
+    Interior cells are clipped Voronoi cells of a hexagonal seed grid of
+    spacing ``size`` (default: the median ring edge). A conforming cell cannot
+    be finer along the ring than the ring itself; if snapping to the ring would
+    fold a cell, the spacing grows by 1.25 until the cells tile the ring.
+    """
     pts = np.asarray(ring, float)
     if len(pts) > 2 and np.allclose(pts[0], pts[-1], atol=1e-12, rtol=0.0):
         pts = pts[:-1]
@@ -168,33 +307,25 @@ def polygon_mesh_ring(ring: np.ndarray, *, size: float | None = None, lloyd: int
     domain = Polygon(_closed_xy(xy))
     area = 0.5 * abs(_area2(xy))
     h = _target_size(xy, size)
+    whole = [pts.copy()] if len(pts) > 4 else []
     if h < 1e-12 or area < 1e-18:
-        return [pts.copy()] if len(pts) > 4 else []
-    seeds = _hex_seeds(xy, h)
-    if len(seeds) < 3:
-        return [pts.copy()] if len(pts) > 4 else []
-    raw = _voronoi_cells(seeds)
-    cells = [_clip_one(cell, xy, seeds[i], domain) for i, cell in enumerate(raw)]
-    for _ in range(max(int(lloyd), 0)):
-        nxt = []
-        for cell in cells:
-            if len(cell) < 3:
-                continue
-            c = _cell_centroid(cell)
-            if point_in_ring(c, xy):
-                nxt.append(c)
-        if len(nxt) < 3:
-            break
-        seeds = np.asarray(nxt, float)
-        raw = _voronoi_cells(seeds)
-        cells = [_clip_one(cell, xy, seeds[i], domain) for i, cell in enumerate(raw)]
-    cells = _merge_small(cells, seeds, xy)
+        return whole
+    span = float(np.linalg.norm(xy.max(axis=0) - xy.min(axis=0)))
+    got = None
+    while got is None and h <= span:
+        got = _conforming_cells(xy, h, lloyd, domain)
+        h *= 1.25
+    if got is None:
+        return whole
+    verts, faces = got
+    n = len(pts)
     out = []
-    for cell in cells:
-        if len(cell) <= 4 or abs(_area2(cell)) < 1e-16:
+    for face in faces:
+        if len(face) <= 4 and len(faces) > 1:
             continue
-        out.append(origin + np.outer(cell[:, 0], u) + np.outer(cell[:, 1], v))
-    return out or ([pts.copy()] if len(pts) > 4 else [])
+        rows = [pts[i] if i < n else origin + verts[i, 0] * u + verts[i, 1] * v for i in face]
+        out.append(np.asarray(rows, float))
+    return out or whole
 
 
 def fill_rib_cells(cells: list[tuple[str, np.ndarray]]) -> list[tuple[str, np.ndarray]]:

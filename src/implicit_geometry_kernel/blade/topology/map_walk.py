@@ -315,12 +315,9 @@ def _side_arcs(pts: np.ndarray, cut, i_le: int | None = None, i_su: int | None =
         return ccw, cw
 
     def _away(i_from: int, i_other: int) -> int:
-        if (i_from + 1) % n == i_other:
-            return -1
-        if (i_from - 1) % n == i_other:
-            return 1
-        d_le = (i_le - i_from) % n
-        return 1 if d_le <= n - d_le else -1
+        # walk to the LE without passing the other TE corner: stepping +1 meets
+        # the other corner first exactly when it is nearer than the LE that way
+        return -1 if (i_other - i_from) % n < (i_le - i_from) % n else 1
 
     return (
         _walk_arc_dir(pts, i_su, i_le, _away(i_su, i_pr)),

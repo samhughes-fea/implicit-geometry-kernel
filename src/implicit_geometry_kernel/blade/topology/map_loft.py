@@ -16,25 +16,58 @@ from implicit_geometry_kernel.blade.topology.template import (
 def loft_mapped_strips(s0: Mapping[str, np.ndarray], s1: Mapping[str, np.ndarray],
                        t0: ShellTopologyTemplate, t1: ShellTopologyTemplate
                        ) -> list[tuple[str, np.ndarray, bool]]:
-    """Quad (or collapsing) strips between two templates. Omit one-sided webs.
+    """All-quad strips between two sampled stations. Omit one-sided webs.
 
     Each t1 skin branch is ruled from the t0 skin walk between its mapped
     endpoints (web onset/drop splits a panel along the mould, not a chord).
+    Both sides of every strip are the stations' own nodes, so neighbouring
+    bands share every station node.
 
-    Returns ``(name, face, collapsing)`` with ``face`` shape ``(4, 3)`` or ``(3, 3)``.
+    Where any strip of the band changes node count (a web or cap starts or
+    ends, a panel is born from a point, the TE goes blunt or sharp), the band
+    gets a mid-span row: equal strips split into two quads, and the others take
+    an all-quad transition (:func:`_transition_quads`).
+
+    Returns ``(name, face, collapsing)``; ``face`` is a quad ``(4, 3)``.
+    ``collapsing`` marks the faces of a transition (and the triangle halves of
+    a folded quad, which are ``(3, 3)``).
     """
+    pairs = _band_pairs(s0, s1, t0, t1)
+    event = any(len(pa) != len(pb) for _name, pa, pb in pairs)
     faces: list[tuple[str, np.ndarray, bool]] = []
-    used: set[str] = set()
+    for name, pa, pb in pairs:
+        if not event:
+            faces.extend(_ruled_quads(name, pa, pb))
+        elif len(pa) == len(pb):
+            faces.extend(_split_quads(name, pa, pb))
+        else:
+            faces.extend(_transition_quads(name, pa, pb))
+    return faces
+
+
+def _band_pairs(s0: Mapping[str, np.ndarray], s1: Mapping[str, np.ndarray],
+                t0: ShellTopologyTemplate, t1: ShellTopologyTemplate
+                ) -> list[tuple[str, np.ndarray, np.ndarray]]:
+    """``(name, t0 nodes, t1 nodes)`` for every strip of the band."""
+    raw: list[tuple[str, np.ndarray, np.ndarray]] = []
+    t0_wraps = any(b.wrap for b in t0.loop)
+    groups = _met_key_groups(s1, t1)
+    for branch in t0.loop:
+        apex = _dies_at(branch, s0, s1, t0, t1, groups)
+        if apex is not None:
+            raw.append((branch.name, np.asarray(s0[branch.name], float), apex.reshape(1, -1)))
     for branch in t1.loop:
+        if branch.wrap and not t0_wraps and branch.name in s1:
+            ridge0 = _sample_te_ridge(s0)
+            if ridge0 is not None:
+                raw.append((branch.name, ridge0.reshape(1, -1), np.asarray(s1[branch.name], float)))
+            continue
         if branch.wrap or branch.name not in s1:
             continue
         pb = np.asarray(s1[branch.name], float)
-        pa = _skin_parent(branch, s0, t0, t1, pb)
-        if pa is None:
-            continue
-        birth = bool(np.allclose(pa[0], pa[-1]))
-        faces.extend(_strip_faces(branch.name, pa, pb, t0, t1, branch, birth=birth))
-        used.add(branch.name)
+        pa = _skin_parent(_outer_ends(branch, s0, t0, groups), s0, t0, t1, pb)
+        if pa is not None:
+            raw.append((branch.name, pa, pb))
     for branch in t0.loop:
         if not branch.wrap or branch.name not in s0:
             continue
@@ -46,27 +79,210 @@ def loft_mapped_strips(s0: Mapping[str, np.ndarray], s1: Mapping[str, np.ndarray
             ridge = _sample_te_ridge(s1)
             if ridge is None:
                 continue
-            pb = np.vstack([ridge, ridge])
-            dest = branch.name
-        faces.extend(_strip_faces(dest, pa, pb, t0, t1, branch))
-        used.add(dest)
+            pb, dest = ridge.reshape(1, -1), branch.name
+        raw.append((dest, pa, pb))
     names1 = {w.name for w in t1.webs}
     for web in t0.webs:
         if web.name not in s0 or web.name not in s1 or web.name not in names1:
             continue
-        pa, pb = np.asarray(s0[web.name], float), np.asarray(s1[web.name], float)
-        if len(pa) < 2 or len(pb) < 2:
+        raw.append((web.name, np.asarray(s0[web.name], float), np.asarray(s1[web.name], float)))
+    out: list[tuple[str, np.ndarray, np.ndarray]] = []
+    for name, pa, pb in raw:
+        if len(pa) == 0 or len(pb) == 0 or not (np.all(np.isfinite(pa)) and np.all(np.isfinite(pb))):
             continue
-        pa, pb = _match_open_counts(pa, pb)
-        for i in range(len(pa) - 1):
-            quad = np.stack([pa[i], pa[i + 1], pb[i + 1], pb[i]])
-            if _quad_bowtie(quad):
-                a, b, c, d = quad
-                _append_face(faces, web.name, np.stack([a, b, c]), True)
-                _append_face(faces, web.name, np.stack([a, c, d]), True)
-                continue
-            _append_face(faces, web.name, quad, False)
-    return faces
+        pa, pb = _dedupe_open(np.asarray(pa, float)), _dedupe_open(np.asarray(pb, float))
+        if len(pa) == 1 and len(pb) == 1:
+            continue
+        out.append((name, pa, pb))
+    return out
+
+
+def _met_key_groups(s1: Mapping[str, np.ndarray], t1: ShellTopologyTemplate) -> list[set]:
+    """Sets of t1 keys that meet at one point: the ends of each region with no length.
+
+    The sampler gives a region with no length no nodes (its two keys meet, for
+    example where a cap edge passes a web foot); the keys of each set are one
+    point on the t1 station.
+    """
+    groups: list[set] = []
+    for b in t1.loop:
+        if b.wrap or b.name in s1 or b.start == b.end:
+            continue
+        q0, q1 = _xyz_of_vid(s1, t1, b.start), _xyz_of_vid(s1, t1, b.end)
+        if q0 is None or q1 is None or float(np.linalg.norm(q0 - q1)) > 0.0:
+            continue
+        merged = {(b.start, b.side), (b.end, b.side)}
+        for g in [g for g in groups if g & merged]:
+            merged |= g
+            groups.remove(g)
+        groups.append(merged)
+    return groups
+
+
+def _group_of(groups: list[set], vid, side: str) -> set | None:
+    for g in groups:
+        if (vid, side) in g:
+            return g
+    return None
+
+
+def _le_order(s0: Mapping[str, np.ndarray], t0: ShellTopologyTemplate, side: str, vid) -> float | None:
+    """Arc distance of a t0 key from the LE end of its side (orders the keys of a group)."""
+    chain = _concat_side_samples(s0, t0, side)
+    p = _te_key_xyz(s0, t0, vid, side)
+    if chain is None or p is None:
+        return None
+    seg = np.linalg.norm(np.diff(chain, axis=0), axis=1)
+    arc = np.concatenate([[0.0], np.cumsum(seg)])
+    i = int(np.argmin(np.linalg.norm(chain - p, axis=1)))
+    le = _xyz_of_vid(s0, t0, ("anchor", "le"))
+    i_le = 0 if le is None else int(np.argmin(np.linalg.norm(chain - le, axis=1)))
+    return float(abs(arc[i] - arc[i_le]))
+
+
+def _outer_ends(branch: LoopBranch, s0: Mapping[str, np.ndarray], t0: ShellTopologyTemplate,
+                groups: list[set]) -> LoopBranch:
+    """A t1 branch whose end keys meet others on t1 takes the outer t0 key of each set.
+
+    Branches run LE to TE on their side, so a branch ending in a set ends at the
+    set's most LE-ward key on t0 and one starting in a set starts at its most
+    TE-ward key. The t0 regions between the keys of a set are left to die at
+    the meeting point (:func:`_dies_at`), so no t0 node is covered twice.
+    """
+    from dataclasses import replace
+
+    def pick(vid, last: bool):
+        g = _group_of(groups, vid, branch.side)
+        if g is None:
+            return vid
+        ranked: list[tuple[float, object]] = []
+        for v, side in g:
+            d = _le_order(s0, t0, side, v) if side == branch.side else None
+            if d is not None:
+                ranked.append((d, v))
+        if not ranked:
+            return vid
+        ranked.sort(key=lambda dv: dv[0])
+        return ranked[-1][1] if last else ranked[0][1]
+
+    start, end = pick(branch.start, True), pick(branch.end, False)
+    if start == branch.start and end == branch.end:
+        return branch
+    return replace(branch, start=start, end=end)
+
+
+def _dies_at(branch: LoopBranch, s0: Mapping[str, np.ndarray], s1: Mapping[str, np.ndarray],
+             t0: ShellTopologyTemplate, t1: ShellTopologyTemplate, groups: list[set]
+             ) -> np.ndarray | None:
+    """The t1 point a t0 region shrinks to, when both its keys meet on t1."""
+    if branch.wrap or branch.name not in s0 or not len(s0[branch.name]):
+        return None
+    g = _group_of(groups, branch.start, branch.side)
+    if g is None or (branch.end, branch.side) not in g:
+        return None
+    for vid, _side in g:
+        p = _xyz_of_vid(s1, t1, vid)
+        if p is not None:
+            return p
+    return None
+
+
+def _ruled_quads(name: str, pa: np.ndarray, pb: np.ndarray) -> list[tuple[str, np.ndarray, bool]]:
+    out: list[tuple[str, np.ndarray, bool]] = []
+    for i in range(len(pa) - 1):
+        quad = np.stack([pa[i], pa[i + 1], pb[i + 1], pb[i]])
+        if _quad_bowtie(quad):
+            a, b, c, d = quad
+            _append_face(out, name, np.stack([a, b, c]), True)
+            _append_face(out, name, np.stack([a, c, d]), True)
+        else:
+            _append_face(out, name, quad, False)
+    return out
+
+
+def _mid(p: np.ndarray, q: np.ndarray) -> np.ndarray:
+    """Midpoint of a spanwise or interior edge, ``p`` on t0 first (same bits on both sides)."""
+    return 0.5 * (p + q)
+
+
+def _split_quads(name: str, pa: np.ndarray, pb: np.ndarray) -> list[tuple[str, np.ndarray, bool]]:
+    """Two quads per ruled quad, through the mid-span row of an event band."""
+    m = [_mid(pa[i], pb[i]) for i in range(len(pa))]
+    out: list[tuple[str, np.ndarray, bool]] = []
+    for i in range(len(pa) - 1):
+        _append_face(out, name, np.stack([pa[i], pa[i + 1], m[i + 1], m[i]]), False)
+        _append_face(out, name, np.stack([m[i], m[i + 1], pb[i + 1], pb[i]]), False)
+    return out
+
+
+def _transition_quads(name: str, pa: np.ndarray, pb: np.ndarray) -> list[tuple[str, np.ndarray, bool]]:
+    """All-quad strip between station polylines with different node counts.
+
+    Both sides have an even number of edges (each region has an odd node
+    count, and onset keys land on even nodes), so every other node is a
+    coarse node. The coarse sides are zipped into triangles and each triangle
+    splits into three quads through its centroid and edge midpoints. On a
+    station line the midpoint of a coarse edge is the station node between
+    its ends, and on the band's spanwise sides it is the mid-span row node,
+    so the strip shares every node with its neighbours. A side of one node
+    (a panel born from a point) is the apex of a fan.
+    """
+    if (len(pa) - 1) % 2 or (len(pb) - 1) % 2:
+        raise ValueError(
+            f"transition strip {name!r} has {len(pa) - 1} and {len(pb) - 1} edges; "
+            "an all-quad transition needs an even number on each station"
+        )
+    ca, cb = pa[::2], pb[::2]
+
+    def point(v: tuple[str, int]) -> np.ndarray:
+        return ca[v[1]] if v[0] == "a" else cb[v[1]]
+
+    def mid(u: tuple[str, int], v: tuple[str, int]) -> np.ndarray:
+        if u[0] == v[0] and abs(u[1] - v[1]) == 1:
+            fine = pa if u[0] == "a" else pb
+            return fine[2 * min(u[1], v[1]) + 1]
+        if u[0] == "b" and v[0] == "a":
+            u, v = v, u
+        return _mid(point(u), point(v))
+
+    tris: list[tuple[tuple[str, int], tuple[str, int], tuple[str, int]]] = []
+    if len(ca) == 1:
+        tris = [(("a", 0), ("b", j + 1), ("b", j)) for j in range(len(cb) - 1)]
+    elif len(cb) == 1:
+        tris = [(("a", i), ("a", i + 1), ("b", 0)) for i in range(len(ca) - 1)]
+    else:
+        fa, fb = _arc_fracs(ca), _arc_fracs(cb)
+        i = j = 0
+        while i < len(ca) - 1 or j < len(cb) - 1:
+            if j == len(cb) - 1 or (i < len(ca) - 1 and fa[i + 1] <= fb[j + 1]):
+                tris.append((("a", i), ("a", i + 1), ("b", j)))
+                i += 1
+            else:
+                tris.append((("a", i), ("b", j + 1), ("b", j)))
+                j += 1
+    out: list[tuple[str, np.ndarray, bool]] = []
+    for v0, v1, v2 in tris:
+        p0, p1, p2 = point(v0), point(v1), point(v2)
+        c = (p0 + p1 + p2) / 3.0
+        m01, m12, m20 = mid(v0, v1), mid(v1, v2), mid(v2, v0)
+        _append_face(out, name, np.stack([p0, m01, c, m20]), True)
+        _append_face(out, name, np.stack([p1, m12, c, m01]), True)
+        _append_face(out, name, np.stack([p2, m20, c, m12]), True)
+    return out
+
+
+def _dedupe_open(pts: np.ndarray) -> np.ndarray:
+    keep = [pts[0]]
+    for q in pts[1:]:
+        if not np.allclose(keep[-1], q, atol=1e-12, rtol=0.0):
+            keep.append(q)
+    return np.asarray(keep, float)
+
+
+def _arc_fracs(pts: np.ndarray) -> np.ndarray:
+    seg = np.linalg.norm(np.diff(pts, axis=0), axis=1)
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    return s / s[-1] if s[-1] > 0.0 else np.linspace(0.0, 1.0, len(pts))
 
 
 def _match_open_counts(pa: np.ndarray, pb: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -100,50 +316,6 @@ def _append_face(faces: list[tuple[str, np.ndarray, bool]], name: str,
                  face: np.ndarray, collapsing: bool) -> None:
     if _finite_loft_face(face):
         faces.append((name, np.asarray(face, float), collapsing))
-
-
-def _strip_faces(name: str, pa: np.ndarray, pb: np.ndarray, t0, t1, branch,
-                 *, birth: bool = False) -> list[tuple[str, np.ndarray, bool]]:
-    pa, pb = np.asarray(pa, float), np.asarray(pb, float)
-    if len(pa) < 2 or len(pb) < 2:
-        return []
-    pa, pb = _match_open_counts(pa, pb)
-    collapsing = birth or np.allclose(pa[0], pa[-1]) or np.allclose(pb[0], pb[-1])
-    if not birth:
-        try:
-            start_m = t0.map_vertex(branch.start, t1) if branch.start in t0.vertices else branch.start
-            end_m = t0.map_vertex(branch.end, t1) if branch.end in t0.vertices else branch.end
-            collapsing = collapsing or (start_m == end_m)
-        except KeyError:
-            pass
-    if branch.wrap and np.allclose(pa[0], pa[-1]) and np.allclose(pb[0], pb[-1]):
-        return []
-    out: list[tuple[str, np.ndarray, bool]] = []
-    if collapsing:
-        pa_pt = bool(np.allclose(pa[0], pa[-1]))
-        pb_pt = bool(np.allclose(pb[0], pb[-1]))
-        if pa_pt and not pb_pt:
-            apex = pa[0]
-            for i in range(len(pb) - 1):
-                _append_face(out, name, np.stack([apex, pb[i], pb[i + 1]]), True)
-            return out
-        if pb_pt and not pa_pt:
-            apex = pb[0]
-            for i in range(len(pa) - 1):
-                _append_face(out, name, np.stack([apex, pa[i], pa[i + 1]]), True)
-            return out
-        for i in range(len(pa) - 1):
-            _append_face(out, name, np.stack([pa[i], pa[i + 1], pb[i + 1]]), True)
-        return out
-    for i in range(len(pa) - 1):
-        quad = np.stack([pa[i], pa[i + 1], pb[i + 1], pb[i]])
-        if _quad_bowtie(quad):
-            a, b, c, d = quad
-            _append_face(out, name, np.stack([a, b, c]), True)
-            _append_face(out, name, np.stack([a, c, d]), True)
-        else:
-            _append_face(out, name, quad, False)
-    return out
 
 
 def _xyz_of_vid(samples: Mapping[str, np.ndarray], tmpl: ShellTopologyTemplate, vid) -> np.ndarray | None:
@@ -224,8 +396,15 @@ def _arc_resample_bunched(pts: np.ndarray, n: int) -> np.ndarray:
 
 
 def _on_chain(chain: np.ndarray, p: np.ndarray) -> np.ndarray:
-    d = np.linalg.norm(np.asarray(chain, float)[:, :2] - np.asarray(p, float)[:2], axis=1)
-    return np.asarray(chain, float)[int(np.argmin(d))].copy()
+    """Nearest even node of the t0 side chain to a key that t0 lacks (XY).
+
+    Region boundaries sit on even chain nodes (every region has an even number
+    of edges), so a key placed on an even node keeps both strips beside it at
+    an even edge count, which the all-quad transition needs.
+    """
+    pts = np.asarray(chain, float)[::2]
+    d = np.linalg.norm(pts[:, :2] - np.asarray(p, float)[:2], axis=1)
+    return pts[int(np.argmin(d))].copy()
 
 
 def _skin_parent(branch: LoopBranch, s0: Mapping[str, np.ndarray],
@@ -239,15 +418,55 @@ def _skin_parent(branch: LoopBranch, s0: Mapping[str, np.ndarray],
     pb = np.asarray(pb, float)
     n = max(len(pb), 2)
     chain = _concat_side_samples(s0, t0, branch.side)
-    p0 = _xyz_of_vid(s0, t0, branch.start) if branch.start in t0.vertices else None
-    p1 = _xyz_of_vid(s0, t0, branch.end) if branch.end in t0.vertices else None
+    p0 = _te_key_xyz(s0, t0, branch.start, branch.side)
+    p1 = _te_key_xyz(s0, t0, branch.end, branch.side)
     if chain is None:
         return _collapsed_parent(branch, s0, t0, t1, n)
     if p0 is None:
         p0 = _on_chain(chain, pb[0])
     if p1 is None:
         p1 = _on_chain(chain, pb[-1])
+    own = _chain_nodes_between(chain, p0, p1)
+    if own is not None:
+        return own
     return _resample_keys(p0, p1, chain, n)
+
+
+def _chain_nodes_between(chain: np.ndarray, p0: np.ndarray, p1: np.ndarray) -> np.ndarray | None:
+    """The t0 station's own nodes from ``p0`` to ``p1``.
+
+    A strip's lower edge must be the t0 station's nodes, or the strip below and
+    the strip above meet at different nodes along the station line. Where the
+    two stations carry different counts (a topology event), the band takes an
+    all-quad transition instead of resampling either side.
+    """
+    chain = np.asarray(chain, float)
+    d0 = np.linalg.norm(chain - np.asarray(p0, float), axis=1)
+    d1 = np.linalg.norm(chain - np.asarray(p1, float), axis=1)
+    i0, i1 = int(np.argmin(d0)), int(np.argmin(d1))
+    if d0[i0] > 1e-12 or d1[i1] > 1e-12:
+        return None
+    step = 1 if i1 >= i0 else -1
+    return chain[i0 : i1 + step if i1 + step >= 0 else None : step].copy()
+
+
+def _te_key_xyz(samples: Mapping[str, np.ndarray], tmpl: ShellTopologyTemplate, vid, side: str) -> np.ndarray | None:
+    """A t1 key on the t0 station, with the TE ridge and TE corner as one key.
+
+    Where the trailing edge goes from blunt to sharp, a sharp branch ends at the
+    ridge ``("TE",)`` and the blunt station has a corner ``("TE", side)`` per
+    side instead (and the other way round). The strip must end at that corner,
+    or it stops one node short of it and leaves a sliver beside the TE strip.
+    """
+    if vid in tmpl.vertices:
+        got = _xyz_of_vid(samples, tmpl, vid)
+        if got is not None:
+            return got
+    if vid == ("TE",):
+        return _xyz_of_vid(samples, tmpl, ("TE", side))
+    if isinstance(vid, tuple) and len(vid) == 2 and vid[0] == "TE":
+        return _xyz_of_vid(samples, tmpl, ("TE",))
+    return None
 
 
 def _collapsed_parent(branch: LoopBranch, s0: Mapping[str, np.ndarray],

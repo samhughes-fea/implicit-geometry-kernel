@@ -1,4 +1,4 @@
-"""Unstructured polygonal fill of a planar n-gon (Voronoi clip, >4 nodes).
+"""Unstructured polygonal fill of a planar n-gon (conforming Voronoi, >4 nodes).
 
 Kernel-owned mesher: no Gmsh. Element size follows the boundary sampling.
 """
@@ -7,7 +7,6 @@ from __future__ import annotations
 
 
 import numpy as np
-from numba import njit
 
 from implicit_geometry_kernel.geos import lib as geos_lib
 from implicit_geometry_kernel.geos.geom import MultiPolygon, Polygon
@@ -139,104 +138,6 @@ def _geos_clip(cell: np.ndarray, domain: Polygon) -> list[np.ndarray]:
     return _geom_rings(got)
 
 
-@njit(cache=True)
-def _seg_hit(ax, ay, bx, by, cx, cy, dx, dy):
-    den = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx)
-    if abs(den) < 1e-18:
-        return False, 0.0, 0.0
-    t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / den
-    u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / den
-    if t < -1e-12 or t > 1.0 + 1e-12 or u < -1e-12 or u > 1.0 + 1e-12:
-        return False, 0.0, 0.0
-    return True, ax + t * (bx - ax), ay + t * (by - ay)
-
-
-@njit(cache=True)
-def _convex_has(poly, n, px, py) -> bool:
-    for i in range(n):
-        ax, ay = poly[i, 0], poly[i, 1]
-        bx, by = poly[(i + 1) % n, 0], poly[(i + 1) % n, 1]
-        if (bx - ax) * (py - ay) - (by - ay) * (px - ax) < -1e-12:
-            return False
-    return True
-
-
-@njit(cache=True)
-def _ring_has(ring, n, px, py) -> bool:
-    inside = False
-    for i in range(n):
-        x1, y1 = ring[i, 0], ring[i, 1]
-        x2, y2 = ring[(i + 1) % n, 0], ring[(i + 1) % n, 1]
-        cross = (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1)
-        if abs(cross) <= 1e-12:
-            if min(x1, x2) - 1e-12 <= px <= max(x1, x2) + 1e-12 and (
-                min(y1, y2) - 1e-12 <= py <= max(y1, y2) + 1e-12
-            ):
-                return True
-        if ((y1 > py) != (y2 > py)) and (px < (x2 - x1) * (py - y1) / (y2 - y1 + 1e-30) + x1):
-            inside = not inside
-    return inside
-
-
-@njit(cache=True)
-def _clip_convex_to_ring(cell, ring, sx, sy):
-    """Intersection of a convex Voronoi cell with a (possibly concave) ring."""
-    nc = cell.shape[0]
-    nr = ring.shape[0]
-    buf = np.empty((nc + nr + nc * nr, 2), np.float64)
-    k = 0
-    for i in range(nc):
-        if _ring_has(ring, nr, cell[i, 0], cell[i, 1]):
-            buf[k, 0], buf[k, 1] = cell[i, 0], cell[i, 1]
-            k += 1
-    for j in range(nr):
-        if _convex_has(cell, nc, ring[j, 0], ring[j, 1]):
-            buf[k, 0], buf[k, 1] = ring[j, 0], ring[j, 1]
-            k += 1
-    for i in range(nc):
-        ax, ay = cell[i, 0], cell[i, 1]
-        bx, by = cell[(i + 1) % nc, 0], cell[(i + 1) % nc, 1]
-        for j in range(nr):
-            hit, x, y = _seg_hit(
-                ax, ay, bx, by, ring[j, 0], ring[j, 1],
-                ring[(j + 1) % nr, 0], ring[(j + 1) % nr, 1],
-            )
-            if hit:
-                buf[k, 0], buf[k, 1] = x, y
-                k += 1
-    if k < 3:
-        return np.empty((0, 2), np.float64)
-    keep = np.ones(k, np.uint8)
-    for i in range(k):
-        if keep[i] == 0:
-            continue
-        for j in range(i + 1, k):
-            dx = buf[i, 0] - buf[j, 0]
-            dy = buf[i, 1] - buf[j, 1]
-            if dx * dx + dy * dy < 1e-24:
-                keep[j] = 0
-    m = 0
-    for i in range(k):
-        if keep[i]:
-            buf[m, 0], buf[m, 1] = buf[i, 0], buf[i, 1]
-            m += 1
-    k = m
-    if k < 3:
-        return np.empty((0, 2), np.float64)
-    ang = np.empty(k, np.float64)
-    for i in range(k):
-        ang[i] = np.arctan2(buf[i, 1] - sy, buf[i, 0] - sx)
-    for i in range(1, k):
-        key_a = ang[i]
-        key_x, key_y = buf[i, 0], buf[i, 1]
-        j = i
-        while j > 0 and ang[j - 1] > key_a:
-            ang[j] = ang[j - 1]
-            buf[j, 0], buf[j, 1] = buf[j - 1, 0], buf[j - 1, 1]
-            j -= 1
-        ang[j] = key_a
-        buf[j, 0], buf[j, 1] = key_x, key_y
-    return buf[:k].copy()
 
 def polygon_mesh_ring(*args, **kwargs):
     from implicit_geometry_kernel.mesh.polygon_voronoi import polygon_mesh_ring as _fn

@@ -22,6 +22,36 @@
   PyPI through ``GEOS_LIBRARY_PATH``, instead of apt ``libgeos-dev`` (3.12.1),
   so an Ubuntu mirror outage no longer fails every job. The suite gives the
   same result on both GEOS versions.
+- Shell mesh (K7). ``mesh.shell_mesh(geo, n_span | h=)`` returns a ``ShellMesh``:
+  shared nodes, quads on the skin and webs, polygons (5 or more nodes) on rib
+  faces and the tip closure, and per element its region, surface, cut
+  partition, thickness, layers, layer thicknesses and cap eccentricity. One
+  conforming sheet: strips reuse each station's nodes, rib and tip perimeters
+  are skin and web nodes, and web/cap start and end bands take an all-quad
+  transition. ``mesh.write_vtk`` writes it with polygons kept whole.
+  ``mesh_stations`` adds forced stations, the tip, and the spans where a cap
+  edge passes a web foot (``key_crossing_stations``).
+  ``topology.zones.zone_sized_templates`` sets node counts per zone from region
+  length. Example 15.
+- Regions now have an odd node count. ``sample_region_polylines`` with
+  ``n_chord`` even returns ``n_chord + 1`` nodes per region (TE regions and
+  the wrap likewise round up to odd).
+- Mesh cap keys sit on each side's own cap edges from the cut, not on one chord
+  window shared by both sides, and station templates order each side's regions
+  by that side's keys. On twisted reference blades the ``cap_*`` regions now
+  coincide with the section's caps (bug log BG-031).
+- A spar cap is no longer dropped from the skin loop at a concave skin vertex:
+  cap vertices that share one foot are spread along the skin by cap arc length
+  (SG-029; the IEA 22 pressure cap near 9–10 % span).
+- Side arcs on a blunt TE walk to the LE without passing the other TE corner
+  (BG-033).
+- The polygon fill (``polygon_mesh_ring``) clips exactly with GEOS, returns
+  ring nodes bit for bit, never puts a node on a ring edge, and merges 3- and
+  4-node cells (BG-029). The numba angle-sort clipper is removed.
+- Deprecated: the Gmsh strips and triangle rib fills in ``mesh.gmsh``
+  (``mesh_shell``, ``write_shell_msh``, ``triangulate_ring(s)``,
+  ``fill_rib_cells``, ``mesh_rib_cells(_many)``) warn ``DeprecationWarning``;
+  use ``mesh.shell_mesh``. They stay for comparison studies.
 
 ## 0.9.1 (2026-11-11)
 

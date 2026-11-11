@@ -20,3 +20,4 @@ Span loft, airfoils, queries, catalogue concepts, and published blades.
 | 12 | [12_locked_loft_zones](12_locked_loft_zones/) | `LockedLoftPlan`, `resample_locked` |
 | 13 | [13_planform_csv_roundtrip](13_planform_csv_roundtrip/) | `read_planform_csv`, `write_windio` |
 | 14 | [14_geometric_centroid](14_geometric_centroid/) | wall geometric centroid (shoelace / strip / quadtree) |
+| 15 | [15_shell_mesh](15_shell_mesh/) | `mesh.shell_mesh`, `mesh.write_vtk`: all-quad skin and webs, polygon ribs and tip |

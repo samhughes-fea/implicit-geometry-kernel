@@ -90,6 +90,9 @@ def place_station_keys(cut, graph: ShellGraph, region_graph: WallRegionGraph, z:
             if name in ("le", "te"):
                 continue
             keys[(name, side)] = _xyz_at_frac(arc, fr, frac)
+    for side, arc in (("suction", su), ("pressure", pr)):
+        for name, xyz in _cap_keys_on_side(cut, graph, anchors, arc, float(z)).items():
+            keys[(name, side)] = xyz
     for name, run in _web_name_runs(graph.webs, cut, anchors):
         mid = _as_xyz(np.asarray(run.points, float), float(z))
         if len(mid) < 2:
@@ -100,12 +103,107 @@ def place_station_keys(cut, graph: ShellGraph, region_graph: WallRegionGraph, z:
     return keys
 
 
+def _cap_anchor_names(anchors: dict[str, float]) -> list[str]:
+    names = [n for n in anchors if n in ("cap_lo", "cap_hi")
+             or (str(n).startswith("cap_") and str(n).endswith(("_lo", "_hi")))]
+    return sorted(names, key=lambda n: (float(anchors[n]), n))
+
+
+def _cap_edge_roles(anchors: dict[str, float]) -> list[str]:
+    """Cap edge names LE to TE, one ``lo``/``hi`` pair per cap the anchors name.
+
+    An anchor merged into a nearby web (closer than the graph's ``min_gap``) is
+    still a cap edge on the cut; its role keeps the remaining names in place.
+    """
+    if "cap_lo" in anchors or "cap_hi" in anchors:
+        return ["cap_lo", "cap_hi"]
+    idx = sorted({int(str(n)[4:].rsplit("_", 1)[0]) for n in anchors
+                  if str(n).startswith("cap_") and str(n).endswith(("_lo", "_hi"))
+                  and str(n)[4:].rsplit("_", 1)[0].isdigit()})
+    return [f"cap_{k}_{end}" for k in idx for end in ("lo", "hi")]
+
+
+def _cap_keys_on_side(cut, graph: ShellGraph, anchors: dict[str, float], arc: np.ndarray,
+                      z: float) -> dict[str, np.ndarray]:
+    """Cap anchors on one side placed at the cut's own cap partition edges.
+
+    The region graph holds one chord window per cap for both sides, but the cut
+    builds each side's cap where the layup puts it (on a twisted section with
+    upright webs the two sides differ). The keys follow the cut, so a ``cap_*``
+    region is the cut's cap partition on that side.
+    """
+    from implicit_geometry_kernel.section.assembly.members import wall_type_for_label
+
+    names = _cap_anchor_names(anchors)
+    if not names or len(arc) < 2:
+        return {}
+
+    def _is_cap(label: str) -> bool:
+        wt = wall_type_for_label(label)
+        return wt is not None and wt.kind == "cap"
+
+    chord = max(float(np.linalg.norm(arc[0] - arc[-1])), 1e-9)
+    seg_a, seg_b = arc[:-1, :2], arc[1:, :2]
+    ab = seg_b - seg_a
+    den = np.maximum((ab * ab).sum(axis=1), 1e-30)
+    pts = []
+    for edge in graph.partition_edges():
+        if _is_cap(edge.name_a) == _is_cap(edge.name_b):
+            continue
+        q = np.asarray(edge.point, float)[:2]
+        t = np.clip(((q - seg_a) * ab).sum(axis=1) / den, 0.0, 1.0)
+        d = np.linalg.norm(seg_a + t[:, None] * ab - q, axis=1)
+        if float(np.min(d)) > 1e-6 * chord:
+            continue
+        pts.append(_as_xyz(q[None, :], z)[0])
+    roles = _cap_edge_roles(anchors)
+    if len(pts) != len(roles):
+        # the cut and the region graph disagree on how many caps are live here:
+        # keep the graph's chord-window keys (the cut has no edge to name)
+        return {}
+    fr = _chord_fracs(cut, np.asarray(pts))
+    order = np.argsort(fr, kind="stable")
+    return {name: np.asarray(pts[int(i)], float) for name, i in zip(roles, order)
+            if name in anchors}
+
+
 def _key_name(vid: ShellVertexId) -> str:
     if vid == ("TE",) or (len(vid) > 0 and vid[0] == "TE") or (len(vid) > 1 and vid[1] == "te"):
         return "te"
     if vid[0] == "anchor":
         return str(vid[1])
     return "te"
+
+
+def _merge_met_keys(keys: dict, template: ShellTopologyTemplate, tol: float) -> None:
+    """Keys that bound a region of no length become one point (in place).
+
+    Where two keys meet (a cap edge passing a web foot) the region between
+    them has no nodes; its neighbours must end on the same node, or the
+    station line keeps a sliver gap there.
+    """
+    for branch in template.loop:
+        if branch.wrap or branch.side not in ("suction", "pressure"):
+            continue
+        k0 = (_key_name(branch.start), branch.side)
+        k1 = (_key_name(branch.end), branch.side)
+        if k0 == k1 or k0 not in keys or k1 not in keys or k0[0] == "te" or k1[0] == "te":
+            continue
+        p0, p1 = keys[k0], keys[k1]
+        if 0.0 < float(np.linalg.norm(p0 - p1)) < tol:
+            mid = 0.5 * (np.asarray(p0, float) + np.asarray(p1, float))
+            keys[k0] = mid
+            keys[k1] = mid.copy()
+
+
+def _odd_count(n: int) -> int:
+    """Nodes per region: odd, so each region has an even number of edges.
+
+    An all-quad mesh needs an even number of edges on each station side of a
+    transition strip (see ``loft_mapped_strips``); the next odd count up keeps
+    every region and every sum of regions even.
+    """
+    return int(n) if int(n) % 2 else int(n) + 1
 
 
 def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTemplate,
@@ -116,7 +214,11 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
     Default holds ``n_chord``. ``size_field=True`` spaces nodes by in-plane ``h``
     (CSG viz); template ``n_chord`` is unused then.
     """
-    n = max(int(template.n_chord), 2)
+    n = _odd_count(max(int(template.n_chord), 2))
+
+    def _count(branch, default: int) -> int:
+        # a branch sized on its own (zone sizing) keeps its count
+        return _odd_count(max(int(branch.n), 3)) if branch.sized else default
     z = float(template.z)
     wrap_on = any(b.wrap for b in template.loop)
     keys = place_station_keys(cut, graph, region_graph, z, te_blunt=wrap_on)
@@ -133,6 +235,7 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
 
     chord = max(float(np.linalg.norm(su[0] - su[-1])), 1e-9)
     c_h = max(float(getattr(cut, "chord", 0.0) or 0.0), chord)
+    _merge_met_keys(keys, template, 1e-6 * chord)
     t_live = station_live_thickness(cut) if size_field else 0.0
     for branch in template.loop:
         if branch.wrap:
@@ -149,7 +252,7 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
             if size_field:
                 sampled = resample_open_h(wrap_arc, c_h, t_live)
             else:
-                sampled = arc_resample_open(wrap_arc, max(n, 4))
+                sampled = arc_resample_open(wrap_arc, _count(branch, _odd_count(max(n, 4))))
             sampled[0], sampled[-1] = a, b
             out[branch.name] = sampled
             continue
@@ -161,7 +264,7 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
             continue
         if float(np.linalg.norm(p0 - p1)) < 1e-6 * chord:
             continue
-        n_use = n + n // 2 if branch.name.startswith("te_") else n
+        n_use = _count(branch, _odd_count(n + n // 2) if branch.name.startswith("te_") else n)
         out[branch.name] = _resample_keys(
             p0, p1, arcs[side], n_use,
             bunch_end=False if size_field else branch.name.startswith("te_"),
@@ -179,10 +282,10 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
         match = name_to_run.get(f"web_{web.index}") or name_to_run.get(su_name)
         ends = np.vstack([su_ft, pr_ft])
         if match is None:
-            sampled = resample_open_h(ends, c_h, t_live) if size_field else arc_resample_open(ends, n)
+            sampled = resample_open_h(ends, c_h, t_live) if size_field else arc_resample_open(ends, _count(web, n))
         else:
             mid = _as_xyz(np.asarray(match.points, float), z)
-            sampled = resample_open_h(mid, c_h, t_live) if size_field else arc_resample_open(mid, n)
+            sampled = resample_open_h(mid, c_h, t_live) if size_field else arc_resample_open(mid, _count(web, n))
         if np.linalg.norm(sampled[0] - su_ft) <= np.linalg.norm(sampled[0] - pr_ft):
             sampled[0], sampled[-1] = su_ft, pr_ft
         else:

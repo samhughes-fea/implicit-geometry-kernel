@@ -1,4 +1,7 @@
-"""Gmsh backend (optional extra ``[mesh]``)."""
+"""Gmsh backend (optional extra ``[mesh]``). Deprecated: use :func:`implicit_geometry_kernel.mesh.shell_mesh`.
+
+The Gmsh strips and triangle rib fills are kept for comparison studies only.
+"""
 
 from implicit_geometry_kernel.mesh.gmsh.plane import (
     fill_rib_cells,

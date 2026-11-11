@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Mapping, Sequence
 
 from implicit_geometry_kernel.blade.topology.graph import (
     ShellVertexId,
@@ -15,6 +15,23 @@ from implicit_geometry_kernel.blade.topology.graph import (
 from implicit_geometry_kernel.blade.topology.layout_compile import _regions_from_ordered
 from implicit_geometry_kernel.blade.topology.signatures import signatures_compatible
 
+def _regions_per_side(graph: WallRegionGraph, fracs: Mapping[str, float], ordered: Sequence[str],
+                      side_fracs: Mapping[str, Mapping[str, float]], *, z: float,
+                      active_webs: Sequence) -> tuple:
+    """TE wrap, then each side's regions in that side's own anchor order."""
+    out: list = []
+    for side in ("suction", "pressure"):
+        fr = dict(fracs)
+        fr.update({k: float(v) for k, v in side_fracs.get(side, {}).items() if k in fr})
+        side_order = sorted(ordered, key=lambda name: float(fr[name]))
+        windows = live_cap_windows(graph, fr, side_order, z=z, active_webs=active_webs)
+        regions = _regions_from_ordered(side_order, fracs=fr, windows=windows)
+        if not out:
+            out.extend(r for r in regions if r.wrap)
+        out.extend(r for r in regions if not r.wrap and r.side == side)
+    return tuple(out)
+
+
 @dataclass(frozen=True)
 class LoopBranch:
     name: str
@@ -23,6 +40,8 @@ class LoopBranch:
     n: int
     side: str
     wrap: bool = False
+    sized: bool = False
+    """``n`` was set for this branch (zone sizing), not taken from ``n_chord``."""
 
 
 def _loop_vid(name: str, side: str = "") -> ShellVertexId:
@@ -47,6 +66,7 @@ class WebBranch:
     suction: ShellVertexId
     pressure: ShellVertexId
     n: int
+    sized: bool = False
 
 
 @dataclass(frozen=True)
@@ -66,7 +86,16 @@ class ShellTopologyTemplate:
                           t_c: float | None = None,
                           dropped_web_indices: Sequence[int] | None = None,
                           te_blunt: bool | None = None,
+                          side_fracs: Mapping[str, Mapping[str, float]] | None = None,
                           ) -> "ShellTopologyTemplate":
+        """Station template from the region graph at ``z``.
+
+        ``side_fracs`` (optional) gives each side's own chord fraction of an
+        anchor (``{"suction": {name: frac}, "pressure": {...}}``), as the station
+        keys sit on the cut. A cap edge and a web foot can then take different
+        orders on the two sides (upright webs on a twisted section), and each
+        side's regions follow its own order.
+        """
         n = max(int(n_chord), 2)
         te_arc = float(graph.te_arc)
         authored = tuple(graph.webs_at(z))
@@ -92,10 +121,14 @@ class ShellTopologyTemplate:
             ordered = [n for n in fracs if not str(n).startswith("web_") or n in keep_web]
         else:
             ordered = list(fracs)
-        windows = live_cap_windows(
-            graph, fracs, ordered, z=float(z), active_webs=active_webs,
-        )
-        regions = _regions_from_ordered(ordered, fracs=fracs, windows=windows)
+        if side_fracs is None:
+            windows = live_cap_windows(
+                graph, fracs, ordered, z=float(z), active_webs=active_webs,
+            )
+            regions = _regions_from_ordered(ordered, fracs=fracs, windows=windows)
+        else:
+            regions = _regions_per_side(graph, fracs, ordered, side_fracs,
+                                        z=float(z), active_webs=active_webs)
         vertices: list[ShellVertexId] = [
             ("TE",), ("TE", "suction"), ("TE", "pressure"), ("anchor", "le"),
         ]

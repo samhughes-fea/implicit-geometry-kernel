@@ -51,6 +51,16 @@ entries are from a retired repo-root log.
 | [BG-025](#bg-025) | Property CSG column 3 undersamples thin wall tubes | **Fixed** |
 | [BG-026](#bg-026) | 5D occupancy QT hits `max_cells=150000` and truncates | **Fixed** |
 | [BG-027](#bg-027) | Planform `axes.png` labelled cell-area locus as shear centre | **Fixed** |
+| [BG-028](#bg-028) | Loft strips resampled the lower station: cracks on station lines | **Fixed** |
+| [BG-029](#bg-029) | Rib/tip polygon fill left hanging nodes and 3–4-node cells | **Fixed** |
+| [BG-030](#bg-030) | Web/cap start and end bands meshed with triangles and cracks | **Fixed** |
+| [BG-031](#bg-031) | Mesh cap regions used one chord window for both sides | **Fixed** |
+| [BG-032](#bg-032) | Cap edge passing a web foot between stations folded the strips | **Fixed** |
+| [BG-033](#bg-033) | Side arcs walked through the other TE corner (IEA 15) | **Fixed** |
+| [BG-034](#bg-034) | Sliver transition quads where node counts change | **Open** (K8) |
+| [BG-035](#bg-035) | IEA 15 TE wrap folds at 15–22 % span | **Open** (SG-030) |
+| [BG-036](#bg-036) | windIO webs kept root to tip without `start_nd_span` | **Open** |
+| [BG-037](#bg-037) | Webs cross each other between stations (IEA 15, IEA 10) | **Open** |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -71,7 +81,7 @@ Do not add per-blade branches (`if iea10`) in loft code.
 | TE wrap includes the OML ridge | `_te_wrap_arc`; metrics use ridge / max chord-frac, not max blade-x |
 | Wrap presence from skin-mid opening | Blunt vs sharp held on a loft `z` list; a single `section_at` / CSG frame uses the raw test (BG-005, BG-008) |
 | Active web anchors are loop joints | Template rebuilds regions from `evaluate_anchors`; web mid ends share skin nodes (BG-019) |
-| Omit bowtie loft quads | `_quad_bowtie` drops opposing-normal strips (BG-018) |
+| Bowtie loft quads | `_quad_bowtie` splits an opposing-normal quad into two triangles (BG-018); K7 removes their causes (BG-031–BG-033); IEA 15 TE wrap left (BG-035) |
 | Rib rings = `n_live_webs + 1` | `rib_cell_polygons_from_samples` splits only at live web feet; `cap_lo` / `cap_hi` stay on the skin (BG-010) |
 | Cut `layout` is the authored concept | Web drop lists `dropped_web_indices`; realised W/X are `station_webs` / `station_family` (BG-022) |
 
@@ -691,3 +701,174 @@ are compared in [`examples/blade/14_geometric_centroid`](../../examples/blade/14
 in data`. Regenerated example 09 `planform/axes.png`.
 **Fixed.**
 
+## BG-028
+
+**Symptom.** Mapped loft strips cracked along interior station lines: the strip
+below and the strip above a station met at different nodes.
+
+**Evidence.** Edge-use count on the assembled faces: edges used once on interior
+station lines (`tests/test_loft_conformity.py`).
+
+**Root cause.** `_skin_parent` resampled the lower station's arc between the
+mapped keys instead of reusing that station's own nodes.
+
+**Fix.** `_chain_nodes_between` takes the t0 station's own nodes; where the two
+stations' counts differ the band takes an all-quad transition (BG-030).
+
+**Verification.** `test_strips_share_the_station_nodes` (commit 45af12a).
+**Fixed.**
+
+## BG-029
+
+**Symptom.** Rib and tip-closure polygon fills left hanging nodes on the skin and
+web edges of their ring, and some cells had 3 or 4 nodes.
+
+**Evidence.** `tests/test_polygon_conforming.py`: interior nodes on ring edges;
+area sums short of the ring area with the angle-sort clipper.
+
+**Root cause.** Voronoi cells were clipped with a convex angle-sort clipper that
+lost area and inserted new points on the ring.
+
+**Fix.** Exact GEOS clip, cells snapped onto ring nodes (ring nodes returned bit
+for bit), a tiling check, seed spacing grown until the cells tile, 3- and 4-node
+cells merged into an edge neighbour. The numba clipper is deleted.
+
+**Verification.** `tests/test_polygon_conforming.py` (commit dbb73d5).
+**Fixed.**
+
+## BG-030
+
+**Symptom.** Where a web or cap starts or ends, loft strips fell back to
+triangles and left cracks: at the TE ridge versus TE corner key, an upper-only TE
+wrap that was never lofted, and a panel born from a point whose one-node side
+was dropped.
+
+**Evidence.** Edge-use and face-size counts on the five reference blades.
+
+**Root cause.** Unequal node counts across an event band were zipped into
+triangles; the TE ridge and corner were different keys; one-node sides were
+skipped.
+
+**Fix.** Odd node counts per region (an even number of edges), a mid-span row in
+event bands, `_transition_quads` (coarse sides zipped, each triangle split into
+three quads through real station nodes), the TE ridge and corner aliased, an
+upper-only wrap lofted as a fan, a point-born panel meshed as an apex fan.
+
+**Verification.** `test_09_pa_4d_web3_onset_and_drop_are_skin_ruled`,
+`test_transition_quads_keep_both_stations_and_drop_nonfinite` (commit b0ab78c).
+**Fixed.**
+
+## BG-031
+
+**Symptom.** Folded loft quads (split into triangles) near the root of IEA 22,
+IEA 3.4 and NREL 5MW, mostly in pressure-side cap regions.
+
+**Evidence.** IEA 22 at z = 13.8 m: the mesh put both cap edges at chord fraction
+0.29 / 0.50 on both sides; the cut's suction cap was 0.23–0.44 and pressure cap
+0.34–0.53. On the pressure side the `web_1` foot crossed the window edge and
+`cap_pr_2` shrank to 2 mm and flipped.
+
+**Root cause.** Cap keys came from the region graph's single chord window for
+both sides. The section builds each side's cap where the layup puts it; on a
+twisted section with upright webs the two sides differ.
+
+**Fix.** Cap keys sit on the cut's own cap partition edges per side, matched by
+lo/hi role (`_cap_keys_on_side`); templates order each side's regions by that
+side's keys (`side_fracs`); per-web pads use the side's web foot.
+
+**Verification.** `test_iea22_cap_keys_are_the_cut_cap_edges` (commit a4096d1).
+Folded quads NREL 5MW / IEA 22 / IEA 3.4: 32 / 84 / 84 → 0.
+**Fixed.**
+
+## BG-032
+
+**Symptom.** A crack and overlapping strips where a cap edge passes a web foot
+between two stations (IEA 22 near the tip, IEA 3.4 at 7.5 % and 95 % span).
+
+**Evidence.** IEA 22 z = 130.9 → 134.4 m: `cap_lo` moves from the LE side of the
+`web_0` foot to its TE side; the t0 arc between them was covered by `le_su`,
+`bay_su_0` (reversed) and `cap_su`.
+
+**Root cause.** The region between two keys that swap order shrinks to nothing
+inside the band and grows back reversed; a ruled strip cannot represent that.
+
+**Fix.** `key_crossing_stations` bisects each band for the span where two keys
+meet and the mesh adds a station there; met keys are merged into one point; a
+t0 region whose keys meet on t1 dies to that point, and its neighbours take the
+outer keys.
+
+**Verification.** `test_iea34_cap_edge_passing_a_web_gets_a_station_and_stays_conforming`
+(commit 82c4fc8).
+**Fixed.**
+
+## BG-033
+
+**Symptom.** IEA 15 near 52 % span: pressure regions ten times their length and
+folded quads; the pressure web feet sat on the suction skin.
+
+**Evidence.** The pressure side arc's mean y was +0.26 (same as suction).
+
+**Root cause.** `_side_arcs` walked each TE corner to the LE the shorter way
+round, which passed the other TE corner when the LE was nearly opposite.
+
+**Fix.** Each corner walks the way that reaches the LE before the other corner.
+
+**Verification.** `tests/test_side_arcs.py` (fails on the old rule; commit
+56fe1b6). IEA 15 folded quads 22 → 8.
+**Fixed.**
+
+## BG-034
+
+**Symptom.** Sliver quads (a corner under 20°) in event bands where a region's
+node count changes.
+
+**Evidence.** All such quads on IEA 22 are in event bands. With fixed counts most
+bands are ruled; zone sizing alone adds transitions and more slivers at 41
+stations, fewer at 161 (NREL 5MW, h = 0.08 chord: 7 of 8164 faces).
+
+**Root cause.** A transition's triangles are as long as the band (metres) and as
+wide as a chord element (centimetres).
+
+**Fix.** Node counts per zone that follow region length
+(`zone_sized_templates`, commit 92e7d45). Span spacing near `h` is the remaining
+part (K8 refinement).
+**Open** (K8).
+
+## BG-035
+
+**Symptom.** IEA 15 TE wrap quads fold between 15 % and 22 % span (8 split quads
+at 41 stations, 2 bands at 161).
+
+**Evidence.** Wrap length jumps 0.12 → 0.15 → 0.12 m between stations; at 16.3 %
+span the raw wrap polyline runs down, back up and down again.
+
+**Root cause.** The section's skin mid-line folds back on itself at the blunt TE
+([SG-030](../section/bug_log.md#sg-030)); the loft is faithful to it.
+**Open** (section geometry).
+
+## BG-036
+
+**Symptom.** windIO webs run root to tip unless `start_nd_span` is given.
+
+**Evidence.** Found reading `web_span_windows_from_windio_structure` and the web
+reader during K7: a web with no span keys gets the full span.
+
+**Root cause.** The reader takes a web's span extent only from explicit span
+keys, not from its `nd_arc` grid narrowed to the plane-intersection offset grid.
+
+**Fix.** Patch drafted; applying it breaks the IEA 10 root ("web_x_positions is
+empty … continuous_box"), which needs a caps-with-no-live-webs root layout path.
+**Open** (own PR after K7).
+
+## BG-037
+
+**Symptom.** Two webs swap chordwise order between stations: IEA 15 at 10 % span
+(pressure side) and at the tip, IEA 10 at 2.5 %, 5 % and 50 % span.
+
+**Evidence.** Per-side key order of `web_*` feet differs between consecutive
+stations (station key scan, 41 stations).
+
+**Root cause.** Not established. Webs cannot cross; this comes from the windIO
+data or how the reader places webs. The mesh adds a station at the crossing
+(BG-032), so the skin stays conforming, but the webs meet there.
+**Open** (data / reader).

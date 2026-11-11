@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import warnings
+
 from pathlib import Path
 
 import numpy as np
@@ -52,6 +54,7 @@ def mesh_shell(geo, zs=None, *, n_chord: int = 8, out: Path | None = None) -> di
     Compatible bands become quads (one per authored strip). Birth/death faces
     stay triangles until all-quad subdivision. Requires the ``gmsh`` package.
     """
+    warnings.warn("mesh.gmsh.mesh_shell is deprecated: use mesh.shell_mesh (all-quad skin and webs, polygon ribs); the Gmsh path is kept for comparison only", DeprecationWarning, stacklevel=2)
     import gmsh
 
     if zs is None:

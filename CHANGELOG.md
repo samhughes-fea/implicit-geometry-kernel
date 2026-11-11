@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.9.1 (2026-11-11)
+
 - ``SectionCut.mid_surface()`` docstring: a capped run stays on the skin
   mid-surface (since 0.7.0; 0.2.0 moved it to the stack's mid-surface).
   Consumers carry the cap eccentricity in their laminate. ``docs/MIGRATING.md``

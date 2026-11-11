@@ -31,6 +31,7 @@ fractions match 0.2.x with `LC`. `0R` means no ribs; `10R` adds ten ribs.
 |---|---|
 | `BladeGeometry(stations, "2D-F", t_skin, t_cap, t_web, ...)` | `BladeGeometry(stations, "2D-F-LC-0R", t_skin, t_cap, t_web, ..., pivot_fraction=0.333)` |
 | no `pivot_fraction` (fell back to 0.333) | `pivot_fraction` is required: a chord fraction or a span table. Use the stations' pitch axis where you set one |
+| `geo.station_at(z)` | `geo.interpolate(z)`: `(chord, twist, pitch_axis, offset, (x, upper, lower))` |
 
 ## Imports
 

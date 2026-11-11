@@ -320,15 +320,31 @@ def _live_web_fracs(cut) -> list[float]:
 def _template_from_cut(graph: WallRegionGraph, cut, z: float, n_chord: int,
                        te_blunt: bool | None = None) -> ShellTopologyTemplate:
     dropped = getattr(cut, "dropped_web_indices", None)
+    shell = cut.shell_graph()
     if te_blunt is None:
-        pts = _skin_mid_loop(cut.shell_graph(), float(z))
+        pts = _skin_mid_loop(shell, float(z))
         te_blunt = te_is_blunt(cut, pts)
     return ShellTopologyTemplate.from_region_graph(
         graph, float(z), n_chord=int(n_chord),
         live_web_fracs=_live_web_fracs(cut) or None, t_c=_cut_tc(cut),
         dropped_web_indices=None if dropped is None else tuple(int(i) for i in dropped),
         te_blunt=te_blunt,
+        side_fracs=_station_side_fracs(graph, cut, shell, float(z), te_blunt),
     )
+
+
+def _station_side_fracs(graph: WallRegionGraph, cut, shell, z: float,
+                        te_blunt: bool) -> dict[str, dict[str, float]]:
+    """Each side's chord fraction of every anchor key, where the sampler puts it."""
+    from implicit_geometry_kernel.blade.topology.map import place_station_keys
+
+    keys = place_station_keys(cut, shell, graph, z, te_blunt=te_blunt)
+    out: dict[str, dict[str, float]] = {"suction": {}, "pressure": {}}
+    for (name, side), xyz in keys.items():
+        if name in ("le", "te") or side not in out:
+            continue
+        out[side][str(name)] = float(_chord_fracs(cut, np.asarray(xyz, float)[None, :2])[0])
+    return out
 
 
 def templates_along(geo, zs: Sequence[float], n_chord: int = 12) -> list[ShellTopologyTemplate]:

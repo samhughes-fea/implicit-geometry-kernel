@@ -109,6 +109,41 @@ def _foot(points: NDArray[np.float64], prefix: NDArray[np.float64], target: NDAr
     return float(prefix[segment] + t[segment] * np.hypot(*ab[segment])), feet[segment], segment, float(t[segment])
 
 
+def _at_arc(points: NDArray[np.float64], prefix: NDArray[np.float64], sigma: float):
+    """``(arc parameter, point, segment, t)`` at arc parameter ``sigma`` of a polyline."""
+    segment = int(np.clip(np.searchsorted(prefix, sigma, side="right") - 1, 0, len(points) - 2))
+    span = float(prefix[segment + 1] - prefix[segment])
+    t = (sigma - float(prefix[segment])) / span
+    return sigma, points[segment] + t * (points[segment + 1] - points[segment]), segment, float(t)
+
+
+def _spread_shared_feet(sigma: NDArray[np.float64], cap_prefix: NDArray[np.float64],
+                        label: str) -> NDArray[np.float64]:
+    """Strictly monotone feet: each run of equal feet is spread between its neighbours.
+
+    The run's feet are placed by the cap's own arc length between the feet of
+    the cap vertices either side of it, so the map stays piecewise linear and
+    one-to-one. A run at either end of the cap has no neighbour on that side and
+    is refused.
+    """
+    out = np.asarray(sigma, dtype=np.float64).copy()
+    n = len(out)
+    i = 0
+    while i < n - 1:
+        if out[i + 1] != out[i]:
+            i += 1
+            continue
+        j = i + 1
+        while j + 1 < n and out[j + 1] == out[i]:
+            j += 1
+        if i == 0 or j == n - 1:
+            raise ValueError(f"cap {label!r} does not run monotonically along its skin")
+        lo, hi = i - 1, j + 1
+        out[i:j + 1] = np.interp(cap_prefix[i:j + 1], [cap_prefix[lo], cap_prefix[hi]], [out[lo], out[hi]])
+        i = hi
+    return out
+
+
 def _merge_distance(points: NDArray[np.float64], vertex: int) -> float:
     lengths = []
     if vertex > 0:
@@ -150,8 +185,15 @@ def _bond_one_cap(cap: ShellMidlineStrip, chain: list[_Arc]):
     feet = [_foot(chain_points, chain_prefix, point) for point in cap_points]
     sigma = np.array([f[0] for f in feet])
     steps = np.diff(sigma)
-    if not (np.all(steps > 0.0) or np.all(steps < 0.0)):
+    if not (np.all(steps >= 0.0) or np.all(steps <= 0.0)) or not np.any(steps):
         raise ValueError(f"cap {cap.label!r} does not run monotonically along its skin")
+    if not np.all(steps):
+        # Several cap vertices share one foot: the skin turns concave there (seen
+        # from the cap), so its normal projection is many-to-one at that skin
+        # vertex. Spread the shared feet along the skin by cap arc length.
+        sigma = _spread_shared_feet(sigma, cap_prefix, cap.label)
+        for k in np.flatnonzero(sigma != np.array([f[0] for f in feet])):
+            feet[int(k)] = _at_arc(chain_points, chain_prefix, float(sigma[k]))
     chain_partner: list[NDArray[np.float64]] = [f[1] for f in feet]
     chain_insert: list[tuple[int, float] | None] = [(f[2], f[3]) for f in feet]
     paired_chain_vertex: dict[int, int] = {}

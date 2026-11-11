@@ -187,10 +187,14 @@ def live_cap_windows(
     from implicit_geometry_kernel.blade.topology.layout_compile import _merge_chord_windows
 
     kind = graph.cap_placement.kind
+
+    def _web_frac(w: WebMember) -> float:
+        return float(fracs.get(f"web_{w.index}", w.at(z)))
+
     if kind == "per_web_pads":
         pad = float(graph.cap_pad if graph.cap_pad is not None else PER_WEB_PAD)
         return _merge_chord_windows(
-            [(max(0.02, float(w.at(z)) - pad), min(0.98, float(w.at(z)) + pad))
+            [(max(0.02, _web_frac(w) - pad), min(0.98, _web_frac(w) + pad))
              for w in active_webs]
         )
     if kind == "continuous_box":

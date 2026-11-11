@@ -45,6 +45,7 @@ fractions match 0.2.x with `LC`. `0R` means no ribs; `10R` adds ten ribs.
 |---|---|
 | `SectionGeometry(layout=..., airfoil=..., ...)` | `SectionGeometry(SectionSpec.from_kwargs(...), SectionOptions.from_kwargs(...))` |
 | `apply_shapely` | `apply_clip` |
+| `cut.mid_surface()` put a cap + skin run on the stack's mid-surface | The run stays on the skin mid-surface. Give the stacked laminate an offset of half the cap thickness, inward (`cut.shell_graph().offset_regions()`) |
 
 Changes made after 0.2 and removed again before 0.9 (`span_kind`, `SpanWeb`,
 `ExprSDF`, `WallRegionGraph.cap_mode`) are listed in the changelog.

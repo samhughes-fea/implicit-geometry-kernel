@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- ``SectionCut.mid_surface()`` docstring: a capped run stays on the skin
+  mid-surface (since 0.7.0; 0.2.0 moved it to the stack's mid-surface).
+  Consumers carry the cap eccentricity in their laminate. ``docs/MIGRATING.md``
+  has the row.
+
 - Loft morph: interior stations blend the parent surfaces directly at each
   chord position instead of refitting an intermediate aerofoil. A prismatic
   loft now reproduces its end sections exactly (it drifted by up to

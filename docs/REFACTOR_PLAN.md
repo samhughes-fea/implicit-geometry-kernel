@@ -13,21 +13,22 @@ The architecture programme is **closed**. Steps 1–8 are done; step 9 was decli
 Standing work is product/API/docs cleanup, demo ports onto the public entry points,
 and parked consumer items — not a new numbered step.
 
-### 1.0 plan (after 0.9.0)
+### 0.9.x plan (after 0.9.0)
 
-The next programme takes the kernel to 1.0: consumers pin it, the kernel ships
-the analysis shell mesh, and the public API is frozen. Kernel PRs:
+The next programme: consumers pin the kernel and the kernel ships the analysis
+shell mesh. Releases stay on 0.9.x (0.9.1, 0.9.2, ...); the maintainer will not
+cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 
 | Id | What | State |
 |----|------|-------|
-| K1 | 0.9.0 release notes, `docs/MIGRATING.md`, 0.2 compat check | Done (this PR) |
-| K2 | Reference-catalogue tests (`-m reference`), stable cap names at family-C stations, `pyyaml` in `[dev]` | Done (this PR) |
-| K3 | No consumer names in the public repo; report renamed `SHELL_FE_REPLACEMENT_GAPS.md` | Done (this PR) |
-| K4 | Pinned `ruff`/`mypy`, weekly `tool-drift` workflow | Done (this PR) |
+| K1 | 0.9.0 release notes, `docs/MIGRATING.md`, 0.2 compat check | Done (#52, 0.9.1) |
+| K2 | Reference-catalogue tests (`-m reference`), stable cap names at family-C stations, `pyyaml` in `[dev]` | Done (#52, 0.9.1) |
+| K3 | No consumer names in the public repo; report renamed `SHELL_FE_REPLACEMENT_GAPS.md` | Done (#52, 0.9.1) |
+| K4 | Pinned `ruff`/`mypy`, weekly `tool-drift` workflow | Done (#52, 0.9.1) |
 | K6 | Tip closure on every blade: closes the skin shell at z/L = 1 with the polygon mesher, skin partition; `nR` counts interior ribs only | Next |
 | K7 | Mesh product: skin/web quads, polygonal ribs and tip, arrays with partition and thickness, no Gmsh | After K6 |
 | K8 | Leading-edge and spanwise refinement controls | After K7 |
-| K5 | 1.0 scope: trimmed top-level API, internal docs to `docs/internal/` | After consumers move |
+| K5 | Trimmed top-level API (deprecate first), internal docs to `docs/internal/`; still 0.9.x | After consumers move |
 
 Maintainer decisions (10 Nov): the kernel produces the analysis shell mesh and
 consumers use it without remeshing (Gmsh only for comparison in consumers);
@@ -176,7 +177,7 @@ in-kernel mesh is `integration/quadtree`. Consumers own shell mesher jobs;
 |------|------|-------------|
 | Agnostic | No consumer names, paths or special cases in `src/` or tests. Docs describe products and roles | `tests/test_consumer_names.py` (src and tests) |
 | Public API | Only names in the top-level `__all__` and `contract/` are public | API snapshot test |
-| Versioning | Semantic versions; removals only in a minor release (pre-1.0) after one release of deprecation warnings; tags never move. Do not tag `v1.0.0` until a consumer pin and `check_consumer.py` are green; stay on 0.9.x / 0.10.x until then | Changelog; tags by the maintainer |
+| Versioning | Semantic versions; removals only in a minor release (pre-1.0) after one release of deprecation warnings; tags never move. Releases stay on 0.9.x; do not tag `v1.0.0` (maintainer, 11 Nov: the public API is not worked out) | Changelog; tags by the maintainer |
 | Main branch | Every change through a PR with green CI (lint, tests on Python 3.11 to 3.13, examples, wheel build) | Branch protection on `main` |
 | Numbers | Results reproducible between releases unless the changelog says otherwise | Golden-number test |
 | Dependencies | Runtime: numpy, numba. Offset/overlay: ctypes ``libgeos_c`` (system/conda GEOS). Extras: scipy, matplotlib, cadquery, gmsh, pyyaml, contourpy | Core-install CI job |

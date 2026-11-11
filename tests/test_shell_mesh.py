@@ -178,3 +178,31 @@ def test_leading_edge_and_span_refinement():
         shell_mesh(geo, n_span=5, region_h={"le_su": 0.05})
     with pytest.raises(ValueError):
         mesh_stations(geo, 5, refine=[(0.0, 1.0, 0.0)])
+
+
+def _area_vector(p):
+    return 0.5 * np.sum(np.cross(p, np.roll(p, -1, axis=0)), axis=0)
+
+
+def test_normals_out_of_the_skin_to_the_te_on_webs_and_along_z_on_ribs(mesh):
+    _geo_, m = mesh
+    skin = [i for i, s in enumerate(m.surface) if s == "skin"]
+    runs: dict = {}
+    for i in skin:
+        e = m.elements[i]
+        for a, b in zip(e, e[1:] + e[:1]):
+            runs.setdefault((min(a, b), max(a, b)), []).append((a, b))
+    for key, uses in runs.items():
+        if len(uses) == 2:
+            assert uses[0] != uses[1], key  # neighbours run a shared edge in opposite directions
+    flux = 0.0
+    for i in skin:
+        p = m.nodes[list(m.elements[i])]
+        flux += float(_area_vector(p)[:2] @ (p.mean(axis=0)[:2] - np.array([0.0, 0.0])))
+    assert flux > 0.0
+    for e, s in zip(m.elements, m.surface):
+        a = _area_vector(m.nodes[list(e)])
+        if s == "web":
+            assert a[0] > 0.0  # untwisted blade: the TE is +x
+        elif s in ("rib", "tip_closure"):
+            assert a[2] > 0.0

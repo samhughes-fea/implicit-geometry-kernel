@@ -36,7 +36,10 @@ class ShellMesh:
     """Nodes and elements of the blade shell, with per-element shell data.
 
     ``elements[i]`` lists node indices (4 for a quad, 5 or more for a polygon)
-    in loop order. The per-element tuples share that index.
+    in loop order. The per-element tuples share that index. Normals (right-hand
+    rule on that order) point out of the section on the skin, towards the
+    trailing edge on webs, and along +z on ribs and the tip closure; a cap
+    stack's mid-plane lies ``eccentricity`` inside the skin, along -normal.
     """
 
     nodes: np.ndarray
@@ -113,6 +116,89 @@ def _nearest_run(runs, p: np.ndarray):
         if d < best_d:
             best, best_d = run, d
     return best
+
+
+def _area_vector(p: np.ndarray) -> np.ndarray:
+    """Newell normal of a polygon: its area times its unit normal (right-hand rule on the node order)."""
+    return 0.5 * np.sum(np.cross(p, np.roll(p, -1, axis=0)), axis=0)
+
+
+def _oriented(nodes: np.ndarray, elements: list[tuple[int, ...]], surface: Sequence[str],
+              zs: Sequence[float], te_at: Mapping[float, np.ndarray]) -> list[tuple[int, ...]]:
+    """Elements reordered so that their normals follow one rule per surface.
+
+    Skin: out of the section. The skin is made consistent across every edge two
+    skin elements share, then each connected sheet takes the sign for which
+    ``sum(A_e . (x_e - c))`` is positive (``A_e`` area vector, ``c`` any point
+    of the station): for a closed section that sum is twice its area with
+    outward normals, whatever the section's concavity. Webs: towards the
+    trailing edge of their station. Ribs and the tip closure: along +z.
+    """
+    out = list(elements)
+    z_st = np.asarray(sorted(zs), float)
+
+    def flip(i: int) -> None:
+        e = out[i]
+        out[i] = (e[0],) + tuple(reversed(e[1:]))
+
+    def station(x: np.ndarray) -> float:
+        return float(z_st[int(np.argmin(np.abs(z_st - x[2])))])
+
+    skin = [i for i, s in enumerate(surface) if s == "skin"]
+    by_edge: dict[tuple[int, int], list[int]] = {}
+    for i in skin:
+        e = out[i]
+        for a, b in zip(e, e[1:] + e[:1]):
+            by_edge.setdefault((min(a, b), max(a, b)), []).append(i)
+
+    def directed(i: int, a: int, b: int) -> bool:
+        e = out[i]
+        return any(u == a and v == b for u, v in zip(e, e[1:] + e[:1]))
+
+    seen: set[int] = set()
+    for start in skin:
+        if start in seen:
+            continue
+        seen.add(start)
+        sheet, stack = [start], [start]
+        while stack:
+            i = stack.pop()
+            e = out[i]
+            for a, b in zip(e, e[1:] + e[:1]):
+                users = by_edge[(min(a, b), max(a, b))]
+                if len(users) != 2:
+                    continue
+                j = users[0] if users[1] == i else users[1]
+                if j in seen:
+                    continue
+                if directed(j, a, b):  # a consistent neighbour runs the shared edge the other way
+                    flip(j)
+                seen.add(j)
+                sheet.append(j)
+                stack.append(j)
+        centre: dict[float, np.ndarray] = {}
+        for i in sheet:
+            for k in out[i]:
+                centre.setdefault(station(nodes[k]), nodes[k])
+        flux = 0.0
+        for i in sheet:
+            p = nodes[list(out[i])]
+            x = p.mean(axis=0)
+            c = centre[station(x)]
+            flux += float(_area_vector(p)[:2] @ (x - c)[:2])
+        if flux < 0.0:
+            for i in sheet:
+                flip(i)
+    for i, s in enumerate(surface):
+        p = nodes[list(out[i])]
+        area = _area_vector(p)
+        if s == "web":
+            te = te_at.get(station(p.mean(axis=0)))
+            if te is not None and float(area[:2] @ (te - p.mean(axis=0))[:2]) < 0.0:
+                flip(i)
+        elif s in ("rib", "tip_closure") and area[2] < 0.0:
+            flip(i)
+    return out
 
 
 def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None, n_chord: int = 8,
@@ -206,8 +292,11 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None, n_chor
                     add(f, (name, "tip_closure", str(tip.partition), t_tip, 0.0, (str(tip.partition),),
                             (t_tip,)))
 
+    pts = np.asarray(nodes, float).reshape(-1, 3)
+    te_at = {float(z): np.asarray(smp["te_su"][-1], float) for z, smp in zip(zs, smps) if len(smp.get("te_su", ()))}
+    elements = _oriented(pts, elements, [r[1] for r in rows], zs, te_at)
     return ShellMesh(
-        nodes=np.asarray(nodes, float).reshape(-1, 3),
+        nodes=pts,
         elements=tuple(elements),
         name=tuple(r[0] for r in rows),
         surface=tuple(r[1] for r in rows),

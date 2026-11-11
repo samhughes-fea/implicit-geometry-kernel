@@ -4,6 +4,12 @@
 
 ## 0.9.2 (2026-11-11)
 
+- ``ShellMesh`` element normals follow one rule per surface: out of the
+  section on the skin (consistent across every shared skin edge), towards the
+  trailing edge on webs, and along +z on ribs and the tip closure. A cap
+  stack's mid-plane lies ``eccentricity`` inside the skin, along -normal.
+  Before this, the suction and pressure skins and the webs had opposite
+  windings, which a shell solver reads as flipped normals.
 - Tip closure on every blade (``TipClosure``). Every ``BladeGeometry`` closes
   its skin at the tip station, whether it comes from a catalogue layout, a
   concept or windIO. The closure is part of the skin: its faces carry the skin

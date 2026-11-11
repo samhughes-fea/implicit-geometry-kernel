@@ -115,3 +115,25 @@ def test_reference_blade_mesh_is_all_quad_and_conforming(rel):
         # open only along the root, or along a web's start or end line
         on_root = abs(m.nodes[a, 2] - z_root) < 1e-9 and abs(m.nodes[b, 2] - z_root) < 1e-9
         assert on_root or (a in web and b in web)
+
+
+def test_vtk_keeps_polygons(tmp_path, mesh):
+    from implicit_geometry_kernel.mesh import write_vtk
+
+    _geo_, m = mesh
+    path = tmp_path / "shell.vtk"
+    parts = write_vtk(m, path)
+    text = path.read_text().splitlines()
+    i = text.index(f"CELL_TYPES {len(m.elements)}")
+    types = [int(t) for t in text[i + 1:i + 1 + len(m.elements)]]
+    assert types.count(9) == len(m.quads) and types.count(7) == len(m.polygons)
+    assert set(parts) == set(m.partition)
+    assert f"POINTS {len(m.nodes)} double" in text
+
+
+def test_gmsh_path_is_deprecated():
+    pytest.importorskip("gmsh")
+    from implicit_geometry_kernel.mesh.gmsh import triangulate_ring
+
+    with pytest.deprecated_call():
+        triangulate_ring(np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]]))

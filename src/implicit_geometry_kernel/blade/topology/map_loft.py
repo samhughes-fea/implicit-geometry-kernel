@@ -251,10 +251,12 @@ def _transition_quads(name: str, pa: np.ndarray, pb: np.ndarray) -> list[tuple[s
     elif len(cb) == 1:
         tris = [(("a", i), ("a", i + 1), ("b", 0)) for i in range(len(ca) - 1)]
     else:
+        # advance the side whose next coarse edge is centred earlier along the
+        # strip, so the zip is the same whichever station is the finer one
         fa, fb = _arc_fracs(ca), _arc_fracs(cb)
         i = j = 0
         while i < len(ca) - 1 or j < len(cb) - 1:
-            if j == len(cb) - 1 or (i < len(ca) - 1 and fa[i + 1] <= fb[j + 1]):
+            if j == len(cb) - 1 or (i < len(ca) - 1 and fa[i] + fa[i + 1] <= fb[j] + fb[j + 1]):
                 tris.append((("a", i), ("a", i + 1), ("b", j)))
                 i += 1
             else:

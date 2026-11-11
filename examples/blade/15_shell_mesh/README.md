@@ -18,8 +18,10 @@ whole blade.
 ```python
 from implicit_geometry_kernel.mesh import shell_mesh, write_vtk
 
-m = shell_mesh(geo, h=0.08)       # node counts follow region length per zone
+m = shell_mesh(geo, h=0.08)       # node counts follow region length (element size h/2 to h)
 m = shell_mesh(geo, 41)           # or 41 stations, n_chord nodes per region
+m = shell_mesh(geo, h=0.08, region_h={"le_su": 0.03, "le_pr": 0.03},
+               refine=[(0.0, 1.0, 0.03)])   # finer leading edge, finer root span
 write_vtk(m, "shell.vtk")          # quads and polygons as they are
 ```
 
@@ -43,8 +45,14 @@ parametric blade only. Each figure's note gives the edge use: 2 on a smooth
 sheet, 3 where a web meets the skin or a rib meets the skin, 4 where a rib
 crosses a web; open edges lie on the root only.
 
-Known limits are in the [blade bug log](../../../docs/blade/bug_log.md):
-transition quads under 20° need span spacing near `h` (BG-034, K8), and the
+A count change takes an all-quad transition, which is well shaped when the band
+is one to two fine edges long: with `region_h` much finer than the span
+spacing, add a `refine` window there (BG-034). Sized from `h` (the parametric
+figure) no quad has a corner under 20°; the NREL figure uses fixed counts.
+
+Known limits are in the [blade bug log](../../../docs/blade/bug_log.md): a
+region that runs out at a point (a cap end at the tip) is a thin wedge and so
+is its fan, and the
 IEA 15 blunt trailing edge near 16 % span folds in the section geometry
 (BG-035, SG-030). The Gmsh strips and triangle rib fills in `mesh.gmsh` are
 deprecated and kept for comparison only.

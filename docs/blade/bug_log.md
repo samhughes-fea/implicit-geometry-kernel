@@ -57,7 +57,7 @@ entries are from a retired repo-root log.
 | [BG-031](#bg-031) | Mesh cap regions used one chord window for both sides | **Fixed** |
 | [BG-032](#bg-032) | Cap edge passing a web foot between stations folded the strips | **Fixed** |
 | [BG-033](#bg-033) | Side arcs walked through the other TE corner (IEA 15) | **Fixed** |
-| [BG-034](#bg-034) | Sliver transition quads where node counts change | **Open** (K8) |
+| [BG-034](#bg-034) | Sliver transition quads where node counts change | Resolved (K8) |
 | [BG-035](#bg-035) | IEA 15 TE wrap folds at 15–22 % span | **Open** (SG-030) |
 | [BG-036](#bg-036) | windIO webs kept root to tip without `start_nd_span` | **Open** |
 | [BG-037](#bg-037) | Webs cross each other between stations (IEA 15, IEA 10) | **Open** |
@@ -819,20 +819,47 @@ round, which passed the other TE corner when the LE was nearly opposite.
 
 ## BG-034
 
-**Symptom.** Sliver quads (a corner under 20°) in event bands where a region's
-node count changes.
+**Symptom.** Sliver quads (a corner under 20° or over 160°) in bands where a
+region's node count changes.
 
-**Evidence.** All such quads on IEA 22 are in event bands. With fixed counts most
-bands are ruled; zone sizing alone adds transitions and more slivers at 41
-stations, fewer at 161 (NREL 5MW, h = 0.08 chord: 7 of 8164 faces).
+**Evidence.** NREL 5MW at `h = 0.25` m, 247 stations: 15 bad quads of 17 687,
+all in the one band at 17.5–17.75 m where the TE wrap closes. There the webs
+drop from 17 to 7 nodes over 0.25 m for the same 1.42 m length. The parametric
+2D-F blade's 7 → 5 and 5 → 3 transitions had corners of 164–173°.
 
-**Root cause.** A transition's triangles are as long as the band (metres) and as
-wide as a chord element (centimetres).
+**Root cause.** Three parts.
+1. One count per zone, from the zone's longest length: a zone that starts at
+   the root keeps the root's fine count to its far end, then drops to the next
+   zone's count in one band (17 → 7).
+2. TE regions bunched their nodes at the ends even when sized from `h`, so the
+   coarse nodes a transition zips were unevenly spaced.
+3. The transition zip compared the next coarse node's arc fraction, so ties
+   went to the first station: a 5 → 3 strip got a skewed middle triangle that
+   the 3 → 5 strip did not (165° against 143° for the same shape).
 
-**Fix.** Node counts per zone that follow region length
-(`zone_sized_templates`, commit 92e7d45). Span spacing near `h` is the remaining
-part (K8 refinement).
-**Open** (K8).
+**Fix.** `region_counts` sets each region's count from its own length at every
+station, holding it while the element size stays in `[h/2, h]`. Regions
+sized from `h` are evenly spaced. The zip advances the side whose next coarse
+edge is centred earlier, so it is symmetric.
+
+Quads with a corner under 20° or over 160°, `shell_mesh(geo, h=0.25)`:
+
+| Blade | Before (zone counts) | After |
+|---|---|---|
+| Parametric 2D-F-LC-4R | 0 / 1 120 | 0 / 1 062 |
+| NREL 5MW | 15 / 17 687 | 3 / 16 034 |
+| IEA 15 MW | 100 / 41 413 | 3 / 35 964 |
+| IEA 22 MW | 222 / 75 494 | 27 / 53 738 |
+| IEA 3.4 MW | 92 / 15 817 | 33 / 15 340 |
+| IEA 10 MW | 221 / 35 216 | 39 / 31 425 |
+
+On IEA 22 every quad left is where a region ends at a point: the TE wrap
+closing (100 m) and the caps and bays running out at the tip, 3 cm wide over
+a 0.25 m band. The region itself is a wedge of a few degrees there, so its
+fan is too. A transition needs a band about one to two fine
+edges long; with `region_h` much finer than the span spacing, add `refine`
+windows (test `test_region_counts.py`).
+**Resolved** (K8).
 
 ## BG-035
 

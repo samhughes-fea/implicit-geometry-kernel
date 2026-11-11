@@ -13,7 +13,7 @@ law.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Sequence
+from typing import Mapping, Sequence
 
 import numpy as np
 
@@ -25,7 +25,7 @@ from implicit_geometry_kernel.blade.topology import (
     section_cut_near,
 )
 from implicit_geometry_kernel.blade.topology.crossings import key_crossing_stations
-from implicit_geometry_kernel.blade.topology.zones import zone_sized_templates
+from implicit_geometry_kernel.blade.topology.region_counts import region_counts
 from implicit_geometry_kernel.mesh.polygon_voronoi import polygon_mesh_ring
 
 SURFACES = ("skin", "web", "rib", "tip_closure")
@@ -72,12 +72,14 @@ class ShellMesh:
         return out
 
 
-def mesh_stations(geo, n_span: int | None = None, *, h: float | None = None) -> tuple[float, ...]:
+def mesh_stations(geo, n_span: int | None = None, *, h: float | None = None,
+                  refine: Sequence[tuple[float, float, float]] = ()) -> tuple[float, ...]:
     """Span stations of the mesh: evenly spaced, every forced station, and key crossings.
 
     ``n_span`` evenly spaced stations, or about one per ``h`` of span when only
-    ``h`` is given. Forced stations (ribs, ply drops, stringer ends), the tip
-    closure and the stations where two skin keys meet are always added.
+    ``h`` is given. ``refine`` holds ``(z0, z1, dz)`` windows that get stations
+    at most ``dz`` apart. Forced stations (ribs, ply drops, stringer ends), the
+    tip closure and the stations where two skin keys meet are always added.
     """
     z0, z1 = float(geo.stations[0].z), float(geo.stations[-1].z)
     if n_span is None:
@@ -85,6 +87,12 @@ def mesh_stations(geo, n_span: int | None = None, *, h: float | None = None) -> 
             raise ValueError("give n_span or h")
         n_span = max(int(np.ceil((z1 - z0) / float(h))) + 1, 2)
     zs = {round(float(z), 9) for z in np.linspace(z0, z1, int(n_span))}
+    for a, b, dz in refine:
+        a, b = max(float(min(a, b)), z0), min(float(max(a, b)), z1)
+        if float(dz) <= 0.0:
+            raise ValueError("refinement spacing dz must be positive")
+        if b > a:
+            zs |= {round(float(z), 9) for z in np.linspace(a, b, int(np.ceil((b - a) / float(dz) - 1e-9)) + 1)}
     zs |= {round(float(z), 9) for z in geo.forced_stations()}
     zs |= {round(float(m.z), 9) for m in geo.transverse}
     zs.add(round(float(geo.tip_closure_z), 9))
@@ -108,16 +116,24 @@ def _nearest_run(runs, p: np.ndarray):
 
 
 def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None, n_chord: int = 8,
-               zs: Sequence[float] | None = None, polygon_size: float | None = None) -> ShellMesh:
+               zs: Sequence[float] | None = None, polygon_size: float | None = None,
+               region_h: Mapping[str, float] | None = None,
+               refine: Sequence[tuple[float, float, float]] = ()) -> ShellMesh:
     """The blade's conforming shell mesh.
 
     Stations are ``zs`` or :func:`mesh_stations`. With ``h`` (target element
-    edge, m) each region's node count follows its length per zone
-    (:func:`~implicit_geometry_kernel.blade.topology.zones.zone_sized_templates`);
-    without it every region has ``n_chord`` nodes (odd). ``polygon_size`` is the
-    rib and tip cell size (default: from the perimeter spacing).
+    edge, m) each region's node count follows its length
+    (:func:`~implicit_geometry_kernel.blade.topology.region_counts.region_counts`);
+    without it every region has ``n_chord`` nodes (odd). ``region_h`` sets the
+    element size of named regions (``{"le_su": h / 3, "le_pr": h / 3}`` refines
+    the leading edge) and ``refine`` adds span stations in ``(z0, z1, dz)``
+    windows (see :func:`mesh_stations`). ``polygon_size`` is the rib and tip
+    cell size (default: from the perimeter spacing).
     """
-    zs = tuple(sorted(float(z) for z in (zs if zs is not None else mesh_stations(geo, n_span, h=h))))
+    if region_h and h is None:
+        raise ValueError("region_h needs h")
+    zs = tuple(sorted(float(z) for z in (
+        zs if zs is not None else mesh_stations(geo, n_span, h=h, refine=refine))))
     cuts, tmpls, smps = [], [], []
     for z in zs:
         cut = section_cut_near(geo, z)
@@ -128,7 +144,7 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None, n_chor
         tmpls.append(tmpl)
         smps.append(sample_region_polylines(cut, cut.shell_graph(), tmpl, geo.region_graph))
     if h is not None:
-        tmpls = zone_sized_templates(tmpls, smps, float(h))
+        tmpls = region_counts(tmpls, smps, float(h), region_h=region_h)
         smps = [sample_region_polylines(c, c.shell_graph(), t, geo.region_graph) for c, t in zip(cuts, tmpls)]
     graphs = [c.shell_graph() for c in cuts]
 

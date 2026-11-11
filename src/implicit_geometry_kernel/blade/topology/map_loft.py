@@ -247,7 +247,27 @@ def _skin_parent(branch: LoopBranch, s0: Mapping[str, np.ndarray],
         p0 = _on_chain(chain, pb[0])
     if p1 is None:
         p1 = _on_chain(chain, pb[-1])
+    own = _chain_nodes_between(chain, p0, p1, n)
+    if own is not None:
+        return own
     return _resample_keys(p0, p1, chain, n)
+
+
+def _chain_nodes_between(chain: np.ndarray, p0: np.ndarray, p1: np.ndarray, n: int) -> np.ndarray | None:
+    """The station's own nodes from ``p0`` to ``p1`` when there are exactly ``n``.
+
+    A strip's lower edge must be the t0 station's nodes, or the strip below and
+    the strip above meet at different nodes along the station line. Resampling
+    is left to topology events, where the node counts differ.
+    """
+    chain = np.asarray(chain, float)
+    d0 = np.linalg.norm(chain - np.asarray(p0, float), axis=1)
+    d1 = np.linalg.norm(chain - np.asarray(p1, float), axis=1)
+    i0, i1 = int(np.argmin(d0)), int(np.argmin(d1))
+    if d0[i0] > 1e-12 or d1[i1] > 1e-12 or abs(i1 - i0) + 1 != n:
+        return None
+    step = 1 if i1 >= i0 else -1
+    return chain[i0 : i1 + step if i1 + step >= 0 else None : step].copy()
 
 
 def _collapsed_parent(branch: LoopBranch, s0: Mapping[str, np.ndarray],

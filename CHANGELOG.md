@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- windIO arcs are placed on the blade's own sections (``blade/windio_arc.py``).
+  A point at ``nd_arc = s`` is the outer-surface point at that arc length on
+  the section the blade has at that span; the old mapping ``x/c = 1 - 2 min(s,
+  1 - s)`` (still in ``windio_nd``) took arc length as chord position and put
+  the IEA 15 MW webs 25 to 290 mm off (BG-038).
+  ``web_feet_fn_from_windio_structure``, ``cap_side_windows_fn_from_windio_structure``
+  and ``WallRegionGraph.from_windio_structure(..., geo=)`` use it.
+- Two-foot webs: ``BladeGeometry(web_positions=...)`` may return ``(suction,
+  pressure)`` pairs; the web mid-line is the line through the two outer-surface
+  points. A single fraction per web works as before.
+- Per-side cap windows: ``BladeGeometry(cap_windows=...)`` may return
+  ``{"suction": (lo, hi), "pressure": (lo, hi)}``
+  (``CapPlacementRule.from_side_windows``).
+- windIO webs take their span window from their ``nd_arc`` grid (BG-036); where
+  no web is live the section has no webs and no web-bound caps.
+- A tip (or rib) on a section without webs is always meshed: the skin loop
+  closes on at least five nodes (BG-039).
+- ``docs/REFACTOR_PLAN.md`` lists the geometry a consumer adapter still has to
+  do itself, as kernel to-dos (G1 to G18).
+
 ## 0.9.2 (2026-11-11)
 
 - ``ShellMesh`` element normals follow one rule per surface: out of the

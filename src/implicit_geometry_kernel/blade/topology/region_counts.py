@@ -8,6 +8,12 @@ station change in small steps, each taken by the loft's all-quad transition,
 so a long tapering zone does not end in one band that drops from a fine root
 count to a coarse one (bug log BG-034). Counts are odd (an even number of
 edges per region), as that transition needs.
+
+A section without webs is one cell whose ring is the whole skin loop; the
+loop then gets at least :data:`MIN_CELL_NODES` nodes (the longest region
+takes the extra edges), so a rib or tip closure there is a polygon the
+polygon mesher can fill rather than a quad it leaves out. A cell bounded by a
+web already has at least six.
 """
 from __future__ import annotations
 
@@ -17,6 +23,10 @@ from typing import Mapping, Sequence
 import numpy as np
 
 from implicit_geometry_kernel.blade.topology.template import ShellTopologyTemplate
+
+
+MIN_CELL_NODES = 5
+"""Fewest nodes round a rib or tip closure cell (polygons of at least five nodes)."""
 
 
 def _length(pts: np.ndarray) -> float:
@@ -43,6 +53,20 @@ def _held_edges(length: float, previous: int | None, h: float, minimum: int) -> 
     return edges
 
 
+def _widen_single_cell(tmpl: ShellTopologyTemplate, smp: Mapping[str, np.ndarray],
+                       held: dict[str, int], minimum: int) -> None:
+    """Add two edges at a time to the longest loop region until the loop closes on
+    :data:`MIN_CELL_NODES` nodes (a closed ring has as many nodes as edges)."""
+    names = [b.name for b in tmpl.loop if b.name in smp]
+    if not names:
+        return
+    for name in names:
+        held.setdefault(name, _even_edges(0.0, 1.0, minimum))
+    longest = max(names, key=lambda n: _length(smp[n]))
+    while sum(held[n] for n in names) < MIN_CELL_NODES:
+        held[longest] += 2
+
+
 def region_counts(templates: Sequence[ShellTopologyTemplate],
                   samples: Sequence[Mapping[str, np.ndarray]], h: float,
                   *, minimum: int = 3,
@@ -65,6 +89,8 @@ def region_counts(templates: Sequence[ShellTopologyTemplate],
     for tmpl, smp in zip(templates, samples):
         held = {name: _held_edges(_length(pts), held.get(name), sizes.get(name, h), minimum)
                 for name, pts in smp.items()}
+        if not tmpl.webs:
+            _widen_single_cell(tmpl, smp, held, minimum)
         least = _even_edges(0.0, h, minimum)
         loop = tuple(replace(b, n=held.get(b.name, least) + 1, sized=True) for b in tmpl.loop)
         webs = tuple(replace(w, n=held.get(w.name, least) + 1, sized=True) for w in tmpl.webs)
@@ -72,4 +98,4 @@ def region_counts(templates: Sequence[ShellTopologyTemplate],
     return out
 
 
-__all__ = ["region_counts"]
+__all__ = ["MIN_CELL_NODES", "region_counts"]

@@ -59,8 +59,12 @@ entries are from a retired repo-root log.
 | [BG-033](#bg-033) | Side arcs walked through the other TE corner (IEA 15) | **Fixed** |
 | [BG-034](#bg-034) | Sliver transition quads where node counts change | Resolved (K8) |
 | [BG-035](#bg-035) | IEA 15 TE wrap folds at 15–22 % span | **Open** (SG-030) |
-| [BG-036](#bg-036) | windIO webs kept root to tip without `start_nd_span` | **Open** |
+| [BG-036](#bg-036) | windIO webs kept root to tip without `start_nd_span` | **Fixed** (K9) |
 | [BG-037](#bg-037) | Webs cross each other between stations (IEA 15, IEA 10) | **Open** |
+| [BG-038](#bg-038) | windIO `nd_arc` read as chord position (IEA 15 webs 25–290 mm off) | **Fixed** (K9) |
+| [BG-039](#bg-039) | Tip closure left out on a single-cell tip at a coarse `h` | **Fixed** (K9) |
+| [BG-040](#bg-040) | `merge_cap_and_skin=True` drops the caps from the shell graph | **Open** |
+| [BG-041](#bg-041) | windIO caps found by layer name only (IEA 10 gets none) | **Open** |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -883,9 +887,10 @@ reader during K7: a web with no span keys gets the full span.
 **Root cause.** The reader takes a web's span extent only from explicit span
 keys, not from its `nd_arc` grid narrowed to the plane-intersection offset grid.
 
-**Fix.** Patch drafted; applying it breaks the IEA 10 root ("web_x_positions is
-empty … continuous_box"), which needs a caps-with-no-live-webs root layout path.
-**Open** (own PR after K7).
+**Fix.** `windio_nd.web_span_extent`: the span window is the web's `nd_arc`
+grid, narrowed to the offset grid of a plane-intersection anchor. Where no web
+is live (the IEA 10 root) the layout steps down to a section without webs and
+without web-bound caps (`loft_layout._layout_at`). **Fixed** (K9).
 
 ## BG-037
 
@@ -899,3 +904,59 @@ stations (station key scan, 41 stations).
 data or how the reader places webs. The mesh adds a station at the crossing
 (BG-032), so the skin stays conforming, but the webs meet there.
 **Open** (data / reader).
+
+
+## BG-038
+
+**Symptom.** Webs and cap edges read from windIO sit at the wrong chord
+position: IEA 15 webs 25 to 290 mm from the points the file gives.
+
+**Evidence.** The OML point at a web's `nd_arc`, measured along the section's
+own outline, against the kernel web's foot at the same span.
+
+**Root cause.** `windio_nd` maps arc to chord with `x/c = 1 - 2 min(s, 1 - s)`:
+arc length taken as chord position, leading edge at `s = 0.5`. The same value
+was used for both feet of a web (one chord position) and for both sides' caps
+(one window).
+
+**Fix.** `blade/windio_arc.py` measures each arc on the section the blade has
+at that span. Webs take two feet (`web_positions` pairs; the web mid-line is the
+line through the two OML points) and each side keeps its own cap window
+(`CapPlacementRule.from_side_windows`). `WallRegionGraph.from_windio_structure`
+takes `geo=` to place its anchors the same way. **Fixed** (K9).
+
+## BG-039
+
+**Symptom.** IEA 10 at `h = 1` m meshes without a tip closure once its webs
+stop before the tip (BG-036).
+
+**Evidence.** The tip is one cell; `region_counts` gave its two loop regions
+three nodes each, a 4-node ring, and `polygon_mesh_ring` fills only rings of
+five nodes or more (it returned no faces, without an error).
+
+**Root cause.** The count rule had a minimum per region but none per closure
+cell. A cell bounded by a web always has six nodes or more; a cell with no web
+is the bare loop.
+
+**Fix.** `region_counts` closes a web-less loop on at least `MIN_CELL_NODES`
+(5) nodes; the longest region takes the extra edges. **Fixed** (K9).
+
+## BG-040
+
+**Symptom.** With `merge_cap_and_skin=True` the shell graph has no cap
+partitions, and one cap run meshes a degenerate triangle at `h = 0.25`.
+
+**Evidence.** Seen building a parametric blade with stacked caps; with the
+option off the caps are there and the mesh is clean.
+
+**Root cause.** Not established. **Open.**
+
+## BG-041
+
+**Symptom.** The windIO reader finds no spar caps on IEA 10.
+
+**Evidence.** Caps are taken from layers whose name contains `spar` or `cap`;
+IEA 10 names its layers by keypoint pair and material.
+
+**Root cause.** Identification by name. A structural rule (the uniaxial band
+between the web feet) or an explicit list is needed. **Open.**

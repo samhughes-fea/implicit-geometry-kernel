@@ -179,7 +179,8 @@ def cap_side_series_from_windio_structure(structure: Mapping[str, Any], geo,
             continue
         grid = np.unique(np.concatenate([start[0], end[0]]))
         zs = _grid_to_z(grid, z_table)
-        rows, sides = [], set()
+        rows: list[tuple[float, float]] = []
+        sides: set[str] = set()
         for g, z in zip(grid, zs):
             zc = _clip_z(z, geo)
             p = arc(zc, float(np.interp(g, *start)))

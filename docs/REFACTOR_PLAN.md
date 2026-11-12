@@ -28,7 +28,40 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | K6 | Tip closure on every blade: closes the skin shell at z/L = 1 with the polygon mesher, skin partition; `nR` counts interior ribs only | Done (#54, 0.9.2) |
 | K7 | Mesh product: skin/web quads, polygonal ribs and tip, arrays with partition and thickness, no Gmsh | Done (#55, 0.9.2) |
 | K8 | Leading-edge and spanwise refinement controls | Done (#56, 0.9.2) |
+| K9 | windIO read on the blade's own sections: arcs by OML arc length, per-side cap windows, two-foot webs, web span windows (BG-036), tip closure on single-cell tips | In progress |
 | K5 | Trimmed top-level API (deprecate first), internal docs to `docs/internal/`; still 0.9.x | After consumers move |
+
+#### Consumer adapter gaps (to do)
+
+Maintainer rule (12 Nov): a consumer hands all of its geometry to the kernel. Anything
+a consumer's adapter still has to compute, convert, approximate or refuse is a kernel
+to-do, listed here until the adapter can drop it. The list comes from building a kernel
+blade out of a parametric shell-model consumer's inputs (law-defined planform, airfoil
+family with a root-circle blend, webs, caps, ribs, stringers) and out of windIO files.
+
+| Id | What the adapter does today | What the kernel should do | State |
+|----|-----------------------------|---------------------------|-------|
+| G1 | Maps windIO `nd_arc` itself, because the reader used `x/c = 1 - 2 min(s, 1 - s)` (webs 25–290 mm off on a 15 MW blade) | Place arcs on the section the blade has at that span (`blade/windio_arc.py`) | In K9 |
+| G2 | Refuses suction and pressure caps with different chord bands | Per-side cap windows (`CapPlacementRule.from_side_windows`, `cap_windows` returning a mapping) | In K9 |
+| G3 | Cannot pass a web through its two attachment points (one chord position per web) | Two-foot webs: `web_positions` pairs of (suction, pressure) fractions | In K9 |
+| G4 | Works round partial-span webs kept root to tip (BG-036) | Web span window from the `nd_arc` grid; layout steps down where no web is live | In K9 |
+| G5 | — (found on the way) | A single-cell tip at a coarse `h` lost its tip closure (4-node ring); the loop now closes on at least five nodes | In K9 |
+| G6 | Bisects stations until the loft is within 0.1 mm of its own analytic surface (81 stations become a few hundred) | Take the outer shape as laws or a callable `section(z)` and refine stations to a stated tolerance | To do |
+| G7 | Adds quarter-point probes because the airfoil morph changes rule (smoothstep or linear) when one station is at least 60 % thick and the next is not | One documented morph rule, or the rule as an explicit option | To do |
+| G8 | Converts every chord fraction: its fractions are measured from the pitch axis on the chord law, the kernel's on each station's own x extent (they differ across a root blend) | Accept positions in metres from the pitch axis, or a reference chord law | To do |
+| G9 | Flips the twist sign | State the twist convention in `Station` and offer the other sense | To do |
+| G10 | Leaves `merge_cap_and_skin` off: with it on the caps vanish from the shell graph and one cap run meshes a degenerate triangle | Fix; add to the bug log | To do |
+| G11 | Records a cap-edge difference (up to 17 mm on a root circle): the kernel cuts the edge at `x` on the cap mid-plane, the consumer at `x` on its node surface | Choice of the surface the edge is measured on | To do |
+| G12 | Refuses tilted webs | A tilt angle on a web (two-foot webs already carry the geometry) | To do |
+| G13 | Refuses webs with different layups; one cap thickness for both sides | Thickness per web and per cap side | To do |
+| G14 | Refuses wall nodes on the outer surface (`wall_reference = oml`) | A reference-surface option for the shell graph (mid-surface, OML) | To do |
+| G15 | Refuses stringers whose chord position or height varies along the span | Stringer position and height as span laws | To do |
+| G16 | Finds windIO spar caps by layer name (`spar`, `cap`); a file that names layers by keypoint (10 MW) gets none | Identify caps by structure (the band between the web feet, uniaxial material) or take an explicit list | To do |
+| G17 | Sums ply thicknesses itself for skin, cap and web | Thickness per partition from the stack (decision D4) | To do |
+| G18 | — | Webs that cross between stations (BG-037) | Open |
+
+Not kernel work: the trailing-edge bond and core fill are materials inside the section,
+and plies, loads and solvers stay in consumers.
 
 Maintainer decisions (10 Nov): the kernel produces the analysis shell mesh and
 consumers use it without remeshing (Gmsh only for comparison in consumers);

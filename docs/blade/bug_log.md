@@ -1007,7 +1007,11 @@ the two branches of the bulge.
 **Fix.** A closed trailing end that a surface reaches steeper than 45 degrees is
 round: its spline gets a vertical end tangent and the surface is cut at the end
 point's x (under 1e-6 of chord is left aft of it). The gap falls to under
-0.001 mm. Golden numbers do not move (no golden section has a round trailing
+0.001 mm. A blunt base listed as points (the surface runs on down the
+base to its mid-point: 11.5 mm off on a 5.4 m flatback section) is the same
+defect at a corner: the corner is found by the jump in turning angle at the
+last point (over 20 degrees and three times the turn before it), the spline
+stops there and the base segment is straight. Golden numbers do not move (no golden section has a round trailing
 end). **Fixed** (K9).
 
 ## BG-044

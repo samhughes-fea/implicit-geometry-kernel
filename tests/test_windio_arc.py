@@ -203,3 +203,20 @@ def test_round_trailing_end_ends_at_its_end_point():
         assert np.abs(got - sign * y)[aft].max() < 1e-9  # through the points, to the end
         dense = np.linspace(0.999, 1.0, 2001)  # single-valued and falling to the end
         assert np.all(np.diff(sign * foil.surface(side, dense)) < 0.0)
+
+
+def test_blunt_base_listed_as_points_keeps_its_corner():
+    # a flatback whose surfaces flare, then run down the base to its mid-point: the last
+    # segment is the base, not part of the smooth surface
+    x = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, 241)))
+    y = 0.6 * (0.2969 * np.sqrt(x) - 0.126 * x - 0.3516 * x**2 + 0.2843 * x**3 - 0.1015 * x**4)
+    y += 0.01 * x**8  # half the base height, reached with a flare
+    y[-1] = 0.0
+    pts = np.vstack([np.column_stack([x[::-1], y[::-1]]), np.column_stack([x[1:], -y[1:]])])
+    foil = Airfoil(pts, "flatback")
+    aft = x > 0.5
+    assert np.abs(foil.surface("upper", x) - y)[aft].max() < 1e-9
+    assert np.abs(foil.surface("lower", x) + y)[aft].max() < 1e-9
+    # straight down the base between the corner and the end point
+    xm = 0.5 * (x[-2] + x[-1])
+    assert foil.surface("upper", xm) == pytest.approx(0.5 * y[-2], rel=1e-9)

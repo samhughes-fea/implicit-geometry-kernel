@@ -27,7 +27,9 @@
 - A round trailing end (a circle, an ellipse, a root transition section) ends at
   its end point: the surface's spline has a vertical end tangent there. It used
   to bulge 1e-5 of chord aft of it, where sorting the samples by x scrambled the
-  surface (BG-043). Golden numbers unchanged.
+  surface (BG-043). A blunt base listed as points (surfaces that run on down
+  the base to its mid-point) keeps its corner: the spline stops at the corner
+  and the base segment is straight. Golden numbers unchanged.
 - ``docs/REFACTOR_PLAN.md`` lists the geometry a consumer adapter still has to
   do itself, as kernel to-dos (G1 to G18).
 

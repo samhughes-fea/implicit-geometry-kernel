@@ -28,7 +28,7 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | K6 | Tip closure on every blade: closes the skin shell at z/L = 1 with the polygon mesher, skin partition; `nR` counts interior ribs only | Done (#54, 0.9.2) |
 | K7 | Mesh product: skin/web quads, polygonal ribs and tip, arrays with partition and thickness, no Gmsh | Done (#55, 0.9.2) |
 | K8 | Leading-edge and spanwise refinement controls | Done (#56, 0.9.2) |
-| K9 | windIO read on the blade's own sections: arcs by OML arc length, per-side cap windows, two-foot webs, web span windows (BG-036), tip closure on single-cell tips | In progress |
+| K9 | windIO read on the blade's own sections: arcs by OML arc length at every z (corner to corner), per-side cap windows, two-foot webs, web span windows (BG-036) whose ends are mesh stations, tip closure on single-cell tips; station airfoils that reproduce their points (blunt corner, round end, base listed as points) | PR open |
 | K5 | Trimmed top-level API (deprecate first), internal docs to `docs/internal/`; still 0.9.x | After consumers move |
 
 #### Consumer adapter gaps (to do)
@@ -46,7 +46,8 @@ family with a root-circle blend, webs, caps, ribs, stringers) and out of windIO 
 | G3 | Cannot pass a web through its two attachment points (one chord position per web) | Two-foot webs: `web_positions` pairs of (suction, pressure) fractions | In K9 |
 | G4 | Works round partial-span webs kept root to tip (BG-036) | Web span window from the `nd_arc` grid; layout steps down where no web is live | In K9 |
 | G5 | — (found on the way) | A single-cell tip at a coarse `h` lost its tip closure (4-node ring); the loop now closes on at least five nodes | In K9 |
-| G5b | Could not get within 0.1 mm at a blunt trailing edge however many stations it added | Station airfoils pass through their given points (BG-042) | In K9 |
+| G5b | Could not get within 0.1 mm at a trailing edge however many stations it added | Station airfoils pass through their given points; round trailing ends and bases listed as points are kept (BG-042, BG-043) | In K9 |
+| G5c | Saw webs start and end at the nearest mesh station | Partial-span web ends are forced stations (BG-045) | In K9 |
 | G6 | Bisects stations until the loft is within 0.1 mm of its own analytic surface (81 stations become a few hundred) | Take the outer shape as laws or a callable `section(z)` and refine stations to a stated tolerance | To do |
 | G7 | Adds quarter-point probes because the airfoil morph changes rule (smoothstep or linear) when one station is at least 60 % thick and the next is not | One documented morph rule, or the rule as an explicit option | To do |
 | G8 | Converts every chord fraction: its fractions are measured from the pitch axis on the chord law, the kernel's on each station's own x extent (they differ across a root blend) | Accept positions in metres from the pitch axis, or a reference chord law | To do |

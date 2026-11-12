@@ -17,6 +17,9 @@ class CapPlacementRule:
     anchor: FixedBandAnchor | None = None
     half_width: float | None = None
     chord_window: tuple[float, float] | None = None
+    #: per-side chord windows ``((suction_lo, suction_hi), (pressure_lo, pressure_hi))``
+    #: when the two caps differ; ``chord_window`` is then their union
+    side_windows: tuple[tuple[float, float], tuple[float, float]] | None = None
 
     @staticmethod
     def none() -> CapPlacementRule:
@@ -58,6 +61,22 @@ class CapPlacementRule:
             half_width=half,
             chord_window=(lo, hi),
         )
+
+    @staticmethod
+    def from_side_windows(suction, pressure) -> CapPlacementRule:
+        """Family-B caps with their own chord window on each side (fractions from the LE).
+
+        Each ``(lo, hi)`` is where that side's cap is; ``chord_window`` is the union
+        (for the wall-region graph's ordering), and the section builds each cap in its
+        own window.
+        """
+        su = (float(min(suction)), float(max(suction)))
+        pr = (float(min(pressure)), float(max(pressure)))
+        if su[1] - su[0] <= 0.0 or pr[1] - pr[0] <= 0.0:
+            raise ValueError(f"cap windows need lo < hi; got {suction} and {pressure}")
+        rule = CapPlacementRule.from_chord_windows((su, pr))
+        return CapPlacementRule(kind=rule.kind, anchor=rule.anchor, half_width=rule.half_width,
+                                chord_window=rule.chord_window, side_windows=(su, pr))
 
     @staticmethod
     def from_structural_family(

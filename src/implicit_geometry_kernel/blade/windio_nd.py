@@ -115,6 +115,65 @@ def _span_extent(block: Mapping[str, Any]) -> tuple[float, float] | None:
     return (min(a, b), max(a, b))
 
 
+def _grid_range(table: tuple[np.ndarray, np.ndarray] | None) -> tuple[float, float] | None:
+    if table is None or len(table[0]) == 0:
+        return None
+    return float(np.min(table[0])), float(np.max(table[0]))
+
+
+def _offset_grid_range(block: Any) -> tuple[float, float] | None:
+    if not isinstance(block, Mapping):
+        return None
+    plane = block.get("plane_intersection")
+    offset = plane.get("offset") if isinstance(plane, Mapping) else None
+    grid = offset.get("grid") if isinstance(offset, Mapping) else None
+    if grid is None or len(grid) == 0:
+        return None
+    g = np.asarray(grid, float)
+    return float(g.min()), float(g.max())
+
+
+def web_span_extent(web: Mapping[str, Any], anchors: Mapping[str, Any]) -> tuple[float, float] | None:
+    """Span window of a web in windIO grid units, or ``None`` for the whole blade.
+
+    An explicit ``start_nd_span`` / ``end_nd_span`` wins. Otherwise the web exists
+    where it is defined: the grid of its ``nd_arc`` tables, narrowed to the grid of
+    its ``plane_intersection`` offset when it has one. Outside the offset grid a
+    precomputed ``nd_arc`` table only holds placeholders (in IEA-10-198 every web
+    reads 0.217 / 0.717 at the root), so those points are not web positions.
+    """
+    host = anchors.get(str(web.get("name", "")), web)
+    for block in (host, web):
+        if isinstance(block, Mapping):
+            explicit = _span_extent(block)
+            if explicit is not None:
+                return explicit
+    start, end = _web_start_end(web, anchors)
+    ranges = [r for r in (_grid_range(start), _grid_range(end)) if r is not None]
+    for block in (host, web):
+        off = _offset_grid_range(block)
+        if off is not None:
+            ranges.append(off)
+            break
+    if not ranges:
+        return None
+    lo = max(r[0] for r in ranges)
+    hi = min(r[1] for r in ranges)
+    if hi < lo:
+        return None
+    return lo, hi
+
+
+def _crop_to(grid: np.ndarray, fr: np.ndarray, extent: tuple[float, float] | None) -> tuple[np.ndarray, np.ndarray]:
+    """Table points inside the web's span window (placeholders outside it dropped)."""
+    if extent is None:
+        return grid, fr
+    keep = (grid >= extent[0] - 1e-12) & (grid <= extent[1] + 1e-12)
+    if int(keep.sum()) < 1:
+        return grid, fr
+    return grid[keep], fr[keep]
+
+
 def _grid_to_z(grid: np.ndarray, z_of_s: np.ndarray | None) -> np.ndarray:
     g = np.asarray(grid, float).reshape(-1)
     if z_of_s is None:
@@ -175,7 +234,7 @@ def web_position_table_from_windio_structure(
         start, end = _web_start_end(web, anchors)
         if start is None:
             return None
-        g, fr = _frac_along(start, end)
+        g, fr = _crop_to(*_frac_along(start, end), web_span_extent(web, anchors))
         series.append((_grid_to_z(g, z_table), fr))
     z_all = np.unique(np.concatenate([z for z, _ in series]))
     if z_all.size < 1:
@@ -209,12 +268,7 @@ def web_positions_fn_from_windio_structure(
     z_table = None if z_of_s is None else np.asarray(z_of_s, float)
     ordered_webs = [webs[int(i)] for i in web_order]
     for web in ordered_webs:
-        host = anchors.get(str(web.get("name", "")), web)
-        extent = None
-        if isinstance(host, Mapping):
-            extent = _span_extent(host)
-        if extent is None:
-            extent = _span_extent(web)
+        extent = web_span_extent(web, anchors)
         if extent is None:
             extents.append(None)
         else:

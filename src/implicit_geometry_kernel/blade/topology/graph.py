@@ -160,13 +160,18 @@ class WallRegionGraph:
         cls, structure: Mapping, z_of_s=None, *,
         te_arc: float = TE_ARC,
         min_gap: float = MIN_GAP,
+        geo=None,
     ) -> WallRegionGraph:
+        """The file's webs and cap edges as anchors. With ``geo`` (a blade carrying the
+        outer shape) the arcs are placed on its sections
+        (:mod:`implicit_geometry_kernel.blade.windio_arc`); without it they use the
+        fixed ``x/c = 1 - 2 min(s, 1 - s)`` map of :mod:`windio_nd`."""
         from implicit_geometry_kernel.blade.topology.layout_compile import (
             graph_from_windio_structure,
         )
 
         return graph_from_windio_structure(
-            cls, structure, z_of_s, te_arc=te_arc, min_gap=min_gap
+            cls, structure, z_of_s, te_arc=te_arc, min_gap=min_gap, geo=geo
         )
 
 

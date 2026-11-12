@@ -69,8 +69,11 @@ from implicit_geometry_kernel.mesh.polygon import fill_rib_cells  # noqa: E402
 from implicit_geometry_kernel.blade.windio import (  # noqa: E402
     cap_window_table_from_windio_structure,
     transverse_members_from_windio,
-    web_positions_fn_from_windio_structure,
     web_positions_from_windio_structure,
+)
+from implicit_geometry_kernel.blade.windio_arc import (  # noqa: E402
+    cap_side_windows_fn_from_windio_structure,
+    web_feet_fn_from_windio_structure,
 )
 from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule  # noqa: E402
 from implicit_geometry_kernel.section.layout.section_layout import SectionLayout  # noqa: E402
@@ -306,8 +309,16 @@ def load_windio(path: Path) -> tuple[str, BladeGeometry, np.ndarray]:
     cap_t = _layer_tables(layers, needles=("spar_cap",), require_web=False)
     web_t = _web_gauge(layers)
     layout = _layout_from_structure(structure)
-    web_positions = web_positions_fn_from_windio_structure(structure, z_of_s)
-    cap_windows = cap_window_table_from_windio_structure(structure, z_of_s)
+    shape = dict(
+        chord=_z_table(z_of_s, outer["chord"]),
+        twist=_z_table(z_of_s, outer["twist"]),
+        pitch_axis=_pitch_table(z_of_s, outer),
+        offset=_offset_table(z_of_s, blade["reference_axis"]),
+    )
+    # the outer shape alone, on which the file's arcs are placed (web feet, cap edges)
+    oml = BladeGeometry(stations, "0A-LC-0R", 0.0025, **shape)
+    web_positions = web_feet_fn_from_windio_structure(structure, oml, z_of_s)
+    cap_windows = cap_side_windows_fn_from_windio_structure(structure, oml, z_of_s)
     geo = BladeGeometry(
         stations,
         layout,
@@ -316,12 +327,9 @@ def load_windio(path: Path) -> tuple[str, BladeGeometry, np.ndarray]:
         shear_web_thickness=_thickness_at_z(web_t, z_of_s, 0.004),
         web_positions=web_positions,
         cap_windows=cap_windows,
-        chord=_z_table(z_of_s, outer["chord"]),
-        twist=_z_table(z_of_s, outer["twist"]),
-        pitch_axis=_pitch_table(z_of_s, outer),
-        offset=_offset_table(z_of_s, blade["reference_axis"]),
-        region_graph=WallRegionGraph.from_windio_structure(structure, z_of_s),
+        region_graph=WallRegionGraph.from_windio_structure(structure, z_of_s, geo=oml),
         transverse=transverse_members_from_windio(structure, z_of_s),
+        **shape,
     )
     return str(data.get("name", path.stem)), geo, z_of_s
 

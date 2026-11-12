@@ -420,7 +420,7 @@ def _save_elevation(key: str, name: str, faces: list[np.ndarray], kinds: list[st
     ax.add_collection(PolyCollection(
         [uv[i] for i in order], facecolors=_face_rgba(kinds, 0.92)[order],
         edgecolors=mesh_edge_rgba(len(order)),
-        linewidths=[mesh_linewidths(kinds, base=MESH_LW_FLAT)[i] for i in order],
+        linewidths=np.asarray(mesh_linewidths(kinds, base=MESH_LW_FLAT))[order],
         rasterized=True,
     ))
     ax.set_aspect("equal")
@@ -484,7 +484,7 @@ def _save_corner_cutaway(key: str, name: str, faces: list[np.ndarray], kinds: li
     ax.add_collection(PolyCollection(
         [uv[i] for i in order], facecolors=_face_rgba(kinds, 0.92)[order],
         edgecolors=mesh_edge_rgba(len(order)),
-        linewidths=[mesh_linewidths(kinds, base=MESH_LW_FLAT)[i] for i in order],
+        linewidths=np.asarray(mesh_linewidths(kinds, base=MESH_LW_FLAT))[order],
         rasterized=True,
     ))
     ax.set_aspect("equal")

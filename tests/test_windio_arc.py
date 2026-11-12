@@ -235,3 +235,25 @@ def test_arc_runs_corner_to_corner_on_a_section_that_lists_its_base():
         qx, qy, q_side = arc_point(x[:-1], open_upper[:-1], open_lower[:-1], s)
         assert side == q_side
         assert (px, py) == pytest.approx((qx, qy), abs=1e-12)
+
+
+def test_a_partial_span_web_starts_and_ends_on_mesh_stations():
+    from implicit_geometry_kernel import WallRegionGraph
+
+    oml = _oml()
+    z_of_s = np.array([[0.0, 0.0], [1.0, 3.0]])
+    structure = {"webs": [{
+        "name": "web", "start_nd_arc": {"grid": [0.21, 0.83], "values": [0.3, 0.3]},
+        "end_nd_arc": {"grid": [0.21, 0.83], "values": [0.7, 0.7]}}]}
+    geo = BladeGeometry(
+        _stations(), "1C-CN-LC-0R", 0.003, pivot_fraction=0.3, shear_web_thickness=0.004,
+        spar_cap_thickness=0.006,
+        web_positions=web_feet_fn_from_windio_structure(structure, oml, z_of_s),
+        region_graph=WallRegionGraph.from_windio_structure(structure, z_of_s, geo=oml))
+    ends = (0.21 * 3.0, 0.83 * 3.0)  # neither is a multiple of h
+    assert geo.forced_stations() == pytest.approx(ends)
+    mesh = shell_mesh(geo, None, h=0.25)
+    ids = sorted({k for e, s in zip(mesh.elements, mesh.surface) if s == "web" for k in e})
+    z = mesh.nodes[ids][:, 2]
+    assert z.min() == pytest.approx(ends[0], abs=1e-9)
+    assert z.max() == pytest.approx(ends[1], abs=1e-9)

@@ -178,14 +178,18 @@ def web_feet_fn_from_windio_structure(structure: Mapping[str, Any], geo,
         start, end = _web_start_end(web, anchors)
         if start is None or end is None:
             return None
-        rows.append((start, end, web_span_extent(web, anchors)))
+        extent = web_span_extent(web, anchors)
+        # the window in z, the same numbers the wall-region graph gives its web members
+        window = None if extent is None else (_z_of_grid(extent[0], z_table),
+                                              _z_of_grid(extent[1], z_table))
+        rows.append((start, end, window))
 
     def at(z: float) -> tuple[tuple[float, float], ...]:
         g = _grid_of_z(float(z), z_table)
         zc = _clip_z(float(z), geo)
         out = []
-        for start, end, extent in rows:
-            if extent is not None and not extent[0] - 1e-12 <= g <= extent[1] + 1e-12:
+        for start, end, window in rows:
+            if window is not None and not window[0] - 1e-9 <= float(z) <= window[1] + 1e-9:
                 continue
             a = arc(zc, float(np.interp(g, *start)))
             b = arc(zc, float(np.interp(g, *end)))

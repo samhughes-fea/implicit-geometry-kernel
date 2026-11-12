@@ -633,7 +633,7 @@ def figure_projected(stem: str, title: str, faces: list[np.ndarray], kinds: list
         ax.add_collection(PolyCollection(
             [stretched[i] for i in order], facecolors=fc[order],
             edgecolors=mesh_edge_rgba(len(order)),
-            linewidths=[mesh_linewidths(kinds, base=MESH_LW_FLAT)[i] for i in order],
+            linewidths=np.asarray(mesh_linewidths(kinds, base=MESH_LW_FLAT))[order],
             rasterized=True,
         ))
         ax.set_aspect("equal")

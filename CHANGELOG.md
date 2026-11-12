@@ -20,6 +20,9 @@
   (``CapPlacementRule.from_side_windows``).
 - windIO webs take their span window from their ``nd_arc`` grid (BG-036); where
   no web is live the section has no webs and no web-bound caps.
+- The ends of a partial-span web are forced stations, so the mesh's webs start
+  and end where the web does and not at the nearest evenly spaced station
+  (BG-045).
 - A tip (or rib) on a section without webs is always meshed: the skin loop
   closes on at least five nodes (BG-039).
 - A station ``Airfoil`` passes through the points it was given. Its spline was

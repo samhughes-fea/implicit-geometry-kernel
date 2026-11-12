@@ -68,6 +68,7 @@ entries are from a retired repo-root log.
 | [BG-042](#bg-042) | Station airfoil missed its own points at a blunt-TE corner (0.1 mm at 4.5 m chord) | **Fixed** (K9) |
 | [BG-043](#bg-043) | Round trailing end bulged aft of its end point and was scrambled (0.1 mm at 5.4 m chord) | **Fixed** (K9) |
 | [BG-044](#bg-044) | windIO web feet and cap edges interpolated in chord fraction between grid points (up to 10 mm) | **Fixed** (K9) |
+| [BG-045](#bg-045) | A partial-span web started and ended at the nearest mesh station, not at its own ends | **Fixed** (K9) |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -1030,3 +1031,21 @@ changes.
 **Fix.** `web_feet_fn_from_windio_structure` and
 `cap_side_windows_fn_from_windio_structure` interpolate the arc to z and place
 it on the section at z. The same check gives 0.09 mm at most. **Fixed** (K9).
+
+## BG-045
+
+**Symptom.** IEA 15 at `h = 1` m: the webs start at z = 12.0 m and end at
+110.0 m in the mesh; the file starts them at 11.939 m and ends them at
+109.837 m.
+
+**Evidence.** `forced_stations()` was empty for the blade; the web nodes'
+z-range was the first and last mesh station inside the web's window.
+
+**Root cause.** Two things. The ends of a partial-span web were not forced
+stations. And a span window compared z to 1e-12 while stations are keyed at
+`round(z, 9)`, so a window end added as a station fell outside its own window
+after rounding (by 2e-10 here).
+
+**Fix.** `forced_stations()` includes the wall-region graph's web window ends,
+and span windows include their ends to the station key resolution (1e-9).
+**Fixed** (K9).

@@ -294,8 +294,14 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         return float(self._skin(self.tip_closure_z))
 
     def forced_stations(self) -> tuple[float, ...]:
-        """Sorted unique member stations (ribs and stringer ends; mesh hint)."""
+        """Sorted unique member stations (ribs, stringer ends, ply drops and the ends of
+        partial-span webs; mesh hint)."""
         by_key: dict[float, float] = {}
+        z_lo, z_hi = float(self.stations[0].z), float(self.stations[-1].z)
+        for web in getattr(self.region_graph, "webs", ()) or ():
+            for z in (web.z0, web.z1):
+                if z is not None and z_lo < float(z) < z_hi:
+                    by_key[round(float(z), 9)] = float(z)
         for member in self.transverse:
             by_key[round(float(member.z), 9)] = float(member.z)
         for stringer in self.stringers:

@@ -9,7 +9,7 @@ side positive).
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Sequence, Union
+from typing import Any, Sequence, Union
 
 import numpy as np
 
@@ -71,13 +71,12 @@ class Airfoil:
             # corner sharper than that (the flare into a blunt trailing edge)
             u = np.union1d(u, t)
             last = side[-1] - side[-2]
-            if closed_te and abs(last[1]) > abs(last[0]):
-                ends = ("not-a-knot", (1, 0.0)), ("not-a-knot", (1, float(np.sign(last[1]))))
-            else:
-                ends = "not-a-knot", "not-a-knot"
-            dense = np.column_stack([CubicSpline(t, side[:, 0], bc_type=ends[0])(u),
-                                     CubicSpline(t, side[:, 1], bc_type=ends[1])(u)])
-            if ends[0] != "not-a-knot":
+            round_end = closed_te and abs(last[1]) > abs(last[0])
+            bc_x: Any = ("not-a-knot", (1, 0.0)) if round_end else "not-a-knot"
+            bc_y: Any = ("not-a-knot", (1, float(np.sign(last[1])))) if round_end else "not-a-knot"
+            dense = np.column_stack([CubicSpline(t, side[:, 0], bc_type=bc_x)(u),
+                                     CubicSpline(t, side[:, 1], bc_type=bc_y)(u)])
+            if round_end:
                 # y(x) cannot hold what little of the round end still lies aft of its
                 # end point (under 1e-6 of chord): the surface is cut at that x
                 inside = dense[:, 0] < side[-1, 0]

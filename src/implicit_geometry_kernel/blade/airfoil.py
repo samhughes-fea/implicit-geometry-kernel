@@ -37,18 +37,25 @@ class Airfoil:
         first, second = p[: le + 1][::-1], p[le:]
         if np.mean(first[:, 1]) < np.mean(second[:, 1]):
             first, second = second, first
-        self._upper = self._monotone(first)
-        self._lower = self._monotone(second)
+        closed = bool(np.linalg.norm(p[0] - p[-1]) <= 1e-12)
+        self._upper = self._monotone(first, closed)
+        self._lower = self._monotone(second, closed)
         x0 = min(self._upper[0, 0], self._lower[0, 0])
         x1 = max(self._upper[-1, 0], self._lower[-1, 0])
         self._x0, self._span = x0, x1 - x0
 
     @staticmethod
-    def _monotone(side: np.ndarray) -> np.ndarray:
+    def _monotone(side: np.ndarray, closed_te: bool = False) -> np.ndarray:
         """Densely resampled surface, LE to TE, from a cubic spline through the points.
 
         The spline is parametrised by arc length, so blunt leading edges (where y(x)
         has a vertical tangent) are represented accurately.
+
+        A round trailing end (the surfaces meet at one point, ``closed_te``, and this
+        one arrives there steeper than 45 degrees: a circle, an ellipse, a root
+        transition section) gets a vertical end tangent and ends at its end point. With
+        a free end the spline bulges 1e-5 of chord aft of that point, where y(x) is not
+        single-valued and sorting the samples by x scrambles the surface.
         """
         if side[0, 0] > side[-1, 0]:
             side = side[::-1]
@@ -63,7 +70,19 @@ class Airfoil:
             # the cosine samples are 0.04 % of chord apart at the TE end and would cut a
             # corner sharper than that (the flare into a blunt trailing edge)
             u = np.union1d(u, t)
-            dense = np.column_stack([CubicSpline(t, side[:, 0])(u), CubicSpline(t, side[:, 1])(u)])
+            last = side[-1] - side[-2]
+            if closed_te and abs(last[1]) > abs(last[0]):
+                ends = ("not-a-knot", (1, 0.0)), ("not-a-knot", (1, float(np.sign(last[1]))))
+            else:
+                ends = "not-a-knot", "not-a-knot"
+            dense = np.column_stack([CubicSpline(t, side[:, 0], bc_type=ends[0])(u),
+                                     CubicSpline(t, side[:, 1], bc_type=ends[1])(u)])
+            if ends[0] != "not-a-knot":
+                # y(x) cannot hold what little of the round end still lies aft of its
+                # end point (under 1e-6 of chord): the surface is cut at that x
+                inside = dense[:, 0] < side[-1, 0]
+                inside[-1] = True
+                dense = dense[inside]
         except ImportError:  # pragma: no cover - SciPy is an optional dependency
             dense = side
         order = np.argsort(dense[:, 0], kind="stable")

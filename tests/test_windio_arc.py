@@ -189,3 +189,17 @@ def test_station_airfoil_passes_through_its_points_at_a_blunt_te_corner():
     aft = x > 0.5
     assert np.abs(foil.surface("upper", x) - y)[aft].max() < 1e-9
     assert np.abs(foil.surface("lower", x) + y)[aft].max() < 1e-9
+
+
+def test_round_trailing_end_ends_at_its_end_point():
+    # a circle given on a cosine grid: both surfaces arrive vertically at (1, 0)
+    x = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, 241)))
+    y = np.sqrt(x * (1.0 - x))
+    pts = np.vstack([np.column_stack([x[::-1], y[::-1]]), np.column_stack([x[1:], -y[1:]])])
+    foil = Airfoil(pts, "circle")
+    for side, sign in (("upper", 1.0), ("lower", -1.0)):
+        got = foil.surface(side, x)
+        aft = x > 0.5
+        assert np.abs(got - sign * y)[aft].max() < 1e-9  # through the points, to the end
+        dense = np.linspace(0.999, 1.0, 2001)  # single-valued and falling to the end
+        assert np.all(np.diff(sign * foil.surface(side, dense)) < 0.0)

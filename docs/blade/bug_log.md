@@ -66,6 +66,8 @@ entries are from a retired repo-root log.
 | [BG-040](#bg-040) | `merge_cap_and_skin=True` drops the caps from the shell graph | **Open** |
 | [BG-041](#bg-041) | windIO caps found by layer name only (IEA 10 gets none) | **Open** |
 | [BG-042](#bg-042) | Station airfoil missed its own points at a blunt-TE corner (0.1 mm at 4.5 m chord) | **Fixed** (K9) |
+| [BG-043](#bg-043) | Round trailing end bulged aft of its end point and was scrambled (0.1 mm at 5.4 m chord) | **Fixed** (K9) |
+| [BG-044](#bg-044) | windIO web feet and cap edges interpolated in chord fraction between grid points (up to 10 mm) | **Fixed** (K9) |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -986,3 +988,41 @@ is cut.
 through them. The gap above falls to 0.001 mm. The golden numbers move by at
 most 4e-8 (sections, unit chord) and 4e-7 (blade, sums of coordinates), with no
 change of structure; re-baselined. **Fixed** (K9).
+
+## BG-043
+
+**Symptom.** A root transition section (80 % thick, round at both ends) lofted
+from its own points sits 0.1 mm off them at the trailing end, at any station
+spacing.
+
+**Evidence.** The section's surfaces meet at (1, 0) with a vertical tangent.
+The kernel's upper surface ended at x = 1.0000129 with y = 0.0028 instead of 0,
+and its last samples alternated in y.
+
+**Root cause.** Each surface is splined on its own with a free end. At a round
+end the spline bulges 1e-5 of chord aft of the end point, y(x) is no longer
+single-valued there, and `_monotone` sorts the samples by x, which interleaves
+the two branches of the bulge.
+
+**Fix.** A closed trailing end that a surface reaches steeper than 45 degrees is
+round: its spline gets a vertical end tangent and the surface is cut at the end
+point's x (under 1e-6 of chord is left aft of it). The gap falls to under
+0.001 mm. Golden numbers do not move (no golden section has a round trailing
+end). **Fixed** (K9).
+
+## BG-044
+
+**Symptom.** Web feet placed from windIO arcs are exact at the file's grid
+points and up to 10 mm off between them (61.5 m blade, 30 grid points).
+
+**Evidence.** Distance from the outer-surface points at a web's arcs to the
+kernel's web line: 0.007 mm at grid points, 3 to 10 mm half-way between.
+
+**Root cause.** The first version of `windio_arc` placed the arcs at the grid
+points and interpolated the resulting chord fractions in z. windIO interpolates
+the arc; the chord fraction of a fixed arc is not linear in z where the section
+changes.
+
+**Fix.** `web_feet_fn_from_windio_structure` and
+`cap_side_windows_fn_from_windio_structure` interpolate the arc to z and place
+it on the section at z. The same check gives 0.09 mm at most. **Fixed** (K9).

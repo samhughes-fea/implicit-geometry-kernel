@@ -60,7 +60,7 @@ entries are from a retired repo-root log.
 | [BG-034](#bg-034) | Sliver transition quads where node counts change | Resolved (K8) |
 | [BG-035](#bg-035) | IEA 15 TE wrap folds at 15–22 % span | **Open** (SG-030) |
 | [BG-036](#bg-036) | windIO webs kept root to tip without `start_nd_span` | **Fixed** (K9) |
-| [BG-037](#bg-037) | Webs cross each other between stations (IEA 15, IEA 10) | **Open** |
+| [BG-037](#bg-037) | Webs cross each other between stations (IEA 15, IEA 10) | **Open** (IEA 15 near the web ends only, after K9) |
 | [BG-038](#bg-038) | windIO `nd_arc` read as chord position (IEA 15 webs 25–290 mm off) | **Fixed** (K9) |
 | [BG-039](#bg-039) | Tip closure left out on a single-cell tip at a coarse `h` | **Fixed** (K9) |
 | [BG-040](#bg-040) | `merge_cap_and_skin=True` drops the caps from the shell graph | **Open** |
@@ -903,7 +903,12 @@ stations (station key scan, 41 stations).
 **Root cause.** Not established. Webs cannot cross; this comes from the windIO
 data or how the reader places webs. The mesh adds a station at the crossing
 (BG-032), so the skin stays conforming, but the webs meet there.
-**Open** (data / reader).
+
+**Update (K9).** Most of these came from the reader's arc mapping (BG-038) and
+from webs kept outside their span window (BG-036). With arcs placed on the real
+sections, the same 41-station scan finds no crossing on IEA 10, IEA 3.4, IEA 22
+or NREL 5 MW, and one on IEA 15 near the web ends (z about 113.3 m of 117 m).
+**Open** for that one.
 
 
 ## BG-038

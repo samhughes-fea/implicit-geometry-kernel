@@ -9,6 +9,9 @@
   the IEA 15 MW webs 25 to 290 mm off (BG-038).
   ``web_feet_fn_from_windio_structure``, ``cap_side_windows_fn_from_windio_structure``
   and ``WallRegionGraph.from_windio_structure(..., geo=)`` use it.
+  The arc runs along the two surfaces only: an open blunt base is not among the
+  points, and a base the section lists as points (surfaces that run on down the
+  base to its mid-point) carries no arc length.
 - Two-foot webs: ``BladeGeometry(web_positions=...)`` may return ``(suction,
   pressure)`` pairs; the web mid-line is the line through the two outer-surface
   points. A single fraction per web works as before.

@@ -220,3 +220,18 @@ def test_blunt_base_listed_as_points_keeps_its_corner():
     # straight down the base between the corner and the end point
     xm = 0.5 * (x[-2] + x[-1])
     assert foil.surface("upper", xm) == pytest.approx(0.5 * y[-2], rel=1e-9)
+
+
+def test_arc_runs_corner_to_corner_on_a_section_that_lists_its_base():
+    x = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, 241)))
+    y = 0.6 * (0.2969 * np.sqrt(x) - 0.126 * x - 0.3516 * x**2 + 0.2843 * x**3 - 0.1015 * x**4)
+    y += 0.01 * x**8
+    open_upper, open_lower = y.copy(), -y.copy()  # the surfaces alone: an open base
+    listed_upper, listed_lower = y.copy(), -y.copy()
+    listed_upper[-1] = listed_lower[-1] = 0.0  # each runs on down the base to its mid-point
+    for s in (0.1, 0.26, 0.5, 0.68, 0.9):
+        px, py, side = arc_point(x, listed_upper, listed_lower, s)
+        # the same point as on the surfaces up to their corners (x[-2]), arc for arc
+        qx, qy, q_side = arc_point(x[:-1], open_upper[:-1], open_lower[:-1], s)
+        assert side == q_side
+        assert (px, py) == pytest.approx((qx, qy), abs=1e-12)

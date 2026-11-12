@@ -37,18 +37,42 @@ from implicit_geometry_kernel.blade.windio_nd import (
 ArcMap = Callable[[float, float], tuple[float, str]]
 
 
+def _is_base_segment(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> bool:
+    """Whether ``b -> c`` (``c`` the trailing-edge end point) is a blunt base listed as
+    points rather than the last piece of a surface: it is steeper than 45 degrees and
+    turns more than 20 degrees from ``a -> b``. A round end is as steep but turns
+    little at each point; a sharp trailing edge is not steep."""
+    before, last = b - a, c - b
+    n0, n1 = float(np.linalg.norm(before)), float(np.linalg.norm(last))
+    if n0 <= 0.0 or n1 <= 0.0:
+        return False
+    turn = float(np.arccos(np.clip(float(before @ last) / (n0 * n1), -1.0, 1.0)))
+    return bool(turn > np.radians(20.0) and abs(last[1]) > abs(last[0]))
+
+
 def section_arc_loop(x: np.ndarray, upper: np.ndarray, lower: np.ndarray
                      ) -> tuple[np.ndarray, np.ndarray, int]:
     """The unit-chord OML as an open polyline TE (suction) -> LE -> TE (pressure).
 
     Returns ``(points, arc, i_le)``: the points, their arc fractions (0 at the suction
     trailing edge, 1 at the pressure one) and the leading-edge index.
+
+    The arc runs along the two surfaces only, never along a blunt base. Where the base
+    is open (the surfaces end apart) it is not among the points. Where the section
+    lists it (each surface runs on down the base to a common end point, a corner
+    before the last segment) those two segments have no arc length: the arc is 0 all
+    along the suction half of the base and 1 all along the pressure half.
     """
     x = np.asarray(x, float)
     su = np.column_stack([x[::-1], np.asarray(upper, float)[::-1]])
     pr = np.column_stack([x[1:], np.asarray(lower, float)[1:]])
     pts = np.vstack([su, pr])
     seg = np.linalg.norm(np.diff(pts, axis=0), axis=1)
+    if len(pts) >= 7 and np.linalg.norm(pts[0] - pts[-1]) <= 1e-9:
+        if _is_base_segment(pts[2], pts[1], pts[0]):
+            seg[0] = 0.0
+        if _is_base_segment(pts[-3], pts[-2], pts[-1]):
+            seg[-1] = 0.0
     cum = np.concatenate([[0.0], np.cumsum(seg)])
     return pts, cum / cum[-1], len(x) - 1
 

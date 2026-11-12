@@ -169,3 +169,18 @@ def test_a_single_cell_tip_still_gets_its_tip_closure():
     assert tips
     ring = {k for e in tips for k in e}
     assert len(ring) >= MIN_CELL_NODES
+
+
+def test_station_airfoil_passes_through_its_points_at_a_blunt_te_corner():
+    # a surface that flares into a blunt trailing edge over the last 0.005 % of chord:
+    # sharper than the spacing of the airfoil's own spline samples at that end
+    x = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, 241)))
+    y = 0.6 * (0.2969 * np.sqrt(x) - 0.126 * x - 0.3516 * x**2 + 0.2843 * x**3 - 0.1015 * x**4)
+    y[-1] -= 4e-4  # the corner
+    pts = np.vstack([np.column_stack([x[::-1], y[::-1]]), np.column_stack([x[1:], -y[1:]])])
+    foil = Airfoil(pts, "flared")
+    # the spline's own most forward point sets x = 0 (2e-11 of chord ahead of the given
+    # nose point), so the test is aft of the nose and to 1e-9; the cut corner was 4e-5
+    aft = x > 0.5
+    assert np.abs(foil.surface("upper", x) - y)[aft].max() < 1e-9
+    assert np.abs(foil.surface("lower", x) + y)[aft].max() < 1e-9

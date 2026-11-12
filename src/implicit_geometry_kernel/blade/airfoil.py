@@ -59,6 +59,10 @@ class Airfoil:
             from scipy.interpolate import CubicSpline
 
             u = t[-1] * (1.0 - np.cos(np.linspace(0.0, 0.5 * np.pi, 4001)))  # fine at the LE end
+            # the given points are kept as samples, so the surface passes through them:
+            # the cosine samples are 0.04 % of chord apart at the TE end and would cut a
+            # corner sharper than that (the flare into a blunt trailing edge)
+            u = np.union1d(u, t)
             dense = np.column_stack([CubicSpline(t, side[:, 0])(u), CubicSpline(t, side[:, 1])(u)])
         except ImportError:  # pragma: no cover - SciPy is an optional dependency
             dense = side

@@ -65,6 +65,7 @@ entries are from a retired repo-root log.
 | [BG-039](#bg-039) | Tip closure left out on a single-cell tip at a coarse `h` | **Fixed** (K9) |
 | [BG-040](#bg-040) | `merge_cap_and_skin=True` drops the caps from the shell graph | **Open** |
 | [BG-041](#bg-041) | windIO caps found by layer name only (IEA 10 gets none) | **Open** |
+| [BG-042](#bg-042) | Station airfoil missed its own points at a blunt-TE corner (0.1 mm at 4.5 m chord) | **Fixed** (K9) |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -965,3 +966,23 @@ IEA 10 names its layers by keypoint pair and material.
 
 **Root cause.** Identification by name. A structural rule (the uniaxial band
 between the web feet) or an explicit list is needed. **Open.**
+
+## BG-042
+
+**Symptom.** A blade lofted through stations taken from another surface model
+sits 0.1 mm off that surface at the trailing edge of a 4.5 m chord section,
+however close the stations are.
+
+**Evidence.** At a station, `Airfoil.surface` returned y/c = 0.003659 at the
+last point before the trailing edge where the given point is 0.003701. The
+section flares into a blunt trailing edge over the last 0.005 % of chord.
+
+**Root cause.** `Airfoil._monotone` samples its arc-length spline at 4001
+cosine-spaced points, fine at the leading edge and 0.04 % of chord apart at the
+trailing edge, then interpolates linearly: a corner sharper than that spacing
+is cut.
+
+**Fix.** The given points are kept among the samples, so each surface passes
+through them. The gap above falls to 0.001 mm. The golden numbers move by at
+most 4e-8 (sections, unit chord) and 4e-7 (blade, sums of coordinates), with no
+change of structure; re-baselined. **Fixed** (K9).

@@ -19,6 +19,11 @@
   no web is live the section has no webs and no web-bound caps.
 - A tip (or rib) on a section without webs is always meshed: the skin loop
   closes on at least five nodes (BG-039).
+- A station ``Airfoil`` passes through the points it was given. Its spline was
+  sampled 0.04 % of chord apart at the trailing edge and cut any sharper corner
+  (the flare into a blunt trailing edge: 0.1 mm on a 4.5 m chord, BG-042). The
+  golden numbers move by at most 4e-8 (sections) and 4e-7 (blade, sums of
+  coordinates) and are re-baselined.
 - ``docs/REFACTOR_PLAN.md`` lists the geometry a consumer adapter still has to
   do itself, as kernel to-dos (G1 to G18).
 

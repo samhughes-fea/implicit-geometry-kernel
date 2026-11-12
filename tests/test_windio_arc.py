@@ -141,6 +141,11 @@ def test_windio_web_feet_are_the_oml_points_at_their_arcs():
             assert fs == pytest.approx(arc_point(*sec, web["start_nd_arc"]["values"][0])[0])
             assert fp == pytest.approx(arc_point(*sec, web["end_nd_arc"]["values"][0])[0])
     fn = web_feet_fn_from_windio_structure(_structure(), geo, z_of_s)
+    # between the grid points too: the arc is placed on the section at that z
+    for z in (0.4, 1.1, 2.7):
+        sec = _section(geo, z)
+        fore = min(fn(z), key=lambda p: p[0])
+        assert fore == pytest.approx((arc_point(*sec, 0.36)[0], arc_point(*sec, 0.66)[0]), abs=1e-12)
     assert len(fn(1.0)) == 2  # both webs live inboard
     assert len(fn(2.5)) == 1  # the aft web ends at 60 % span
     pairs = fn(1.0)

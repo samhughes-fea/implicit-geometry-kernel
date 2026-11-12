@@ -84,6 +84,13 @@ def _clip_z(z: float, geo) -> float:
     return float(np.clip(z, z0, z1))
 
 
+def _grid_of_z(z: float, z_table: np.ndarray | None) -> float:
+    """The file's span grid value at z (the inverse of ``z_of_s``)."""
+    if z_table is None:
+        return float(z)
+    return float(np.interp(float(z), z_table[:, 1], z_table[:, 0]))
+
+
 WebSeries = tuple[str, np.ndarray, np.ndarray, "tuple[float, float] | None"]
 
 
@@ -130,21 +137,37 @@ def web_feet_fn_from_windio_structure(structure: Mapping[str, Any], geo,
                                       z_of_s: np.ndarray | Sequence | None = None,
                                       ) -> Callable[[float], tuple[tuple[float, float], ...]] | None:
     """``f(z) ->`` the ``(suction, pressure)`` chord fractions of each web live at z,
-    LE to TE (``BladeGeometry(web_positions=...)``), interpolated linearly in z between
-    the grid points of :func:`web_feet_series_from_windio_structure`."""
-    series = web_feet_series_from_windio_structure(structure, geo, z_of_s)
-    if series is None:
+    LE to TE (``BladeGeometry(web_positions=...)``).
+
+    The file's arcs are interpolated to z (linear on its span grid, as windIO defines
+    them) and placed on the section at z, so the feet are the outer-surface points at
+    those arcs at every z, not only at the grid points: a chord fraction interpolated
+    between grid points is off by millimetres where the section changes between them."""
+    webs = [w for w in (structure.get("webs") or ()) if isinstance(w, Mapping)]
+    if not webs:
         return None
+    anchors = _anchors_by_name(structure)
+    arc = section_arc_map(geo)
+    z_table = None if z_of_s is None else np.asarray(z_of_s, float)
+    rows = []
+    for web in webs:
+        start, end = _web_start_end(web, anchors)
+        if start is None or end is None:
+            return None
+        rows.append((start, end, web_span_extent(web, anchors)))
 
     def at(z: float) -> tuple[tuple[float, float], ...]:
-        z = float(z)
+        g = _grid_of_z(float(z), z_table)
+        zc = _clip_z(float(z), geo)
         out = []
-        for _name, zs, feet, window in series:
-            if window is not None and not window[0] - 1e-12 <= z <= window[1] + 1e-12:
+        for start, end, extent in rows:
+            if extent is not None and not extent[0] - 1e-12 <= g <= extent[1] + 1e-12:
                 continue
-            f = (float(np.interp(z, zs, feet[:, 0])), float(np.interp(z, zs, feet[:, 1])))
-            if 0.0 < f[0] < 1.0 and 0.0 < f[1] < 1.0:
-                out.append(f)
+            a = arc(zc, float(np.interp(g, *start)))
+            b = arc(zc, float(np.interp(g, *end)))
+            su, pr = (a, b) if a[1] == "suction" else (b, a)
+            if 0.0 < su[0] < 1.0 and 0.0 < pr[0] < 1.0:
+                out.append((su[0], pr[0]))
         out.sort(key=lambda p: p[0] + p[1])
         return tuple(out)
 
@@ -212,14 +235,46 @@ def cap_side_windows_fn_from_windio_structure(
 ) -> Callable[[float], dict[str, tuple[float, float]] | None] | None:
     """``f(z) -> {"suction": (lo, hi), "pressure": (lo, hi)}`` (``BladeGeometry
     (cap_windows=...)``): each side's cap window, the union of that side's cap layers
-    live at z (:func:`cap_side_series_from_windio_structure`); ``None`` where a side has
-    none, and ``None`` overall when the file has no caps on both sides."""
+    live at z, their arcs interpolated to z and placed on the section at z (as
+    :func:`web_feet_fn_from_windio_structure`); ``None`` where a side has none, and
+    ``None`` overall when the file has no caps on both sides."""
     series = cap_side_series_from_windio_structure(structure, geo, z_of_s)
     if not {s for s, *_ in series} >= {"suction", "pressure"}:
         return None
+    anchors = _anchors_by_name(structure)
+    arc = section_arc_map(geo)
+    z_table = None if z_of_s is None else np.asarray(z_of_s, float)
+    rows = []
+    for layer in structure.get("layers") or ():
+        if not isinstance(layer, Mapping) or not _is_cap_layer(layer):
+            continue
+        start = resolve_nd_arc_table(layer.get("start_nd_arc"), anchors)
+        end = resolve_nd_arc_table(layer.get("end_nd_arc"), anchors)
+        if start is None or end is None:
+            continue
+        grid = np.unique(np.concatenate([start[0], end[0]]))
+        sides = {arc(_clip_z(zg, geo), float(np.interp(g, *t)))[1]
+                 for g, zg in zip(grid, _grid_to_z(grid, z_table)) for t in (start, end)}
+        if len(sides) == 1:  # as the series: a band round the leading edge is not a cap
+            rows.append((start, end, float(grid[0]), float(grid[-1])))
 
     def at(z: float) -> dict[str, tuple[float, float]] | None:
-        out = _side_windows_at(series, float(z))
+        g = _grid_of_z(float(z), z_table)
+        zc = _clip_z(float(z), geo)
+        out: dict[str, tuple[float, float]] = {}
+        for start, end, g0, g1 in rows:
+            if not g0 - 1e-12 <= g <= g1 + 1e-12:
+                continue
+            p = arc(zc, float(np.interp(g, *start)))
+            q = arc(zc, float(np.interp(g, *end)))
+            if p[1] != q[1]:
+                continue
+            lo, hi = min(p[0], q[0]), max(p[0], q[0])
+            if hi - lo <= 1e-6:
+                continue
+            if p[1] in out:
+                lo, hi = min(lo, out[p[1]][0]), max(hi, out[p[1]][1])
+            out[p[1]] = (lo, hi)
         return out if set(out) == {"suction", "pressure"} else None
 
     return at

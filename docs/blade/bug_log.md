@@ -59,8 +59,16 @@ entries are from a retired repo-root log.
 | [BG-033](#bg-033) | Side arcs walked through the other TE corner (IEA 15) | **Fixed** |
 | [BG-034](#bg-034) | Sliver transition quads where node counts change | Resolved (K8) |
 | [BG-035](#bg-035) | IEA 15 TE wrap folds at 15–22 % span | **Open** (SG-030) |
-| [BG-036](#bg-036) | windIO webs kept root to tip without `start_nd_span` | **Open** |
-| [BG-037](#bg-037) | Webs cross each other between stations (IEA 15, IEA 10) | **Open** |
+| [BG-036](#bg-036) | windIO webs kept root to tip without `start_nd_span` | **Fixed** (K9) |
+| [BG-037](#bg-037) | Webs cross each other between stations (IEA 15, IEA 10) | **Open** (IEA 15 near the web ends only, after K9) |
+| [BG-038](#bg-038) | windIO `nd_arc` read as chord position (IEA 15 webs 25–290 mm off) | **Fixed** (K9) |
+| [BG-039](#bg-039) | Tip closure left out on a single-cell tip at a coarse `h` | **Fixed** (K9) |
+| [BG-040](#bg-040) | `merge_cap_and_skin=True` drops the caps from the shell graph | **Open** |
+| [BG-041](#bg-041) | windIO caps found by layer name only (IEA 10 gets none) | **Open** |
+| [BG-042](#bg-042) | Station airfoil missed its own points at a blunt-TE corner (0.1 mm at 4.5 m chord) | **Fixed** (K9) |
+| [BG-043](#bg-043) | Round trailing end bulged aft of its end point and was scrambled (0.1 mm at 5.4 m chord) | **Fixed** (K9) |
+| [BG-044](#bg-044) | windIO web feet and cap edges interpolated in chord fraction between grid points (up to 10 mm) | **Fixed** (K9) |
+| [BG-045](#bg-045) | A partial-span web started and ended at the nearest mesh station, not at its own ends | **Fixed** (K9) |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -883,9 +891,10 @@ reader during K7: a web with no span keys gets the full span.
 **Root cause.** The reader takes a web's span extent only from explicit span
 keys, not from its `nd_arc` grid narrowed to the plane-intersection offset grid.
 
-**Fix.** Patch drafted; applying it breaks the IEA 10 root ("web_x_positions is
-empty … continuous_box"), which needs a caps-with-no-live-webs root layout path.
-**Open** (own PR after K7).
+**Fix.** `windio_nd.web_span_extent`: the span window is the web's `nd_arc`
+grid, narrowed to the offset grid of a plane-intersection anchor. Where no web
+is live (the IEA 10 root) the layout steps down to a section without webs and
+without web-bound caps (`loft_layout._layout_at`). **Fixed** (K9).
 
 ## BG-037
 
@@ -898,4 +907,145 @@ stations (station key scan, 41 stations).
 **Root cause.** Not established. Webs cannot cross; this comes from the windIO
 data or how the reader places webs. The mesh adds a station at the crossing
 (BG-032), so the skin stays conforming, but the webs meet there.
-**Open** (data / reader).
+
+**Update (K9).** Most of these came from the reader's arc mapping (BG-038) and
+from webs kept outside their span window (BG-036). With arcs placed on the real
+sections, the same 41-station scan finds no crossing on IEA 10, IEA 3.4, IEA 22
+or NREL 5 MW, and one on IEA 15 near the web ends (z about 113.3 m of 117 m).
+**Open** for that one.
+
+
+## BG-038
+
+**Symptom.** Webs and cap edges read from windIO sit at the wrong chord
+position: IEA 15 webs 25 to 290 mm from the points the file gives.
+
+**Evidence.** The OML point at a web's `nd_arc`, measured along the section's
+own outline, against the kernel web's foot at the same span.
+
+**Root cause.** `windio_nd` maps arc to chord with `x/c = 1 - 2 min(s, 1 - s)`:
+arc length taken as chord position, leading edge at `s = 0.5`. The same value
+was used for both feet of a web (one chord position) and for both sides' caps
+(one window).
+
+**Fix.** `blade/windio_arc.py` measures each arc on the section the blade has
+at that span. Webs take two feet (`web_positions` pairs; the web mid-line is the
+line through the two OML points) and each side keeps its own cap window
+(`CapPlacementRule.from_side_windows`). `WallRegionGraph.from_windio_structure`
+takes `geo=` to place its anchors the same way. **Fixed** (K9).
+
+## BG-039
+
+**Symptom.** IEA 10 at `h = 1` m meshes without a tip closure once its webs
+stop before the tip (BG-036).
+
+**Evidence.** The tip is one cell; `region_counts` gave its two loop regions
+three nodes each, a 4-node ring, and `polygon_mesh_ring` fills only rings of
+five nodes or more (it returned no faces, without an error).
+
+**Root cause.** The count rule had a minimum per region but none per closure
+cell. A cell bounded by a web always has six nodes or more; a cell with no web
+is the bare loop.
+
+**Fix.** `region_counts` closes a web-less loop on at least `MIN_CELL_NODES`
+(5) nodes; the longest region takes the extra edges. **Fixed** (K9).
+
+## BG-040
+
+**Symptom.** With `merge_cap_and_skin=True` the shell graph has no cap
+partitions, and one cap run meshes a degenerate triangle at `h = 0.25`.
+
+**Evidence.** Seen building a parametric blade with stacked caps; with the
+option off the caps are there and the mesh is clean.
+
+**Root cause.** Not established. **Open.**
+
+## BG-041
+
+**Symptom.** The windIO reader finds no spar caps on IEA 10.
+
+**Evidence.** Caps are taken from layers whose name contains `spar` or `cap`;
+IEA 10 names its layers by keypoint pair and material.
+
+**Root cause.** Identification by name. A structural rule (the uniaxial band
+between the web feet) or an explicit list is needed. **Open.**
+
+## BG-042
+
+**Symptom.** A blade lofted through stations taken from another surface model
+sits 0.1 mm off that surface at the trailing edge of a 4.5 m chord section,
+however close the stations are.
+
+**Evidence.** At a station, `Airfoil.surface` returned y/c = 0.003659 at the
+last point before the trailing edge where the given point is 0.003701. The
+section flares into a blunt trailing edge over the last 0.005 % of chord.
+
+**Root cause.** `Airfoil._monotone` samples its arc-length spline at 4001
+cosine-spaced points, fine at the leading edge and 0.04 % of chord apart at the
+trailing edge, then interpolates linearly: a corner sharper than that spacing
+is cut.
+
+**Fix.** The given points are kept among the samples, so each surface passes
+through them. The gap above falls to 0.001 mm. The golden numbers move by at
+most 4e-8 (sections, unit chord) and 4e-7 (blade, sums of coordinates), with no
+change of structure; re-baselined. **Fixed** (K9).
+
+## BG-043
+
+**Symptom.** A root transition section (80 % thick, round at both ends) lofted
+from its own points sits 0.1 mm off them at the trailing end, at any station
+spacing.
+
+**Evidence.** The section's surfaces meet at (1, 0) with a vertical tangent.
+The kernel's upper surface ended at x = 1.0000129 with y = 0.0028 instead of 0,
+and its last samples alternated in y.
+
+**Root cause.** Each surface is splined on its own with a free end. At a round
+end the spline bulges 1e-5 of chord aft of the end point, y(x) is no longer
+single-valued there, and `_monotone` sorts the samples by x, which interleaves
+the two branches of the bulge.
+
+**Fix.** A closed trailing end that a surface reaches steeper than 45 degrees is
+round: its spline gets a vertical end tangent and the surface is cut at the end
+point's x (under 1e-6 of chord is left aft of it). The gap falls to under
+0.001 mm. A blunt base listed as points (the surface runs on down the
+base to its mid-point: 11.5 mm off on a 5.4 m flatback section) is the same
+defect at a corner: the corner is found by the jump in turning angle at the
+last point (over 20 degrees and three times the turn before it), the spline
+stops there and the base segment is straight. Golden numbers do not move (no golden section has a round trailing
+end). **Fixed** (K9).
+
+## BG-044
+
+**Symptom.** Web feet placed from windIO arcs are exact at the file's grid
+points and up to 10 mm off between them (61.5 m blade, 30 grid points).
+
+**Evidence.** Distance from the outer-surface points at a web's arcs to the
+kernel's web line: 0.007 mm at grid points, 3 to 10 mm half-way between.
+
+**Root cause.** The first version of `windio_arc` placed the arcs at the grid
+points and interpolated the resulting chord fractions in z. windIO interpolates
+the arc; the chord fraction of a fixed arc is not linear in z where the section
+changes.
+
+**Fix.** `web_feet_fn_from_windio_structure` and
+`cap_side_windows_fn_from_windio_structure` interpolate the arc to z and place
+it on the section at z. The same check gives 0.09 mm at most. **Fixed** (K9).
+
+## BG-045
+
+**Symptom.** IEA 15 at `h = 1` m: the webs start at z = 12.0 m and end at
+110.0 m in the mesh; the file starts them at 11.939 m and ends them at
+109.837 m.
+
+**Evidence.** `forced_stations()` was empty for the blade; the web nodes'
+z-range was the first and last mesh station inside the web's window.
+
+**Root cause.** Two things. The ends of a partial-span web were not forced
+stations. And a span window compared z to 1e-12 while stations are keyed at
+`round(z, 9)`, so a window end added as a station fell outside its own window
+after rounding (by 2e-10 here).
+
+**Fix.** `forced_stations()` includes the wall-region graph's web window ends,
+and span windows include their ends to the station key resolution (1e-9).
+**Fixed** (K9).

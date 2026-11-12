@@ -174,7 +174,9 @@ def test_g6_iea10_tip_section_at_builds_or_drops_web():
     z_tip = float(geo.stations[-1].z)
     cut = geo.section_at(z_tip)
     assert cut.walls
-    assert any(w.kind == "web" for w in cut.walls) or cut.dropped_webs
+    # the file's webs end at 92.5 % span: the tip is a skin loop with its closure
+    assert not any(w.kind == "web" for w in cut.walls) and not cut.dropped_webs
+    assert cut.tip_closure is not None
 
 
 # --- G7 ----------------------------------------------------------------------
@@ -202,7 +204,7 @@ def test_g7_section_at_lru_and_lofted_aabb():
 def test_g8_example09_reads_windio_web_positions():
     src = (ROOT / "examples" / "blade" / "08_reference_blades" / "reference_blades.py").read_text(encoding="utf-8")
     assert "web_positions=(0.22, 0.50)" not in src
-    assert "web_positions_fn_from_windio_structure" in src
+    assert "web_feet_fn_from_windio_structure" in src
     assert "cap_windows=(cap_windows if not web_positions else None)" not in src
 
 

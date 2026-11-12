@@ -35,7 +35,7 @@ def test_nrel_transition_section_at():
     assert "skin" in kinds
 
 
-def _assert_unique_closed_loop(cut):
+def _assert_unique_closed_loop(cut, needs_caps=True):
     g = cut.shell_graph()
     names = [r.name for r in g.loop]
     assert names, "empty skin loop"
@@ -48,7 +48,8 @@ def _assert_unique_closed_loop(cut):
         for i in (0, -1):
             d = float(np.min(np.linalg.norm(loop_xy - web.points[i, :2], axis=1)))
             assert d <= tol, (web.name, i, d)
-    assert any(r.kind == "cap" for r in g.loop)
+    if g.webs or needs_caps:
+        assert any(r.kind == "cap" for r in g.loop)
 
 
 _08_CASES = (
@@ -132,7 +133,11 @@ def test_reference_blades_closed_conformal_loop_at_landmarks(rel):
     ns = _08_ns()
     _name, geo, _ = ns["load_windio"](ns["catalogue_yaml"](_catalogue(), rel))
     for _key, z, _label in ns["_landmarks"](geo):
-        _assert_unique_closed_loop(geo.section_at(float(z)))
+        # caps bound by the webs exist only where webs are live; caps the file
+        # places itself (cap windows) wherever it places them
+        own = getattr(geo, "_cap_windows_fn", None)
+        _assert_unique_closed_loop(geo.section_at(float(z)),
+                                   needs_caps=own is not None and own(float(z)) is not None)
 
 
 @pytest.mark.skipif(_catalogue() is None, reason="reference-blades catalogue not cloned")
@@ -201,10 +206,10 @@ def test_iea10_cylinder_has_spar_webs_not_te_plug():
     _name, geo, _ = ns["load_windio"](
         ns["catalogue_yaml"](_catalogue(), "iea3.4_iea10/IEA-10-198-RWT.yaml")
     )
-    z0 = float(geo.stations[0].z)
+    z0, span = float(geo.stations[0].z), float(geo.stations[-1].z) - float(geo.stations[0].z)
     names = []
-    for z in (z0, z0 + 0.02 * (float(geo.stations[-1].z) - z0)):
-        live = []
+    # the file's fore and rear webs start at 3 % span, the TE web at 5 %
+    for z in (z0, z0 + 0.02 * span, z0 + 0.04 * span):
         cut = geo.section_at(float(z))
         from implicit_geometry_kernel.blade.topology import _cut_tc
         from implicit_geometry_kernel.blade.topology.ribs import _live_web_fracs
@@ -214,7 +219,8 @@ def test_iea10_cylinder_has_spar_webs_not_te_plug():
             live_web_fracs=_live_web_fracs(cut) or None, t_c=_cut_tc(cut),
         )
         names.append(tuple(w.name for w in t.webs))
-    assert names[0] == ("fore_web",)
+    assert names[0] == () and names[1] == ()
+    assert set(names[2]) == {"fore_web", "rear_web"}
     assert all("web_te" not in n or len(n) >= 2 for n in names)
 
 
@@ -254,7 +260,8 @@ def _span_metrics_for(geo, n=9):
     "rel, checks",
     [
         ("iea3.4_iea10/IEA-10-198-RWT.yaml", {
-            "n_web_clusters": 1, "n_coverage_holes": 0,
+            # the file's webs start at 3 % span: none at the root station
+            "n_web_clusters": 0, "n_coverage_holes": 0,
             "max_te_oml": 0.10, "max_te_chatter": 0.05,
         }),
         ("iea15/IEA-15-240-RWT.yaml", {"n_coverage_holes": 0}),
@@ -294,8 +301,7 @@ def test_iea10_loft_keepset_matches_intercept():
     zs = np.unique(np.concatenate([np.linspace(z0, z1, 11), [20.0]]))
     tpls = templates_along(geo, zs, n_chord=8)
     root = tpls[0]
-    assert {w.index for w in root.webs} == {0}
-    assert all(w.name == "fore_web" or w.index == 0 for w in root.webs)
+    assert not root.webs  # the file's webs start at 3 % span
     mid = next(t for t in tpls if abs(float(t.z) - 20.0) < 0.5)
     assert {w.index for w in mid.webs} == {0, 1, 2}
     assert {w.name for w in mid.webs} >= {"fore_web", "rear_web", "web_te"}
@@ -304,7 +310,10 @@ def test_iea10_loft_keepset_matches_intercept():
         dropped = {int(i) for i in cut.dropped_web_indices}
         expect = set(range(n_webs)) - dropped
         got = {int(w.index) for w in tmpl.webs}
-        assert got == expect, (tmpl.z, got, expect, dropped)
+        # a web is in the template where it is live (its span window) and not dropped
+        assert got <= expect, (tmpl.z, got, expect, dropped)
+        if 0.05 * (z1 - z0) <= float(tmpl.z) - z0 <= 0.475 * (z1 - z0):
+            assert got == expect, (tmpl.z, got, expect, dropped)
         n_int = len(cut.shell_graph().webs)
         assert len(tmpl.webs) == n_int, (tmpl.z, len(tmpl.webs), n_int)
         samples = sample_region_polylines(cut, cut.shell_graph(), tmpl, geo.region_graph)
@@ -313,7 +322,7 @@ def test_iea10_loft_keepset_matches_intercept():
 
 
 @pytest.mark.skipif(_catalogue() is None, reason="reference-blades catalogue not cloned")
-def test_iea34_fore_web_at_5985():
+def test_iea34_fore_web_up_to_its_end():
     from implicit_geometry_kernel.blade.topology import (
         sample_region_polylines,
         section_cut_near,
@@ -324,7 +333,9 @@ def test_iea34_fore_web_at_5985():
     _name, geo, _ = ns["load_windio"](
         ns["catalogue_yaml"](_catalogue(), "iea3.4_iea10/IEA-3.4-130-RWT.yaml")
     )
-    zs = (59.5, 59.85, 60.2)
+    # the file's webs end at 94 % span (z = 59.22 m)
+    assert not templates_along(geo, (59.85,), n_chord=8)[0].webs
+    zs = (58.5, 58.85, 59.2)
     tpls = templates_along(geo, zs, n_chord=8)
     assert len(tpls) == 3
     for tmpl in tpls:

@@ -58,6 +58,25 @@ def mesh_edge_rgba(n: int):
     return np.broadcast_to(to_rgba(MESH_EDGE, MESH_EDGE_ALPHA), (max(int(n), 0), 4)).copy()
 
 
+def add_faces_3d(ax, faces, **kwargs):
+    """Add polygons to a 3D axes and set the data limits from their real vertices.
+
+    Matplotlib pads faces of unequal vertex count (loft quads next to rib polygons) into
+    one array with ``np.empty`` and autoscales on the whole array, padding included, so
+    the limits pick up whatever was in that memory: wrong limits, or "Axis limits cannot
+    be NaN or Inf". The collection is therefore added without autoscaling and the limits
+    come from the vertices themselves.
+    """
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+    faces = [np.asarray(f, float) for f in faces]
+    coll = Poly3DCollection(faces, **kwargs)
+    ax.add_collection3d(coll, autolim=False)
+    pts = np.concatenate(faces)
+    ax.auto_scale_xyz(pts[:, 0], pts[:, 1], pts[:, 2], had_data=ax.has_data())
+    return coll
+
+
 def is_rib_role(role: str) -> bool:
     key = str(role).lower()
     return "rib" in key or key.startswith("tip")

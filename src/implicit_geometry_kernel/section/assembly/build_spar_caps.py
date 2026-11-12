@@ -250,77 +250,78 @@ def _caps_fixed_band(
         x_lo = x_c - half
         x_hi = x_c + half
         extent_anchor = "band_center"
-    x_lo, x_hi, cap_h_upper, cap_h_lower, _clamp_b = cap_feasibility_clamp(
-        airfoil_sdf,
-        skin_thickness,
-        x_lo,
-        x_hi,
-        cap_h_upper,
-        cap_h_lower,
-        y_search=y_search,
-        phi_inner_ref=phi_inner_ref,
-        aft_half_depth_rule=False,
-        extent_anchor=extent_anchor,
-        center_x=float(x_c),
-    )
-    cap_h_upper, cap_h_lower = snap_cap_heights(cap_h_upper, cap_h_lower, spar_cap_ply_pitch_m)
-    _camber_b = _clamp_b.get("camber_xy")
-    strip_b = None
-    strip_b_fw: dict[str, Any] = {}
-    if all_flapwise and c_station is not None:
-        y_tc, y_bc = inner_y_at_x(
+    chord_m = float(getattr(airfoil_sdf, "chord", 1.0))
+    if rule.side_windows is not None:
+        # each side's cap in its own window (a published layup whose suction and
+        # pressure caps differ); each band is clamped with both cap heights
+        bands = [(min(w) * chord_m, max(w) * chord_m) for w in rule.side_windows]
+        extent_anchor = "deepest"
+    else:
+        bands = [(x_lo, x_hi), (x_lo, x_hi)]
+    sides: list[tuple] = []
+    for b_lo, b_hi in bands:
+        if sides and rule.side_windows is None:
+            sides.append(sides[0])  # one band for both sides: clamped once
+            break
+        b_c = float(x_c) if rule.side_windows is None else 0.5 * (b_lo + b_hi)
+        sides.append((b_c, *cap_feasibility_clamp(
             airfoil_sdf,
             skin_thickness,
-            x_c,
+            b_lo,
+            b_hi,
+            cap_h_upper,
+            cap_h_lower,
             y_search=y_search,
-            phi_inner=phi_inner_ref,
+            phi_inner_ref=phi_inner_ref,
+            aft_half_depth_rule=False,
+            extent_anchor=extent_anchor,
+            center_x=b_c,
+        )))
+    (c_u, x_lo_u, x_hi_u, h_u, _, info_u), (c_l, x_lo_l, x_hi_l, _, h_l, info_l) = sides
+    cap_h_upper, cap_h_lower = snap_cap_heights(h_u, h_l, spar_cap_ply_pitch_m)
+    out = []
+    for surface, label, centre, lo, hi, height, info in (
+            ("suction_surface", ComponentLabel.SPAR_CAP_SUCTION_SURFACE, c_u, x_lo_u, x_hi_u,
+             cap_h_upper, info_u),
+            ("pressure_surface", ComponentLabel.SPAR_CAP_PRESSURE_SURFACE, c_l, x_lo_l, x_hi_l,
+             cap_h_lower, info_l)):
+        camber = info.get("camber_xy")
+        strip = None
+        strip_fw: dict[str, Any] = {}
+        if all_flapwise and c_station is not None:
+            y_tc, y_bc = inner_y_at_x(
+                airfoil_sdf,
+                skin_thickness,
+                centre,
+                y_search=y_search,
+                phi_inner=phi_inner_ref,
+            )
+            cy_c = 0.5 * (y_tc + y_bc)
+            c_lo = web_station_projection(nx, ny, lo, cy_c)
+            c_hi = web_station_projection(nx, ny, hi, cy_c)
+            strip = _parallel_web_strip_clip(nx, ny, c_lo, c_hi)
+            strip_fw = flapwise_strip_params(nx, ny, c_lo, c_hi)
+        wall = _cap_wall(
+            skin_thickness=skin_thickness,
+            x_start=lo,
+            x_end=hi,
+            cap_height=height,
+            surface=surface,
+            fw=strip_fw,
+            camber_xy=camber,
         )
-        cy_c = 0.5 * (y_tc + y_bc)
-        c_lo = web_station_projection(nx, ny, x_lo, cy_c)
-        c_hi = web_station_projection(nx, ny, x_hi, cy_c)
-        strip_b = _parallel_web_strip_clip(nx, ny, c_lo, c_hi)
-        strip_b_fw = flapwise_strip_params(nx, ny, c_lo, c_hi)
-    wall_u = _cap_wall(
-        skin_thickness=skin_thickness,
-        x_start=x_lo,
-        x_end=x_hi,
-        cap_height=cap_h_upper,
-        surface="suction_surface",
-        fw=strip_b_fw,
-        camber_xy=_camber_b,
-    )
-    wall_l = _cap_wall(
-        skin_thickness=skin_thickness,
-        x_start=x_lo,
-        x_end=x_hi,
-        cap_height=cap_h_lower,
-        surface="pressure_surface",
-        fw=strip_b_fw,
-        camber_xy=_camber_b,
-    )
-    cap_upper = _register_cap_side(
-        wall=wall_u,
-        label=ComponentLabel.SPAR_CAP_SUCTION_SURFACE,
-        recipes=recipes,
-        unrotated=unrotated,
-        airfoil_sdf=airfoil_sdf,
-        airfoil_expr_node=airfoil_expr_node,
-        camber_xy=_camber_b,
-        strip_clip=strip_b,
-        web_union=web_union,
-    )
-    cap_lower = _register_cap_side(
-        wall=wall_l,
-        label=ComponentLabel.SPAR_CAP_PRESSURE_SURFACE,
-        recipes=recipes,
-        unrotated=unrotated,
-        airfoil_sdf=airfoil_sdf,
-        airfoil_expr_node=airfoil_expr_node,
-        camber_xy=_camber_b,
-        strip_clip=strip_b,
-        web_union=web_union,
-    )
-    return cap_upper, cap_lower
+        out.append(_register_cap_side(
+            wall=wall,
+            label=label,
+            recipes=recipes,
+            unrotated=unrotated,
+            airfoil_sdf=airfoil_sdf,
+            airfoil_expr_node=airfoil_expr_node,
+            camber_xy=camber,
+            strip_clip=strip,
+            web_union=web_union,
+        ))
+    return out[0], out[1]
 
 
 def _caps_per_web_pads(

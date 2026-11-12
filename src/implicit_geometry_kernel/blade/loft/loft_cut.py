@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 from implicit_geometry_kernel.blade.cut import CellPolygon, SectionCut, SectionWall, _twist_offset
 from implicit_geometry_kernel.blade.loft.loft_tables import _FORK_TWIST_SIGN, _match, _morph_surfaces
+from implicit_geometry_kernel.contract.errors import InfeasibleSectionGeometry
 from implicit_geometry_kernel.section.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M as _MIN_SKIN,
     MIN_REALISTIC_SPAR_WALL_THICKNESS_M as _MIN_CAP,
@@ -32,6 +33,41 @@ def _min_thickness_scale(t_skin: float, t_cap: float, t_web: float) -> float:
     if k > 1.0:
         k *= 1.0 + 1e-9
     return k
+
+
+#: how far inside its outer-mould-line foot a two-foot web's axis point is placed, in skin
+#: thicknesses along the web's line: past the skin mid-surface (half a skin thickness in
+#: along the wall normal) for webs within about 75 degrees of the normal, and within the
+#: section builder's search for the skin mid-surface from it (four skin thicknesses)
+_FOOT_AXIS_DEPTH = 2.0
+
+
+def _with_web_axes(layout, feet, x: np.ndarray, upper: np.ndarray, lower: np.ndarray,
+                   chord: float, skin: float):
+    """``layout`` with each web the line through the OML points at its two feet.
+
+    ``feet`` are ``(suction, pressure)`` chord fractions; ``x``, ``upper``, ``lower`` the
+    unit-chord surfaces of the section, ``chord`` its (scaled) chord and ``skin`` its
+    (scaled) skin thickness. The section builder extends a web from its axis points to
+    the skin mid-surface along the line, so each axis point is taken on the line just
+    inside its foot (``_FOOT_AXIS_DEPTH`` skin thicknesses).
+    """
+    import dataclasses
+
+    axes = []
+    for f_su, f_pr in feet:
+        top = np.array([f_su, float(np.interp(f_su, x, upper))]) * chord
+        bot = np.array([f_pr, float(np.interp(f_pr, x, lower))]) * chord
+        span = float(np.linalg.norm(top - bot))
+        if span <= 2.0 * _FOOT_AXIS_DEPTH * skin:
+            raise InfeasibleSectionGeometry(
+                f"web feet {(f_su, f_pr)} are {span:.4g} m apart, too close for a "
+                f"skin of {skin:.4g} m")
+        u = (bot - top) / span
+        a = top + _FOOT_AXIS_DEPTH * skin * u
+        b = bot - _FOOT_AXIS_DEPTH * skin * u
+        axes.append(((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))))
+    return dataclasses.replace(layout, web_axes_m=tuple(axes))
 
 
 class LoftCutMixin:
@@ -110,6 +146,9 @@ class LoftCutMixin:
         # frozen geometry code is used as it is.
         k = _min_thickness_scale(t_skin, t_cap, t_web)
         twist_rad = _FORK_TWIST_SIGN * np.radians(twist)
+        feet = self._web_feet_at(z)
+        if feet is not None:
+            layout = _with_web_axes(layout, feet, x, upper, lower, chord * k, t_skin * k)
         web_offsets = None
         if self.web_offsets is not None:
             web_offsets = tuple(v * k for v in self.web_offsets)

@@ -21,6 +21,7 @@ from implicit_geometry_kernel.blade.windio_nd import (  # noqa: F401
     web_position_table_from_windio_structure,
     web_positions_fn_from_windio_structure,
     web_positions_from_windio_structure,
+    web_span_extent,
 )
 
 def cap_chord_windows_from_windio_structure(
@@ -141,10 +142,7 @@ def web_span_windows_from_windio_structure(
     out: list[tuple[float, float] | None] = []
     for i in order:
         web = webs[int(i)] if int(i) < len(webs) else {}
-        host = anchors.get(str(web.get("name", "")), web)
-        extent = _span_extent(host) if isinstance(host, Mapping) else None
-        if extent is None:
-            extent = _span_extent(web) if isinstance(web, Mapping) else None
+        extent = web_span_extent(web, anchors) if isinstance(web, Mapping) else None
         if extent is None:
             out.append(None)
         else:

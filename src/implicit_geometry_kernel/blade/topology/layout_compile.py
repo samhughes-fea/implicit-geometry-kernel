@@ -206,7 +206,11 @@ def graph_from_windio_structure(
     *,
     te_arc: float = TE_ARC,
     min_gap: float = MIN_GAP,
+    geo=None,
 ) -> WallRegionGraph:
+    if geo is not None:
+        return _graph_from_windio_on_sections(cls, structure, z_of_s, geo, te_arc=te_arc,
+                                              min_gap=min_gap)
     from implicit_geometry_kernel.blade.windio import (
         cap_window_table_from_windio_structure,
         web_position_table_from_windio_structure,
@@ -245,6 +249,42 @@ def graph_from_windio_structure(
     else:
         _, regions, _, cap_windows, rule, pad = layout_parts(
             tuple(w.at(0.0) for w in webs) if webs else (), None)
+    return cls(
+        tuple(anchors), regions, tuple(webs), te_arc=float(te_arc),
+        min_gap=float(min_gap), cap_windows=cap_windows, cap_placement=rule, cap_pad=pad,
+    )
+
+
+def _graph_from_windio_on_sections(cls: type[WallRegionGraph], structure: Mapping, z_of_s, geo,
+                                   *, te_arc: float, min_gap: float) -> WallRegionGraph:
+    """As :func:`graph_from_windio_structure`, with the file's arcs placed on ``geo``'s
+    sections (:mod:`implicit_geometry_kernel.blade.windio_arc`): each web anchor is the
+    mid-point of its two feet, the cap anchors the union of the two sides' windows."""
+    from implicit_geometry_kernel.blade.windio_arc import (
+        cap_union_table_from_windio_structure,
+        web_feet_series_from_windio_structure,
+    )
+
+    anchors: list[Anchor] = [Anchor("le", 0.0), Anchor("te", 1.0)]
+    webs: list[WebMember] = []
+    series = web_feet_series_from_windio_structure(structure, geo, z_of_s) or []
+    order = sorted(range(len(series)), key=lambda j: float(np.median(series[j][2].sum(axis=1))))
+    for j, k in enumerate(order):
+        name, zs, feet, window = series[k]
+        z0, z1 = (None, None) if window is None else window
+        law = (zs, 0.5 * feet.sum(axis=1)) if len(zs) > 1 else float(0.5 * feet[0].sum())
+        webs.append(WebMember(int(j), law, z0, z1, name=name))
+        anchors.append(Anchor(f"web_{j}", law, z0, z1))
+    web_fracs = tuple(float(np.median(0.5 * series[k][2].sum(axis=1))) for k in order)
+    windows = cap_union_table_from_windio_structure(structure, geo, z_of_s)
+    cap = None
+    if windows is not None:
+        zg, vals = windows
+        anchors.append(Anchor("cap_lo", (zg, vals[:, 0])))
+        anchors.append(Anchor("cap_hi", (zg, vals[:, 1])))
+        cap = CapPlacementRule.from_chord_windows(((float(np.median(vals[:, 0])),
+                                                    float(np.median(vals[:, 1]))),))
+    _, regions, _, cap_windows, rule, pad = layout_parts(web_fracs, cap)
     return cls(
         tuple(anchors), regions, tuple(webs), te_arc=float(te_arc),
         min_gap=float(min_gap), cap_windows=cap_windows, cap_placement=rule, cap_pad=pad,

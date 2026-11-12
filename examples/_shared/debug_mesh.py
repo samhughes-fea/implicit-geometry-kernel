@@ -49,6 +49,11 @@ def _te_xyz(samples: dict, oml_te=None) -> np.ndarray | None:
         if key in samples and len(samples[key]):
             arr = np.asarray(samples[key], float)
             pts.append(arr)
+    if not any(k in samples and len(samples[k]) for k in ("te_pr", "te_su")):
+        # a section without webs: the nose branches run on to the trailing edge
+        for key in ("le_su", "le_pr"):
+            if key in samples and len(samples[key]):
+                pts.append(np.asarray(samples[key], float))
     if not pts:
         return None
     stacked = np.vstack(pts)
@@ -89,10 +94,15 @@ def span_metrics(walls: list, faces: np.ndarray, roles: np.ndarray, geo=None) ->
             oml_tes.append(oml_te_pt)
         te = _te_xyz(samples, oml_te=oml_te_pt)
         le = None
-        if "le_su" in samples:
-            le = np.asarray(samples["le_su"], float)[-1]
-        elif "le_pr" in samples:
-            le = np.asarray(samples["le_pr"], float)[-1]
+        nose = samples.get("le_su", samples.get("le_pr"))
+        if nose is not None:
+            nose = np.asarray(nose, float)
+            le = nose[-1]
+            # on a section without webs the nose branch runs LE to TE: its LE end
+            # is the one away from the trailing edge
+            if te is not None and (np.linalg.norm(nose[0, :2] - te[:2])
+                                   > np.linalg.norm(nose[-1, :2] - te[:2])):
+                le = nose[0]
         chord = 1.0
         if te is not None and le is not None:
             chord = max(float(np.linalg.norm(te[:2] - le[:2])), 1e-9)

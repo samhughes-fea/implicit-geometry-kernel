@@ -2,6 +2,43 @@
 
 ## Unreleased
 
+- windIO arcs are placed on the blade's own sections (``blade/windio_arc.py``).
+  A point at ``nd_arc = s`` is the outer-surface point at that arc length on
+  the section the blade has at that span; the old mapping ``x/c = 1 - 2 min(s,
+  1 - s)`` (still in ``windio_nd``) took arc length as chord position and put
+  the IEA 15 MW webs 25 to 290 mm off (BG-038).
+  ``web_feet_fn_from_windio_structure``, ``cap_side_windows_fn_from_windio_structure``
+  and ``WallRegionGraph.from_windio_structure(..., geo=)`` use it.
+  The arc runs along the two surfaces only: an open blunt base is not among the
+  points, and a base the section lists as points (surfaces that run on down the
+  base to its mid-point) carries no arc length.
+- Two-foot webs: ``BladeGeometry(web_positions=...)`` may return ``(suction,
+  pressure)`` pairs; the web mid-line is the line through the two outer-surface
+  points. A single fraction per web works as before.
+- Per-side cap windows: ``BladeGeometry(cap_windows=...)`` may return
+  ``{"suction": (lo, hi), "pressure": (lo, hi)}``
+  (``CapPlacementRule.from_side_windows``).
+- windIO webs take their span window from their ``nd_arc`` grid (BG-036); where
+  no web is live the section has no webs and no web-bound caps.
+- The ends of a partial-span web are forced stations, so the mesh's webs start
+  and end where the web does and not at the nearest evenly spaced station
+  (BG-045).
+- A tip (or rib) on a section without webs is always meshed: the skin loop
+  closes on at least five nodes (BG-039).
+- A station ``Airfoil`` passes through the points it was given. Its spline was
+  sampled 0.04 % of chord apart at the trailing edge and cut any sharper corner
+  (the flare into a blunt trailing edge: 0.1 mm on a 4.5 m chord, BG-042). The
+  golden numbers move by at most 4e-8 (sections) and 4e-7 (blade, sums of
+  coordinates) and are re-baselined.
+- A round trailing end (a circle, an ellipse, a root transition section) ends at
+  its end point: the surface's spline has a vertical end tangent there. It used
+  to bulge 1e-5 of chord aft of it, where sorting the samples by x scrambled the
+  surface (BG-043). A blunt base listed as points (surfaces that run on down
+  the base to its mid-point) keeps its corner: the spline stops at the corner
+  and the base segment is straight. Golden numbers unchanged.
+- ``docs/REFACTOR_PLAN.md`` lists the geometry a consumer adapter still has to
+  do itself, as kernel to-dos (G1 to G18).
+
 ## 0.9.2 (2026-11-11)
 
 - ``ShellMesh`` element normals follow one rule per surface: out of the

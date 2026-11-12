@@ -20,7 +20,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import numpy as np  # noqa: E402
 from matplotlib.collections import PolyCollection  # noqa: E402
 from matplotlib.colors import to_rgba  # noqa: E402
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 
 from _shared.blade_viz import (  # noqa: E402
     FULL_BLADE,
@@ -39,6 +38,7 @@ from _shared.blade_viz import (  # noqa: E402
 )
 from _shared.debug_mesh import dump_debug_mesh  # noqa: E402
 from _shared.plotting import (  # noqa: E402
+    add_faces_3d,
     MESH_LW_FLAT,
     MESH_LW_3D,
     mesh_edge_rgba,
@@ -264,14 +264,11 @@ def _draw_walls(ax, faces: list[np.ndarray], kinds: list[str], *,
         _finish_3d(ax, np.zeros((0, 3), float), elev=elev, azim=azim, zoom=zoom)
         return
     rgba = _face_rgba(kinds)
-    try:
-        ax.add_collection3d(Poly3DCollection(
-            shown, facecolors=rgba, shade=True,
-            edgecolors=mesh_edge_rgba(len(shown)),
-            linewidths=mesh_linewidths(kinds, base=MESH_LW_3D),
-        ))
-    except ValueError:
-        pass
+    add_faces_3d(
+        ax, shown, facecolors=rgba, shade=True,
+        edgecolors=mesh_edge_rgba(len(shown)),
+        linewidths=mesh_linewidths(kinds, base=MESH_LW_3D),
+    )
     _finish_3d(ax, np.concatenate(shown), elev=elev, azim=azim, zoom=zoom)
 
 
@@ -420,7 +417,7 @@ def _save_elevation(key: str, name: str, faces: list[np.ndarray], kinds: list[st
     ax.add_collection(PolyCollection(
         [uv[i] for i in order], facecolors=_face_rgba(kinds, 0.92)[order],
         edgecolors=mesh_edge_rgba(len(order)),
-        linewidths=[mesh_linewidths(kinds, base=MESH_LW_FLAT)[i] for i in order],
+        linewidths=np.asarray(mesh_linewidths(kinds, base=MESH_LW_FLAT))[order],
         rasterized=True,
     ))
     ax.set_aspect("equal")
@@ -484,7 +481,7 @@ def _save_corner_cutaway(key: str, name: str, faces: list[np.ndarray], kinds: li
     ax.add_collection(PolyCollection(
         [uv[i] for i in order], facecolors=_face_rgba(kinds, 0.92)[order],
         edgecolors=mesh_edge_rgba(len(order)),
-        linewidths=[mesh_linewidths(kinds, base=MESH_LW_FLAT)[i] for i in order],
+        linewidths=np.asarray(mesh_linewidths(kinds, base=MESH_LW_FLAT))[order],
         rasterized=True,
     ))
     ax.set_aspect("equal")

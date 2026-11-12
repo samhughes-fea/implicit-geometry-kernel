@@ -106,11 +106,10 @@ def _iea34_catalogue():
     return None
 
 
-@pytest.mark.skipif(_iea34_catalogue() is None, reason="reference-blades catalogue not cloned")
-def test_iea34_cap_edge_passing_a_web_gets_a_station_and_stays_conforming():
-    import runpy
+def test_cap_edge_passing_a_web_gets_a_station_and_stays_conforming():
     from collections import Counter
 
+    from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
     from implicit_geometry_kernel.blade.topology import (
         _template_from_cut,
         loft_mapped_strips,
@@ -119,11 +118,16 @@ def test_iea34_cap_edge_passing_a_web_gets_a_station_and_stays_conforming():
     )
     from implicit_geometry_kernel.blade.topology.crossings import key_crossing_stations
 
-    ns = runpy.run_path(str(ROOT / "examples" / "blade" / "08_reference_blades" / "reference_blades.py"))
-    _name, geo, _ = ns["load_windio"](ns["catalogue_yaml"](_iea34_catalogue(), "iea3.4_iea10/IEA-3.4-130-RWT.yaml"))
-    zs = [3.15, 4.725]
+    # the cap's fore edge (0.20 + 0.04 z) passes the fore web (0.26) at z = 1.5
+    geo = BladeGeometry(
+        [Station(0.0, 1.0, Airfoil.naca4("2418"), twist=10.0),
+         Station(3.0, 0.7, Airfoil.naca4("2415"), twist=2.0)],
+        "2B-CN-LC-0R", 0.003, spar_cap_thickness=0.008, shear_web_thickness=0.004,
+        pivot_fraction=0.3, web_positions=(0.26, 0.7),
+        cap_windows=lambda z: (0.20 + 0.04 * z, 0.45 + 0.04 * z))
+    zs = [1.0, 2.0]
     extra = key_crossing_stations(geo, zs)
-    assert len(extra) == 1 and zs[0] < extra[0] < zs[1]
+    assert len(extra) == 1 and extra[0] == pytest.approx(1.5, abs=1e-6)
     stations = []
     for z in sorted(zs + list(extra)):
         cut = section_cut_near(geo, z)

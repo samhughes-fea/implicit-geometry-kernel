@@ -9,7 +9,7 @@ side positive).
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Sequence, Union
+from typing import Any, Sequence, Union
 
 import numpy as np
 
@@ -17,6 +17,12 @@ import numpy as np
 # ---------------------------------------------------------------------------
 # Airfoils
 # ---------------------------------------------------------------------------
+#: a trailing-end corner: the turn [rad] at the last point before the end, and how many
+#: times the turn at the point before it (see ``Airfoil._monotone``)
+_CORNER_TURN = np.radians(20.0)
+_CORNER_JUMP = 3.0
+
+
 class Airfoil:
     """Airfoil from coordinates normalised by the chord (x from 0 at the LE to 1 at the TE).
 
@@ -37,31 +43,72 @@ class Airfoil:
         first, second = p[: le + 1][::-1], p[le:]
         if np.mean(first[:, 1]) < np.mean(second[:, 1]):
             first, second = second, first
-        self._upper = self._monotone(first)
-        self._lower = self._monotone(second)
+        closed = bool(np.linalg.norm(p[0] - p[-1]) <= 1e-9)
+        self._upper = self._monotone(first, closed)
+        self._lower = self._monotone(second, closed)
         x0 = min(self._upper[0, 0], self._lower[0, 0])
         x1 = max(self._upper[-1, 0], self._lower[-1, 0])
         self._x0, self._span = x0, x1 - x0
 
     @staticmethod
-    def _monotone(side: np.ndarray) -> np.ndarray:
+    def _monotone(side: np.ndarray, closed_te: bool = False) -> np.ndarray:
         """Densely resampled surface, LE to TE, from a cubic spline through the points.
 
         The spline is parametrised by arc length, so blunt leading edges (where y(x)
-        has a vertical tangent) are represented accurately.
+        has a vertical tangent) are represented accurately. The given points are among
+        the samples, so the surface passes through them.
+
+        The trailing end is one of three kinds:
+
+        * a corner: the last segment turns more than 20 degrees from the one before
+          it, and more than three times the turn at the point before (a blunt base
+          listed as points, the surface running on to the base; a smooth curve turns
+          by like amounts at neighbouring points, whatever its sampling). The spline
+          stops at the corner and the last segment is straight; a spline through a
+          corner would bulge aft of it;
+        * round: the surfaces meet at one point (``closed_te``) and this one arrives
+          there steeper than 45 degrees without a corner (a circle, an ellipse, a root
+          transition section). The spline gets a vertical end tangent and the surface
+          ends at its end point; with a free end it bulges 1e-5 of chord aft of that
+          point, where y(x) is not single-valued and sorting the samples by x
+          scrambles the surface;
+        * otherwise free (a sharp trailing edge, or a blunt one given by its corners).
         """
         if side[0, 0] > side[-1, 0]:
             side = side[::-1]
         keep = np.concatenate([[True], np.linalg.norm(np.diff(side, axis=0), axis=1) > 1e-12])
         side = side[keep]
-        t = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(side, axis=0), axis=1))])
+        last = side[-1] - side[-2]
+        corner = False
+        if len(side) >= 5:
+            seg = np.diff(side[-4:], axis=0)
+            ang = np.unwrap(np.arctan2(seg[:, 1], seg[:, 0]))
+            turn_before, turn_last = abs(ang[1] - ang[0]), abs(ang[2] - ang[1])
+            corner = bool(turn_last > _CORNER_TURN and turn_last > _CORNER_JUMP * turn_before)
+        body = side[:-1] if corner else side
+        t = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(body, axis=0), axis=1))])
         try:
             from scipy.interpolate import CubicSpline
 
             u = t[-1] * (1.0 - np.cos(np.linspace(0.0, 0.5 * np.pi, 4001)))  # fine at the LE end
-            dense = np.column_stack([CubicSpline(t, side[:, 0])(u), CubicSpline(t, side[:, 1])(u)])
+            # the cosine samples are 0.04 % of chord apart at the TE end and would cut
+            # anything sharper than that (the flare into a blunt trailing edge)
+            u = np.union1d(u, t)
+            round_end = closed_te and not corner and abs(last[1]) > abs(last[0])
+            bc_x: Any = ("not-a-knot", (1, 0.0)) if round_end else "not-a-knot"
+            bc_y: Any = ("not-a-knot", (1, float(np.sign(last[1])))) if round_end else "not-a-knot"
+            dense = np.column_stack([CubicSpline(t, body[:, 0], bc_type=bc_x)(u),
+                                     CubicSpline(t, body[:, 1], bc_type=bc_y)(u)])
+            if round_end:
+                # y(x) cannot hold what little of the round end still lies aft of its
+                # end point (under 1e-6 of chord): the surface is cut at that x
+                inside = dense[:, 0] < side[-1, 0]
+                inside[-1] = True
+                dense = dense[inside]
         except ImportError:  # pragma: no cover - SciPy is an optional dependency
-            dense = side
+            dense = body
+        if corner:
+            dense = np.vstack([dense, side[-1]])
         order = np.argsort(dense[:, 0], kind="stable")
         dense = dense[order]
         keep = np.concatenate([[True], np.diff(dense[:, 0]) > 1e-14])

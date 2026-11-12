@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import replace
 
 import numpy as np
@@ -93,6 +94,30 @@ class LoftLayoutMixin:
                 out.append(stringer)
         return tuple(out)
 
+    def _web_feet_at(self, z: float):
+        """Two-foot webs at z: ``((suction, pressure), ...)`` chord fractions, LE to TE.
+
+        ``None`` when ``web_positions`` gives one fraction per web (a straight line
+        in the layout's orientation). A web given by two feet is the line through the
+        outer-mould-line points at those chord fractions on each side.
+        """
+        if self._web_positions_fn is None:
+            return None
+        raw = self._web_positions_fn(float(z))
+        if raw is None or not len(raw):
+            return None
+        rows = [r for r in raw]
+        if not all(isinstance(r, (tuple, list, np.ndarray)) and np.size(r) == 2 for r in rows):
+            if any(isinstance(r, (tuple, list, np.ndarray)) for r in rows):
+                raise ValueError("web_positions entries must all be fractions or all "
+                                 "(suction, pressure) pairs")
+            return None
+        feet = sorted(((float(r[0]), float(r[1])) for r in rows), key=lambda p: p[0] + p[1])
+        for a, b in feet:
+            if not (0.0 < a < 1.0 and 0.0 < b < 1.0):
+                raise ValueError(f"web feet must be chord fractions inside (0, 1); got {(a, b)}")
+        return tuple(feet)
+
     def _layout_at(self, z: float):
         from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
         from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
@@ -107,20 +132,35 @@ class LoftLayoutMixin:
             layout = spec
         fracs = None
         if self._web_positions_fn is not None:
-            raw = self._web_positions_fn(float(z))
-            fracs = tuple(float(f) for f in np.atleast_1d(raw).reshape(-1))
+            feet = self._web_feet_at(z)
+            if feet is not None:
+                fracs = tuple(0.5 * (a + b) for a, b in feet)
+            else:
+                raw = self._web_positions_fn(float(z))
+                fracs = tuple(float(f) for f in np.atleast_1d(raw).reshape(-1))
         if fracs is not None:
             layout = _with_web_fractions(layout, fracs)
+            if not fracs and layout.cap_placement.kind in ("continuous_box", "per_web_pads"):
+                # no webs live here (a file whose webs start outboard of the root): a
+                # web-pad or box rule has nothing to place caps by
+                layout = replace(layout, cap_placement=CapPlacementRule.none(),
+                                 structural_family="A", catalogue_key=None,
+                                 flags=tuple(f for f in layout.flags if f != "has_spar_caps"))
         if self._cap_windows_fn is not None:
             windows = self._cap_windows_fn(float(z))
             if windows is not None:
-                raw = tuple(windows) if not isinstance(windows, tuple) else windows
-                if raw and not isinstance(raw[0], (tuple, list)):
-                    raw = (tuple(float(x) for x in raw),)
+                if isinstance(windows, Mapping):
+                    rule = CapPlacementRule.from_side_windows(windows["suction"],
+                                                              windows["pressure"])
+                else:
+                    raw = tuple(windows) if not isinstance(windows, tuple) else windows
+                    if raw and not isinstance(raw[0], (tuple, list)):
+                        raw = (tuple(float(x) for x in raw),)
+                    rule = CapPlacementRule.from_chord_windows(raw)
                 layout = SectionLayout(
                     web_chord_fracs=layout.web_chord_fracs,
                     orientation=layout.orientation,
-                    cap_placement=CapPlacementRule.from_chord_windows(raw),
+                    cap_placement=rule,
                     catalogue_key=layout.catalogue_key,
                     web_stations_m=layout.web_stations_m,
                     web_axes_m=layout.web_axes_m,

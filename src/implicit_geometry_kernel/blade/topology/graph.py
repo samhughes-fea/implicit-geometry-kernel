@@ -50,6 +50,12 @@ def _as_law(value) -> FracLaw:
     return _const
 
 
+#: a span window includes its ends to the resolution stations are keyed at: cuts are
+#: cached per ``round(z, 9)`` and mesh stations are rounded the same way, so a window end
+#: that is itself a station must still be inside the window after rounding
+_Z_KEY_TOL = 1e-9
+
+
 @dataclass(frozen=True)
 class Anchor:
     """A feature line on the skin-mid loop, as chord fraction from the LE."""
@@ -63,9 +69,9 @@ class Anchor:
         return float(np.clip(_as_law(self.frac)(z), 0.0, 1.0))
 
     def active(self, z: float) -> bool:
-        if self.z0 is not None and float(z) < float(self.z0) - 1e-12:
+        if self.z0 is not None and float(z) < float(self.z0) - _Z_KEY_TOL:
             return False
-        if self.z1 is not None and float(z) > float(self.z1) + 1e-12:
+        if self.z1 is not None and float(z) > float(self.z1) + _Z_KEY_TOL:
             return False
         return True
 
@@ -99,9 +105,9 @@ class WebMember:
         return float(np.clip(_as_law(self.frac)(z), 0.0, 1.0))
 
     def active(self, z: float) -> bool:
-        if self.z0 is not None and float(z) < float(self.z0) - 1e-12:
+        if self.z0 is not None and float(z) < float(self.z0) - _Z_KEY_TOL:
             return False
-        if self.z1 is not None and float(z) > float(self.z1) + 1e-12:
+        if self.z1 is not None and float(z) > float(self.z1) + _Z_KEY_TOL:
             return False
         return True
 
@@ -160,13 +166,18 @@ class WallRegionGraph:
         cls, structure: Mapping, z_of_s=None, *,
         te_arc: float = TE_ARC,
         min_gap: float = MIN_GAP,
+        geo=None,
     ) -> WallRegionGraph:
+        """The file's webs and cap edges as anchors. With ``geo`` (a blade carrying the
+        outer shape) the arcs are placed on its sections
+        (:mod:`implicit_geometry_kernel.blade.windio_arc`); without it they use the
+        fixed ``x/c = 1 - 2 min(s, 1 - s)`` map of :mod:`windio_nd`."""
         from implicit_geometry_kernel.blade.topology.layout_compile import (
             graph_from_windio_structure,
         )
 
         return graph_from_windio_structure(
-            cls, structure, z_of_s, te_arc=te_arc, min_gap=min_gap
+            cls, structure, z_of_s, te_arc=te_arc, min_gap=min_gap, geo=geo
         )
 
 

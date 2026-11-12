@@ -23,7 +23,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import numpy as np  # noqa: E402
 from matplotlib.collections import PolyCollection  # noqa: E402
 from matplotlib.colors import to_rgba  # noqa: E402
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 
 from _shared.blade_viz import (  # noqa: E402
     FULL_BLADE,
@@ -40,6 +39,7 @@ from _shared.blade_viz import (  # noqa: E402
 )
 from _shared.debug_mesh import as_quad, dump_debug_mesh  # noqa: E402
 from _shared.plotting import (  # noqa: E402
+    add_faces_3d,
     MESH_LW_3D,
     MESH_LW_FLAT,
     NAVY,
@@ -69,8 +69,11 @@ from implicit_geometry_kernel.mesh.polygon import fill_rib_cells  # noqa: E402
 from implicit_geometry_kernel.blade.windio import (  # noqa: E402
     cap_window_table_from_windio_structure,
     transverse_members_from_windio,
-    web_positions_fn_from_windio_structure,
     web_positions_from_windio_structure,
+)
+from implicit_geometry_kernel.blade.windio_arc import (  # noqa: E402
+    cap_side_windows_fn_from_windio_structure,
+    web_feet_fn_from_windio_structure,
 )
 from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule  # noqa: E402
 from implicit_geometry_kernel.section.layout.section_layout import SectionLayout  # noqa: E402
@@ -306,8 +309,16 @@ def load_windio(path: Path) -> tuple[str, BladeGeometry, np.ndarray]:
     cap_t = _layer_tables(layers, needles=("spar_cap",), require_web=False)
     web_t = _web_gauge(layers)
     layout = _layout_from_structure(structure)
-    web_positions = web_positions_fn_from_windio_structure(structure, z_of_s)
-    cap_windows = cap_window_table_from_windio_structure(structure, z_of_s)
+    shape = dict(
+        chord=_z_table(z_of_s, outer["chord"]),
+        twist=_z_table(z_of_s, outer["twist"]),
+        pitch_axis=_pitch_table(z_of_s, outer),
+        offset=_offset_table(z_of_s, blade["reference_axis"]),
+    )
+    # the outer shape alone, on which the file's arcs are placed (web feet, cap edges)
+    oml = BladeGeometry(stations, "0A-LC-0R", 0.0025, **shape)
+    web_positions = web_feet_fn_from_windio_structure(structure, oml, z_of_s)
+    cap_windows = cap_side_windows_fn_from_windio_structure(structure, oml, z_of_s)
     geo = BladeGeometry(
         stations,
         layout,
@@ -316,12 +327,9 @@ def load_windio(path: Path) -> tuple[str, BladeGeometry, np.ndarray]:
         shear_web_thickness=_thickness_at_z(web_t, z_of_s, 0.004),
         web_positions=web_positions,
         cap_windows=cap_windows,
-        chord=_z_table(z_of_s, outer["chord"]),
-        twist=_z_table(z_of_s, outer["twist"]),
-        pitch_axis=_pitch_table(z_of_s, outer),
-        offset=_offset_table(z_of_s, blade["reference_axis"]),
-        region_graph=WallRegionGraph.from_windio_structure(structure, z_of_s),
+        region_graph=WallRegionGraph.from_windio_structure(structure, z_of_s, geo=oml),
         transverse=transverse_members_from_windio(structure, z_of_s),
+        **shape,
     )
     return str(data.get("name", path.stem)), geo, z_of_s
 
@@ -537,7 +545,7 @@ def _draw_oml(ax, rings: list[np.ndarray], geo: BladeGeometry, *, elev: float, a
         kw["linewidths"] = MESH_LW_3D
     else:
         kw["linewidths"] = 0.0
-    ax.add_collection3d(Poly3DCollection(faces, **kw))
+    add_faces_3d(ax, faces, **kw)
     n = len(shown)
     picks = range(n) if every_ring else sorted({0, n // 4, n // 2, (3 * n) // 4, n - 1})
     for i in picks:
@@ -563,7 +571,7 @@ def _draw_walls(ax, faces: list[np.ndarray], kinds: list[str], *, elev: float, a
         kw["linewidths"] = mesh_linewidths(kinds, base=MESH_LW_3D)
     else:
         kw["linewidths"] = 0.0
-    ax.add_collection3d(Poly3DCollection(shown, **kw))
+    add_faces_3d(ax, shown, **kw)
     _finish_3d(ax, np.concatenate(shown), elev=elev, azim=azim)
 
 
@@ -625,7 +633,7 @@ def figure_projected(stem: str, title: str, faces: list[np.ndarray], kinds: list
         ax.add_collection(PolyCollection(
             [stretched[i] for i in order], facecolors=fc[order],
             edgecolors=mesh_edge_rgba(len(order)),
-            linewidths=[mesh_linewidths(kinds, base=MESH_LW_FLAT)[i] for i in order],
+            linewidths=np.asarray(mesh_linewidths(kinds, base=MESH_LW_FLAT))[order],
             rasterized=True,
         ))
         ax.set_aspect("equal")
@@ -731,7 +739,7 @@ def figure_mesh_closeup(stem: str, faces: list[np.ndarray], half: float, n_nodes
     ax = fig.add_subplot(111, projection="3d")
     rgba = np.broadcast_to(to_rgba(NAVY, 0.82), (len(faces), 4)).copy()
     edges = np.broadcast_to(to_rgba("#d1d5db", 0.7), (len(faces), 4)).copy()
-    ax.add_collection3d(Poly3DCollection(faces, facecolors=rgba, edgecolors=edges, linewidths=0.2, shade=True))
+    add_faces_3d(ax, faces, facecolors=rgba, edgecolors=edges, linewidths=0.2, shade=True)
     _finish_3d(ax, np.concatenate(faces), elev=8, azim=0)
     ax.set_title(f"IEA 15 MW Gmsh wall strips at max chord |Δz| ≤ {half:.2f} m")
     note(fig, f"Transfinite wall-strip mesh ({n_nodes} nodes, {n_elem} faces globally).")

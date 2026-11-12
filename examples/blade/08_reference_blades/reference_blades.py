@@ -23,7 +23,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import numpy as np  # noqa: E402
 from matplotlib.collections import PolyCollection  # noqa: E402
 from matplotlib.colors import to_rgba  # noqa: E402
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 
 from _shared.blade_viz import (  # noqa: E402
     FULL_BLADE,
@@ -40,6 +39,7 @@ from _shared.blade_viz import (  # noqa: E402
 )
 from _shared.debug_mesh import as_quad, dump_debug_mesh  # noqa: E402
 from _shared.plotting import (  # noqa: E402
+    add_faces_3d,
     MESH_LW_3D,
     MESH_LW_FLAT,
     NAVY,
@@ -545,7 +545,7 @@ def _draw_oml(ax, rings: list[np.ndarray], geo: BladeGeometry, *, elev: float, a
         kw["linewidths"] = MESH_LW_3D
     else:
         kw["linewidths"] = 0.0
-    ax.add_collection3d(Poly3DCollection(faces, **kw))
+    add_faces_3d(ax, faces, **kw)
     n = len(shown)
     picks = range(n) if every_ring else sorted({0, n // 4, n // 2, (3 * n) // 4, n - 1})
     for i in picks:
@@ -571,7 +571,7 @@ def _draw_walls(ax, faces: list[np.ndarray], kinds: list[str], *, elev: float, a
         kw["linewidths"] = mesh_linewidths(kinds, base=MESH_LW_3D)
     else:
         kw["linewidths"] = 0.0
-    ax.add_collection3d(Poly3DCollection(shown, **kw))
+    add_faces_3d(ax, shown, **kw)
     _finish_3d(ax, np.concatenate(shown), elev=elev, azim=azim)
 
 
@@ -739,7 +739,7 @@ def figure_mesh_closeup(stem: str, faces: list[np.ndarray], half: float, n_nodes
     ax = fig.add_subplot(111, projection="3d")
     rgba = np.broadcast_to(to_rgba(NAVY, 0.82), (len(faces), 4)).copy()
     edges = np.broadcast_to(to_rgba("#d1d5db", 0.7), (len(faces), 4)).copy()
-    ax.add_collection3d(Poly3DCollection(faces, facecolors=rgba, edgecolors=edges, linewidths=0.2, shade=True))
+    add_faces_3d(ax, faces, facecolors=rgba, edgecolors=edges, linewidths=0.2, shade=True)
     _finish_3d(ax, np.concatenate(faces), elev=8, azim=0)
     ax.set_title(f"IEA 15 MW Gmsh wall strips at max chord |Δz| ≤ {half:.2f} m")
     note(fig, f"Transfinite wall-strip mesh ({n_nodes} nodes, {n_elem} faces globally).")

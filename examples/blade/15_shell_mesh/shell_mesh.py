@@ -23,9 +23,8 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from matplotlib.colors import to_rgba  # noqa: E402
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 
-from _shared.plotting import NAVY, RED, TEAL, note, plt, save  # noqa: E402
+from _shared.plotting import NAVY, RED, TEAL, add_faces_3d, note, plt, save  # noqa: E402
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station  # noqa: E402
 from implicit_geometry_kernel.mesh import ShellMesh, shell_mesh  # noqa: E402
 
@@ -54,8 +53,7 @@ def _faces(m: ShellMesh, keep) -> tuple[list[np.ndarray], list[str]]:
 
 def _draw(ax, faces, cols, *, elev, azim, lw=0.15, aspect=None):
     rgba = [to_rgba(c, 0.9) for c in cols]
-    ax.add_collection3d(Poly3DCollection(faces, facecolors=rgba, edgecolors=to_rgba(EDGE, 0.6),
-                                         linewidths=lw, shade=True))
+    add_faces_3d(ax, faces, facecolors=rgba, edgecolors=to_rgba(EDGE, 0.6), linewidths=lw, shade=True)
     pts = np.concatenate(faces)
     box = np.ptp(pts, axis=0)
     box[box == 0.0] = 1.0

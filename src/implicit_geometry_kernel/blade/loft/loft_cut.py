@@ -342,6 +342,7 @@ class LoftCutMixin:
             station_family=fam,
             tip_closure=self._tip_closure_at(z),
         )
+        object.__setattr__(cut, "_wall_reference", getattr(self, "wall_reference", "mid"))
         if self.merge_cap_and_skin:
             from implicit_geometry_kernel.blade.shell_graph import shell_graph, shell_strips_from_graph
             from dataclasses import replace as _replace

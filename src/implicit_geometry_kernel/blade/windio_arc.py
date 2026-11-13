@@ -242,9 +242,37 @@ def web_feet_fn_from_windio_structure(structure: Mapping[str, Any], geo,
     return at
 
 
+def _cap_decision(layer: Mapping[str, Any], cap_id) -> str:
+    """``yes``, ``band`` or ``no``.
+
+    The default (``cap_id is None``) is the name rule: a non-web layer whose
+    name contains ``spar`` or ``cap``. A sequence of names is an explicit list.
+    ``"between_webs"`` also keeps a non-web layer whose placed band sits
+    between the outermost web feet, which is how a keypoint-named file (no
+    ``cap`` in the name) still yields caps.
+    """
+    if layer.get("web") not in (None, ""):
+        return "no"
+    name = str(layer.get("name", ""))
+    if isinstance(cap_id, (list, tuple, set, frozenset)):
+        return "yes" if name in {str(item) for item in cap_id} else "no"
+    if any(tag in name.lower() for tag in ("spar", "cap")):
+        return "yes"
+    if cap_id == "between_webs":
+        return "band"
+    return "no"
+
+
+def _band_between_webs(lo: float, hi: float, feet) -> bool:
+    if not feet or len(feet) < 2:
+        return False
+    left = min(min(a, b) for a, b in feet)
+    right = max(max(a, b) for a, b in feet)
+    return left - 1e-4 <= float(lo) and float(hi) <= right + 1e-4
+
+
 def _is_cap_layer(layer: Mapping[str, Any]) -> bool:
-    name = str(layer.get("name", "")).lower()
-    return layer.get("web") in (None, "") and any(tag in name for tag in ("spar", "cap"))
+    return _cap_decision(layer, None) == "yes"
 
 
 CapSeries = tuple[str, np.ndarray, np.ndarray]
@@ -252,6 +280,8 @@ CapSeries = tuple[str, np.ndarray, np.ndarray]
 
 def cap_side_series_from_windio_structure(structure: Mapping[str, Any], geo,
                                           z_of_s: np.ndarray | Sequence | None = None,
+                                          *,
+                                          cap_id=None,
                                           ) -> list[CapSeries]:
     """Per spar-cap layer (by name, as :func:`windio.cap_window_table_from_windio_structure`):
     ``(side, z, rows)`` with ``rows`` the ``(lo, hi)`` chord fractions of the layer's arcs
@@ -260,9 +290,13 @@ def cap_side_series_from_windio_structure(structure: Mapping[str, Any], geo,
     anchors = _anchors_by_name(structure)
     arc = section_arc_map(geo)
     z_table = None if z_of_s is None else np.asarray(z_of_s, float)
+    feet_fn = web_feet_fn_from_windio_structure(structure, geo, z_of_s) if cap_id == "between_webs" else None
     out: list[CapSeries] = []
     for layer in structure.get("layers") or ():
-        if not isinstance(layer, Mapping) or not _is_cap_layer(layer):
+        if not isinstance(layer, Mapping):
+            continue
+        decision = _cap_decision(layer, cap_id)
+        if decision == "no":
             continue
         start = resolve_nd_arc_table(layer.get("start_nd_arc"), anchors)
         end = resolve_nd_arc_table(layer.get("end_nd_arc"), anchors)
@@ -278,8 +312,14 @@ def cap_side_series_from_windio_structure(structure: Mapping[str, Any], geo,
             q = arc(zc, float(np.interp(g, *end)))
             rows.append((min(p[0], q[0]), max(p[0], q[0])))
             sides.update((p[1], q[1]))
-        if len(sides) == 1:
-            out.append((sides.pop(), zs, np.asarray(rows, float)))
+        if len(sides) != 1:
+            continue
+        if decision == "band":
+            if feet_fn is None or not any(
+                _band_between_webs(lo, hi, feet_fn(float(z))) for z, (lo, hi) in zip(zs, rows)
+            ):
+                continue
+        out.append((sides.pop(), zs, np.asarray(rows, float)))
     return out
 
 
@@ -300,31 +340,49 @@ def _side_windows_at(series: Sequence[CapSeries], z: float) -> dict[str, tuple[f
 
 def cap_side_windows_fn_from_windio_structure(
     structure: Mapping[str, Any], geo, z_of_s: np.ndarray | Sequence | None = None,
+    *,
+    cap_id=None,
 ) -> Callable[[float], dict[str, tuple[float, float]] | None] | None:
     """``f(z) -> {"suction": (lo, hi), "pressure": (lo, hi)}`` (``BladeGeometry
     (cap_windows=...)``): each side's cap window, the union of that side's cap layers
     live at z, their arcs interpolated to z and placed on the section at z (as
     :func:`web_feet_fn_from_windio_structure`); ``None`` where a side has none, and
     ``None`` overall when the file has no caps on both sides."""
-    series = cap_side_series_from_windio_structure(structure, geo, z_of_s)
+    series = cap_side_series_from_windio_structure(structure, geo, z_of_s, cap_id=cap_id)
     if not {s for s, *_ in series} >= {"suction", "pressure"}:
         return None
     anchors = _anchors_by_name(structure)
     arc = section_arc_map(geo)
     z_table = None if z_of_s is None else np.asarray(z_of_s, float)
     rows = []
+    feet_fn = web_feet_fn_from_windio_structure(structure, geo, z_of_s) if cap_id == "between_webs" else None
     for layer in structure.get("layers") or ():
-        if not isinstance(layer, Mapping) or not _is_cap_layer(layer):
+        if not isinstance(layer, Mapping):
+            continue
+        decision = _cap_decision(layer, cap_id)
+        if decision == "no":
             continue
         start = resolve_nd_arc_table(layer.get("start_nd_arc"), anchors)
         end = resolve_nd_arc_table(layer.get("end_nd_arc"), anchors)
         if start is None or end is None:
             continue
         grid = np.unique(np.concatenate([start[0], end[0]]))
-        sides = {arc(_clip_z(zg, geo), float(np.interp(g, *t)))[1]
-                 for g, zg in zip(grid, _grid_to_z(grid, z_table)) for t in (start, end)}
-        if len(sides) == 1:  # as the series: a band round the leading edge is not a cap
-            rows.append((start, end, float(grid[0]), float(grid[-1])))
+        placed = [arc(_clip_z(zg, geo), float(np.interp(g, *t)))
+                  for g, zg in zip(grid, _grid_to_z(grid, z_table)) for t in (start, end)]
+        sides = {p[1] for p in placed}
+        if len(sides) != 1:  # a band round the leading edge is not a cap
+            continue
+        if decision == "band":
+            samples = []
+            for g, zg in zip(grid, _grid_to_z(grid, z_table)):
+                p = arc(_clip_z(zg, geo), float(np.interp(g, *start)))
+                q = arc(_clip_z(zg, geo), float(np.interp(g, *end)))
+                samples.append((float(zg), min(p[0], q[0]), max(p[0], q[0])))
+            if feet_fn is None or not any(
+                _band_between_webs(lo, hi, feet_fn(z)) for z, lo, hi in samples
+            ):
+                continue
+        rows.append((start, end, float(grid[0]), float(grid[-1])))
 
     def at(z: float) -> dict[str, tuple[float, float]] | None:
         g = _grid_of_z(float(z), z_table)
@@ -350,10 +408,12 @@ def cap_side_windows_fn_from_windio_structure(
 
 def cap_union_table_from_windio_structure(
     structure: Mapping[str, Any], geo, z_of_s: np.ndarray | Sequence | None = None,
+    *,
+    cap_id=None,
 ) -> tuple[np.ndarray, np.ndarray] | None:
     """``(z, values)``, values ``(n, 2)``: the union of both sides' cap windows at each
     cap grid point where both sides have a cap (the wall-region graph's cap anchors)."""
-    series = cap_side_series_from_windio_structure(structure, geo, z_of_s)
+    series = cap_side_series_from_windio_structure(structure, geo, z_of_s, cap_id=cap_id)
     if not series:
         return None
     zs = np.unique(np.concatenate([z for _s, z, _r in series]))

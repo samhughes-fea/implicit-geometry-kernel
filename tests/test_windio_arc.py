@@ -152,6 +152,38 @@ def test_windio_web_feet_are_the_oml_points_at_their_arcs():
     assert pairs[0][0] + pairs[0][1] < pairs[1][0] + pairs[1][1]  # LE to TE
 
 
+def _keypoint_structure():
+    """Caps named by keypoint pair, plus a trailing-edge skin that is not a cap."""
+    return {
+        "webs": _structure()["webs"],
+        "layers": [
+            {"name": "kp_3_4", "start_nd_arc": _table(0.25), "end_nd_arc": _table(0.33)},
+            {"name": "kp_8_9", "start_nd_arc": _table(0.70), "end_nd_arc": _table(0.78)},
+            {"name": "shell_te", "start_nd_arc": _table(0.02), "end_nd_arc": _table(0.08)},
+        ],
+    }
+
+
+def test_keypoint_caps_need_a_structural_rule_or_an_explicit_list():
+    geo = _oml()
+    z_of_s = np.array([[0.0, 0.0], [1.0, 3.0]])
+    structure = _keypoint_structure()
+    assert cap_side_windows_fn_from_windio_structure(structure, geo, z_of_s) is None
+    found = cap_side_windows_fn_from_windio_structure(
+        structure, geo, z_of_s, cap_id="between_webs",
+    )
+    named = cap_side_windows_fn_from_windio_structure(
+        structure, geo, z_of_s, cap_id=("kp_3_4", "kp_8_9"),
+    )
+    assert found is not None and named is not None
+    assert set(found(0.0)) == {"suction", "pressure"}
+    assert found(0.0)["suction"] == pytest.approx(named(0.0)["suction"])
+    # the trailing-edge skin is outside the webs, so it does not widen the cap
+    sec = _section(geo, 0.0)
+    te = min(arc_point(*sec, s)[0] for s in (0.02, 0.08))
+    assert found(0.0)["suction"][1] < te
+
+
 def test_windio_cap_windows_per_side_leave_out_a_band_round_the_le():
     geo = _oml()
     fn = cap_side_windows_fn_from_windio_structure(_structure(), geo, np.array([[0.0, 0.0], [1.0, 3.0]]))

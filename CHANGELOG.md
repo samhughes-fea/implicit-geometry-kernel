@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- windIO caps can be chosen by more than a name containing ``spar`` or ``cap``.
+  ``cap_id="between_webs"`` keeps a non-web layer whose band sits between the
+  outermost web feet. ``cap_id`` may also be an explicit list of layer names.
+  The default name rule is unchanged (BG-041, G16).
 - A stringer's chord fraction and depth can vary along the span
   (``Stringer.position_law``, ``Stringer.depth_law``): a callable of ``z`` or a
   ``(z, values)`` table. A fixed ``position`` and ``depth`` are unchanged (G15).

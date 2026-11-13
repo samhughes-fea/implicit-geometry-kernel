@@ -64,7 +64,7 @@ entries are from a retired repo-root log.
 | [BG-038](#bg-038) | windIO `nd_arc` read as chord position (IEA 15 webs 25–290 mm off) | **Fixed** (K9) |
 | [BG-039](#bg-039) | Tip closure left out on a single-cell tip at a coarse `h` | **Fixed** (K9) |
 | [BG-040](#bg-040) | `merge_cap_and_skin=True` drops the caps from the shell graph | **Fixed** |
-| [BG-041](#bg-041) | windIO caps found by layer name only (IEA 10 gets none) | **Open** |
+| [BG-041](#bg-041) | windIO caps found by layer name only (IEA 10 gets none) | **Fixed** |
 | [BG-042](#bg-042) | Station airfoil missed its own points at a blunt-TE corner (0.1 mm at 4.5 m chord) | **Fixed** (K9) |
 | [BG-043](#bg-043) | Round trailing end bulged aft of its end point and was scrambled (0.1 mm at 5.4 m chord) | **Fixed** (K9) |
 | [BG-044](#bg-044) | windIO web feet and cap edges interpolated in chord fraction between grid points (up to 10 mm) | **Fixed** (K9) |
@@ -978,8 +978,10 @@ replacement is kept on the cut. **Fixed** (G10).
 **Evidence.** Caps are taken from layers whose name contains `spar` or `cap`;
 IEA 10 names its layers by keypoint pair and material.
 
-**Root cause.** Identification by name. A structural rule (the uniaxial band
-between the web feet) or an explicit list is needed. **Open.**
+**Root cause.** Identification by name. `cap_id="between_webs"` keeps a
+non-web layer whose band sits between the outermost web feet, and `cap_id`
+may be an explicit list of layer names. The default name rule is unchanged.
+**Fixed** (G16).
 
 ## BG-042
 

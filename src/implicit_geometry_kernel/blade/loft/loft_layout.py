@@ -37,6 +37,15 @@ class LoftLayoutMixin:
         f = float(fracs[int(index)])
         return lambda z, _f=f: _f
 
+    def _web_tilts_at(self, z: float):
+        fn = getattr(self, "_web_tilt_fn", None)
+        if fn is None:
+            return None
+        raw = fn(float(z))
+        if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+            return (float(raw),)
+        return tuple(float(v) for v in np.atleast_1d(raw).reshape(-1))
+
     def _pitch_metres_at(self, z: float):
         fn = getattr(self, "_web_x_from_pitch_fn", None)
         if fn is None:

@@ -122,6 +122,11 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         ``"midplane"`` (default) reads a cap window as a chord fraction on the
         cap mid-plane. ``"outer"`` reads it on the outer mould line and places
         the mid-plane edge on the inward normal, ``skin + half the cap`` in.
+    web_tilt_deg:
+        Tilt of a chord-fraction web from the thickness direction, in degrees,
+        toward the trailing edge. One number, one per web, or a callable of
+        ``z``. Two-foot webs already carry their line and reject a tilt. Zero
+        leaves the web chord-normal.
     n_airfoil_points:
         Points per surface used to hand the interpolated airfoil to the section
         geometry.
@@ -180,6 +185,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         cap_x_from_pitch: Optional[SpanTable] = None,
         twist_sense: str = "nose_up",
         cap_edge_reference: str = "midplane",
+        web_tilt_deg: Optional[SpanTable] = None,
     ):
         from implicit_geometry_kernel.catalogue import resolve_system_type
 
@@ -287,6 +293,16 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         if cap_edge_reference not in ("midplane", "outer"):
             raise ValueError("cap_edge_reference must be 'midplane' or 'outer'")
         self.cap_edge_reference = str(cap_edge_reference)
+        if web_tilt_deg is None:
+            self._web_tilt_fn = None
+        elif callable(web_tilt_deg):
+            self._web_tilt_fn = web_tilt_deg
+        elif isinstance(web_tilt_deg, (int, float)) and not isinstance(web_tilt_deg, bool):
+            _tilt = float(web_tilt_deg)
+            self._web_tilt_fn = lambda z, _v=_tilt: _v
+        else:
+            _tilts = tuple(float(v) for v in web_tilt_deg)
+            self._web_tilt_fn = lambda z, _w=_tilts: _w
         if region_graph is None:
             from implicit_geometry_kernel.blade.topology import WallRegionGraph
             self.region_graph = self._with_anchored_web_laws(

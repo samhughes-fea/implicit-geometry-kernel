@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- ``BladeGeometry(..., web_tilt_deg=)`` tilts a chord-fraction web away from
+  the thickness direction. The web is the line through the outer-surface
+  points at the tilted feet. Two-foot webs already carry that line. Zero is
+  unchanged (G12).
 - ``BladeGeometry(..., cap_edge_reference=)`` chooses where a cap window is
   measured. ``"midplane"`` (default, unchanged) is a chord fraction on the cap
   mid-plane. ``"outer"`` is the same fraction on the outer mould line; the

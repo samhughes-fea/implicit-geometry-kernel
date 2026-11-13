@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- ``BladeGeometry(..., cap_edge_reference=)`` chooses where a cap window is
+  measured. ``"midplane"`` (default, unchanged) is a chord fraction on the cap
+  mid-plane. ``"outer"`` is the same fraction on the outer mould line; the
+  mid-plane edge is that point stepped in along the normal by the skin plus
+  half the cap (G11).
 - ``merge_cap_and_skin=True`` keeps the cap partitions on the shell graph.
   Rebuilding the graph from the merged runs dropped them, because those runs
   have no skin bonds, and a cap region was then lofted onto the neighbouring

@@ -71,7 +71,8 @@ class SectionGeometry(RunnerLifecycleMixin):
         self._zone_gauges_m = None if spec.zone_gauges_m is None else dict(spec.zone_gauges_m)
         self._t_skin_gauges = (spec.gauges.skin_ss, spec.gauges.skin_ps)
         self._t_skin = spec.gauges.skin_max
-        self._t_spar = float(spec.gauges.cap)
+        cap = spec.gauges.cap
+        self._t_spar = cap if isinstance(cap, tuple) else float(cap)
         self._t_web = spec.gauges.web_arg
         self._twist_rad = spec.twist_rad
         self._outputs = tuple(options.outputs)

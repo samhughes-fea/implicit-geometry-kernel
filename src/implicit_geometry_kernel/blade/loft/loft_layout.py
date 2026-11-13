@@ -164,7 +164,10 @@ class LoftLayoutMixin:
         chord, _, _, _, (x, upper, lower) = self.interpolate(float(z))
         y_of = upper if side == "suction" else lower
         cap = self._cap(float(z))
-        t_cap = float(cap[0] if isinstance(cap, (tuple, list)) else cap)
+        if isinstance(cap, (tuple, list)):
+            t_cap = float(cap[0] if side == "suction" else cap[1])
+        else:
+            t_cap = float(cap)
         inset = float(self._skin(float(z))) + 0.5 * t_cap
         eps = 1e-3
         f0 = float(np.clip(frac - eps, 0.0, 1.0))

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- ``spar_cap_thickness`` may be ``(suction, pressure)`` and
+  ``shear_web_thickness`` may be one value per web (or a callable of ``z``
+  returning either). A single number still applies to every wall of that kind
+  (G13).
 - ``BladeGeometry(..., web_tilt_deg=)`` tilts a chord-fraction web away from
   the thickness direction. The web is the line through the outer-surface
   points at the tilted feet. Two-foot webs already carry that line. Zero is

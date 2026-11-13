@@ -58,6 +58,7 @@ from implicit_geometry_kernel.blade.loft.loft_tables import (
     SpanTable,
     Thickness,
     _as_function,
+    _gauge_law,
     _as_pivot_fraction,
     _as_span_table,
     _is_frac_sequence,
@@ -94,6 +95,8 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         ``SectionLayout`` (web fractions and cap rule, as for reference blades).
     skin_thickness, spar_cap_thickness, shear_web_thickness:
         Wall thicknesses in metres, as numbers or functions of z.
+        ``spar_cap_thickness`` may be ``(suction, pressure)``.
+        ``shear_web_thickness`` may be one value per web, leading edge to trailing edge.
     web_positions:
         Web chord fractions, LE to TE (default: the layout's). A callable ``f(z)``
         or ``(z, values)`` table with shape ``(n, n_webs)`` varies stations along
@@ -163,8 +166,8 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         stations: Sequence[Station],
         layout: str | SystemLayoutSpec | SectionLayout,
         skin_thickness: Thickness,
-        spar_cap_thickness: Thickness = 0.0,
-        shear_web_thickness: Thickness = 0.0,
+        spar_cap_thickness: Thickness | Sequence[float] = 0.0,
+        shear_web_thickness: Thickness | Sequence[float] = 0.0,
         web_positions: Optional[SpanTable] = None,
         web_offsets: Optional[Sequence[float]] = None,
         n_airfoil_points: int = 161,
@@ -265,8 +268,8 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
             else:
                 self._cap_windows_fn = _as_span_table(cap_windows, "cap_windows", cols=2)
         self._skin = _as_function(skin_thickness, "skin_thickness")
-        self._cap = _as_function(spar_cap_thickness, "spar_cap_thickness")
-        self._web = _as_function(shear_web_thickness, "shear_web_thickness")
+        self._cap = _gauge_law(spar_cap_thickness, "spar_cap_thickness")
+        self._web = _gauge_law(shear_web_thickness, "shear_web_thickness")
         self._chord = _as_span_table(chord, "chord")
         self._twist = _as_span_table(twist, "twist")
         self._offset = _as_span_table(offset, "offset", cols=2)

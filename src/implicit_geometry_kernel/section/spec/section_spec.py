@@ -89,7 +89,17 @@ def resolve_spar_cap_thickness(
     cap_height: float | None = None,
     default: float | None = None,
     required: bool = False,
-) -> float:
+) -> float | tuple[float, float]:
+    """Scalar, or ``(suction, pressure)`` when the two caps differ."""
+    raw = spar_cap_thickness if spar_cap_thickness is not None else cap_height
+    if isinstance(raw, (tuple, list)) and not isinstance(raw, str):
+        vals = [float(v) for v in raw]
+        if len(vals) != 2:
+            raise ValueError(
+                "spar_cap_thickness sequence must be (suction, pressure); "
+                f"got {len(vals)}"
+            )
+        return (vals[0], vals[1])
     return _pick_exclusive(
         spar_cap_thickness,
         (cap_height,),
@@ -171,7 +181,7 @@ class Gauges:
 
     skin_ss: float
     skin_ps: float
-    cap: float
+    cap: float | tuple[float, float]
     web: float | tuple[float, ...]
 
     @property
@@ -230,7 +240,8 @@ class SectionSpec:
                 raise ValueError("pivot_fraction must be a chord fraction in (0, 1)")
             object.__setattr__(self, "pivot_fraction", f)
         g = self.gauges
-        if min(g.skin_ss, g.skin_ps, g.cap) < 0.0:
+        caps = g.cap if isinstance(g.cap, tuple) else (g.cap,)
+        if min(g.skin_ss, g.skin_ps, *caps) < 0.0:
             raise ValueError("gauges must be non-negative")
         web = g.web
         if isinstance(web, tuple):
@@ -289,6 +300,11 @@ class SectionSpec:
         cap = resolve_spar_cap_thickness(
             spar_cap_thickness=spar_cap_thickness, cap_height=cap_height, required=True
         )
+        cap_field: float | tuple[float, float]
+        if isinstance(cap, tuple):
+            cap_field = cap
+        else:
+            cap_field = float(cap)
         web = resolve_shear_web_thickness(
             shear_web_thickness=shear_web_thickness,
             web_thickness=web_thickness,
@@ -311,7 +327,7 @@ class SectionSpec:
             layout=layout,
             airfoil=airfoil,
             twist_rad=twist,
-            gauges=Gauges(skin_ss=ss, skin_ps=ps, cap=float(cap), web=web_t),
+            gauges=Gauges(skin_ss=ss, skin_ps=ps, cap=cap_field, web=web_t),
             webs=None if xs is None else tuple(float(x) for x in xs),
             web_indices=None if web_indices is None else tuple(int(i) for i in web_indices),
             web_y_anchors=None if web_y_coords is None else tuple((float(a), float(b)) for a, b in web_y_coords),

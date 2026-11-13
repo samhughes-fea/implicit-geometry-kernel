@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- ``StackThickness.from_layup`` and ``StackThickness.from_windio`` report the
+  real thickness of each wall from a layup or a windIO ply stack. A missing
+  run keeps the geometric sum. This is thickness, not a stiffness centre (G17).
 - windIO caps can be chosen by more than a name containing ``spar`` or ``cap``.
   ``cap_id="between_webs"`` keeps a non-web layer whose band sits between the
   outermost web feet. ``cap_id`` may also be an explicit list of layer names.

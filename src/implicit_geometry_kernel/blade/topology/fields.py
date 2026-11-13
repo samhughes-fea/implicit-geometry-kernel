@@ -28,17 +28,116 @@ def _polyline_distance(xy: np.ndarray, poly: np.ndarray) -> np.ndarray:
     return best
 
 
+def _as_layup(layup):
+    """``layup(z, run_name) -> metres``, or a mapping of run name to a thickness."""
+    if callable(layup):
+        return layup
+
+    def at(z, name, _table=dict(layup)):
+        value = _table.get(name)
+        if value is None:
+            return None
+        return float(value(z) if callable(value) else value)
+
+    return at
+
+
+def _layer_thickness(layer):
+    """Metres, or a callable of ``z``, from a windIO layer's plies or ``thickness``."""
+    plies = layer.get("plies") or layer.get("stack")
+    if plies:
+        return float(sum(float(p.get("thickness", p) if isinstance(p, dict) else p) for p in plies))
+    thickness = layer.get("thickness", 0.0)
+    if isinstance(thickness, dict) and "grid" in thickness and "values" in thickness:
+        grid = np.asarray(thickness["grid"], float)
+        values = np.asarray(thickness["values"], float)
+
+        def at(z, _g=grid, _v=values):
+            return float(np.interp(z, _g, _v))
+
+        return at
+    return float(thickness)
+
+
+def windio_stack_layup(structure):
+    """``(z, run_name) -> metres`` from a windIO stack.
+
+    Cap layers (name contains ``spar`` or ``cap``, and not a web) add to that
+    side's spar-cap run, on top of the skin sum. A layer with ``web`` set adds
+    to ``shear_web_<i>`` when the web is named that way, otherwise to every
+    shear web. Every other layer sums into the skin runs.
+    """
+    skin = []
+    caps = {"suction": [], "pressure": []}
+    webs: dict[str, list] = {}
+    web_any: list = []
+    for layer in structure.get("layers") or ():
+        if not isinstance(layer, dict):
+            continue
+        thickness = _layer_thickness(layer)
+        web = layer.get("web")
+        name = str(layer.get("name", "")).lower()
+        if web not in (None, ""):
+            key = str(web)
+            webs.setdefault(key, []).append(thickness)
+            web_any.append(thickness)
+            continue
+        if any(tag in name for tag in ("spar", "cap")):
+            if "pressure" in name or name.endswith("_ps") or "_ps" in name:
+                caps["pressure"].append(thickness)
+            else:
+                caps["suction"].append(thickness)
+            continue
+        skin.append(thickness)
+
+    def total(parts, z):
+        return float(sum(float(p(z) if callable(p) else p) for p in parts))
+
+    def layup(z, run_name):
+        key = str(run_name)
+        skin_t = total(skin, z)
+        if "spar_cap" in key and "pressure" in key:
+            return skin_t + total(caps["pressure"], z)
+        if "spar_cap" in key:
+            return skin_t + total(caps["suction"], z)
+        if key.startswith("shear_web") or key.startswith("web"):
+            parts = webs.get(key)
+            if parts is None and key.startswith("shear_web_"):
+                parts = webs.get(key.split("shear_web_", 1)[1])
+            return total(parts if parts is not None else web_any, z)
+        if key.startswith("skin"):
+            return skin_t
+        return None
+
+    return layup
+
+
 class StackThickness:
     """Skin thickness everywhere, plus cap thickness inside cap footprints.
 
     Nearest loop-run ``T`` (a step, not a ramp). Shared cap/skin vertices may
     evaluate to either side. Not a Newton joint spec.
+
+    ``from_layup`` and ``from_windio`` replace that geometric sum with the real
+    stack thickness of the run. A layup that returns ``None`` keeps the
+    geometric sum. This is thickness, not a stiffness centre.
     """
 
-    def __init__(self, geo, cache_size: int = 256) -> None:
+    def __init__(self, geo, cache_size: int = 256, layup=None) -> None:
         self.geo = geo
+        self.layup = None if layup is None else _as_layup(layup)
         self._cache: OrderedDict[float, object] = OrderedDict()
         self._cache_size = int(cache_size)
+
+    @classmethod
+    def from_layup(cls, geo, layup, cache_size: int = 256):
+        """Real thickness per wall from ``layup(z, run_name)`` or a name mapping."""
+        return cls(geo, cache_size=cache_size, layup=layup)
+
+    @classmethod
+    def from_windio(cls, geo, structure, cache_size: int = 256):
+        """Real thickness per wall from the windIO layer stack (ply sums)."""
+        return cls(geo, cache_size=cache_size, layup=windio_stack_layup(structure))
 
     def _loop(self, z: float):
         key = round(float(z), 9)
@@ -48,7 +147,7 @@ class StackThickness:
             return hit
         try:
             graph = self.geo.section_at(key).shell_graph()
-            payload = (graph.loop, float(self.geo._skin(key)))
+            payload = (graph.loop, graph.webs, float(self.geo._skin(key)))
         except InfeasibleSectionGeometry:
             payload = None
         self._cache[key] = payload
@@ -70,14 +169,19 @@ class StackThickness:
             if payload is None:
                 out[group] = float(self.geo._skin(zkey))
                 continue
-            loop, skin_t = payload
+            loop, webs, skin_t = payload
             xy = points[group, :2]
             T = np.full(len(group), skin_t)
             best = np.full(len(group), np.inf)
-            for run in loop:
+            runs = loop if self.layup is None else loop + webs
+            for run in runs:
                 d = _polyline_distance(xy, run.points[:, :2])
                 closer = d < best
                 stack_t = float(sum(run.layer_thicknesses_m)) if run.layer_thicknesses_m else float(run.thickness)
+                if self.layup is not None:
+                    given = self.layup(zkey, run.name)
+                    if given is not None:
+                        stack_t = float(given)
                 T[closer] = stack_t
                 best[closer] = d[closer]
             out[group] = T

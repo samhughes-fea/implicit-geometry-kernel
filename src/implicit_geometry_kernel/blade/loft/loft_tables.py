@@ -173,7 +173,7 @@ def _metre_rows(raw, name: str):
         return None
     if isinstance(raw, (int, float)) and not isinstance(raw, bool):
         return (float(raw),)
-    rows = []
+    rows: list[float | tuple[float, float]] = []
     for item in raw:
         if isinstance(item, (int, float)) and not isinstance(item, bool):
             rows.append(float(item))

@@ -70,6 +70,7 @@ from implicit_geometry_kernel.blade.loft.loft_fields import LoftFieldsMixin
 from implicit_geometry_kernel.blade.loft.loft_layout import LoftLayoutMixin
 
 if TYPE_CHECKING:
+    from implicit_geometry_kernel.blade.loft.section_callable import SectionSample
     from implicit_geometry_kernel.catalogue.system_layout import SystemLayoutSpec
     from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
 
@@ -327,7 +328,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         self._section_cache_size = 256
         # Set by from_section: already-blended samples, parallel to self.stations.
         # interpolate lerps these and does not call _morph_surfaces.
-        self._section_samples = None
+        self._section_samples: tuple[SectionSample, ...] | None = None
         # interpolate / section_at / query / write / validate live on mixins
 
     @classmethod

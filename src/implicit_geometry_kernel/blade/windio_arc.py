@@ -173,6 +173,14 @@ def _placed_feet(arc: ArcMap, geo, z_table, z: float, start, end) -> tuple[float
     return float(su[0]), float(pr[0])
 
 
+def _web_midpoint(arc, geo, z_table, start, end) -> Callable[[float], float]:
+    """Chord-fraction midpoint of one web, with the feet bound for this web."""
+    def midpoint(z: float) -> float:
+        su, pr = _placed_feet(arc, geo, z_table, z, start, end)
+        return 0.5 * (su + pr)
+    return midpoint
+
+
 def web_midpoint_laws_from_windio_structure(structure: Mapping[str, Any], geo,
                                             z_of_s: np.ndarray | Sequence | None = None,
                                             ) -> list[tuple[str, Callable[[float], float], "tuple[float, float] | None"]] | None:
@@ -197,11 +205,11 @@ def web_midpoint_laws_from_windio_structure(structure: Mapping[str, Any], geo,
         window = None if extent is None else (_z_of_grid(extent[0], z_table),
                                               _z_of_grid(extent[1], z_table))
 
-        def at(z: float, _start=start, _end=end) -> float:
-            su, pr = _placed_feet(arc, geo, z_table, z, _start, _end)
-            return 0.5 * (su + pr)
-
-        laws.append((str(web.get("name", f"web_{j}")), at, window))
+        laws.append((
+            str(web.get("name", f"web_{j}")),
+            _web_midpoint(arc, geo, z_table, start, end),
+            window,
+        ))
     return laws
 
 

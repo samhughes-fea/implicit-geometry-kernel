@@ -85,7 +85,7 @@ def resolve_skin_thickness(
 
 def resolve_spar_cap_thickness(
     *,
-    spar_cap_thickness: float | None = None,
+    spar_cap_thickness: float | tuple[float, float] | None = None,
     cap_height: float | None = None,
     default: float | None = None,
     required: bool = False,
@@ -100,8 +100,9 @@ def resolve_spar_cap_thickness(
                 f"got {len(vals)}"
             )
         return (vals[0], vals[1])
+    scalar = spar_cap_thickness if isinstance(spar_cap_thickness, (int, float)) else None
     return _pick_exclusive(
-        spar_cap_thickness,
+        scalar,
         (cap_height,),
         names="spar_cap_thickness / cap_height",
         default=default,

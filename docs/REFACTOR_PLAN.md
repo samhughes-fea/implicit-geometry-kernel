@@ -58,7 +58,7 @@ family with a root-circle blend, webs, caps, ribs, stringers) and out of windIO 
 | G13 | Refuses webs with different layups; one cap thickness for both sides | Thickness per web and per cap side | Done (`spar_cap_thickness=(suction, pressure)`, `shear_web_thickness` one value per web) |
 | G14 | Refuses wall nodes on the outer surface (`wall_reference = oml`) | A reference-surface option for the shell graph (mid-surface, OML) | Done (`wall_reference`: `mid` default, `oml`) |
 | G15 | Refuses stringers whose chord position or height varies along the span | Stringer position and height as span laws | Done (`Stringer.position_law`, `Stringer.depth_law`) |
-| G16 | Finds windIO spar caps by layer name (`spar`, `cap`); a file that names layers by keypoint (10 MW) gets none | Identify caps by structure (the band between the web feet, uniaxial material) or take an explicit list | To do |
+| G16 | Finds windIO spar caps by layer name (`spar`, `cap`); a file that names layers by keypoint (10 MW) gets none | Identify caps by structure (the band between the web feet, uniaxial material) or take an explicit list | Done (`cap_id`: name rule default, `between_webs`, or a name list; BG-041) |
 | G17 | Sums ply thicknesses itself for skin, cap and web | Thickness per partition from the stack (decision D4) | To do |
 | G18 | — | Webs that cross between stations (BG-037) | Done (web anchors follow the placed arcs) |
 

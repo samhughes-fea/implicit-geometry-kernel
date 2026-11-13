@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- A blade can be lofted from a callable ``section(z)``
+  (``BladeGeometry.from_section``). The callable is already the consumer's
+  blend. Stations are added until the linear loft of those samples is within
+  a stated tolerance of ``section(z)`` on the placed outer mould line, and
+  ``interpolate`` does not run ``_morph_surfaces`` again on that path. Station
+  tables still morph with the 60 % smoothstep rule (G6).
 - windIO arcs are placed on the blade's own sections (``blade/windio_arc.py``).
   A point at ``nd_arc = s`` is the outer-surface point at that arc length on
   the section the blade has at that span; the old mapping ``x/c = 1 - 2 min(s,

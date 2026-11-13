@@ -78,6 +78,10 @@ class LoftCutMixin:
         ``Airfoil.interpolate_by_thickness``. Chord, twist and offset come from span
         tables when given, otherwise from the stations. Pitch axis is always
         ``pivot_fraction``.
+
+        A blade built with :meth:`BladeGeometry.from_section` already carries the
+        consumer's blend in its samples. Between those stations the surfaces and the
+        scalars are linear, and ``_morph_surfaces`` is not called.
         """
         zs = np.array([s.z for s in self.stations])
         if z < zs[0] - 1e-12 * max(1.0, abs(zs[0])) or z > zs[-1] + 1e-12 * max(1.0, abs(zs[-1])):
@@ -85,6 +89,20 @@ class LoftCutMixin:
         k = int(np.clip(np.searchsorted(zs, z, side="right") - 1, 0, len(zs) - 2))
         a, b = self.stations[k], self.stations[k + 1]
         w = float(np.clip((z - a.z) / (b.z - a.z), 0.0, 1.0))
+        samples = getattr(self, "_section_samples", None)
+        if samples is not None:
+            # The callable was already the consumer's blend. Lerp the samples.
+            # Do not run _morph_surfaces on this path.
+            from implicit_geometry_kernel.blade.loft.section_callable import lerp_sample
+
+            blended = lerp_sample(samples[k], samples[k + 1], w, float(z))
+            return (
+                blended.chord,
+                blended.twist,
+                blended.pivot_fraction,
+                blended.offset,
+                (np.asarray(blended.x, float), np.asarray(blended.upper, float), np.asarray(blended.lower, float)),
+            )
         x = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, self.n_airfoil_points)))
         upper, lower = _morph_surfaces(a.airfoil, b.airfoil, w, x)
         zz = float(z)

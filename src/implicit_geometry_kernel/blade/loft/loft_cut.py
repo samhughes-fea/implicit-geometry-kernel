@@ -164,14 +164,27 @@ class LoftCutMixin:
         # frozen geometry code is used as it is.
         k = _min_thickness_scale(t_skin, t_cap, t_web)
         twist_rad = _FORK_TWIST_SIGN * np.radians(twist)
+        pitch_m = self._pitch_metres_at(z)
         feet = self._web_feet_at(z)
+        if pitch_m is not None and pitch_m and isinstance(pitch_m[0], tuple):
+            feet = tuple(
+                (float(pitch) + float(a) / chord, float(pitch) + float(b) / chord)
+                for a, b in pitch_m
+            )
         if feet is not None:
+            from implicit_geometry_kernel.catalogue import SystemLayoutSpec
+            from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
+
+            if isinstance(layout, SystemLayoutSpec):
+                layout = SectionLayout.from_system_layout_spec(layout)
             layout = _with_web_axes(layout, feet, x, upper, lower, chord * k, t_skin * k)
         web_offsets = None
-        if self.web_offsets is not None:
+        if pitch_m is not None and not (pitch_m and isinstance(pitch_m[0], tuple)):
+            web_offsets = tuple((float(xm) + pitch * chord) * k for xm in pitch_m)
+        elif self.web_offsets is not None:
             web_offsets = tuple(v * k for v in self.web_offsets)
         elif self._web_x_from_pitch is not None:
-            web_offsets = tuple((x + pitch * chord) * k for x in self._web_x_from_pitch)
+            web_offsets = tuple((xm + pitch * chord) * k for xm in self._web_x_from_pitch)
         spec = SectionSpec.from_kwargs(
             layout,
             AirfoilSDF.from_surface_graphs(x, upper, lower, chord * k),

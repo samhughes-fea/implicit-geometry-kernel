@@ -7,7 +7,8 @@ from dataclasses import replace
 
 import numpy as np
 
-from implicit_geometry_kernel.blade.loft.loft_tables import _with_web_fractions
+from implicit_geometry_kernel.blade.concepts.web_anchoring import chord_fraction_from_pitch
+from implicit_geometry_kernel.blade.loft.loft_tables import _metre_rows, _with_web_fractions
 from implicit_geometry_kernel.blade.stations import Stringer, TransverseMember
 
 
@@ -35,6 +36,29 @@ class LoftLayoutMixin:
         fracs = tuple(float(f) for f in getattr(self.spec, "web_chord_fracs", ()) or ())
         f = float(fracs[int(index)])
         return lambda z, _f=f: _f
+
+    def _pitch_metres_at(self, z: float):
+        fn = getattr(self, "_web_x_from_pitch_fn", None)
+        if fn is None:
+            return None
+        return _metre_rows(fn(float(z)), "web_x_from_pitch")
+
+    def _cap_metres_at(self, z: float, chord: float, pitch: float):
+        fn = getattr(self, "_cap_x_from_pitch_fn", None)
+        if fn is None:
+            return None
+        raw = _metre_rows(fn(float(z)), "cap_x_from_pitch")
+        if raw is None:
+            return None
+        if raw and not isinstance(raw[0], tuple):
+            raise ValueError("cap_x_from_pitch needs (x0, x1) pairs")
+        return tuple(
+            (
+                chord_fraction_from_pitch(a, chord, pitch),
+                chord_fraction_from_pitch(b, chord, pitch),
+            )
+            for a, b in raw
+        )
 
     def _with_anchored_web_laws(self, graph):
         """PA/LE loft anchors follow the metre freeze, not catalogue LC fractions."""
@@ -87,12 +111,20 @@ class LoftLayoutMixin:
         out = []
         for stringer in self.stringers:
             if stringer.extent is None:
-                out.append(stringer)
+                out.append(self._stringer_on_chord(stringer, z))
                 continue
             z0, z1 = round(float(stringer.extent[0]), 9), round(float(stringer.extent[1]), 9)
             if z0 <= key <= z1:
-                out.append(stringer)
+                out.append(self._stringer_on_chord(stringer, z))
         return tuple(out)
+
+    def _stringer_on_chord(self, stringer: Stringer, z: float) -> Stringer:
+        if getattr(stringer, "position_m", None) is None:
+            return stringer
+        chord = max(self._span_scalar(self._chord, [s.chord for s in self.stations], float(z)), 1e-12)
+        pitch = float(self._pitch(float(z)))
+        frac = chord_fraction_from_pitch(stringer.position_m, chord, pitch)
+        return replace(stringer, position=float(frac))
 
     def _web_feet_at(self, z: float):
         """Two-foot webs at z: ``((suction, pressure), ...)`` chord fractions, LE to TE.
@@ -124,7 +156,8 @@ class LoftLayoutMixin:
         from implicit_geometry_kernel.catalogue import SystemLayoutSpec
 
         spec = self.spec
-        if self._web_positions_fn is None and self._cap_windows_fn is None:
+        if (self._web_positions_fn is None and self._cap_windows_fn is None
+                and getattr(self, "_cap_x_from_pitch_fn", None) is None):
             return spec
         if isinstance(spec, SystemLayoutSpec):
             layout = SectionLayout.from_system_layout_spec(spec)
@@ -146,26 +179,29 @@ class LoftLayoutMixin:
                 layout = replace(layout, cap_placement=CapPlacementRule.none(),
                                  structural_family="A", catalogue_key=None,
                                  flags=tuple(f for f in layout.flags if f != "has_spar_caps"))
-        if self._cap_windows_fn is not None:
+        chord = max(self._span_scalar(self._chord, [s.chord for s in self.stations], float(z)), 1e-12)
+        pitch = float(self._pitch(float(z)))
+        windows = self._cap_metres_at(z, chord, pitch)
+        if windows is None and self._cap_windows_fn is not None:
             windows = self._cap_windows_fn(float(z))
-            if windows is not None:
-                if isinstance(windows, Mapping):
-                    rule = CapPlacementRule.from_side_windows(windows["suction"],
-                                                              windows["pressure"])
-                else:
-                    raw = tuple(windows) if not isinstance(windows, tuple) else windows
-                    if raw and not isinstance(raw[0], (tuple, list)):
-                        raw = (tuple(float(x) for x in raw),)
-                    rule = CapPlacementRule.from_chord_windows(raw)
-                layout = SectionLayout(
-                    web_chord_fracs=layout.web_chord_fracs,
-                    orientation=layout.orientation,
-                    cap_placement=rule,
-                    catalogue_key=layout.catalogue_key,
-                    web_stations_m=layout.web_stations_m,
-                    web_axes_m=layout.web_axes_m,
-                    structural_family=layout.structural_family,
-                    flags=layout.flags,
-                )
+        if windows is not None:
+            if isinstance(windows, Mapping):
+                rule = CapPlacementRule.from_side_windows(windows["suction"],
+                                                          windows["pressure"])
+            else:
+                raw = tuple(windows) if not isinstance(windows, tuple) else windows
+                if raw and not isinstance(raw[0], (tuple, list)):
+                    raw = (tuple(float(x) for x in raw),)
+                rule = CapPlacementRule.from_chord_windows(raw)
+            layout = SectionLayout(
+                web_chord_fracs=layout.web_chord_fracs,
+                orientation=layout.orientation,
+                cap_placement=rule,
+                catalogue_key=layout.catalogue_key,
+                web_stations_m=layout.web_stations_m,
+                web_axes_m=layout.web_axes_m,
+                structural_family=layout.structural_family,
+                flags=layout.flags,
+            )
         return layout
 

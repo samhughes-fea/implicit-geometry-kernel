@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Webs, cap windows and stringers can be given in metres from the pitch axis
+  (``web_x_from_pitch``, ``cap_x_from_pitch``, ``Stringer.position_m``). Each
+  station converts them with its own chord and pivot
+  (``chord_fraction_from_pitch``), so a root blend does not reuse a fraction
+  of a different chord (G8).
 - ``BladeGeometry(..., airfoil_morph=)`` chooses the station-table airfoil blend:
   ``"auto"`` (unchanged: smoothstep when one station is at least 60 % thick or
   an ellipse and the other is not), ``"smoothstep"``, ``"thickness"`` or

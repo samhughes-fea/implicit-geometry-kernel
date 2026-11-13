@@ -128,8 +128,12 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
     web_tilt_deg:
         Tilt of a chord-fraction web from the thickness direction, in degrees,
         toward the trailing edge. One number, one per web, or a callable of
-        ``z``. Two-foot webs already carry their line and reject a tilt. Zero
+        ``z``. Two-foot webs already carry their line and reject a tilt.         Zero
         leaves the web chord-normal.
+    wall_reference:
+        ``"mid"`` (default) puts shell nodes on the laminate mid-surface.
+        ``"oml"`` moves skin runs out along the surface normal by half the
+        skin thickness, onto the outer mould line. Webs stay on their midline.
     n_airfoil_points:
         Points per surface used to hand the interpolated airfoil to the section
         geometry.
@@ -189,6 +193,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         twist_sense: str = "nose_up",
         cap_edge_reference: str = "midplane",
         web_tilt_deg: Optional[SpanTable] = None,
+        wall_reference: str = "mid",
     ):
         from implicit_geometry_kernel.catalogue import resolve_system_type
 
@@ -306,6 +311,9 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         else:
             _tilts = tuple(float(v) for v in web_tilt_deg)
             self._web_tilt_fn = lambda z, _w=_tilts: _w
+        if wall_reference not in ("mid", "oml"):
+            raise ValueError("wall_reference must be 'mid' or 'oml'")
+        self.wall_reference = str(wall_reference)
         if region_graph is None:
             from implicit_geometry_kernel.blade.topology import WallRegionGraph
             self.region_graph = self._with_anchored_web_laws(

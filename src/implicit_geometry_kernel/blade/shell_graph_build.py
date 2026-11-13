@@ -111,6 +111,28 @@ def _host_panel_suffix(layers: Tuple[str, ...]) -> str | None:
     return None
 
 
+def _offset_to_outer_surface(points: np.ndarray, distance: float) -> np.ndarray:
+    """Move a skin run from its mid-surface onto the outer mould line.
+
+    The run is oriented so ``z × tangent`` points out of the section.
+    """
+    pts = np.array(points, float, copy=True)
+    for i in range(len(pts)):
+        if i == 0:
+            direction = pts[1, :2] - pts[0, :2]
+        elif i == len(pts) - 1:
+            direction = pts[-1, :2] - pts[-2, :2]
+        else:
+            direction = pts[i + 1, :2] - pts[i - 1, :2]
+        length = float(np.linalg.norm(direction))
+        if length <= 1e-15:
+            continue
+        outward = np.array([-direction[1], direction[0]]) / length
+        pts[i, 0] += outward[0] * distance
+        pts[i, 1] += outward[1] * distance
+    return pts
+
+
 def _endpoint_gap(a: np.ndarray, b: np.ndarray) -> float:
     pa = np.asarray(a, float).reshape(-1, a.shape[-1])[:, :2]
     pb = np.asarray(b, float).reshape(-1, b.shape[-1])[:, :2]
@@ -170,9 +192,13 @@ def _runs_of(ms: MidSurface, segs, cut: SectionCut, surface: str) -> Tuple[Shell
         else:
             mesh_t = float(sum(layer_t))
         ecc = 0.5 * t_cap if t_cap else 0.0
+        points = np.vstack(pts)
+        if (surface == "skin" and getattr(cut, "_wall_reference", "mid") == "oml"
+                and mesh_t > 0.0 and len(points) >= 2):
+            points = _offset_to_outer_surface(points, 0.5 * float(mesh_t))
         return ShellRun(
             name, surface, _colour_kind(surface, layers, by_label), layers,
-            np.vstack(pts), float(mesh_t),
+            points, float(mesh_t),
             requires_eccentricity=t_cap > 0.0 and surface == "skin",
             eccentricity_m=ecc,
             layer_thicknesses_m=layer_t,

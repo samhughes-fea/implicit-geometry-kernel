@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- ``BladeGeometry(..., wall_reference=)`` places shell nodes. ``"mid"``
+  (default, unchanged) is the laminate mid-surface. ``"oml"`` moves each skin
+  run out along its normal by half the skin thickness. Webs stay on their
+  midline (G14).
 - ``spar_cap_thickness`` may be ``(suction, pressure)`` and
   ``shear_web_thickness`` may be one value per web (or a callable of ``z``
   returning either). A single number still applies to every wall of that kind

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- ``geometric_integrals`` returns the wall area, centroid and second moments
+  at a station. Spar caps stay on their own mid-line, so the cap offset is in
+  the moments. No elastic centre, shear centre, principal axes, mass centre
+  or warping.
 - ``StackThickness.from_layup`` and ``StackThickness.from_windio`` report the
   real thickness of each wall from a layup or a windIO ply stack. A missing
   run keeps the geometric sum. This is thickness, not a stiffness centre (G17).

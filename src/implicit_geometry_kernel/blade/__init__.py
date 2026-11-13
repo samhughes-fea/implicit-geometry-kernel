@@ -8,6 +8,7 @@ from implicit_geometry_kernel.blade.concepts import (
     write_windio,
 )
 from implicit_geometry_kernel.blade.cut import CellPolygon, SectionCut, SectionWall
+from implicit_geometry_kernel.blade.geometric import GeometricIntegrals, geometric_integrals
 from implicit_geometry_kernel.blade.loft import (
     BladeGeometry,
     LockedLoftPlan,
@@ -82,6 +83,7 @@ __all__ = [
     "BladeConcept",
     "BladeGeometry",
     "CellPolygon",
+    "GeometricIntegrals",
     "LockedLoftPlan",
     "MidSegment",
     "MidSurface",
@@ -123,6 +125,7 @@ __all__ = [
     "rib_face_triangles",
     "tip_closure_polygons",
     "sample_region_polylines",
+    "geometric_integrals",
     "section_at",
     "shared_loft_names",
     "signatures_compatible",

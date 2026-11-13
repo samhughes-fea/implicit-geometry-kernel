@@ -74,8 +74,18 @@ def _near_circle(foil) -> bool:
     return float(foil.max_thickness) >= 0.6 or "ellipse" in name
 
 
-def _morph_surfaces(fa, fb, w: float, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """TE-preserving morph: smoothstep blend on circle roots, else thickness blend.
+_MORPH_RULES = ("auto", "smoothstep", "thickness", "linear")
+
+
+def _morph_surfaces(fa, fb, w: float, x: np.ndarray, rule: str = "auto") -> tuple[np.ndarray, np.ndarray]:
+    """TE-preserving morph between two station airfoils.
+
+    ``rule="auto"`` (station-table blades) uses a smoothstep blend when one
+    parent is at least 60 % thick or named like an ellipse and the other is
+    not, a linear blend when both are, and ``Airfoil.interpolate_by_thickness``
+    otherwise. ``"smoothstep"``, ``"thickness"`` and ``"linear"`` force that
+    one rule on every interval, so a consumer does not have to probe quarter
+    stations to see which rule fired (G7).
 
     Surfaces are blended where they are sampled (``x``), from the parents' own
     splines. No intermediate airfoil is refitted, so a loft between equal
@@ -83,6 +93,8 @@ def _morph_surfaces(fa, fb, w: float, x: np.ndarray) -> tuple[np.ndarray, np.nda
     """
     w = float(np.clip(w, 0.0, 1.0))
     x = np.asarray(x, float)
+    if rule not in _MORPH_RULES:
+        raise ValueError(f"airfoil_morph must be one of {', '.join(_MORPH_RULES)}; got {rule!r}")
     if w <= 1e-15:
         return np.asarray(fa.surface("upper", x), float), np.asarray(fa.surface("lower", x), float)
     if w >= 1.0 - 1e-15:
@@ -93,10 +105,11 @@ def _morph_surfaces(fa, fb, w: float, x: np.ndarray) -> tuple[np.ndarray, np.nda
         yl = (1.0 - s) * np.asarray(fa.surface("lower", xs), float) + s * np.asarray(fb.surface("lower", xs), float)
         return yu, yl
 
-    if _near_circle(fa) or _near_circle(fb):
-        s = _smoothstep(w) if _near_circle(fa) != _near_circle(fb) else w
-        upper, lower = lerp(s, x)
-    else:
+    if rule == "linear":
+        upper, lower = lerp(w, x)
+    elif rule == "smoothstep":
+        upper, lower = lerp(_smoothstep(w), x)
+    elif rule == "thickness" or not (_near_circle(fa) or _near_circle(fb)):
         # Lerp the surfaces in t/c, then scale thickness about the camber line so the
         # peak t/c is the lerped one (Airfoil.interpolate_by_thickness, evaluated at x).
         # Peaks come from the sampled surfaces themselves, not Airfoil.max_thickness
@@ -112,6 +125,10 @@ def _morph_surfaces(fa, fb, w: float, x: np.ndarray) -> tuple[np.ndarray, np.nda
         yu, yl = lerp(s, x)
         camber, thick = 0.5 * (yu + yl), yu - yl
         upper, lower = camber + 0.5 * thick * scale, camber - 0.5 * thick * scale
+    else:
+        # auto, and the parents differ about the 60 % circle test
+        s = _smoothstep(w) if _near_circle(fa) != _near_circle(fb) else w
+        upper, lower = lerp(s, x)
     gap_a = abs(float(np.asarray(fa.surface("upper", 1.0)) - np.asarray(fa.surface("lower", 1.0))))
     gap_b = abs(float(np.asarray(fb.surface("upper", 1.0)) - np.asarray(fb.surface("lower", 1.0))))
     gap = (1.0 - w) * gap_a + w * gap_b

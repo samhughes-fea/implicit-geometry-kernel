@@ -157,6 +157,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         merge_cap_and_skin: bool = False,
         region_graph=None,
         tip_closure: Optional[TipClosure] = None,
+        airfoil_morph: str = "auto",
     ):
         from implicit_geometry_kernel.catalogue import resolve_system_type
 
@@ -241,6 +242,13 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         self.stringers = tuple(stringers)
         self.ply_drops = tuple(ply_drops)
         self.merge_cap_and_skin = bool(merge_cap_and_skin)
+        from implicit_geometry_kernel.blade.loft.loft_tables import _MORPH_RULES
+
+        if airfoil_morph not in _MORPH_RULES:
+            raise ValueError(
+                f"airfoil_morph must be one of {', '.join(_MORPH_RULES)}; got {airfoil_morph!r}"
+            )
+        self.airfoil_morph = str(airfoil_morph)
         if region_graph is None:
             from implicit_geometry_kernel.blade.topology import WallRegionGraph
             self.region_graph = self._with_anchored_web_laws(

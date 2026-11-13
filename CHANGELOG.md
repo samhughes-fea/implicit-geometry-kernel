@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- ``BladeGeometry(..., airfoil_morph=)`` chooses the station-table airfoil blend:
+  ``"auto"`` (unchanged: smoothstep when one station is at least 60 % thick or
+  an ellipse and the other is not), ``"smoothstep"``, ``"thickness"`` or
+  ``"linear"``. A callable ``section(z)`` is still not morphed again (G7).
 - windIO web and cap anchors follow the arc placed on the section at that span
   for the whole web window. A chord-fraction table of the file's grid froze at
   the last sample, and on the IEA 15 MW the cap edge then passed that frozen

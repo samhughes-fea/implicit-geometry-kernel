@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- ``merge_cap_and_skin=True`` keeps the cap partitions on the shell graph.
+  Rebuilding the graph from the merged runs dropped them, because those runs
+  have no skin bonds, and a cap region was then lofted onto the neighbouring
+  skin (BG-040, G10).
 - ``BladeGeometry(..., twist_sense=)`` documents the station twist. ``"nose_up"``
   (default, unchanged) moves the leading edge toward +y. ``"nose_down"`` places
   the same degree value the other way (G9).

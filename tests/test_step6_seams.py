@@ -77,3 +77,26 @@ def test_merged_cap_and_skin_uses_graph_runs():
     assert any(w.kind == "cap" for w in b.walls)
     cap = next(w for w in b.walls if w.kind == "cap")
     assert cap.thickness == pytest.approx(0.011)
+    graph = b.shell_graph()
+    assert "cap" in {r.kind for r in graph.loop}
+    assert {r.name for r in graph.loop if r.kind == "cap"} >= {
+        "spar_cap_suction_surface",
+        "spar_cap_pressure_surface",
+    }
+
+
+def test_merged_cap_mesh_keeps_cap_partitions():
+    from implicit_geometry_kernel.mesh import shell_mesh
+
+    mesh = shell_mesh(_geo(merge_cap_and_skin=True), h=1.0)
+    assert "spar_cap_suction_surface" in mesh.partition
+    assert "spar_cap_pressure_surface" in mesh.partition
+    pts = mesh.nodes
+    for element, part in zip(mesh.elements, mesh.partition):
+        if "spar_cap" not in part:
+            continue
+        ring = pts[list(element)]
+        area = np.zeros(3)
+        for i in range(len(ring)):
+            area += np.cross(ring[i], ring[(i + 1) % len(ring)])
+        assert 0.5 * np.linalg.norm(area) > 1e-8

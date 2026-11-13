@@ -333,6 +333,11 @@ def shell_graph(cut: SectionCut, include_solids: bool = False) -> ShellGraph:
     boundaries so loft can see them without changing default 2D-F run names.
     """
 
+    cached = getattr(cut, "_partition_graph", None)
+    if cached is not None:
+        if include_solids and not cached.solids:
+            return replace(cached, solids=_solid_runs(cut))
+        return cached
     ms = _mid_surface(cut)
     skins = tuple(s for s in ms.segments if s.kind == "skin")
     webs = tuple(s for s in ms.segments if s.kind == "web")

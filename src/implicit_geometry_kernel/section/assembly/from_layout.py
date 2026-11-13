@@ -52,7 +52,7 @@ def build_section_view(
     twist_angle_rad: float | None = None,
     twist_angle: float | None = None,
     skin_thickness: float | None = None,
-    spar_cap_thickness: float | None = None,
+    spar_cap_thickness: float | tuple[float, float] | None = None,
     shear_web_thickness: float | None = None,
     web_thickness: float | None = None,
     cap_height: float | None = None,
@@ -133,7 +133,7 @@ def multicell_from_section_layout(
     twist_angle_rad: float | None = None,
     twist_angle: float | None = None,
     skin_thickness: float | None = None,
-    spar_cap_thickness: float | None = None,
+    spar_cap_thickness: float | tuple[float, float] | None = None,
     shear_web_thickness: float | None = None,
     web_thickness: float | None = None,
     cap_height: float | None = None,
@@ -143,7 +143,10 @@ def multicell_from_section_layout(
     spar_cap_ply_pitch_m: float | None = None,
     web_indices: Sequence[int] | None = None,
 ) -> SectionMidlineHost:
-    """Assemble from parametric :class:`SectionLayout` (catalogue key optional)."""
+    """Assemble from parametric :class:`SectionLayout` (catalogue key optional).
+
+    ``spar_cap_thickness`` is one gauge, or ``(suction, pressure)`` when the caps differ.
+    """
     from implicit_geometry_kernel.section.assembly.multicell import (
         MultiCellSection,
     )
@@ -229,7 +232,7 @@ def multicell_from_layout(
     twist_angle_rad: float | None = None,
     twist_angle: float | None = None,
     skin_thickness: float | None = None,
-    spar_cap_thickness: float | None = None,
+    spar_cap_thickness: float | tuple[float, float] | None = None,
     shear_web_thickness: float | None = None,
     web_thickness: float | None = None,
     cap_height: float | None = None,

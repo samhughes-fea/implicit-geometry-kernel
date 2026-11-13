@@ -128,20 +128,23 @@ class LoftLayoutMixin:
         return tuple(out)
 
     def _stringer_on_chord(self, stringer: Stringer, z: float) -> Stringer:
-        updates = {}
-        law = getattr(stringer, "position_law", None)
-        if law is not None:
-            updates["position"] = _span_value(law, z, "stringer position")
-        elif getattr(stringer, "position_m", None) is not None:
+        position = stringer.position
+        depth = stringer.depth
+        changed = False
+        if stringer.position_law is not None:
+            position = _span_value(stringer.position_law, z, "stringer position")
+            changed = True
+        elif stringer.position_m is not None:
             chord = max(self._span_scalar(self._chord, [s.chord for s in self.stations], float(z)), 1e-12)
             pitch = float(self._pitch(float(z)))
-            updates["position"] = chord_fraction_from_pitch(stringer.position_m, chord, pitch)
-        depth_law = getattr(stringer, "depth_law", None)
-        if depth_law is not None:
-            updates["depth"] = _span_value(depth_law, z, "stringer depth")
-        if not updates:
+            position = chord_fraction_from_pitch(stringer.position_m, chord, pitch)
+            changed = True
+        if stringer.depth_law is not None:
+            depth = _span_value(stringer.depth_law, z, "stringer depth")
+            changed = True
+        if not changed:
             return stringer
-        return replace(stringer, **updates)
+        return replace(stringer, position=position, depth=depth)
 
     def _web_feet_at(self, z: float):
         """Two-foot webs at z: ``((suction, pressure), ...)`` chord fractions, LE to TE.

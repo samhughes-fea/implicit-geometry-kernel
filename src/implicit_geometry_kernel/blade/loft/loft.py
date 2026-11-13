@@ -61,6 +61,7 @@ from implicit_geometry_kernel.blade.loft.loft_tables import (
     _as_pivot_fraction,
     _as_span_table,
     _is_frac_sequence,
+    _metres_law,
     _with_web_fractions,
 )
 from implicit_geometry_kernel.blade.loft.loft_cut import LoftCutMixin
@@ -103,7 +104,16 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         pitch-centred pad, even when webs are present.
     web_offsets:
         Web positions in metres from the leading edge, fixed along the span. Exclusive
-        with ``web_positions``.
+        with ``web_positions`` and ``web_x_from_pitch``.
+    web_x_from_pitch:
+        Web positions in metres from the pitch axis, toward the trailing edge.
+        A float per web, nested ``(suction, pressure)`` pairs, or a callable of
+        ``z``. Converted with this station's chord and pivot, so the fraction is
+        of that station's own chord. Exclusive with ``web_positions`` and
+        ``web_offsets``.
+    cap_x_from_pitch:
+        Cap windows in the same metres. A ``(x0, x1)`` pair, a sequence of
+        pairs, or a callable of ``z``. Exclusive with ``cap_windows``.
     n_airfoil_points:
         Points per surface used to hand the interpolated airfoil to the section
         geometry.
@@ -158,6 +168,8 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         region_graph=None,
         tip_closure: Optional[TipClosure] = None,
         airfoil_morph: str = "auto",
+        web_x_from_pitch: Optional[SpanTable] = None,
+        cap_x_from_pitch: Optional[SpanTable] = None,
     ):
         from implicit_geometry_kernel.catalogue import resolve_system_type
 
@@ -171,8 +183,10 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
             spec = resolve_system_type(layout)
         else:
             spec = layout
-        if web_positions is not None and web_offsets is not None:
-            raise ValueError("give web_positions or web_offsets, not both")
+        if sum(v is not None for v in (web_positions, web_offsets, web_x_from_pitch)) > 1:
+            raise ValueError("give only one of web_positions, web_offsets, web_x_from_pitch")
+        if cap_windows is not None and cap_x_from_pitch is not None:
+            raise ValueError("give cap_windows or cap_x_from_pitch, not both")
         self._web_positions_fn = None
         if web_positions is not None and callable(web_positions):
             self._web_positions_fn = web_positions
@@ -198,7 +212,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         if src is None:
             raise TypeError("pivot_fraction is required (a chord fraction or span table)")
         self._pitch = _as_pivot_fraction(src)
-        if self.web_offsets is None and web_positions is None and n_webs > 0:
+        if self.web_offsets is None and web_positions is None and web_x_from_pitch is None and n_webs > 0:
             from implicit_geometry_kernel.blade.concepts.web_anchoring import (
                 lc_web_fractions,
                 le_web_offsets_m,
@@ -217,6 +231,14 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
             raise ValueError(f"layout has {spec.n_webs} webs; got {len(self.web_offsets)} offsets")
         if self._web_x_from_pitch is not None and len(self._web_x_from_pitch) != spec.n_webs:
             raise ValueError(f"layout has {spec.n_webs} webs; got {len(self._web_x_from_pitch)} pitch offsets")
+        self._web_x_from_pitch_fn = _metres_law(web_x_from_pitch, "web_x_from_pitch")
+        self._cap_x_from_pitch_fn = _metres_law(cap_x_from_pitch, "cap_x_from_pitch", pairs=True)
+        if self._web_x_from_pitch_fn is not None:
+            sample = self._pitch_metres_at(float(self.stations[0].z))
+            if sample is not None and len(sample) != n_webs:
+                raise ValueError(
+                    f"layout has {n_webs} webs; got {len(sample)} pitch-axis positions"
+                )
         self._cap_windows_fn = None
         if cap_windows is not None:
             if callable(cap_windows):

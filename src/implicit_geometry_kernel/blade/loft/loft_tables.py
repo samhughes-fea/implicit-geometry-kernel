@@ -150,6 +150,48 @@ def _match(polyline: np.ndarray, points: np.ndarray, tol: float = 1e-9) -> np.nd
     return np.array(out, dtype=int)
 
 
+def _metre_rows(raw, name: str):
+    """One float per web, or ``(a, b)`` pairs (two feet, or a cap window)."""
+    if raw is None:
+        return None
+    if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+        return (float(raw),)
+    rows = []
+    for item in raw:
+        if isinstance(item, (int, float)) and not isinstance(item, bool):
+            rows.append(float(item))
+        else:
+            pair = tuple(float(v) for v in item)
+            if len(pair) != 2:
+                raise ValueError(f"{name} rows are a metre or an (a, b) pair")
+            rows.append(pair)
+    if not rows:
+        raise ValueError(f"{name} is empty")
+    if any(isinstance(r, tuple) for r in rows) and any(not isinstance(r, tuple) for r in rows):
+        raise ValueError(f"{name} mixes metres and pairs")
+    return tuple(rows)
+
+
+def _metres_law(value, name: str, *, pairs: bool = False):
+    """Constant metres or a callable ``f(z)``.
+
+    Webs: a float per web, or nested ``(suction_m, pressure_m)`` pairs.
+    Caps (``pairs=True``): each window is ``(x0, x1)`` metres from the pitch
+    axis; a single ``(x0, x1)`` is one window. Span variation is a callable,
+    because a two-number sequence is already one window or two webs.
+    """
+    if value is None:
+        return None
+    if callable(value):
+        return value
+    if pairs and isinstance(value, (tuple, list)) and len(value) == 2 and all(
+        isinstance(v, (int, float)) and not isinstance(v, bool) for v in value
+    ):
+        value = (value,)
+    frozen = _metre_rows(value, name)
+    return lambda z, _w=frozen: _w
+
+
 def _is_frac_sequence(value) -> bool:
     try:
         vals = [float(v) for v in value]

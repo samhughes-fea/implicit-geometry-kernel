@@ -118,6 +118,11 @@ class Stringer:
 
     ``extent`` is the inclusive ``(z_start, z_end)`` interval; ``None`` means the
     whole blade. Ends are topology events and ``forced_stations()`` mesh hints.
+
+    ``position`` is a chord fraction from the leading edge. ``position_m`` is
+    metres from the pitch axis toward the trailing edge; when it is set, the
+    cut converts it with that station's chord and pivot and ``position`` is
+    only a placeholder.
     """
 
     name: str
@@ -127,12 +132,15 @@ class Stringer:
     extent: Optional[Tuple[float, float]] = None
     side: str = "pressure"
     free_end: bool = True
+    position_m: Optional[float] = None
 
     def __post_init__(self):
         if not str(self.name).strip():
             raise ValueError("name is required")
-        if not 0.0 < self.position < 1.0:
+        if self.position_m is None and not 0.0 < self.position < 1.0:
             raise ValueError("position must be a chord fraction inside (0, 1)")
+        if self.position_m is not None:
+            object.__setattr__(self, "position_m", float(self.position_m))
         if self.thickness <= 0.0:
             raise ValueError("thickness must be positive")
         if self.depth <= 0.0:

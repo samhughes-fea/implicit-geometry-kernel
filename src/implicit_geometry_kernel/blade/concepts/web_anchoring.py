@@ -42,6 +42,19 @@ class PaRegions:
         return float(self.x_te_max_chord - self.x_te_root)
 
 
+def chord_fraction_from_pitch(x_m: float, chord: float, pivot: float) -> float:
+    """Chord fraction of a point ``x_m`` metres from the pitch axis, toward the TE.
+
+    ``pivot`` is the pitch-axis fraction of this station's own chord. The same
+    conversion places webs, cap edges and stringers that were measured from the
+    pitch axis on the chord law.
+    """
+    c = float(chord)
+    if c <= 0.0:
+        raise ValueError("chord must be positive")
+    return float(pivot) + float(x_m) / c
+
+
 def blade_x_le_te(chord: float, pitch: float) -> tuple[float, float]:
     """Blade-x of the chord LE and TE at a station (pitch axis at ``x = 0``)."""
     c, p = float(chord), float(pitch)
@@ -106,6 +119,7 @@ def le_web_offsets_m(fracs: Sequence[float], root_chord: float) -> tuple[float, 
 __all__ = [
     "PaRegions",
     "blade_x_le_te",
+    "chord_fraction_from_pitch",
     "lc_web_fractions",
     "le_web_offsets_m",
     "pa_regions",

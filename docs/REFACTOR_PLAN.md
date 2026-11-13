@@ -48,7 +48,7 @@ family with a root-circle blend, webs, caps, ribs, stringers) and out of windIO 
 | G5 | — (found on the way) | A single-cell tip at a coarse `h` lost its tip closure (4-node ring); the loop now closes on at least five nodes | Done (K9, #58) |
 | G5b | Could not get within 0.1 mm at a trailing edge however many stations it added | Station airfoils pass through their given points; round trailing ends and bases listed as points are kept (BG-042, BG-043) | Done (K9, #58) |
 | G5c | Saw webs start and end at the nearest mesh station | Partial-span web ends are forced stations (BG-045) | Done (K9, #58) |
-| G6 | Bisects stations until the loft is within 0.1 mm of its own analytic surface (81 stations become a few hundred) | Take the outer shape as laws or a callable `section(z)` and refine stations to a stated tolerance | To do |
+| G6 | Bisects stations until the loft is within 0.1 mm of its own analytic surface (81 stations become a few hundred) | Take the outer shape as laws or a callable `section(z)` and refine stations to a stated tolerance | Done (`BladeGeometry.from_section`; linear samples, no second morph) |
 | G7 | Adds quarter-point probes because the airfoil morph changes rule (smoothstep or linear) when one station is at least 60 % thick and the next is not | One documented morph rule, or the rule as an explicit option | To do |
 | G8 | Converts every chord fraction: its fractions are measured from the pitch axis on the chord law, the kernel's on each station's own x extent (they differ across a root blend) | Accept positions in metres from the pitch axis, or a reference chord law | To do |
 | G9 | Flips the twist sign | State the twist convention in `Station` and offer the other sense | To do |

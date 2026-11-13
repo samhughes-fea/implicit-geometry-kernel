@@ -252,7 +252,66 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         # cut itself so those fields do not rebuild geometry on a second hit.
         self._section_cache: OrderedDict[float, SectionCut] = OrderedDict()
         self._section_cache_size = 256
+        # Set by from_section: already-blended samples, parallel to self.stations.
+        # interpolate lerps these and does not call _morph_surfaces.
+        self._section_samples = None
         # interpolate / section_at / query / write / validate live on mixins
+
+    @classmethod
+    def from_section(
+        cls,
+        section,
+        z,
+        tolerance: float,
+        layout: str | SystemLayoutSpec | SectionLayout,
+        skin_thickness: Thickness,
+        *,
+        knots: Sequence[float] = (),
+        n_airfoil_points: int = 161,
+        **kwargs,
+    ):
+        """Loft ``section(z)`` until the linear loft is within ``tolerance`` metres.
+
+        ``section(z)`` is the consumer's blend at that span: a
+        :class:`~implicit_geometry_kernel.blade.loft.section_callable.SectionSample`,
+        a mapping, or ``(chord, twist, pivot_fraction, offset, airfoil)``. Stations
+        are added, including ``knots``, until a straight loft between neighbours lies
+        within ``tolerance`` of ``section(z)`` on the placed outer mould line. The
+        60 % smoothstep morph is not applied on this path; it stays the rule for
+        blades built from a station table.
+
+        ``z`` is ``(z_root, z_tip)`` or a longer list of spans that must be stations.
+        Chord, twist, pitch axis and offset come from the callable. ``pivot_fraction``
+        is still required by the constructor: pass it, or it is taken from the first
+        sample (a varying pitch axis is then carried by the samples, not the table).
+        """
+        from implicit_geometry_kernel.blade.loft.section_callable import (
+            airfoil_from_surfaces,
+            cosine_x,
+            refine_section_samples,
+        )
+
+        grid = cosine_x(n_airfoil_points)
+        samples = refine_section_samples(section, z, tolerance, grid, knots=knots)
+        stations = tuple(
+            Station(
+                s.z,
+                s.chord,
+                airfoil_from_surfaces(s.x, s.upper, s.lower, name=f"section-z{s.z:g}"),
+                twist=s.twist,
+                pitch_axis=s.pivot_fraction,
+                offset=s.offset,
+            )
+            for s in samples
+        )
+        if "pivot_fraction" not in kwargs and "pitch_axis" not in kwargs:
+            kwargs["pivot_fraction"] = float(samples[0].pivot_fraction)
+        kwargs["n_airfoil_points"] = n_airfoil_points
+        geo = cls(stations, layout, skin_thickness, **kwargs)
+        by_z = {s.z: s for s in samples}
+        geo._section_samples = tuple(by_z[st.z] for st in geo.stations)
+        geo._section_cache.clear()
+        return geo
 
     @classmethod
     def from_concept(cls, concept, stations: Sequence[Station], skin_thickness: Thickness, **kwargs):

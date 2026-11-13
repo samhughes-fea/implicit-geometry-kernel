@@ -49,6 +49,7 @@ from implicit_geometry_kernel.blade import (
     SectionWall,
     ShearWeb,
     LockedLoftPlan,
+    SectionSample,
     PartitionEdge,
     Region,
     ShellGraph,
@@ -85,6 +86,7 @@ from implicit_geometry_kernel.blade import (
     station_network_from_meta,
     tip_closure_polygons,
     wall_meta_from_cut,
+    refine_section_samples,
 )
 from implicit_geometry_kernel.sdf import (
     FeatureTable,
@@ -111,7 +113,8 @@ __all__ = [
     "ShellTopologyTemplate", "SkinRegion",
     "Station", "StationNetwork", "Stringer", "TagNode", "TopologyDiff", "TopologyEvent",
     "SpanwiseScheme", "TipClosure", "TransverseMember", "WallRegionGraph", "WebMember", "PlyDrop",
-    "loft_mapped_strips", "partition_edge_curve", "read_planform_csv", "write_windio", "resolve_system_type",
+    "loft_mapped_strips", "partition_edge_curve", "read_planform_csv", "refine_section_samples", "write_windio", "resolve_system_type",
+    "SectionSample",
     "resample_locked", "rib_face_polygons",
     "section_at",
     "shared_loft_names", "signatures_compatible", "shell_graph", "shell_loft_zones",

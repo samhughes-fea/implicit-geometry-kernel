@@ -127,6 +127,10 @@ class Stringer:
     metres from the pitch axis toward the trailing edge; when it is set, the
     cut converts it with that station's chord and pivot and ``position`` is
     only a placeholder.
+
+    ``position_law`` and ``depth_law`` vary those values along the span: a
+    callable of ``z`` or a ``(z, values)`` table. ``position_law`` is a chord
+    fraction and wins over ``position_m``.
     """
 
     name: str
@@ -137,6 +141,8 @@ class Stringer:
     side: str = "pressure"
     free_end: bool = True
     position_m: Optional[float] = None
+    position_law: Optional[object] = None
+    depth_law: Optional[object] = None
 
     def __post_init__(self):
         if not str(self.name).strip():

@@ -237,7 +237,7 @@
  "implicit_geometry_kernel.Stringer": {
   "kind": "class",
   "members": {},
-  "signature": "(name: 'str', position: 'float', thickness: 'float', depth: 'float', extent: 'Optional[Tuple[float, float]]' = None, side: 'str' = 'pressure', free_end: 'bool' = True, position_m: 'Optional[float]' = None) -> None"
+  "signature": "(name: 'str', position: 'float', thickness: 'float', depth: 'float', extent: 'Optional[Tuple[float, float]]' = None, side: 'str' = 'pressure', free_end: 'bool' = True, position_m: 'Optional[float]' = None, position_law: 'Optional[object]' = None, depth_law: 'Optional[object]' = None) -> None"
  },
  "implicit_geometry_kernel.TagNode": {
   "kind": "class",

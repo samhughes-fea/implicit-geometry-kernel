@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A stringer's chord fraction and depth can vary along the span
+  (``Stringer.position_law``, ``Stringer.depth_law``): a callable of ``z`` or a
+  ``(z, values)`` table. A fixed ``position`` and ``depth`` are unchanged (G15).
 - ``BladeGeometry(..., wall_reference=)`` places shell nodes. ``"mid"``
   (default, unchanged) is the laminate mid-surface. ``"oml"`` moves each skin
   run out along its normal by half the skin thickness. Webs stay on their

@@ -70,6 +70,40 @@ def _with_web_axes(layout, feet, x: np.ndarray, upper: np.ndarray, lower: np.nda
     return dataclasses.replace(layout, web_axes_m=tuple(axes))
 
 
+def _surface_crossing(frac: float, theta: float, x: np.ndarray, y: np.ndarray, upper: bool) -> float:
+    """Chord fraction where the line through ``(frac, 0)`` at ``theta`` from +y meets the surface."""
+    residual = (x - frac) * np.cos(theta) - y * np.sin(theta)
+    best = None
+    for i in range(len(x) - 1):
+        a, b = float(residual[i]), float(residual[i + 1])
+        if a == 0.0 or a * b < 0.0:
+            den = a - b
+            t = 0.0 if den == 0.0 else a / den
+            t = float(np.clip(t, 0.0, 1.0))
+            xx = float(x[i] + t * (x[i + 1] - x[i]))
+            yy = float(y[i] + t * (y[i + 1] - y[i]))
+            if best is None or (yy > best[1] if upper else yy < best[1]):
+                best = (xx, yy)
+    if best is None:
+        return float(frac)
+    return float(best[0])
+
+
+def _tilted_feet(fracs, tilt_deg, x, upper, lower):
+    """``(suction, pressure)`` chord fractions for webs tilted ``tilt_deg`` from the thickness direction."""
+    feet = []
+    for frac, deg in zip(fracs, tilt_deg):
+        # Positive tilt walks the suction foot toward the trailing edge.
+        theta = -float(np.radians(deg))
+        if abs(theta) < 1e-12:
+            feet.append((float(frac), float(frac)))
+            continue
+        su = _surface_crossing(float(frac), theta, x, upper, True)
+        pr = _surface_crossing(float(frac), theta, x, lower, False)
+        feet.append((su, pr))
+    return tuple(feet)
+
+
 class LoftCutMixin:
     def interpolate(self: BladeGeometry, z: float):
         """(chord, twist, pitch_axis, offset, (x, upper, lower)) interpolated at z.
@@ -179,6 +213,18 @@ class LoftCutMixin:
                 (float(pitch) + float(a) / chord, float(pitch) + float(b) / chord)
                 for a, b in pitch_m
             )
+        tilt = self._web_tilts_at(z)
+        if tilt is not None and any(abs(float(v)) > 1e-12 for v in tilt):
+            if feet is not None:
+                raise ValueError(
+                    "web_tilt_deg tilts a single chord fraction; two-foot webs already set the line"
+                )
+            fracs = tuple(float(f) for f in getattr(layout, "web_chord_fracs", ()) or ())
+            if len(tilt) == 1 and len(fracs) != 1:
+                tilt = tuple([tilt[0]] * len(fracs))
+            if len(tilt) != len(fracs):
+                raise ValueError(f"layout has {len(fracs)} webs; got {len(tilt)} tilt angles")
+            feet = _tilted_feet(fracs, tilt, x, upper, lower)
         if feet is not None:
             from implicit_geometry_kernel.catalogue import SystemLayoutSpec
             from implicit_geometry_kernel.section.layout.section_layout import SectionLayout

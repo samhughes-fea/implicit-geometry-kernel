@@ -22,7 +22,11 @@ from implicit_geometry_kernel.blade.airfoil import Airfoil
 # ---------------------------------------------------------------------------
 @dataclass
 class Station:
-    """A spanwise station: position ``z``, chord, twist (degrees, nose up about +z) and airfoil.
+    """A spanwise station: position ``z``, chord, twist (degrees about +z) and airfoil.
+
+    A positive ``twist`` is nose up (leading edge toward +y) when the blade's
+    ``twist_sense`` is ``"nose_up"``, which is the default. ``"nose_down"``
+    places the same number the other way.
 
     ``pitch_axis`` is stored for CSV / windIO round-trip. Loft stacking and the
     S-frame origin use required ``BladeGeometry.pivot_fraction``, not this default.

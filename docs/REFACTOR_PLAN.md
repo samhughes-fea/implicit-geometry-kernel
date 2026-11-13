@@ -60,7 +60,7 @@ family with a root-circle blend, webs, caps, ribs, stringers) and out of windIO 
 | G15 | Refuses stringers whose chord position or height varies along the span | Stringer position and height as span laws | To do |
 | G16 | Finds windIO spar caps by layer name (`spar`, `cap`); a file that names layers by keypoint (10 MW) gets none | Identify caps by structure (the band between the web feet, uniaxial material) or take an explicit list | To do |
 | G17 | Sums ply thicknesses itself for skin, cap and web | Thickness per partition from the stack (decision D4) | To do |
-| G18 | — | Webs that cross between stations (BG-037) | Open |
+| G18 | — | Webs that cross between stations (BG-037) | Done (web anchors follow the placed arcs) |
 
 Not kernel work: the trailing-edge bond and core fill are materials inside the section,
 and plies, loads and solvers stay in consumers.

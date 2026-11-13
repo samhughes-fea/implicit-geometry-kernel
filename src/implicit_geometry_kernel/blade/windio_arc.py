@@ -157,6 +157,54 @@ def web_feet_series_from_windio_structure(structure: Mapping[str, Any], geo,
     return series
 
 
+def _placed_feet(arc: ArcMap, geo, z_table, z: float, start, end) -> tuple[float, float]:
+    """``(suction, pressure)`` chord fractions of one web's arcs at ``z``.
+
+    The file's arc is interpolated to ``z`` and measured on the section at ``z``.
+    A chord fraction stored at the file's grid and then interpolated in ``z`` stops
+    at the last sample, while this placement keeps moving until the web's span
+    window ends; the two disagree by centimetres near that end (BG-037).
+    """
+    g = _grid_of_z(float(z), z_table)
+    zc = _clip_z(float(z), geo)
+    a = arc(zc, float(np.interp(g, *start)))
+    b = arc(zc, float(np.interp(g, *end)))
+    su, pr = (a, b) if a[1] == "suction" else (b, a)
+    return float(su[0]), float(pr[0])
+
+
+def web_midpoint_laws_from_windio_structure(structure: Mapping[str, Any], geo,
+                                            z_of_s: np.ndarray | Sequence | None = None,
+                                            ) -> list[tuple[str, Callable[[float], float], "tuple[float, float] | None"]] | None:
+    """One ``(name, f(z) -> chord fraction, window)`` per web, file order.
+
+    ``f(z)`` is the mid-point of the two feet placed as
+    :func:`web_feet_fn_from_windio_structure`, so a wall-region anchor follows the
+    same point as the section's web for the whole span window.
+    """
+    webs = [w for w in (structure.get("webs") or ()) if isinstance(w, Mapping)]
+    if not webs:
+        return None
+    anchors = _anchors_by_name(structure)
+    arc = section_arc_map(geo)
+    z_table = None if z_of_s is None else np.asarray(z_of_s, float)
+    laws = []
+    for j, web in enumerate(webs):
+        start, end = _web_start_end(web, anchors)
+        if start is None or end is None:
+            return None
+        extent = web_span_extent(web, anchors)
+        window = None if extent is None else (_z_of_grid(extent[0], z_table),
+                                              _z_of_grid(extent[1], z_table))
+
+        def at(z: float, _start=start, _end=end) -> float:
+            su, pr = _placed_feet(arc, geo, z_table, z, _start, _end)
+            return 0.5 * (su + pr)
+
+        laws.append((str(web.get("name", f"web_{j}")), at, window))
+    return laws
+
+
 def web_feet_fn_from_windio_structure(structure: Mapping[str, Any], geo,
                                       z_of_s: np.ndarray | Sequence | None = None,
                                       ) -> Callable[[float], tuple[tuple[float, float], ...]] | None:
@@ -167,35 +215,27 @@ def web_feet_fn_from_windio_structure(structure: Mapping[str, Any], geo,
     them) and placed on the section at z, so the feet are the outer-surface points at
     those arcs at every z, not only at the grid points: a chord fraction interpolated
     between grid points is off by millimetres where the section changes between them."""
-    webs = [w for w in (structure.get("webs") or ()) if isinstance(w, Mapping)]
-    if not webs:
+    laws = web_midpoint_laws_from_windio_structure(structure, geo, z_of_s)
+    if laws is None:
         return None
+    # recover the two feet, not only the midpoint, with the same placement
     anchors = _anchors_by_name(structure)
     arc = section_arc_map(geo)
     z_table = None if z_of_s is None else np.asarray(z_of_s, float)
+    webs = [w for w in (structure.get("webs") or ()) if isinstance(w, Mapping)]
     rows = []
-    for web in webs:
+    for web, (_name, _law, window) in zip(webs, laws):
         start, end = _web_start_end(web, anchors)
-        if start is None or end is None:
-            return None
-        extent = web_span_extent(web, anchors)
-        # the window in z, the same numbers the wall-region graph gives its web members
-        window = None if extent is None else (_z_of_grid(extent[0], z_table),
-                                              _z_of_grid(extent[1], z_table))
         rows.append((start, end, window))
 
     def at(z: float) -> tuple[tuple[float, float], ...]:
-        g = _grid_of_z(float(z), z_table)
-        zc = _clip_z(float(z), geo)
         out = []
         for start, end, window in rows:
             if window is not None and not window[0] - 1e-9 <= float(z) <= window[1] + 1e-9:
                 continue
-            a = arc(zc, float(np.interp(g, *start)))
-            b = arc(zc, float(np.interp(g, *end)))
-            su, pr = (a, b) if a[1] == "suction" else (b, a)
-            if 0.0 < su[0] < 1.0 and 0.0 < pr[0] < 1.0:
-                out.append((su[0], pr[0]))
+            su, pr = _placed_feet(arc, geo, z_table, z, start, end)
+            if 0.0 < su < 1.0 and 0.0 < pr < 1.0:
+                out.append((su, pr))
         out.sort(key=lambda p: p[0] + p[1])
         return tuple(out)
 
@@ -341,4 +381,5 @@ __all__ = [
     "section_arc_map",
     "web_feet_fn_from_windio_structure",
     "web_feet_series_from_windio_structure",
+    "web_midpoint_laws_from_windio_structure",
 ]

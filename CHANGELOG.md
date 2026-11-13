@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- windIO web and cap anchors follow the arc placed on the section at that span
+  for the whole web window. A chord-fraction table of the file's grid froze at
+  the last sample, and on the IEA 15 MW the cap edge then passed that frozen
+  web near 113.3 m of 117 m (BG-037, G18).
 - A blade can be lofted from a callable ``section(z)``
   (``BladeGeometry.from_section``). The callable is already the consumer's
   blend. Stations are added until the linear loft of those samples is within

@@ -261,27 +261,48 @@ def _graph_from_windio_on_sections(cls: type[WallRegionGraph], structure: Mappin
     sections (:mod:`implicit_geometry_kernel.blade.windio_arc`): each web anchor is the
     mid-point of its two feet, the cap anchors the union of the two sides' windows."""
     from implicit_geometry_kernel.blade.windio_arc import (
+        cap_side_windows_fn_from_windio_structure,
         cap_union_table_from_windio_structure,
         web_feet_series_from_windio_structure,
+        web_midpoint_laws_from_windio_structure,
     )
 
     anchors: list[Anchor] = [Anchor("le", 0.0), Anchor("te", 1.0)]
     webs: list[WebMember] = []
+    # Laws follow the arc placed on the section at z. A chord-fraction table of the
+    # file's grid freezes at the last sample, and the cap edge then passes that
+    # frozen web near the tip (IEA 15, about 113.3 m; BG-037).
+    laws = web_midpoint_laws_from_windio_structure(structure, geo, z_of_s) or []
     series = web_feet_series_from_windio_structure(structure, geo, z_of_s) or []
-    order = sorted(range(len(series)), key=lambda j: float(np.median(series[j][2].sum(axis=1))))
+    by_name = {name: (zs, feet) for name, zs, feet, _window in series}
+    order = sorted(range(len(laws)), key=lambda j: float(np.median(by_name[laws[j][0]][1].sum(axis=1)))
+                   if laws[j][0] in by_name and len(by_name[laws[j][0]][1]) else j)
     for j, k in enumerate(order):
-        name, zs, feet, window = series[k]
+        name, law, window = laws[k]
         z0, z1 = (None, None) if window is None else window
-        law = (zs, 0.5 * feet.sum(axis=1)) if len(zs) > 1 else float(0.5 * feet[0].sum())
         webs.append(WebMember(int(j), law, z0, z1, name=name))
         anchors.append(Anchor(f"web_{j}", law, z0, z1))
-    web_fracs = tuple(float(np.median(0.5 * series[k][2].sum(axis=1))) for k in order)
+    web_fracs = tuple(
+        float(np.median(0.5 * by_name[laws[k][0]][1].sum(axis=1)))
+        for k in order if laws[k][0] in by_name
+    )
     windows = cap_union_table_from_windio_structure(structure, geo, z_of_s)
+    side_windows = cap_side_windows_fn_from_windio_structure(structure, geo, z_of_s)
     cap = None
-    if windows is not None:
+    if windows is not None and side_windows is not None:
         zg, vals = windows
-        anchors.append(Anchor("cap_lo", (zg, vals[:, 0])))
-        anchors.append(Anchor("cap_hi", (zg, vals[:, 1])))
+
+        def _union(z: float, end: int, _fn=side_windows, _zg=zg, _vals=vals) -> float:
+            live = _fn(float(z))
+            if live and set(live) == {"suction", "pressure"}:
+                lo = min(live["suction"][0], live["pressure"][0])
+                hi = max(live["suction"][1], live["pressure"][1])
+                return float(lo if end == 0 else hi)
+            return float(np.interp(float(z), _zg, _vals[:, end]))
+
+        z0, z1 = float(zg[0]), float(zg[-1])
+        anchors.append(Anchor("cap_lo", lambda z, _u=_union: _u(z, 0), z0, z1))
+        anchors.append(Anchor("cap_hi", lambda z, _u=_union: _u(z, 1), z0, z1))
         cap = CapPlacementRule.from_chord_windows(((float(np.median(vals[:, 0])),
                                                     float(np.median(vals[:, 1]))),))
     _, regions, _, cap_windows, rule, pad = layout_parts(web_fracs, cap)

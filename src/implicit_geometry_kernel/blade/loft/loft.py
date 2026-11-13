@@ -118,6 +118,10 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         ``"nose_up"`` (default) places a positive station twist with the leading
         edge toward +y. ``"nose_down"`` uses the other sense for the same number.
         The default is the one the golden sections were built with.
+    cap_edge_reference:
+        ``"midplane"`` (default) reads a cap window as a chord fraction on the
+        cap mid-plane. ``"outer"`` reads it on the outer mould line and places
+        the mid-plane edge on the inward normal, ``skin + half the cap`` in.
     n_airfoil_points:
         Points per surface used to hand the interpolated airfoil to the section
         geometry.
@@ -175,6 +179,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         web_x_from_pitch: Optional[SpanTable] = None,
         cap_x_from_pitch: Optional[SpanTable] = None,
         twist_sense: str = "nose_up",
+        cap_edge_reference: str = "midplane",
     ):
         from implicit_geometry_kernel.catalogue import resolve_system_type
 
@@ -279,6 +284,9 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         if twist_sense not in ("nose_up", "nose_down"):
             raise ValueError("twist_sense must be 'nose_up' or 'nose_down'")
         self.twist_sense = str(twist_sense)
+        if cap_edge_reference not in ("midplane", "outer"):
+            raise ValueError("cap_edge_reference must be 'midplane' or 'outer'")
+        self.cap_edge_reference = str(cap_edge_reference)
         if region_graph is None:
             from implicit_geometry_kernel.blade.topology import WallRegionGraph
             self.region_graph = self._with_anchored_web_laws(

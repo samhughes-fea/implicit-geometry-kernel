@@ -150,6 +150,52 @@ class LoftLayoutMixin:
                 raise ValueError(f"web feet must be chord fractions inside (0, 1); got {(a, b)}")
         return tuple(feet)
 
+    def _outer_fraction_to_midplane(self, z: float, frac: float, side: str) -> float:
+        """Chord fraction on the cap mid-plane whose outer foot is ``frac`` on this side."""
+        chord, _, _, _, (x, upper, lower) = self.interpolate(float(z))
+        y_of = upper if side == "suction" else lower
+        cap = self._cap(float(z))
+        t_cap = float(cap[0] if isinstance(cap, (tuple, list)) else cap)
+        inset = float(self._skin(float(z))) + 0.5 * t_cap
+        eps = 1e-3
+        f0 = float(np.clip(frac - eps, 0.0, 1.0))
+        f1 = float(np.clip(frac + eps, 0.0, 1.0))
+        p0 = np.array([f0, float(np.interp(f0, x, y_of))]) * chord
+        p1 = np.array([f1, float(np.interp(f1, x, y_of))]) * chord
+        p = np.array([float(frac), float(np.interp(frac, x, y_of))]) * chord
+        tangent = p1 - p0
+        norm = float(np.linalg.norm(tangent))
+        if norm <= 1e-15:
+            return float(frac)
+        tangent /= norm
+        normal = np.array([-tangent[1], tangent[0]])
+        if float(np.dot(normal, np.array([0.5 * chord, 0.0]) - p)) < 0.0:
+            normal = -normal
+        landed = p + normal * inset
+        return float(landed[0] / chord)
+
+    def _cap_windows_from_outer_surface(self, z: float, windows):
+        def pair(window, side):
+            lo, hi = float(window[0]), float(window[1])
+            return (
+                self._outer_fraction_to_midplane(z, lo, side),
+                self._outer_fraction_to_midplane(z, hi, side),
+            )
+
+        if isinstance(windows, Mapping):
+            return {
+                "suction": pair(windows["suction"], "suction"),
+                "pressure": pair(windows["pressure"], "pressure"),
+            }
+        raw = tuple(windows)
+        if raw and not isinstance(raw[0], (tuple, list)):
+            raw = (tuple(float(v) for v in raw),)
+        suction = tuple(pair(w, "suction") for w in raw)
+        pressure = tuple(pair(w, "pressure") for w in raw)
+        if len(suction) == 1:
+            return {"suction": suction[0], "pressure": pressure[0]}
+        return suction
+
     def _layout_at(self, z: float):
         from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule
         from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
@@ -184,6 +230,8 @@ class LoftLayoutMixin:
         windows = self._cap_metres_at(z, chord, pitch)
         if windows is None and self._cap_windows_fn is not None:
             windows = self._cap_windows_fn(float(z))
+        if windows is not None and getattr(self, "cap_edge_reference", "midplane") == "outer":
+            windows = self._cap_windows_from_outer_surface(z, windows)
         if windows is not None:
             if isinstance(windows, Mapping):
                 rule = CapPlacementRule.from_side_windows(windows["suction"],

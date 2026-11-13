@@ -104,7 +104,7 @@ class LoftCutMixin:
                 (np.asarray(blended.x, float), np.asarray(blended.upper, float), np.asarray(blended.lower, float)),
             )
         x = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, self.n_airfoil_points)))
-        upper, lower = _morph_surfaces(a.airfoil, b.airfoil, w, x)
+        upper, lower = _morph_surfaces(a.airfoil, b.airfoil, w, x, getattr(self, "airfoil_morph", "auto"))
         zz = float(z)
         chord = self._span_scalar(self._chord, [s.chord for s in self.stations], zz)
         twist = self._span_scalar(self._twist, [s.twist for s in self.stations], zz)

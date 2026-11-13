@@ -114,6 +114,10 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
     cap_x_from_pitch:
         Cap windows in the same metres. A ``(x0, x1)`` pair, a sequence of
         pairs, or a callable of ``z``. Exclusive with ``cap_windows``.
+    twist_sense:
+        ``"nose_up"`` (default) places a positive station twist with the leading
+        edge toward +y. ``"nose_down"`` uses the other sense for the same number.
+        The default is the one the golden sections were built with.
     n_airfoil_points:
         Points per surface used to hand the interpolated airfoil to the section
         geometry.
@@ -170,6 +174,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         airfoil_morph: str = "auto",
         web_x_from_pitch: Optional[SpanTable] = None,
         cap_x_from_pitch: Optional[SpanTable] = None,
+        twist_sense: str = "nose_up",
     ):
         from implicit_geometry_kernel.catalogue import resolve_system_type
 
@@ -271,6 +276,9 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
                 f"airfoil_morph must be one of {', '.join(_MORPH_RULES)}; got {airfoil_morph!r}"
             )
         self.airfoil_morph = str(airfoil_morph)
+        if twist_sense not in ("nose_up", "nose_down"):
+            raise ValueError("twist_sense must be 'nose_up' or 'nose_down'")
+        self.twist_sense = str(twist_sense)
         if region_graph is None:
             from implicit_geometry_kernel.blade.topology import WallRegionGraph
             self.region_graph = self._with_anchored_web_laws(

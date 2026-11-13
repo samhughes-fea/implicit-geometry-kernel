@@ -118,6 +118,13 @@ class LoftCutMixin:
             offset = (ox, oy)
         return (chord, twist, pitch, offset, (x, upper, lower))
 
+    def _placement_twist(self: BladeGeometry, twist_deg: float) -> float:
+        """Degrees passed to the nose-up placement. ``nose_down`` negates them."""
+        twist = float(twist_deg)
+        if getattr(self, "twist_sense", "nose_up") == "nose_down":
+            return -twist
+        return twist
+
     def _span_scalar(self: BladeGeometry, table, values, z: float) -> float:
         if table is not None:
             return float(table(z))
@@ -135,7 +142,7 @@ class LoftCutMixin:
         if np.allclose(naca[0], naca[-1]):
             naca = naca[:-1]
         local = np.column_stack([naca[:, 0] - pitch * chord, naca[:, 1]])
-        xy = _twist_offset(local, twist, offset)
+        xy = _twist_offset(local, self._placement_twist(twist), offset)
         pts = np.column_stack([xy, np.full(len(xy), z)])
         return np.vstack([pts, pts[0]])
 
@@ -163,7 +170,8 @@ class LoftCutMixin:
         # thinner-walled section is built k times larger and scaled back: exact, and the
         # frozen geometry code is used as it is.
         k = _min_thickness_scale(t_skin, t_cap, t_web)
-        twist_rad = _FORK_TWIST_SIGN * np.radians(twist)
+        signed_twist = self._placement_twist(twist)
+        twist_rad = _FORK_TWIST_SIGN * np.radians(signed_twist)
         pitch_m = self._pitch_metres_at(z)
         feet = self._web_feet_at(z)
         if pitch_m is not None and pitch_m and isinstance(pitch_m[0], tuple):
@@ -204,10 +212,10 @@ class LoftCutMixin:
         def place(pts_B):
             pts = np.asarray(pts_B, float) / k
             naca = twisted_pitch_axis_blade_frame_to_naca(
-                pts, _FORK_TWIST_SIGN * np.radians(twist), chord, pitch,
+                pts, _FORK_TWIST_SIGN * np.radians(signed_twist), chord, pitch,
             )
             local = np.column_stack([naca[:, 0] - pitch * chord, naca[:, 1]])
-            xy = _twist_offset(local, twist, offset)
+            xy = _twist_offset(local, signed_twist, offset)
             return np.column_stack([xy, np.full(len(xy), z)])
 
         from implicit_geometry_kernel.section.junctions.cap_skin_bonds import (
@@ -267,7 +275,7 @@ class LoftCutMixin:
         n_live = int(getattr(recipe, "n_webs", 0) or len(resolution.web_indices))
         fam = str(getattr(recipe, "structural_family", None) or "")
         cut = SectionCut(
-            z, chord, twist, pitch, (float(offset[0]), float(offset[1])), str(self.layout), tuple(walls), cells,
+            z, chord, signed_twist, pitch, (float(offset[0]), float(offset[1])), str(self.layout), tuple(walls), cells,
             dropped, self._transverse_at(z), self._stringers_at(z), result.section, k,
             dropped_web_indices=dropped_idx,
             station_webs=n_live,

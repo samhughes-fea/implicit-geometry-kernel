@@ -75,7 +75,7 @@ class LoftFieldsMixin:
                 s_frac = float(np.clip(s_frac, 0.0, 1.0))
                 i = int(np.clip(round(s_frac * (len(x) - 1)), 0, len(x) - 1))
                 local = np.array([[x[i] - pitch * chord, 0.5 * (upper[i] + lower[i])]], float)
-                xy = _twist_offset(local, self.interpolate(z)[1], offset)[0]
+                xy = _twist_offset(local, self._placement_twist(self.interpolate(z)[1]), offset)[0]
                 pt = np.array([xy[0], xy[1], z], float)
                 name = f"{drop.name}:{tag}"
                 edges.append(PartitionEdge(z, name, name, pt))

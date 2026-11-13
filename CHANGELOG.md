@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- ``BladeGeometry(..., twist_sense=)`` documents the station twist. ``"nose_up"``
+  (default, unchanged) moves the leading edge toward +y. ``"nose_down"`` places
+  the same degree value the other way (G9).
 - Webs, cap windows and stringers can be given in metres from the pitch axis
   (``web_x_from_pitch``, ``cap_x_from_pitch``, ``Stringer.position_m``). Each
   station converts them with its own chord and pivot

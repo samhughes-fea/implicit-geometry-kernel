@@ -96,7 +96,7 @@ def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
             layout,
             twist_rad=float(twist_rad),
             skin_thickness=skin,  # type: ignore
-            spar_cap_thickness=float(spar),
+            spar_cap_thickness=spar,
             shear_web_thickness=web,
             web_x_positions_m=web_x_positions_m,
             web_indices=web_indices,

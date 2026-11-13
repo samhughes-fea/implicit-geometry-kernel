@@ -205,7 +205,7 @@ def multicell_from_section_layout(
         web_x_positions=list(xs),
         web_thickness=web,
         web_alignment=align,
-        cap_height=float(spar),
+        cap_height=spar,
         skin_thickness=skin,
         twist_angle=float(twist),
         core_enabled=True,

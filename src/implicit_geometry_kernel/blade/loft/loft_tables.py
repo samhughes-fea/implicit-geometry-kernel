@@ -10,6 +10,23 @@ SpanTable = Union[Callable, Sequence]
 _FORK_TWIST_SIGN = -1.0
 
 
+def _gauge_law(value, name: str) -> Callable:
+    """A thickness, a ``(suction, pressure)`` or per-web sequence, or a callable of z."""
+    if callable(value):
+        return value
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        v = float(value)
+        if v < 0.0:
+            raise ValueError(f"{name} must be >= 0")
+        return lambda z, _v=v: _v
+    vals = tuple(float(v) for v in value)
+    if any(v < 0.0 for v in vals):
+        raise ValueError(f"{name} must be >= 0")
+    if not vals:
+        raise ValueError(f"{name} is empty")
+    return lambda z, _w=vals: _w
+
+
 def _as_function(value: Thickness, name: str) -> Callable[[float], float]:
     if callable(value):
         return value

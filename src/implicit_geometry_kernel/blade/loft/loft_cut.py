@@ -20,13 +20,27 @@ from implicit_geometry_kernel.section.layout.thickness_limits import (
 )
 
 
-def _min_thickness_scale(t_skin: float, t_cap: float, t_web: float) -> float:
+def _gauge_values(value) -> tuple[float, ...]:
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return (float(value),)
+    return tuple(float(v) for v in value)
+
+
+def _scale_gauge(value, k: float):
+    vals = tuple(v * k for v in _gauge_values(value))
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return vals[0]
+    return vals
+
+
+def _min_thickness_scale(t_skin, t_cap, t_web) -> float:
     """Scale-up so manufacturing minima are met; the cut is placed back by ``1/k``."""
     k = max(
         1.0,
         *(
             lo / t
-            for lo, t in ((_MIN_SKIN, t_skin), (_MIN_WEB, t_web), (_MIN_CAP, t_cap))
+            for lo, values in ((_MIN_SKIN, t_skin), (_MIN_WEB, t_web), (_MIN_CAP, t_cap))
+            for t in _gauge_values(values)
             if t > 0.0
         ),
     )
@@ -242,9 +256,9 @@ class LoftCutMixin:
         spec = SectionSpec.from_kwargs(
             layout,
             AirfoilSDF.from_surface_graphs(x, upper, lower, chord * k),
-            skin_thickness=t_skin * k,
-            spar_cap_thickness=t_cap * k,
-            shear_web_thickness=t_web * k,
+            skin_thickness=_scale_gauge(t_skin, k),
+            spar_cap_thickness=_scale_gauge(t_cap, k),
+            shear_web_thickness=_scale_gauge(t_web, k),
             twist_rad=twist_rad,
             pivot_fraction=pitch,
             web_offsets=web_offsets,

@@ -52,7 +52,7 @@ family with a root-circle blend, webs, caps, ribs, stringers) and out of windIO 
 | G7 | Adds quarter-point probes because the airfoil morph changes rule (smoothstep or linear) when one station is at least 60 % thick and the next is not | One documented morph rule, or the rule as an explicit option | Done (`airfoil_morph`: auto, smoothstep, thickness, linear) |
 | G8 | Converts every chord fraction: its fractions are measured from the pitch axis on the chord law, the kernel's on each station's own x extent (they differ across a root blend) | Accept positions in metres from the pitch axis, or a reference chord law | Done (`web_x_from_pitch`, `cap_x_from_pitch`, `Stringer.position_m`, `chord_fraction_from_pitch`) |
 | G9 | Flips the twist sign | State the twist convention in `Station` and offer the other sense | Done (`twist_sense`: `nose_up` default, `nose_down`) |
-| G10 | Leaves `merge_cap_and_skin` off: with it on the caps vanish from the shell graph and one cap run meshes a degenerate triangle | Fix; add to the bug log | To do |
+| G10 | Leaves `merge_cap_and_skin` off: with it on the caps vanish from the shell graph and one cap run meshes a degenerate triangle | Fix; add to the bug log | Done (BG-040: keep the cap partitions on the merged cut) |
 | G11 | Records a cap-edge difference (up to 17 mm on a root circle): the kernel cuts the edge at `x` on the cap mid-plane, the consumer at `x` on its node surface | Choice of the surface the edge is measured on | To do |
 | G12 | Refuses tilted webs | A tilt angle on a web (two-foot webs already carry the geometry) | To do |
 | G13 | Refuses webs with different layups; one cap thickness for both sides | Thickness per web and per cap side | To do |

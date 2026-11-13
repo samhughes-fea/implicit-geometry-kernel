@@ -283,9 +283,13 @@ class LoftCutMixin:
             tip_closure=self._tip_closure_at(z),
         )
         if self.merge_cap_and_skin:
-            from implicit_geometry_kernel.blade.shell_graph import shell_strips_from_graph
+            from implicit_geometry_kernel.blade.shell_graph import shell_graph, shell_strips_from_graph
             from dataclasses import replace as _replace
 
+            # Keep the graph built from the stacked walls. Rebuilding it from the
+            # merged runs drops the caps: those runs have no skin bonds, and the
+            # mid-surface only paints a cap where a bond says so (BG-040).
+            partition_graph = shell_graph(cut)
             merged = []
             for strip in shell_strips_from_graph(cut):
                 xy = np.asarray(strip.midline_twisted_pitch_axis_blade_frame, float)
@@ -300,6 +304,7 @@ class LoftCutMixin:
                 )
                 merged.append(SectionWall(strip.label, strip.kind, pts, stack_t, None, {}))
             cut = _replace(cut, walls=tuple(merged))
+            object.__setattr__(cut, "_partition_graph", partition_graph)
         self._section_cache[z] = cut
         while len(self._section_cache) > self._section_cache_size:
             self._section_cache.popitem(last=False)

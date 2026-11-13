@@ -63,7 +63,7 @@ entries are from a retired repo-root log.
 | [BG-037](#bg-037) | Webs cross each other between stations (IEA 15, IEA 10) | **Fixed** (IEA 15 web anchors follow the placed arcs through the window end) |
 | [BG-038](#bg-038) | windIO `nd_arc` read as chord position (IEA 15 webs 25–290 mm off) | **Fixed** (K9) |
 | [BG-039](#bg-039) | Tip closure left out on a single-cell tip at a coarse `h` | **Fixed** (K9) |
-| [BG-040](#bg-040) | `merge_cap_and_skin=True` drops the caps from the shell graph | **Open** |
+| [BG-040](#bg-040) | `merge_cap_and_skin=True` drops the caps from the shell graph | **Fixed** |
 | [BG-041](#bg-041) | windIO caps found by layer name only (IEA 10 gets none) | **Open** |
 | [BG-042](#bg-042) | Station airfoil missed its own points at a blunt-TE corner (0.1 mm at 4.5 m chord) | **Fixed** (K9) |
 | [BG-043](#bg-043) | Round trailing end bulged aft of its end point and was scrambled (0.1 mm at 5.4 m chord) | **Fixed** (K9) |
@@ -963,9 +963,13 @@ is the bare loop.
 partitions, and one cap run meshes a degenerate triangle at `h = 0.25`.
 
 **Evidence.** Seen building a parametric blade with stacked caps; with the
-option off the caps are there and the mesh is clean.
+option off the caps are there and the mesh is clean. The merged cut's walls
+still listed the cap runs, and a second `shell_graph()` did not.
 
-**Root cause.** Not established. **Open.**
+**Root cause.** Merged runs carry no skin bonds. The mid-surface paints a cap
+only where a bond says so, so the rebuilt loop was bare skin and the cap
+region was lofted onto a neighbouring skin. The graph built before that
+replacement is kept on the cut. **Fixed** (G10).
 
 ## BG-041
 

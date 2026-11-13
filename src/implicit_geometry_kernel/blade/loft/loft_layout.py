@@ -8,7 +8,7 @@ from dataclasses import replace
 import numpy as np
 
 from implicit_geometry_kernel.blade.concepts.web_anchoring import chord_fraction_from_pitch
-from implicit_geometry_kernel.blade.loft.loft_tables import _metre_rows, _with_web_fractions
+from implicit_geometry_kernel.blade.loft.loft_tables import _as_span_table, _metre_rows, _with_web_fractions
 from implicit_geometry_kernel.blade.stations import Stringer, TransverseMember
 
 
@@ -128,12 +128,20 @@ class LoftLayoutMixin:
         return tuple(out)
 
     def _stringer_on_chord(self, stringer: Stringer, z: float) -> Stringer:
-        if getattr(stringer, "position_m", None) is None:
+        updates = {}
+        law = getattr(stringer, "position_law", None)
+        if law is not None:
+            updates["position"] = _span_value(law, z, "stringer position")
+        elif getattr(stringer, "position_m", None) is not None:
+            chord = max(self._span_scalar(self._chord, [s.chord for s in self.stations], float(z)), 1e-12)
+            pitch = float(self._pitch(float(z)))
+            updates["position"] = chord_fraction_from_pitch(stringer.position_m, chord, pitch)
+        depth_law = getattr(stringer, "depth_law", None)
+        if depth_law is not None:
+            updates["depth"] = _span_value(depth_law, z, "stringer depth")
+        if not updates:
             return stringer
-        chord = max(self._span_scalar(self._chord, [s.chord for s in self.stations], float(z)), 1e-12)
-        pitch = float(self._pitch(float(z)))
-        frac = chord_fraction_from_pitch(stringer.position_m, chord, pitch)
-        return replace(stringer, position=float(frac))
+        return replace(stringer, **updates)
 
     def _web_feet_at(self, z: float):
         """Two-foot webs at z: ``((suction, pressure), ...)`` chord fractions, LE to TE.
@@ -264,4 +272,13 @@ class LoftLayoutMixin:
                 flags=layout.flags,
             )
         return layout
+
+
+def _span_value(law, z: float, name: str) -> float:
+    if callable(law):
+        return float(law(z))
+    table = _as_span_table(law, name)
+    if table is None:
+        raise ValueError(f"{name} needs a callable or a (z, values) table")
+    return float(table(z))
 

@@ -27,7 +27,7 @@ from implicit_geometry_kernel.blade.topology import (
 from implicit_geometry_kernel.blade.topology.crossings import key_crossing_stations
 from implicit_geometry_kernel.blade.topology.region_counts import region_counts
 from implicit_geometry_kernel.mesh.polygon_voronoi import polygon_mesh_ring
-from implicit_geometry_kernel.stage_log import stage
+from implicit_geometry_kernel.profiling import stage
 
 SURFACES = ("skin", "web", "rib", "tip_closure")
 

@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from implicit_geometry_kernel.profiling import timed_stage
-from implicit_geometry_kernel.stage_log import collecting, fold_reports, stage
+from implicit_geometry_kernel.profiling import collecting, fold_reports, stage, timed_stage
 
 
 def test_a_stage_records_seconds_and_an_error_keeps_its_time() -> None:

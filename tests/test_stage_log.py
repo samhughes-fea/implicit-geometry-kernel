@@ -4,7 +4,15 @@ from __future__ import annotations
 
 import pytest
 
-from implicit_geometry_kernel.profiling import collecting, fold_reports, stage, timed_stage
+from implicit_geometry_kernel.profiling import (
+    LOGGER_NAME,
+    StageCollector,
+    StageReport,
+    collecting,
+    fold_reports,
+    stage,
+    timed_stage,
+)
 
 
 def test_a_stage_records_seconds_and_an_error_keeps_its_time() -> None:
@@ -30,3 +38,14 @@ def test_timed_stage_reports_and_still_fills_its_sink() -> None:
     assert rows["shell-prep"] >= 0.0
     folded = fold_reports(sink.take())
     assert folded["shell-prep"] >= 0.0
+
+
+def test_public_contract() -> None:
+    import dataclasses
+    import logging
+
+    assert LOGGER_NAME == "blade.stage"
+    assert [item.name for item in dataclasses.fields(StageReport)] == [
+        "package", "stage", "seconds", "error", "depth", "started"]
+    assert callable(stage) and callable(fold_reports)
+    assert issubclass(StageCollector, logging.Handler)

@@ -13,6 +13,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
+from implicit_geometry_kernel.stage_log import report_stage
+
 
 def profiling_enabled() -> bool:
     return os.getenv("SECTION_GEOMETRY_PROFILE", "0").lower() in {"1", "true", "yes"}
@@ -97,11 +99,16 @@ def timed_stage(name: str, sink: dict[str, float] | None = None):
     ``sink`` is filled even when ``SECTION_GEOMETRY_PROFILE`` is off so callers
     can decide whether to attach timings. The reserved ``properties`` /
     ``station_build`` / ``plot`` buckets are left alone — ``props_compute``
-    already records ``properties_s`` via :func:`timed_block`.
+    already records ``properties_s`` via :func:`timed_block`. The same seconds
+    are reported on the shared ``blade.stage`` log.
     """
     t0 = time.perf_counter()
+    error: str | None = None
     try:
         yield
+    except Exception as exc:
+        error = str(exc)
+        raise
     finally:
         dt = time.perf_counter() - t0
         if sink is not None:
@@ -109,6 +116,7 @@ def timed_stage(name: str, sink: dict[str, float] | None = None):
         stats = get_stats()
         if stats is not None and name not in {"properties", "station_build", "plot"}:
             stats.extra[name] = float(stats.extra.get(name, 0.0)) + dt
+        report_stage("implicit_geometry_kernel", name, dt, error, t0)
 
 
 def record_grid_eval(n_points: int = 0) -> None:

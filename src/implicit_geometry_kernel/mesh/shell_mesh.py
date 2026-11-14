@@ -27,6 +27,7 @@ from implicit_geometry_kernel.blade.topology import (
 from implicit_geometry_kernel.blade.topology.crossings import key_crossing_stations
 from implicit_geometry_kernel.blade.topology.region_counts import region_counts
 from implicit_geometry_kernel.mesh.polygon_voronoi import polygon_mesh_ring
+from implicit_geometry_kernel.stage_log import stage
 
 SURFACES = ("skin", "web", "rib", "tip_closure")
 
@@ -216,6 +217,16 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None, n_chor
     windows (see :func:`mesh_stations`). ``polygon_size`` is the rib and tip
     cell size (default: from the perimeter spacing).
     """
+    with stage("implicit_geometry_kernel", "shell_mesh"):
+        return _shell_mesh_body(
+            geo, n_span, h=h, n_chord=n_chord, zs=zs,
+            polygon_size=polygon_size, region_h=region_h, refine=refine)
+
+
+def _shell_mesh_body(geo, n_span: int | None = None, *, h: float | None = None, n_chord: int = 8,
+                     zs: Sequence[float] | None = None, polygon_size: float | None = None,
+                     region_h: Mapping[str, float] | None = None,
+                     refine: Sequence[tuple[float, float, float]] = ()) -> ShellMesh:
     if region_h and h is None:
         raise ValueError("region_h needs h")
     zs = tuple(sorted(float(z) for z in (

@@ -217,10 +217,14 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None, n_chor
     windows (see :func:`mesh_stations`). ``polygon_size`` is the rib and tip
     cell size (default: from the perimeter spacing).
     """
-    with stage("implicit_geometry_kernel", "shell_mesh"):
-        return _shell_mesh_body(
+    with stage("implicit_geometry_kernel", "shell_mesh") as rec:
+        mesh = _shell_mesh_body(
             geo, n_span, h=h, n_chord=n_chord, zs=zs,
             polygon_size=polygon_size, region_h=region_h, refine=refine)
+        rec.set("elements", len(mesh.elements))
+        if h is not None:
+            rec.set("edge_length", float(h))
+        return mesh
 
 
 def _shell_mesh_body(geo, n_span: int | None = None, *, h: float | None = None, n_chord: int = 8,

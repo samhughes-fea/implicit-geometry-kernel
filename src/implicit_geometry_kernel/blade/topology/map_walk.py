@@ -10,12 +10,17 @@ from implicit_geometry_kernel.blade.topology.graph import (
 )
 
 
-def _chord_fracs(cut, xy: np.ndarray) -> np.ndarray:
+def _section_local(cut, xy: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Chord and thickness coordinates of ``xy`` (twist and offset removed)."""
     t = np.radians(float(cut.twist))
     c, s = np.cos(t), np.sin(t)
-    x = xy[:, 0] - float(cut.offset[0])
-    y = xy[:, 1] - float(cut.offset[1])
-    local_x = c * x - s * y
+    x = np.asarray(xy, float)[:, 0] - float(cut.offset[0])
+    y = np.asarray(xy, float)[:, 1] - float(cut.offset[1])
+    return c * x - s * y, s * x + c * y
+
+
+def _chord_fracs(cut, xy: np.ndarray) -> np.ndarray:
+    local_x, _local_y = _section_local(cut, xy)
     return (local_x + float(cut.pitch_axis) * float(cut.chord)) / max(float(cut.chord), 1e-12)
 
 
@@ -164,25 +169,55 @@ def _oml_te_xyz(cut) -> np.ndarray | None:
 def _te_corner_indices(pts: np.ndarray, cut) -> tuple[int, int, int]:
     """LE index and suction / pressure TE corners on the skin-mid loop.
 
-    Corners are the farthest pair among vertices within ``TE_OPEN_BAND`` of the
-    trailing extreme (same order as ``TE_OPEN_OVER_C``). A sharp NACA collapses
-    to one ridge; a cylinder / flatback keeps two.
+    A blunt edge is the run, within ``TE_OPEN_BAND`` of the trailing extreme,
+    whose steps lie along the thickness direction. Its ends are the corners.
+    The farthest pair in that band sits out on the curved surface, so the wrap
+    walked past the flatback and then back along the skin (SG-030). A sharp
+    NACA has no such run and stays one ridge; a cylinder keeps the rear cap.
     """
     frac = _chord_fracs(cut, pts)
     i_le = int(np.argmin(frac))
-    fmax = float(frac.max())
-    idx = np.flatnonzero(frac >= fmax - TE_OPEN_BAND)
-    if len(idx) < 2:
-        i_te = int(np.argmax(frac))
-        return i_le, i_te, i_te
-    xy = np.asarray(pts, float)[idx, :2]
-    delta = xy[:, None, :] - xy[None, :, :]
-    d2 = np.sum(delta * delta, axis=2)
-    k = int(np.argmax(d2))
-    a, b = divmod(k, len(idx))
-    i0, i1 = int(idx[a]), int(idx[b])
     i_ridge = int(np.argmax(frac))
+    fmax = float(frac[i_ridge])
     n = len(pts)
+    if n < 2:
+        return i_le, i_ridge, i_ridge
+
+    def _band(step: int) -> list[int]:
+        out: list[int] = []
+        i = i_ridge
+        for _ in range(n):
+            j = (i + int(step)) % n
+            if j == i_le or float(frac[j]) < fmax - TE_OPEN_BAND:
+                break
+            out.append(j)
+            i = j
+        return out
+
+    chain = _band(-1)[::-1] + [i_ridge] + _band(1)
+    if len(chain) < 2:
+        return i_le, i_ridge, i_ridge
+    local_x, local_y = _section_local(cut, pts)
+
+    def _flat(i: int, j: int) -> bool:
+        dx = float(local_x[j] - local_x[i])
+        dy = float(local_y[j] - local_y[i])
+        return abs(dy) >= abs(dx) and abs(dy) > 1e-12
+
+    flat = [_flat(chain[k], chain[k + 1]) for k in range(len(chain) - 1)]
+    ridge_at = chain.index(i_ridge)
+    lo = hi = ridge_at
+    if ridge_at > 0 and flat[ridge_at - 1]:
+        lo = ridge_at - 1
+        while lo > 0 and flat[lo - 1]:
+            lo -= 1
+    if ridge_at < len(flat) and flat[ridge_at]:
+        hi = ridge_at + 1
+        while hi < len(flat) and flat[hi]:
+            hi += 1
+    if lo == hi:
+        return i_le, i_ridge, i_ridge
+    i0, i1 = int(chain[lo]), int(chain[hi])
 
     def _side_idx(step: int) -> set[int]:
         out: set[int] = set()
@@ -196,7 +231,7 @@ def _te_corner_indices(pts: np.ndarray, cut) -> tuple[int, int, int]:
 
     cw, ccw = _side_idx(1), _side_idx(-1)
     same = (i0 in cw and i1 in cw) or (i0 in ccw and i1 in ccw)
-    if same:
+    if same or i0 == i1:
         return i_le, i_ridge, i_ridge
     if float(pts[i0, 1]) >= float(pts[i1, 1]):
         return i_le, i0, i1

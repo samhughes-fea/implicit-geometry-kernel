@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The blunt trailing-edge wrap stops at the flatback. Its corners were the
+  farthest pair inside the trailing band, so on a thick flatback the wrap
+  walked onto the pressure skin and back (about 2 cm on the IEA 15 MW near
+  16 % span) and the loft length jumped between stations (SG-030, BG-035).
+  The shared mitre offset is unchanged.
 - ``geometric_integrals`` returns the wall area, centroid and second moments
   at a station. Spar caps stay on their own mid-line, so the cap offset is in
   the moments. No elastic centre, shear centre, principal axes, mass centre

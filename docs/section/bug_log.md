@@ -58,7 +58,7 @@ Deviations are stated per entry.
 | [SG-027](#sg-027) | Family-C pad `*_0` treated as a distinct merge key from the unindexed canonical pad | **Fixed** — `v0.8.2` index-0 only; no unindexed sibling |
 | [SG-028](#sg-028) | `AirfoilSDF.from_naca` via `Airfoil.naca4` broke sdf↔blade and vertex counts | **Fixed** — shared `naca_four_digit_vertices` |
 | [SG-029](#sg-029) | A spar cap was silently dropped from the skin loop at a concave skin vertex | **Fixed** — shared feet spread by cap arc length |
-| [SG-030](#sg-030) | The skin mid-line folds back on itself at a blunt trailing edge (IEA 15 ~16 % span) | **Open** |
+| [SG-030](#sg-030) | The skin mid-line folds back on itself at a blunt trailing edge (IEA 15 ~16 % span) | **Fixed** — wrap corners are the thickness-aligned run |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -1715,8 +1715,8 @@ non-monotone caps; no reference blade hits it at 41 stations (scan 2026-11-11).
 
 **The skin mid-line folds back on itself at a blunt trailing edge**
 
-**Status:** Open — logged 2026-11-11
-**Area:** skin mid-surface at the TE (section midlines)
+**Status:** Fixed — 2026-11-15
+**Area:** TE wrap corners on the skin mid-loop (`blade/topology/map_walk.py`)
 
 ### Symptom
 IEA 15 at 16.3 % span: the skin mid loop across the TE runs down, back up and
@@ -1728,6 +1728,20 @@ suction corner); at 16.9 % it also repeats a vertex.
 stations; folded loft quads in the TE wrap ([BG-035](../blade/bug_log.md#bg-035)).
 
 ### Root cause
-Not established. Likely the inward half-thickness offset at the TE corners
-forming a swallowtail where the laminate is thick against the flatback height,
-near the moving suction/pressure TE partition point.
+The inward offset ring does not fold, and the shared mitre offset is unchanged.
+`_te_corner_indices` took the farthest pair of skin-mid vertices within
+`TE_OPEN_BAND` of the trailing chord-fraction extreme. On the IEA 15 MW near
+16 % span that pair includes a chordwise hook onto the pressure skin after the
+flatback, so the wrap runs down the edge, back along the skin, and down again.
+Where the hook drops out, the wrap length jumps (0.12 m to 0.15 m).
+
+### Fix
+The corners are the ends of the contiguous thickness-aligned run that contains
+the trailing ridge, still limited to that band (`_te_corner_indices` in
+`blade/topology/map_walk.py`). A sharp edge has no such run and stays one ridge.
+
+### Verification
+`test_te_corners_stop_at_the_flatback`,
+`test_flatback_wrap_is_monotone_and_does_not_jump`,
+`test_iea15_flatback_wrap_is_monotone_near_16_percent` (skipped without the
+catalogue). Catalogue goldens unchanged.

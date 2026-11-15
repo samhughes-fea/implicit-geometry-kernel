@@ -58,7 +58,7 @@ entries are from a retired repo-root log.
 | [BG-032](#bg-032) | Cap edge passing a web foot between stations folded the strips | **Fixed** |
 | [BG-033](#bg-033) | Side arcs walked through the other TE corner (IEA 15) | **Fixed** |
 | [BG-034](#bg-034) | Sliver transition quads where node counts change | Resolved (K8) |
-| [BG-035](#bg-035) | IEA 15 TE wrap folds at 15–22 % span | **Open** (SG-030) |
+| [BG-035](#bg-035) | IEA 15 TE wrap folds at 15–22 % span | **Fixed** (SG-030) |
 | [BG-036](#bg-036) | windIO webs kept root to tip without `start_nd_span` | **Fixed** (K9) |
 | [BG-037](#bg-037) | Webs cross each other between stations (IEA 15, IEA 10) | **Fixed** (IEA 15 web anchors follow the placed arcs through the window end) |
 | [BG-038](#bg-038) | windIO `nd_arc` read as chord position (IEA 15 webs 25–290 mm off) | **Fixed** (K9) |
@@ -89,7 +89,7 @@ Do not add per-blade branches (`if iea10`) in loft code.
 | TE wrap includes the OML ridge | `_te_wrap_arc`; metrics use ridge / max chord-frac, not max blade-x |
 | Wrap presence from skin-mid opening | Blunt vs sharp held on a loft `z` list; a single `section_at` / CSG frame uses the raw test (BG-005, BG-008) |
 | Active web anchors are loop joints | Template rebuilds regions from `evaluate_anchors`; web mid ends share skin nodes (BG-019) |
-| Bowtie loft quads | `_quad_bowtie` splits an opposing-normal quad into two triangles (BG-018); K7 removes their causes (BG-031–BG-033); IEA 15 TE wrap left (BG-035) |
+| Bowtie loft quads | `_quad_bowtie` splits an opposing-normal quad into two triangles (BG-018); K7 removes their causes (BG-031–BG-033); the IEA 15 TE wrap fold was the corner choice (BG-035) |
 | Rib rings = `n_live_webs + 1` | `rib_cell_polygons_from_samples` splits only at live web feet; `cap_lo` / `cap_hi` stay on the skin (BG-010) |
 | Cut `layout` is the authored concept | Web drop lists `dropped_web_indices`; realised W/X are `station_webs` / `station_family` (BG-022) |
 
@@ -877,9 +877,13 @@ at 41 stations, 2 bands at 161).
 **Evidence.** Wrap length jumps 0.12 → 0.15 → 0.12 m between stations; at 16.3 %
 span the raw wrap polyline runs down, back up and down again.
 
-**Root cause.** The section's skin mid-line folds back on itself at the blunt TE
-([SG-030](../section/bug_log.md#sg-030)); the loft is faithful to it.
-**Open** (section geometry).
+**Root cause.** The loft walk is faithful to the corners it is given. Those
+corners were the farthest pair inside the trailing band, which on the IEA 15 MW
+sits past the flatback on the pressure skin
+([SG-030](../section/bug_log.md#sg-030)). The skin mid-ring itself does not fold.
+
+**Fix.** `_te_corner_indices` stops at the ends of the thickness-aligned run
+that contains the trailing ridge. **Fixed** (SG-030).
 
 ## BG-036
 

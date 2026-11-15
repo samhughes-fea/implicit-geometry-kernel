@@ -1,5 +1,6 @@
 """Mapped loft: identity, zones, web drop, cap flicker, TE wrap, rib faces."""
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -38,7 +39,11 @@ from implicit_geometry_kernel.blade.topology import (
     te_is_blunt,
     te_opening,
 )
-from implicit_geometry_kernel.blade.topology.map_walk import _skin_mid_loop
+from implicit_geometry_kernel.blade.topology.map_walk import (
+    _chord_fracs,
+    _skin_mid_loop,
+    _te_corner_indices,
+)
 
 
 def _geo(key="2D-F-LC-0R", **kwargs):
@@ -487,6 +492,98 @@ def test_catalogue_2df_te_trace_is_smooth():
     tes = np.array([s["te_pr"][-1, :2] for s in samples])
     jumps = np.linalg.norm(np.diff(tes, axis=0), axis=1)
     assert float(np.max(jumps)) < 0.25
+
+
+def test_te_corners_stop_at_the_flatback():
+    """A chordwise run inside the trailing band is the skin, not the flatback."""
+    from types import SimpleNamespace
+
+    pts = np.array([
+        [0.0, 0.0, 0.0],
+        [0.5, 0.10, 0.0],
+        [0.996, 0.022, 0.0],
+        [1.0, 0.02, 0.0],
+        [1.0, -0.02, 0.0],
+        [0.996, -0.02, 0.0],
+        [0.5, -0.10, 0.0],
+    ])
+    cut = SimpleNamespace(twist=0.0, offset=(0.0, 0.0), chord=1.0, pitch_axis=0.3)
+    _i_le, i_su, i_pr = _te_corner_indices(pts, cut)
+    assert pts[i_su, 1] == pytest.approx(0.02)
+    assert pts[i_pr, 1] == pytest.approx(-0.02)
+    i_te = int(np.argmax(_chord_fracs(cut, pts)))
+    arc = _te_wrap_arc(pts, pts[i_su], pts[i_pr], _i_le, i_te)
+    assert arc is not None
+    assert not any(np.allclose(p[:2], [0.996, -0.02]) for p in arc)
+    across = arc[:, 1] - arc[0, 1]
+    assert np.all(np.diff(across) <= 1e-12)
+
+
+def test_flatback_wrap_is_monotone_and_does_not_jump():
+    blunt = Airfoil.naca4("0018").with_te_thickness(0.05)
+    stations = [
+        Station(0.0, 4.0, blunt, pitch_axis=0.3),
+        Station(10.0, 3.0, blunt, pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(
+        stations, "2D-F-LC-0R", 0.04,
+        spar_cap_thickness=0.02, shear_web_thickness=0.01,
+        web_positions=(0.25, 0.55), pivot_fraction=0.3,
+    )
+    lengths = []
+    for z in (4.0, 4.5):
+        cut = geo.section_at(float(z))
+        pts = _skin_mid_loop(cut.shell_graph(), float(cut.z))
+        i_le, i_su, i_pr = _te_corner_indices(pts, cut)
+        i_te = int(np.argmax(_chord_fracs(cut, pts)))
+        arc = _te_wrap_arc(pts, pts[i_su], pts[i_pr], i_le, i_te)
+        assert arc is not None and len(arc) >= 2
+        steps = np.linalg.norm(np.diff(arc[:, :2], axis=0), axis=1)
+        assert np.all(steps > 1e-9)
+        axis = pts[i_pr, :2] - pts[i_su, :2]
+        progress = (arc[:, :2] - pts[i_su, :2]) @ axis
+        assert np.all(np.diff(progress) >= -1e-9)
+        lengths.append(float(np.sum(steps)))
+    assert abs(lengths[1] - lengths[0]) / max(lengths) < 0.10
+
+
+def _iea15_yaml() -> Path | None:
+    env = os.environ.get("REFERENCE_BLADES_DIR")
+    roots = ([Path(env)] if env else []) + [
+        Path(__file__).resolve().parents[1] / "reference_blades",
+        Path(__file__).resolve().parents[1].parent / "reference-blades",
+    ]
+    for path in roots:
+        yaml = path / "wind" / "iea15" / "IEA-15-240-RWT.yaml"
+        if yaml.is_file():
+            return yaml
+    return None
+
+
+@pytest.mark.skipif(_iea15_yaml() is None, reason="reference-blades catalogue not cloned")
+def test_iea15_flatback_wrap_is_monotone_near_16_percent():
+    import runpy
+
+    root = Path(__file__).resolve().parents[1]
+    ns = runpy.run_path(str(root / "examples" / "blade" / "08_reference_blades" / "reference_blades.py"))
+    _name, geo, _z = ns["load_windio"](_iea15_yaml())
+    span = float(geo.stations[-1].z)
+    lengths = []
+    for frac in (0.163, 0.169, 0.180):
+        cut = geo.section_at(frac * span)
+        pts = _skin_mid_loop(cut.shell_graph(), float(cut.z))
+        i_le, i_su, i_pr = _te_corner_indices(pts, cut)
+        i_te = int(np.argmax(_chord_fracs(cut, pts)))
+        arc = _te_wrap_arc(pts, pts[i_su], pts[i_pr], i_le, i_te)
+        assert arc is not None and len(arc) >= 2
+        steps = np.linalg.norm(np.diff(arc[:, :2], axis=0), axis=1)
+        assert np.all(steps > 1e-9)
+        axis = pts[i_pr, :2] - pts[i_su, :2]
+        progress = (arc[:, :2] - pts[i_su, :2]) @ axis
+        assert np.all(np.diff(progress) >= -1e-9)
+        lengths.append(float(np.sum(steps)))
+    for left, right in zip(lengths, lengths[1:]):
+        assert abs(right - left) / max(left, right) < 0.10
 
 
 def test_flatback_te_wrap_samples_skin_arc():

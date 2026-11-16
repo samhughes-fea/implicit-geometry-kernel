@@ -63,7 +63,8 @@ def station_network(cut: SectionCut, table: FeatureTable | None = None) -> Stati
     if table is None:
         table = FeatureTable()
     walls = []
-    for run in shell_graph(cut).runs():
+    graph = shell_graph(cut)
+    for run in graph.loop + graph.webs:
         spec = table.add(run.name, run.kind)
         walls.append(WallBranch(spec, run.kind, np.asarray(run.points, float),
                                 float(run.thickness), None))
@@ -78,7 +79,8 @@ def wall_meta_from_cut(cut: SectionCut, table: FeatureTable | None = None) -> tu
         table = FeatureTable()
     nodes: list[SDFNode] = []
     prios: list[int] = []
-    for run in shell_graph(cut).runs():
+    graph = shell_graph(cut)
+    for run in graph.loop + graph.webs:
         spec = table.add(run.name, run.kind)
         band = PolylineBandSDF(run.points[:, :2], max(0.5 * float(run.thickness), 1e-6), spec.id)
         nodes.append(TagNode(band, spec.id))

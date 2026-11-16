@@ -11,7 +11,7 @@ How each member maps onto ``structure``:
   of the camber line (it sets the wall thickness there);
 * spar caps: stacked wall layers beneath the skin, on their footprint;
 * shear webs: branches whose mid-surface is the web axis;
-* sandwich cores and edge inserts: regions.
+* sandwich cores, edge inserts and adhesive bondlines: regions.
 """
 
 from __future__ import annotations
@@ -333,10 +333,11 @@ class InsertBuilder(WallTypeMixin, MemberBuilder):
 
 
 class BondlineBuilder(WallTypeMixin, MemberBuilder):
-    """Adhesive bondline region. Registered so labels resolve; ``build`` is empty.
+    """Adhesive bondline region at the trailing or leading edge.
 
-    Catalogue layouts do not carry bondlines. Tests may override ``build`` to
-    emit a :class:`RegionContribution`.
+    Catalogue layouts do not carry bondlines. Pass ``trailing_edge_bond_x_m``
+    or ``leading_edge_bond_x_m`` on ``MultiCellSection`` to emit a cavity
+    chord-band labelled ``bondline_<i>``.
     """
 
     kind = "bondline"
@@ -348,7 +349,33 @@ class BondlineBuilder(WallTypeMixin, MemberBuilder):
     label_prefixes = ("bondline_",)
 
     def build(self, ctx, prior):  # type: ignore[override]
-        return []
+        out: list[Contribution] = []
+        k = 0
+        te = getattr(ctx, "trailing_edge_bond_x_m", None)
+        if te is not None:
+            wall = InsertWall(kind="trailing_edge", skin_thickness=ctx.skin_thickness,
+                              x_limit=float(te))
+            out.append(self._bond(ctx, k, wall))
+            k += 1
+        le = getattr(ctx, "leading_edge_bond_x_m", None)
+        if le is not None:
+            try:
+                le_x = float(ctx.airfoil_sdf.leading_edge[0])
+            except AttributeError:
+                le_x = 0.0
+            wall = InsertWall(kind="leading_edge", skin_thickness=ctx.skin_thickness,
+                              x_limit=float(le), le_x=le_x, le_y=0.0, radius=ctx.le_radius)
+            out.append(self._bond(ctx, k, wall))
+        return out
+
+    @staticmethod
+    def _bond(ctx, index: int, wall) -> RegionContribution:
+        label = BondlineBuilder.format_label(index)
+        comp = wall.to_sdf_component(ctx.airfoil_sdf, airfoil_expr_node=ctx.airfoil_expr)
+        return RegionContribution(
+            ctx.table.add(label, "bondline"), TagNode(comp.expr, NO_FEATURE),
+            source=SectionMember(label, comp, {label: wall}),
+        )
 
 
 SECTION_BUILDERS = (

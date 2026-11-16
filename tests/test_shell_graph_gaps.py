@@ -67,11 +67,11 @@ def test_g1_solids_keep_caps_shell_adapter_does_not_duplicate():
     g = cut.shell_graph()
     strips = shell_strips_from_graph(cut)
     assert len(cut.walls) == 10
-    assert len(g.runs()) == 8
+    assert len(g.loop) + len(g.webs) == 8
     assert len(strips) == 8
     assert sum(1 for w in cut.walls if w.kind == "cap") == 2
     assert sum(1 for s in strips if s.kind == "cap") == 2
-    assert {s.label for s in strips} == {r.name for r in g.runs()}
+    assert {s.label for s in strips} == {r.name for r in g.loop + g.webs}
     assert "kind" in ShellMidlineStrip.__dataclass_fields__
 
 
@@ -107,7 +107,7 @@ def test_g3_loft_omits_missing_run_names():
 
 # --- G4 ----------------------------------------------------------------------
 
-def test_g4_stack_thickness_jumps_at_partition_edge():
+def test_g4_stack_thickness_is_continuous_at_cap_edges():
     geo = _geo()
     cut = geo.section_at(4.0)
     g = cut.shell_graph()
@@ -116,12 +116,14 @@ def test_g4_stack_thickness_jumps_at_partition_edge():
     stack = StackThickness(geo)
     t_cap = float(stack(cap.points[len(cap.points) // 2].reshape(1, 3))[0])
     t_skin = float(stack(skin.points[len(skin.points) // 2].reshape(1, 3))[0])
-    jump = abs(t_cap - t_skin)
     assert t_cap == pytest.approx(0.011)
     assert t_skin == pytest.approx(0.003)
-    assert jump == pytest.approx(0.008)
     t_ends = stack(cap.points[[0, -1]])
-    assert set(np.round(t_ends, 6)) == {0.003, 0.011}
+    assert t_ends[0] == pytest.approx(t_ends[1], abs=1e-9)
+    assert 0.003 < float(t_ends[0]) < 0.011
+    # the shared vertex is the same value from the skin run's matching end
+    skin_end = min(skin.points[[0, -1]], key=lambda p: np.linalg.norm(p[:2] - cap.points[0, :2]))
+    assert float(stack(np.asarray(skin_end).reshape(1, 3))[0]) == pytest.approx(float(t_ends[0]), abs=1e-9)
 
 
 # --- G5 ----------------------------------------------------------------------
@@ -225,25 +227,25 @@ def test_g8_iea10_web_positions_from_yaml_anchors():
 
 # --- G9 ----------------------------------------------------------------------
 
-def test_g9_cores_and_inserts_are_solids_not_loop_runs():
+def test_g9_cores_are_solids_not_loop_runs():
     cut = _geo().section_at(4.0)
     assert {w.kind for w in cut.walls} <= {"skin", "cap", "web"}
     g = cut.shell_graph()
-    names = " ".join(r.name for r in g.runs())
-    assert "core" not in names
-    assert "insert" not in names
-    assert {r.surface for r in g.runs()} <= {"skin", "web"}
-
-
-def test_g9_opt_in_core_runs_from_polygon_boundaries():
-    geo = _geo()
-    g = geo.shell_graph(4.0, include_solids=True)
+    assert "core" not in " ".join(r.name for r in g.loop)
+    assert {r.surface for r in g.loop + g.webs} <= {"skin", "web"}
     cores = [r for r in g.solids if r.surface == "core"]
     assert cores
     assert all(len(r.points) >= 4 for r in cores)
+    assert all(r.surface == "core" for r in cores)
+
+
+def test_g9_solids_can_be_omitted():
+    geo = _geo()
     default = geo.shell_graph(4.0)
-    assert default.solids == ()
-    assert {r.surface for r in default.runs()} <= {"skin", "web"}
+    assert any(r.surface == "core" for r in default.solids)
+    omitted = geo.shell_graph(4.0, include_solids=False)
+    assert omitted.solids == ()
+    assert {r.surface for r in omitted.loop + omitted.webs} <= {"skin", "web"}
 
 
 # --- G10 / G11 ----------------------------------------------------------------

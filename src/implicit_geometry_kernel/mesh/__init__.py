@@ -7,8 +7,9 @@ trimesh. ``gmsh`` is the optional extra, deprecated (kept for comparison studies
 
 from implicit_geometry_kernel.mesh.gmsh import mesh_rib_cells, mesh_shell, write_shell_msh
 from implicit_geometry_kernel.mesh.polygon import polygon_mesh_ring
+from implicit_geometry_kernel.mesh.quality import MeshRunQuality, mesh_quality
 from implicit_geometry_kernel.mesh.shell_mesh import ShellMesh, mesh_stations, shell_mesh
 from implicit_geometry_kernel.mesh.vtk import write_vtk
 
-__all__ = ["ShellMesh", "mesh_rib_cells", "mesh_shell", "mesh_stations", "polygon_mesh_ring", "shell_mesh",
-           "write_shell_msh", "write_vtk"]
+__all__ = ["MeshRunQuality", "ShellMesh", "mesh_quality", "mesh_rib_cells", "mesh_shell", "mesh_stations",
+           "polygon_mesh_ring", "shell_mesh", "write_shell_msh", "write_vtk"]

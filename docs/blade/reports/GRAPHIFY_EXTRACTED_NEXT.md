@@ -40,7 +40,7 @@ the dict. Do not add a dataclass: wrapping `{by_label}` does not move edges off
 the builder. Query helpers would duplicate `boundary/labels.py`. C++ analogue is
 `std::map<std::string, Polygon>`. Input `section: Any` is a separate DIP item;
 do not reopen it here. Do not split walls / cores / cavity unless a caller
-needs cavity as a published product (G9 cores stay opt-in).
+needs cavity as a published product (G9 cores sit on `shell_graph.solids`).
 
 ## Ignore (this filter)
 

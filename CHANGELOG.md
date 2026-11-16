@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- ``StackThickness`` is continuous at cap/skin partition vertices: the field
+  ramps across each thickness jump instead of stepping. Interiors keep the
+  nearest-run value (skin, plus cap inside footprints).
+- ``BondlineBuilder`` emits a trailing-edge or leading-edge adhesive region
+  when ``trailing_edge_bond_x_m`` / ``leading_edge_bond_x_m`` is set on
+  ``MultiCellSection``. Catalogue layouts still have no bondline.
+- Sandwich cores sit on the default ``shell_graph`` (``ShellGraph.solids``).
+  They stay off the loftable loop. Pass ``include_solids=False`` to omit them.
+  ``shell_strips_from_graph`` still returns loop and web runs only.
+- ``shell_mesh`` reports aspect ratio and scaled Jacobian per partition
+  (``ShellMesh.quality``).
 - The blunt trailing-edge wrap stops at the flatback. Its corners were the
   farthest pair inside the trailing band, so on a thick flatback the wrap
   walked onto the pressure skin and back (about 2 cm on the IEA 15 MW near

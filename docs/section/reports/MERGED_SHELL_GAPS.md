@@ -20,17 +20,17 @@ Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm,
 | **G1** | Wave 3 shipped | `shell_strips_from_graph` = 8 runs; `cut.walls` still 10 (solid caps) |
 | **G2** | Wave 1 shipped | `partition_edges` / `partition_edge_curve`; colouring unchanged |
 | **G3** | Wave 2 shipped | `topology_diff` + `shared_loft_names`; no label lerp |
-| **G4** | locked / closed | `T` step kept (8 mm); no geometric taper; Newton is not a spec at partition vertices |
+| **G4** | shipped | `T` ramps across cap/skin vertices; interiors keep the run value |
 | **G5** | Wave 0 shipped | Loft from graph; snap with SDF; joint `|φ| = 4.000 mm` is out of Pass 1 check |
 | **G6** | Wave 4 shipped | `with_web_feet_on_loop`; loft re-resolves / drops webs on flapwise re-anchor |
 | **G7** | Wave 5 shipped | `section_at` LRU 256 per `round(z, 9)`; `LoftedPolygonSDF` BVH on (`accelerate`, `accel_at`) |
 | **G8** | Wave 6 shipped | `web_positions_from_windio_structure`; example 09 no longer hardcodes `(0.22, 0.50)` |
-| **G9** | Wave 7 shipped | Cores / TE inserts stay constructive solids; not on `shell_graph` |
+| **G9** | shipped | Cores sit on `shell_graph.solids` by default; not on the loftable loop |
 | **G10** | closed for this kernel | No `thin_wall` module; consumers use `mid_surface` / `shell_graph` |
 | **G11** | closed for this kernel | No PCOMP / ply stagger; bind laminates via `offset_regions` / stacked `layers` |
 | **WP6** | parked | named `feature_curve(geo, name_a, name_b, zs)` exists; TE classifier stays an OML helper; OML BVH shipped |
 
-Implementation sequence is [Waves](#waves) below. **G4 is locked:** keep the `T` step; document Newton limits at partition vertices (no geometric taper).
+Implementation sequence is [Waves](#waves) below. **G4:** `StackThickness` ramps across cap/skin vertices so `T` is continuous there.
 
 Oracles (Wave 0): **loft strips** from `shell_graph` polylines; **in-plane snap** from `wall_mid_sdf` + `GeometrySolver`. Joint vertices are out of the Pass 1 `|φ| < 5e-4` check.
 
@@ -81,15 +81,11 @@ Example 09 uses it. No silent label lerp.
 
 ## G4 — Thickness jumps
 
-**Status:** locked / closed (keep the step; Newton limits documented; no geometric taper).
+**Status:** shipped (continuous at cap edges).
 
-**Today:** [`StackThickness`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) assigns nearest loop-run `T` (step, not ramp). Not ply stagger.
+**Today:** [`StackThickness`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) assigns nearest loop-run `T` and ramps across each cap/skin vertex over a distance equal to the thickness jump. Interior cap `T = 11` mm, interior skin `T = 3` mm on the 2D-F fixture; both endpoints of a cap run evaluate to the same blended value. Not ply stagger.
 
-**Evidence:** interior cap `T = 11` mm, interior skin `T = 3` mm, jump **8 mm** (`t_cap`). The two endpoints of one cap run evaluate to `{3 mm, 11 mm}` — nearest-run at the shared vertex is discrete. `GeometrySolver` default tolerance is `1e-6` m (`snap_wall_mid` uses `1e-8`); the jump is 8000× that.
-
-**Decision (Wave 0, locked):** keep the nearest-run `T` step. Document Newton limits at partition vertices. No geometric taper.
-
-**Non-goals:** ply-drop stagger; taper of `T`.
+**Non-goals:** ply-drop stagger of the constitutive stack.
 
 ---
 
@@ -133,13 +129,11 @@ Gauge tables still come from layer names.
 
 ## G9 — Cores / TE inserts / sandwich
 
-**Status:** opt-in graph runs.
+**Status:** on the default graph as solids.
 
-**Today:** sandwich cores and inserts remain **constructive solids** (`CoreWall.to_midline` / `InsertWall.to_midline` raise). `_mid_surface` still merges caps into skins + webs only. Default 2D-F `shell_graph` run names contain neither `core` nor `insert`; `surface` is `skin` / `web` (plus `rib` / `stringer` on faces and branches). `cut.walls` kinds stay `skin` / `cap` / `web`.
+**Today:** sandwich cores and inserts remain **constructive solids** (`CoreWall.to_midline` / `InsertWall.to_midline` raise). `_mid_surface` still merges caps into skins + webs only. Default 2D-F `shell_graph` puts cores on `solids` (`surface` `"core"`); they are not loop runs. `cut.walls` kinds stay `skin` / `cap` / `web`. `shell_strips_from_graph` returns loop and web runs only. Pass `include_solids=False` to omit solids.
 
-**Opt-in:** `shell_graph(cut, include_solids=True)` (also `BladeGeometry.shell_graph(z, include_solids=True)` and `SectionCut.shell_graph(include_solids=True)`) builds `ShellRun`s with `surface` `"core"` / `"insert"` from `to_boundary_polygon` rings, stored on `ShellGraph.solids` and included in `runs()`. Off by default so goldens and 2D-F run-name tests stay put.
-
-**Decision:** keep them off the loop unless a loft consumer asks. Area/inertia keep the polygon path.
+**Decision:** cores on the default graph, off the loftable loop. Area/inertia keep the polygon path.
 
 ---
 
@@ -179,8 +173,8 @@ is parked.
 ## Waves
 
 Opening a wave means implementing that row. **Waves 0–7 are shipped.** G10/G11 stay
-closed for this kernel (consumer / PCOMP). No `ShellMidlineStrip` version, no `T`
-taper. `LoftedPolygonSDF` BVH is shipped.
+closed for this kernel (consumer / PCOMP). No `ShellMidlineStrip` version.
+`LoftedPolygonSDF` BVH is shipped.
 
 ```text
 Wave 0 (G5+G4) → Wave 1 (G2) → Wave 2 (G3) → Wave 3 (G1)
@@ -195,11 +189,11 @@ Wave 0 (G5+G4) → Wave 1 (G2) → Wave 2 (G3) → Wave 3 (G1)
 - **D0.2** Joint vertices are out of the Pass 1 `|φ| < 5e-4` check. Cap/skin ends: max `|φ|` = `t_cap/2` on this fixture (**4.000 mm**); cap midpoint ~0; snap residual ~4×10⁻⁷ m (98.6 % converged).
 - **D0.3** Tests stay characterization (`test_shell_graph_gaps.py`). Do not fail midpoints at 4 mm.
 
-**G4** (locked: document Newton limits, keep the step)
+**G4** (continuous at cap edges)
 
-- **D0.4** `StackThickness` remains a step (11 mm vs 3 mm; jump 8 mm). Shared vertices may evaluate to either side (`{3, 11}` mm).
-- **D0.5** Solver defaults (`tolerance=1e-6`, `snap_wall_mid` `1e-8`) are not a joint spec. Do not Newton-project along the thickness jump expecting the discrete graph vertex.
-- **Non-goal:** geometric taper.
+- **D0.4** `StackThickness` ramps across cap/skin vertices. Interiors stay 11 mm vs 3 mm on this fixture; the shared vertex is the mean of the two sides.
+- **D0.5** Solver defaults (`tolerance=1e-6`, `snap_wall_mid` `1e-8`) are not a joint spec.
+- **Non-goal:** ply-drop stagger.
 
 ### Wave 1 — Partition edge keys (G2) (shipped)
 
@@ -245,9 +239,8 @@ Depends on Waves 0–2.
 
 ### Wave 7 — Cores / TE inserts (G9) (shipped)
 
-- **Decision:** solids-only. Do not extend `_mid_surface` with core or insert runs.
+- **Decision:** solids on the default graph, not on the loftable loop.
 - `CoreWall.to_midline` stays unimplemented. Properties keep the constructive polygon path.
-- Re-open only if a shell consumer needs those names on the loop.
 
 ### Closed here / remaining park
 
@@ -259,6 +252,5 @@ Depends on Waves 0–2.
 
 ## What this inventory does not do
 
-G10/G11 stay out of `src/` (thin-wall consumer; PCOMP). No DTO version, no `T`
-taper, no cores on `shell_graph` by default, no Gmsh driver, no consumer edits.
-OML polygon BVH is in `LoftedPolygonSDF`.
+G10/G11 stay out of `src/` (thin-wall consumer; PCOMP). No DTO version, no
+Gmsh driver, no consumer edits. OML polygon BVH is in `LoftedPolygonSDF`.

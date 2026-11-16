@@ -48,6 +48,8 @@ class MultiCellSection:
         web_y_coords=None,
         trailing_edge_insert_x_m=None,
         leading_edge_insert_x_m=None,
+        trailing_edge_bond_x_m=None,
+        leading_edge_bond_x_m=None,
         le_radius=None,
         core_enabled=True,
         y_search=None,
@@ -87,6 +89,8 @@ class MultiCellSection:
             discrete_cap_chord_half_width, cap_placement=cap_placement,
             web_endpoints=web_endpoints, stage_sink=stage_sink,
             spar_cap_ply_pitch_m=spar_cap_ply_pitch_m, web_indices=web_indices,
+            trailing_edge_bond_x_m=trailing_edge_bond_x_m,
+            leading_edge_bond_x_m=leading_edge_bond_x_m,
         )
         contributions = (registry or section_registry()).run(plan)
         self._structure = assemble(plan, contributions)

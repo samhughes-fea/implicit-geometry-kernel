@@ -298,7 +298,7 @@ def test_shell_strips_from_graph_no_extra_cap_surface():
     cut = _geo().section_at(4.0)
     g = cut.shell_graph()
     strips = shell_strips_from_graph(cut)
-    assert len(strips) == len(g.runs())
+    assert len(strips) == len(g.loop) + len(g.webs)
     assert len(strips) < len(cut.walls)
     cap = next(s for s in strips if s.kind == "cap")
     run = next(r for r in g.loop if r.name == cap.label)

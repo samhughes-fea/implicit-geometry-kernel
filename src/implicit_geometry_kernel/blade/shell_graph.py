@@ -44,7 +44,7 @@ class MidSurface:
 class ShellRun:
     """One loftable run of the shell graph (a partition on the wall, or a web).
 
-    ``surface`` is ``skin``, ``web``, ``rib``, or opt-in ``core`` / ``insert``.
+    ``surface`` is ``skin``, ``web``, ``rib``, or ``core`` / ``insert`` (solids).
     ``kind`` is the colour / feature class: ``cap`` on a stacked skin partition,
     the member name on a rib face, otherwise ``surface``.
     """
@@ -261,16 +261,18 @@ def _side_from_name(name: str) -> str | None:
 
 
 def shell_strips_from_graph(cut: SectionCut):
-    """Shell hand-off: one ``ShellMidlineStrip`` per graph run (caps as partitions).
+    """Shell hand-off: one ``ShellMidlineStrip`` per loftable run (caps as partitions).
 
-    Does not emit a second cap surface. ``cut.walls`` still lists solid caps.
-    The strip type is unchanged (Wave 3); ``build_shell_midline_strips`` is
-    the station skin+web emit, not a second cap surface.
+    Loop and web runs only. Sandwich cores and inserts stay on ``ShellGraph.solids``.
+    ``cut.walls`` still lists solid caps. The strip type is unchanged (Wave 3);
+    ``build_shell_midline_strips`` is the station skin+web emit, not a second
+    cap surface.
     """
     from implicit_geometry_kernel.contract.shell_midline_strip import ShellMidlineStrip
 
     strips = []
-    for run in shell_graph(cut).runs():
+    graph = shell_graph(cut)
+    for run in graph.loop + graph.webs:
         side = _side_from_name(run.name)
         strips.append(
             ShellMidlineStrip(
@@ -326,17 +328,22 @@ from implicit_geometry_kernel.blade.shell_graph_build import (  # noqa: E402
 )
 
 
-def shell_graph(cut: SectionCut, include_solids: bool = False) -> ShellGraph:
+def shell_graph(cut: SectionCut, include_solids: bool = True) -> ShellGraph:
     """Loftable shell graph: skin partitions, web branches, rib faces and stringers.
 
-    ``include_solids`` (default off) adds core and insert runs from polygon
-    boundaries so loft can see them without changing default 2D-F run names.
+    Sandwich cores and inserts sit on ``solids`` by default (polygon
+    boundaries). Pass ``include_solids=False`` to omit them. They are never
+    on the loftable loop.
     """
 
     cached = getattr(cut, "_partition_graph", None)
     if cached is not None:
-        if include_solids and not cached.solids:
-            return replace(cached, solids=_solid_runs(cut))
+        if include_solids:
+            if not cached.solids:
+                return replace(cached, solids=_solid_runs(cut))
+            return cached
+        if cached.solids:
+            return replace(cached, solids=())
         return cached
     ms = _mid_surface(cut)
     skins = tuple(s for s in ms.segments if s.kind == "skin")

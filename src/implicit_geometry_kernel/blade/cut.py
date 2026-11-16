@@ -10,9 +10,9 @@
   ``t_skin``; ``eccentricity_m = t_cap/2`` for constitutive OFFSET. Stack
   ``T = t_cap + t_skin`` remains the thickness oracle (``StackThickness`` /
   cavity), not the mesh gauge. ``shell_graph()`` exports one loftable skin
-  loop plus web branches. Sandwich cores and inserts stay off the loop by
-  default (G9); ``shell_graph(include_solids=True)`` adds polygon-boundary
-  runs with ``surface`` ``core`` / ``insert``.
+  loop plus web branches. Sandwich cores and inserts sit on ``solids``
+  (``surface`` ``core`` / ``insert``) by default; they stay off the loftable
+  loop. Pass ``include_solids=False`` to omit them.
 
 ``cells`` are the closed cell interiors (``CellPolygon``).
 
@@ -155,10 +155,11 @@ class SectionCut:
         xy = _twist_offset(local, self.twist, self.offset)
         return np.column_stack([xy, np.full(len(xy), self.z)])
 
-    def shell_graph(self, include_solids: bool = False) -> "ShellGraph":
+    def shell_graph(self, include_solids: bool = True) -> "ShellGraph":
         """Loftable shell: one wall loop (caps as partitions) plus web branches.
 
-        ``include_solids=True`` adds core and insert runs from polygon boundaries (G9).
+        Sandwich cores and inserts sit on ``solids`` by default. Pass
+        ``include_solids=False`` to omit them.
         """
         from implicit_geometry_kernel.blade.shell_graph import shell_graph as _shell_graph
 

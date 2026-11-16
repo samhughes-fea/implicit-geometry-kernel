@@ -153,6 +153,8 @@ class SectionPlan(BuildContext):
     le_radius: float | None
     spar_cap_ply_pitch_m: float | None
     stage_sink: dict[str, float] | None
+    trailing_edge_bond_x_m: float | None = None
+    leading_edge_bond_x_m: float | None = None
 
     @property
     def n_webs(self) -> int:
@@ -232,6 +234,7 @@ def plan_section(
     core_enabled, y_search, structural_family, fixed_cap_anchor, pitch_fraction_of_chord_from_le,
     fixed_cap_chord_half_width, discrete_cap_chord_half_width, *, cap_placement, web_endpoints,
     stage_sink, spar_cap_ply_pitch_m, web_indices=None,
+    trailing_edge_bond_x_m=None, leading_edge_bond_x_m=None,
 ) -> SectionPlan:
     """Validate and resolve the inputs of :class:`MultiCellSection` (same arguments)."""
     explicit = None
@@ -326,6 +329,8 @@ def plan_section(
         le_radius=le_radius,
         spar_cap_ply_pitch_m=spar_cap_ply_pitch_m,
         stage_sink=stage_sink,
+        trailing_edge_bond_x_m=None if trailing_edge_bond_x_m is None else float(trailing_edge_bond_x_m),
+        leading_edge_bond_x_m=None if leading_edge_bond_x_m is None else float(leading_edge_bond_x_m),
     )
 
 

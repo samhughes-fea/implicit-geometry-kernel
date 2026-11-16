@@ -46,13 +46,13 @@ def _plane_xy(p: np.ndarray) -> np.ndarray:
 def _quad_jacobians(p: np.ndarray) -> np.ndarray:
     """Signed scaled Jacobian at the four corners of a bilinear quad."""
     xy = _plane_xy(p)
-    dets = []
-    for xi, eta in ((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)):
+    corners = ((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0))
+    dets = np.empty(4, float)
+    for i, (xi, eta) in enumerate(corners):
         d_xi = 0.25 * np.array([-(1.0 - eta), (1.0 - eta), (1.0 + eta), -(1.0 + eta)])
         d_eta = 0.25 * np.array([-(1.0 - xi), -(1.0 + xi), (1.0 + xi), (1.0 - xi)])
         a, b = d_xi @ xy, d_eta @ xy
-        dets.append(float(a[0] * b[1] - a[1] * b[0]))
-    dets = np.asarray(dets, float)
+        dets[i] = float(a[0] * b[1] - a[1] * b[0])
     peak = float(np.max(np.abs(dets)))
     return dets / peak if peak > 0.0 else dets
 

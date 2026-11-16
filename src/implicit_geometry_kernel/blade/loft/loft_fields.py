@@ -20,7 +20,7 @@ class LoftFieldsMixin:
         return LoftedPolygonSDF(lambda z: self.oml_polyline(float(z))[:, :2], meta=meta)
 
     def cavity_sdf(self: BladeGeometry, meta: int = 0):
-        """Inner mould line: ``oml + T``. ``T`` is a step (skin, plus cap inside footprints); no taper."""
+        """Inner mould line: ``oml + T``. ``T`` ramps across cap edges (skin, plus cap inside footprints)."""
         from implicit_geometry_kernel.blade.topology.fields import StackThickness
         from implicit_geometry_kernel.sdf.nodes.tagged import FieldOffsetNode
 
@@ -115,8 +115,8 @@ class LoftFieldsMixin:
             out[idx] = t
         return out
 
-    def shell_graph(self: BladeGeometry, z: float, include_solids: bool = False):
-        """Loftable shell graph at ``z``. Solids (cores/inserts) are opt-in."""
+    def shell_graph(self: BladeGeometry, z: float, include_solids: bool = True):
+        """Loftable shell graph at ``z``. Sandwich cores sit on ``solids`` by default."""
         return self.section_at(z).shell_graph(include_solids=include_solids)
 
     def key_points(self: BladeGeometry, z: float) -> dict[str, np.ndarray]:

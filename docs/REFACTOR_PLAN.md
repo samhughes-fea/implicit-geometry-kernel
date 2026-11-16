@@ -420,8 +420,8 @@ Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays
   Do not advertise `[mesh]` (`gmsh`); it is leftover convenience. Consumers own
   shell mesher jobs and ply ABD/PCOMP.
 - G10/G11 are **closed for this kernel** (thin-wall adapter and PCOMP stay in
-  consumers). Remaining park: TE classifier on OML only, no `T` taper, no cores
-  on `shell_graph` unless a shell consumer needs them
+  consumers). Remaining park: TE classifier on OML only. `StackThickness`
+  ramps at cap edges; cores sit on default `shell_graph.solids`
   ([MERGED_SHELL_GAPS](section/reports/MERGED_SHELL_GAPS.md)).
   `LoftedPolygonSDF` BVH (`accelerate` / `accel_at`) is shipped.
 - Mapped loft freeze: loft webs follow intercept `DroppedWeb.index`; no

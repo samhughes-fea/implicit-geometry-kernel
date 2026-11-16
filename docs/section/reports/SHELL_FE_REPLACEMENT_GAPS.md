@@ -79,9 +79,9 @@ that package graph.
 
 | Product | API |
 |---------|-----|
-| Wall gauge | [`StackThickness`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) nearest-run **step** (G4 locked); polygon `wall_mid_sdf`; `cavity_sdf` via `FieldOffsetNode`. Combined skin+cap thickness is the step field on the shell graph. |
+| Wall gauge | [`StackThickness`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) nearest-run field, ramped at cap edges; polygon `wall_mid_sdf`; `cavity_sdf` via `FieldOffsetNode`. Combined skin+cap thickness is the stack field on the shell graph. |
 | Station product | Authored [`shell_graph`](../../../src/implicit_geometry_kernel/blade/shell_graph.py) → [`station_network`](../../../src/implicit_geometry_kernel/blade/topology/network.py). Caps are partitions, not extra loops. `station_network_from_meta` is a meta split, not a second spine. |
-| Trailing edge | Sharp vs blunt: [`classify_trailing_edge`](../../../src/implicit_geometry_kernel/extract/curves.py), `te_blunt_*`, `place_station_keys`, TE wrap. A finite blunt edge on the shell graph is the solid trailing edge. G9 cores/inserts stay opt-in. |
+| Trailing edge | Sharp vs blunt: [`classify_trailing_edge`](../../../src/implicit_geometry_kernel/extract/curves.py), `te_blunt_*`, `place_station_keys`, TE wrap. A finite blunt edge on the shell graph is the solid trailing edge. G9 cores sit on `shell_graph.solids` by default. |
 | Zoning stations | `forced_stations()`, `topology_diff`, `shell_loft_zones` |
 | Solver | `GeometrySolver.project`, `intersect`, `zero_along`; `feature_curve` / `partition_edge_curve` |
 | Domains | WindIO webs/caps, catalogue layouts, planform CSV / `BladeGeometry`. Section CST (`Airfoil.cst`) and `sdf_rounded_box` stay section/SDF primitives. |
@@ -173,7 +173,7 @@ supersedes those done-when criteria.
 | Curvature sizing `h` | [`size_fields`](../../../src/implicit_geometry_kernel/blade/loft/loft_fields.py) / [`polyline_kappa`](../../../src/implicit_geometry_kernel/blade/topology/sizing.py) partial | Consumer may keep chordal-tolerance sizing |
 | Marching squares | Quadtree MS for properties ([`integration/quadtree`](../../../src/implicit_geometry_kernel/integration/quadtree)) | Needed here only if station extract leaves a graph-only path |
 | Dual contouring 3D | Not in this repo | Consumer, or port if non-planar features are required |
-| Cores / TE inserts on loop | G9 opt-in | Default `shell_graph` may omit solids |
+| Cores / TE inserts on loop | G9 solids | Default `shell_graph` puts cores on `solids`, not the loop |
 | Versioned `ShellMidlineStrip` | Parked | Not required |
 | Pre-1.0 API | `0.9.0` breaking | **Do not tag `v1.0.0`.** SemVer 1.0 is a freeze; G-ACC (`check_consumer.py` green) is not met. Pin **0.9.1** / **0.10.0** (maintainer) before the consumer deletes its kernel |
 

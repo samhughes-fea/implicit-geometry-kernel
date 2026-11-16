@@ -77,6 +77,7 @@ REGION_PALETTE: dict[str, str] = {
     "sandwich_core": "#9E86C8",
     "leading_edge_insert": MID_BLUE,
     "trailing_edge_insert": MUTED,
+    "bondline": "#C4A35A",
 }
 
 #: Fallback for a label the palette has never seen.

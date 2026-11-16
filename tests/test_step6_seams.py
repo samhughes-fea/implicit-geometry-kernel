@@ -73,7 +73,8 @@ def test_merged_cap_and_skin_uses_graph_runs():
     a = stacked.section_at(4.0)
     b = merged.section_at(4.0)
     assert len(a.walls) == 10
-    assert len(b.walls) == len(a.shell_graph().runs())
+    g = a.shell_graph()
+    assert len(b.walls) == len(g.loop) + len(g.webs)
     assert any(w.kind == "cap" for w in b.walls)
     cap = next(w for w in b.walls if w.kind == "cap")
     assert cap.thickness == pytest.approx(0.011)

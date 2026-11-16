@@ -21,7 +21,7 @@ LOFTABLE_SURFACES = frozenset({"skin", "web", "core", "insert"})
 
 
 def loftable_runs(graph: ShellGraph) -> Tuple[ShellRun, ...]:
-    """Skin/web (and opt-in solid) runs in graph order; ribs and stringers omitted."""
+    """Skin/web (and solid) runs in graph order; ribs and stringers omitted."""
     return tuple(r for r in graph.runs() if r.surface in LOFTABLE_SURFACES)
 
 

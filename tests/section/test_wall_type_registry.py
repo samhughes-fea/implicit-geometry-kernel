@@ -13,9 +13,6 @@ from implicit_geometry_kernel.section.assembly.members import (
     WallTypeMixin,
     wall_type_for_label,
 )
-from implicit_geometry_kernel.sdf.nodes import Circle
-from implicit_geometry_kernel.section.walls.base import SectionComponent
-from implicit_geometry_kernel.structure import RegionContribution
 from implicit_geometry_kernel.section.assembly.plan import SectionMember
 from implicit_geometry_kernel.section.spec.build import build_section_geometry
 from implicit_geometry_kernel.section.walls.walls import StiffenerWall
@@ -102,31 +99,28 @@ def test_bondline_region_builder_is_registered_and_idle_by_default():
     assert all("bondline" not in str(k) for k in (result.properties_map or ()))
 
 
-def test_bondline_region_builder_emits_only_when_build_is_overridden(monkeypatch):
-    def build(self, ctx, prior):
-        label = self.format_label(0)
-        comp = SectionComponent(Circle(cx=0.4, cy=0.0, r=0.002))
-        return [
-            RegionContribution(
-                ctx.table.add(label, "bondline"),
-                TagNode(comp.expr, 0),
-                source=SectionMember(label, comp),
-            )
-        ]
+def test_bondline_region_builder_emits_a_trailing_edge_band():
+    from implicit_geometry_kernel.section.assembly.multicell import MultiCellSection
 
-    monkeypatch.setattr(BondlineBuilder, "build", build)
-    spec = SectionSpec.from_kwargs(
-        resolve_system_type("2D-F-LC-0R"),
+    section = MultiCellSection(
         Airfoil.naca4("2412").to_sdf(chord=1.0),
+        [0.25, 0.5],
         skin_thickness=0.004,
-        spar_cap_thickness=0.012,
-        shear_web_thickness=0.005,
+        cap_height=0.012,
+        web_thickness=0.005,
+        trailing_edge_bond_x_m=0.85,
     )
-    result = build_section_geometry(
-        spec,
-        options=SectionOptions(outputs=("properties",)),
+    names = {str(getattr(k, "value", k)) for k in section.labels}
+    assert "bondline_0" in names
+    assert any(r.spec.name == "bondline_0" for r in section.structure.regions)
+    idle = MultiCellSection(
+        Airfoil.naca4("2412").to_sdf(chord=1.0),
+        [0.25, 0.5],
+        skin_thickness=0.004,
+        cap_height=0.012,
+        web_thickness=0.005,
     )
-    assert "bondline_0" in (result.properties_map or {})
+    assert all("bondline" not in str(getattr(k, "value", k)) for k in idle.labels)
 
 
 def test_cap_builder_is_off_the_shell_product() -> None:

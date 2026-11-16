@@ -27,6 +27,7 @@ from implicit_geometry_kernel.blade.topology import (
 from implicit_geometry_kernel.blade.topology.crossings import key_crossing_stations
 from implicit_geometry_kernel.blade.topology.region_counts import region_counts
 from implicit_geometry_kernel.mesh.polygon_voronoi import polygon_mesh_ring
+from implicit_geometry_kernel.mesh.quality import MeshRunQuality, mesh_quality
 from implicit_geometry_kernel.profiling import stage
 
 SURFACES = ("skin", "web", "rib", "tip_closure")
@@ -57,6 +58,8 @@ class ShellMesh:
     layers: tuple[tuple[str, ...], ...]
     layer_thicknesses: tuple[tuple[float, ...], ...]
     stations: tuple[float, ...] = field(default=())
+    quality: tuple[MeshRunQuality, ...] = field(default=())
+    """Aspect ratio and scaled Jacobian of the elements on each partition."""
 
     @property
     def quads(self) -> tuple[int, ...]:
@@ -310,18 +313,20 @@ def _shell_mesh_body(geo, n_span: int | None = None, *, h: float | None = None, 
     pts = np.asarray(nodes, float).reshape(-1, 3)
     te_at = {float(z): np.asarray(smp["te_su"][-1], float) for z, smp in zip(zs, smps) if len(smp.get("te_su", ()))}
     elements = _oriented(pts, elements, [r[1] for r in rows], zs, te_at)
+    partition = tuple(r[2] for r in rows)
     return ShellMesh(
         nodes=pts,
         elements=tuple(elements),
         name=tuple(r[0] for r in rows),
         surface=tuple(r[1] for r in rows),
-        partition=tuple(r[2] for r in rows),
+        partition=partition,
         thickness=np.array([r[3] for r in rows], float),
         eccentricity=np.array([r[4] for r in rows], float),
         layers=tuple(r[5] for r in rows),
         layer_thicknesses=tuple(r[6] for r in rows),
         stations=zs,
+        quality=mesh_quality(pts, elements, partition),
     )
 
 
-__all__ = ["SURFACES", "ShellMesh", "mesh_stations", "shell_mesh"]
+__all__ = ["SURFACES", "MeshRunQuality", "ShellMesh", "mesh_stations", "shell_mesh"]

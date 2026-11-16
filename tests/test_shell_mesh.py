@@ -59,6 +59,24 @@ def test_rib_and_tip_perimeters_are_skin_and_web_nodes(mesh):
         assert perimeter and perimeter <= shell_nodes, kind
 
 
+def test_mesh_quality_is_reported_per_partition(mesh):
+    _geo_, m = mesh
+    assert m.quality
+    names = {row.partition for row in m.quality}
+    assert names == set(m.partition)
+    kinds = {}
+    for part, surface in zip(m.partition, m.surface):
+        kinds.setdefault(part, set()).add(surface)
+    for row in m.quality:
+        assert row.n > 0
+        assert row.aspect_min >= 1.0
+        assert row.aspect_max >= row.aspect_min
+        assert row.jacobian_max <= 1.0 + 1e-12
+        if kinds[row.partition] <= {"skin", "web"}:
+            assert row.inverted == 0
+            assert row.jacobian_min > 0.0
+
+
 def test_elements_carry_their_partition_data(mesh):
     geo, m = mesh
     assert np.all(m.thickness > 0.0)

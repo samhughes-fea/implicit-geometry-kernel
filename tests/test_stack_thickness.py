@@ -45,6 +45,18 @@ def test_a_layup_replaces_the_cap_stack_and_leaves_the_skin():
     assert field(np.asarray([skin_pt])) == pytest.approx(geometric(np.asarray([skin_pt])))
 
 
+def test_cap_edge_vertices_share_one_thickness():
+    geo = _blade()
+    cut = geo.section_at(1.0)
+    cap = next(r for r in cut.shell_graph().loop if r.kind == "cap")
+    field = StackThickness(geo)
+    ends = field(cap.points[[0, -1]])
+    mid = float(field(cap.points[len(cap.points) // 2].reshape(1, 3))[0])
+    assert ends[0] == pytest.approx(ends[1], abs=1e-9)
+    assert float(ends[0]) < mid
+    assert mid == pytest.approx(0.003 + 0.008)
+
+
 def test_a_windio_stack_sums_the_plies_of_each_wall():
     geo = _blade()
     cut = geo.section_at(1.0)

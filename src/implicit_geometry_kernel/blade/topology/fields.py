@@ -112,11 +112,64 @@ def windio_stack_layup(structure):
     return layup
 
 
+def _run_stack_t(run, zkey: float, layup) -> float:
+    stack_t = float(sum(run.layer_thicknesses_m)) if run.layer_thicknesses_m else float(run.thickness)
+    if layup is not None:
+        given = layup(zkey, run.name)
+        if given is not None:
+            stack_t = float(given)
+    return stack_t
+
+
+def _cap_edge_pairs(loop, run_t: list[float]):
+    """Shared vertices of adjacent loop runs whose stack thickness differs."""
+    edges = []
+    seen: set[frozenset[str]] = set()
+    for i, a in enumerate(loop):
+        ends_a = (np.asarray(a.points[0, :2], float), np.asarray(a.points[-1, :2], float))
+        for j, b in enumerate(loop):
+            if j <= i:
+                continue
+            jump = abs(run_t[i] - run_t[j])
+            if jump <= 1e-15:
+                continue
+            key = frozenset((a.name, b.name))
+            if key in seen:
+                continue
+            for pa in ends_a:
+                for pb in (np.asarray(b.points[0, :2], float), np.asarray(b.points[-1, :2], float)):
+                    if float(np.linalg.norm(pa - pb)) > 1e-8:
+                        continue
+                    seen.add(key)
+                    edges.append((0.5 * (pa + pb), run_t[i], run_t[j], jump))
+                    break
+                else:
+                    continue
+                break
+    return edges
+
+
+def _blend_cap_edges(xy: np.ndarray, T: np.ndarray, loop, run_t: list[float]) -> np.ndarray:
+    """Linear ramp across each cap/skin partition so ``T`` is continuous there.
+
+    The ramp half-width is the thickness jump. Interiors farther than that keep
+    the nearest-run value; the shared vertex is the mean of the two sides.
+    """
+    out = np.asarray(T, float).copy()
+    for point, _ta, _tb, width in _cap_edge_pairs(loop, run_t):
+        d = np.linalg.norm(xy - point, axis=1)
+        frac = np.clip(1.0 - d / width, 0.0, 1.0)
+        avg = 0.5 * (_ta + _tb)
+        out += (avg - out) * frac
+    return out
+
+
 class StackThickness:
     """Skin thickness everywhere, plus cap thickness inside cap footprints.
 
-    Nearest loop-run ``T`` (a step, not a ramp). Shared cap/skin vertices may
-    evaluate to either side. Not a Newton joint spec.
+    Nearest loop-run ``T``, ramped across cap/skin partition vertices so the
+    field is continuous there. Interiors keep the run value. Not a Newton
+    joint spec.
 
     ``from_layup`` and ``from_windio`` replace that geometric sum with the real
     stack thickness of the run. A layup that returns ``None`` keeps the
@@ -174,16 +227,14 @@ class StackThickness:
             T = np.full(len(group), skin_t)
             best = np.full(len(group), np.inf)
             runs = loop if self.layup is None else loop + webs
-            for run in runs:
+            run_t = [_run_stack_t(run, zkey, self.layup) for run in runs]
+            for run, stack_t in zip(runs, run_t):
                 d = _polyline_distance(xy, run.points[:, :2])
                 closer = d < best
-                stack_t = float(sum(run.layer_thicknesses_m)) if run.layer_thicknesses_m else float(run.thickness)
-                if self.layup is not None:
-                    given = self.layup(zkey, run.name)
-                    if given is not None:
-                        stack_t = float(given)
                 T[closer] = stack_t
                 best[closer] = d[closer]
+            loop_t = run_t[: len(loop)]
+            T = _blend_cap_edges(xy, T, loop, loop_t)
             out[group] = T
         return out
 

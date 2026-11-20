@@ -59,6 +59,7 @@ Deviations are stated per entry.
 | [SG-028](#sg-028) | `AirfoilSDF.from_naca` via `Airfoil.naca4` broke sdf↔blade and vertex counts | **Fixed** — shared `naca_four_digit_vertices` |
 | [SG-029](#sg-029) | A spar cap was silently dropped from the skin loop at a concave skin vertex | **Fixed** — shared feet spread by cap arc length |
 | [SG-030](#sg-030) | The skin mid-line folds back on itself at a blunt trailing edge (IEA 15 ~16 % span) | **Fixed** — wrap corners are the thickness-aligned run |
+| [SG-031](#sg-031) | Max-gauge rebuild raises `InfeasibleSectionGeometry` at every web foot when `web_y` is frozen from a thinner-skin resolve | **Open** |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -1745,3 +1746,76 @@ the trailing ridge, still limited to that band (`_te_corner_indices` in
 `test_flatback_wrap_is_monotone_and_does_not_jump`,
 `test_iea15_flatback_wrap_is_monotone_near_16_percent` (skipped without the
 catalogue). Catalogue goldens unchanged.
+
+## SG-031
+
+**Max-gauge rebuild cannot place a web foot from frozen min-gauge `web_y`**
+
+**Status:** Open — logged 2026-11-20
+**Area:** `section.walls.shear_web.ShearWebComponent._extend_to_skin_mid_surface`
+
+### Symptom
+A station that **resolves** at manufacturing-floor skin and then **rebuilds**
+the same layout at max skin (and/or with twist applied after a twist-free
+resolve) raises:
+
+```text
+InfeasibleSectionGeometry: ShearWebComponent foot cannot reach the skin
+mid-surface along its axis (anchor=[…], skin_thickness=…). Frozen web_y
+anchors are usually stale relative to the current skin, or the local cavity
+is thinner than the skin gauge.
+```
+
+Min-gauge `SectionGeometry.execute()` on the same resolution succeeds. Callers
+that treat max-gauge as the other end of a buildable-stiffness interval then
+collapse max-layup onto min-layup.
+
+Observed on **every** station of a 64-station `1B-CN-LC-0R` / `new_3.2m_rotor`
+capacity sweep (blade-structure e2e, 2026-11-20): e.g. station 0
+`anchor=[0.12043345, 0.01864369390101443]`, `skin_thickness=0.0120433` m;
+station 29 `skin_thickness=0.00705794` m. Same raise, same fallback.
+
+### Evidence
+- Raise site: `src/implicit_geometry_kernel/section/walls/shear_web.py`
+  (`_extend_to_skin_mid_surface`). Primitive
+  `solve_web_foot_on_skin_mid` plus a 65-sample SDF axis march both miss, then
+  the error is raised (never a silent millimetre miss).
+- Consumer path (outside this repo): blade-structure
+  `buildable_capacity` resolves layout at `skin_lo`, freezes `web_x` /
+  `web_y`, then `build_capacity_station_geometry` at `skin_hi` with that
+  resolution. Catch → log
+  `max-gauge build unavailable (ShearWebComponent foot cannot reach…);
+  using min-layup stiffness for both ends of the interval`.
+- Cost: the failed path still pays the primitive + 65-sample / 60-bisection
+  march **then** raises. × ~64 stations makes capacity the dominant wall
+  clock of a feasibility/stiffness e2e even when the NLP itself is cheap.
+
+### Root cause
+Not closed. Two mechanisms the raise already names, both live here:
+
+1. **Stale anchors.** `web_y` is an IML intercept from
+   `resolve_station_layout` at the **floor** skin (and typically twist-free).
+   `_extend_to_skin_mid_surface` will not relocate the axis; it only ray-marches
+   from that origin onto the **current** mid-surface. A thicker skin (or twist
+   applied after the freeze) moves the mid-ring off the frozen axis.
+2. **Cavity vs gauge.** At max skin the local cavity can be thinner than the
+   skin, so there is no mid-surface hit on the axis even with a fresh anchor.
+
+A third, cheaper defect: infeasibility is discovered only after a full
+failed foot search. There is no probe that a caller can use to skip max-gauge
+without that work.
+
+### Fix
+Not done. Candidates (do not implement in this log-only note):
+
+- Re-solve web feet against the **current** gauge/twist instead of treating
+  frozen `web_y` as the axis origin for a later rebuild.
+- Clip max skin to remaining cavity before `ShearWebComponent` is built, so
+  the miss is a bound, not an exception.
+- Expose a cheap infeasibility check so consumers do not use
+  `InfeasibleSectionGeometry` as control flow on every station.
+
+### Verification
+None yet. A kernel test should rebuild one `1B-CN` (or `1B-CN-LC-0R`) cut at
+floor then ceiling skin with frozen `web_y` and assert either a mid-surface
+foot or a documented bound — not a 64-station exception storm.

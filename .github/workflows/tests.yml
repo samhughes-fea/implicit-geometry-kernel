@@ -24,7 +24,9 @@ jobs:
           python -m pip install "shapely==2.2.0"
           python -c "import glob, os, shapely; d = os.path.join(os.path.dirname(shapely.__file__), os.pardir, 'shapely.libs'); print('GEOS_LIBRARY_PATH=' + os.path.abspath(sorted(glob.glob(os.path.join(d, 'libgeos_c*')))[0]))" >> "$GITHUB_ENV"
       - name: Install package
-        run: pip install -e ".[dev]"
+        # Pinned set (requirements/ci.txt) so a new upstream release cannot turn main red;
+        # Dependabot proposes the bumps. core-install below stays unpinned.
+        run: pip install -c requirements/ci.txt -e ".[dev]"
       - name: Lint
         run: |
           ruff check src tests examples scripts
@@ -87,7 +89,9 @@ jobs:
           python -m pip install "shapely==2.2.0"
           python -c "import glob, os, shapely; d = os.path.join(os.path.dirname(shapely.__file__), os.pardir, 'shapely.libs'); print('GEOS_LIBRARY_PATH=' + os.path.abspath(sorted(glob.glob(os.path.join(d, 'libgeos_c*')))[0]))" >> "$GITHUB_ENV"
       - name: Install package
-        run: pip install -e ".[dev]"
+        # Pinned set (requirements/ci.txt) so a new upstream release cannot turn main red;
+        # Dependabot proposes the bumps. core-install below stays unpinned.
+        run: pip install -c requirements/ci.txt -e ".[dev]"
       - name: Run every example and demo
         run: python scripts/run_examples.py --timeout 480
 

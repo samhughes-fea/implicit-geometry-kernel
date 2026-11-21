@@ -13,13 +13,13 @@ import pytest
 
 from implicit_geometry_kernel import Airfoil, BladeConcept, BladeGeometry, Station
 from implicit_geometry_kernel.blade.topology import (
-    _template_from_cut,
     rib_cell_polygons_from_samples,
     sample_region_polylines,
     section_cut_near,
 )
-from implicit_geometry_kernel.mesh.delaunay import mesh_rib_cells_many as native_many
-from implicit_geometry_kernel.mesh.polygon import mesh_rib_cells_many as poly_many
+from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut
+from implicit_geometry_kernel.mesh.fill.delaunay import mesh_rib_cells_many as native_many
+from implicit_geometry_kernel.mesh.fill.polygon import mesh_rib_cells_many as poly_many
 from implicit_geometry_kernel.mesh.gmsh.plane import mesh_rib_cells as gmsh_one_rib
 from implicit_geometry_kernel.mesh.gmsh.plane import mesh_rib_cells_many as gmsh_many
 

@@ -140,17 +140,17 @@ def _geos_clip(cell: np.ndarray, domain: Polygon) -> list[np.ndarray]:
 
 
 def polygon_mesh_ring(*args, **kwargs):
-    from implicit_geometry_kernel.mesh.polygon_voronoi import polygon_mesh_ring as _fn
+    from implicit_geometry_kernel.mesh.fill.polygon_voronoi import polygon_mesh_ring as _fn
     return _fn(*args, **kwargs)
 
 def fill_rib_cells(*args, **kwargs):
-    from implicit_geometry_kernel.mesh.polygon_voronoi import fill_rib_cells as _fn
+    from implicit_geometry_kernel.mesh.fill.polygon_voronoi import fill_rib_cells as _fn
     return _fn(*args, **kwargs)
 
 def mesh_rib_cells(*args, **kwargs):
-    from implicit_geometry_kernel.mesh.polygon_voronoi import mesh_rib_cells as _fn
+    from implicit_geometry_kernel.mesh.fill.polygon_voronoi import mesh_rib_cells as _fn
     return _fn(*args, **kwargs)
 
 def mesh_rib_cells_many(*args, **kwargs):
-    from implicit_geometry_kernel.mesh.polygon_voronoi import mesh_rib_cells_many as _fn
+    from implicit_geometry_kernel.mesh.fill.polygon_voronoi import mesh_rib_cells_many as _fn
     return _fn(*args, **kwargs)

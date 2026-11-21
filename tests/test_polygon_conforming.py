@@ -5,11 +5,11 @@ import pytest
 
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
 from implicit_geometry_kernel.blade.topology import (
-    _template_from_cut,
     rib_cell_polygons_from_samples,
     sample_region_polylines,
 )
-from implicit_geometry_kernel.mesh.polygon import _area2, _ring_basis, polygon_mesh_ring
+from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut
+from implicit_geometry_kernel.mesh.fill import _area2, _ring_basis, polygon_mesh_ring
 
 
 def _geo():

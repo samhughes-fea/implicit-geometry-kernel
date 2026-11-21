@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from implicit_geometry_kernel.mesh.polygon import point_in_ring, points_in_ring, polygon_mesh_ring
+from implicit_geometry_kernel.mesh.fill import point_in_ring, points_in_ring, polygon_mesh_ring
 
 
 def test_points_in_ring_matches_scalar():

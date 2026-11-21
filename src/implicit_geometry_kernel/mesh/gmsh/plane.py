@@ -109,7 +109,7 @@ def _fill_model(xy: np.ndarray, h: float) -> list[np.ndarray]:
 
 def triangulate_ring(ring: np.ndarray, *, size: float | None = None) -> list[np.ndarray]:
     """Frontal-Delaunay triangles of a planar ring; size defaults to median edge."""
-    warnings.warn("mesh.gmsh.triangulate_ring is deprecated: use mesh.shell_mesh (all-quad skin and webs, polygon ribs); the Gmsh path is kept for comparison only", DeprecationWarning, stacklevel=2)
+    warnings.warn("mesh.gmsh.triangulate_ring is deprecated: use mesh.shell.shell_mesh (all-quad skin and webs, triangle ribs); the Gmsh path is kept for comparison only", DeprecationWarning, stacklevel=2)
     pts = np.asarray(ring, float)
     if len(pts) < 3:
         return []
@@ -142,7 +142,7 @@ def triangulate_ring(ring: np.ndarray, *, size: float | None = None) -> list[np.
 
 def triangulate_rings(rings, *, size: float | None = None) -> list[list[np.ndarray]]:
     """One Gmsh session for many planar rings."""
-    warnings.warn("mesh.gmsh.triangulate_rings is deprecated: use mesh.shell_mesh (all-quad skin and webs, polygon ribs); the Gmsh path is kept for comparison only", DeprecationWarning, stacklevel=2)
+    warnings.warn("mesh.gmsh.triangulate_rings is deprecated: use mesh.shell.shell_mesh (all-quad skin and webs, triangle ribs); the Gmsh path is kept for comparison only", DeprecationWarning, stacklevel=2)
     gmsh, own = _gmsh_start()
     try:
         out: list[list[np.ndarray]] = []
@@ -190,7 +190,7 @@ def triangulate_rings(rings, *, size: float | None = None) -> list[list[np.ndarr
 
 def fill_rib_cells(cells: list[tuple[str, np.ndarray]]) -> list[tuple[str, np.ndarray]]:
     """One Gmsh session for already-extracted cell rings."""
-    warnings.warn("mesh.gmsh.fill_rib_cells is deprecated: use mesh.shell_mesh (all-quad skin and webs, polygon ribs); the Gmsh path is kept for comparison only", DeprecationWarning, stacklevel=2)
+    warnings.warn("mesh.gmsh.fill_rib_cells is deprecated: use mesh.shell.shell_mesh (all-quad skin and webs, triangle ribs); the Gmsh path is kept for comparison only", DeprecationWarning, stacklevel=2)
     if not cells:
         return []
     faces = triangulate_rings([ring for _name, ring in cells])
@@ -203,7 +203,7 @@ def fill_rib_cells(cells: list[tuple[str, np.ndarray]]) -> list[tuple[str, np.nd
 
 def mesh_rib_cells_many(template, samples: Mapping[str, np.ndarray], members) -> list[tuple[str, np.ndarray]]:
     """One Gmsh session for every authored rib cell on ``members``."""
-    warnings.warn("mesh.gmsh.mesh_rib_cells_many is deprecated: use mesh.shell_mesh (all-quad skin and webs, polygon ribs); the Gmsh path is kept for comparison only", DeprecationWarning, stacklevel=2)
+    warnings.warn("mesh.gmsh.mesh_rib_cells_many is deprecated: use mesh.shell.shell_mesh (all-quad skin and webs, triangle ribs); the Gmsh path is kept for comparison only", DeprecationWarning, stacklevel=2)
     from implicit_geometry_kernel.blade.topology.ribs import rib_cell_polygons_from_samples
 
     cells: list[tuple[str, np.ndarray]] = []

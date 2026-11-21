@@ -7,7 +7,7 @@ from typing import Mapping
 import numpy as np
 
 from implicit_geometry_kernel.geos.geom import Polygon
-from implicit_geometry_kernel.mesh.polygon import (
+from implicit_geometry_kernel.mesh.fill.polygon import (
     _area2,
     _closed_xy,
     _geos_clip,
@@ -61,7 +61,7 @@ def _circumcenter(a, b, c) -> np.ndarray:
 
 
 def _voronoi_cells_dual(seeds: np.ndarray) -> list[np.ndarray]:
-    from implicit_geometry_kernel.mesh.delaunay import _bowyer_watson_numba
+    from implicit_geometry_kernel.mesh.fill.delaunay import _bowyer_watson_numba
 
     tris = _bowyer_watson_numba(np.asarray(seeds, np.float64))
     n = len(seeds)

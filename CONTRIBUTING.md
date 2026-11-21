@@ -25,7 +25,8 @@ Run these before opening a pull request. CI runs the same ones.
 ruff check src tests examples scripts
 mypy src/implicit_geometry_kernel
 python scripts/check_links.py
-pytest -q                               # about 8 minutes
+interrogate src/implicit_geometry_kernel   # public docstring coverage
+pytest -q -m "not slow"                 # about 4 minutes; drop -m for everything (about 8)
 python scripts/snapshots.py             # golden numbers and public-API snapshot
 python scripts/run_examples.py          # optional: every example script
 sphinx-build -W -b html docs docs/_build/html   # with the [docs] extra
@@ -33,6 +34,8 @@ sphinx-build -W -b html docs docs/_build/html   # with the [docs] extra
 
 ## Rules
 
+- **Workflow.** Issue, PR with `Closes #N`, squash commit, release: see
+  [Workflow](docs/conventions/WORKFLOW.md).
 - **Commits.** Conventional Commits, checked on the PR title, which becomes the
   squash commit: see [Commit messages](docs/conventions/COMMITS.md).
 - **Golden numbers.** A refactor leaves `tests/golden/*.json` unchanged. A change

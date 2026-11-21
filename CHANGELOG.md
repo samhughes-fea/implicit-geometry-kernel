@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.9.4 (2026-11-21)
+
+- Commits: Conventional Commits on ``main`` (``docs/conventions/COMMITS.md``,
+  decision 0012); PRs are squash-merged on their title and ``pr-title.yml``
+  checks it; ``pre-commit`` has a ``commit-msg`` hook.
+- Labels: ``.github/labels.yml`` defines a type / area / flag scheme, synced by
+  ``label-sync.yml`` from ``main``; rules in ``docs/conventions/LABELS.md``.
+- Tags: [Tags and releases](docs/conventions/RELEASING.md) formalises them
+  (``v0.9.N`` / ``v0.9.NrcM`` only, on a ``main`` merge commit, never moved or
+  deleted, no working tags, maintainer only). ``release.yml`` now refuses a tag
+  with another name, on a commit not on ``main``, or without a changelog heading.
+- Rules and scope: ``AGENTS.md`` (with a ``CLAUDE.md`` pointer), ``SCOPE.md``,
+  ``docs/decisions/`` (ten decision records), ``CODEOWNERS``,
+  ``CODE_OF_CONDUCT.md`` and ``.editorconfig``.
+- Release readiness: ``CITATION.cff``, ``CONTRIBUTING.md``, ``SECURITY.md``,
+  issue and pull-request templates, Dependabot (monthly, actions and pip; the
+  pinned ruff and mypy stay with ``tool-drift.yml``), a ``pre-commit`` config
+  (ruff, link check, whitespace), README badges and a tag-pinned install, CI
+  coverage, and an [API stability](docs/conventions/api/STABILITY.md) page that
+  says what is public and how a public name is retired.
+- Docs site: ``docs/api/`` documents each package's ``__all__`` with autodoc
+  (furo theme); ``docs.yml`` builds the site on every PR with warnings as
+  errors and publishes it to GitHub Pages from ``main``. A few docstrings were
+  fixed so they render.
+- ``mesh/shell/shell_mesh.py`` is split into ``stations``, ``spanwise``,
+  ``section_blend`` and ``orient`` beside it, and ``mesh/tables/tables.py``
+  into ``records``, ``geometry``, ``checks`` and ``dump``. No behaviour change:
+  ``shell_mesh`` and ``tables`` still expose every helper they had, but a
+  monkeypatch of a module-level name must now target the module that uses it.
+- ``classify_trailing_edge`` no longer assumes the chord lies along +x: a
+  twisted flatback classified ``sharp`` (SG-032). The trailing edge is now the
+  sharpest convex-hull corner, blunt when a neighbouring hull corner is also a
+  corner. The WP6 park on this helper is closed. A section twisted exactly 90
+  degrees cannot place its web feet; logged as SG-033.
+- Figures: ``plotting.figure_io.write_png`` renders to memory and rewrites a PNG
+  only when more than 0.5 % of its pixels change (``IGK_WRITE_FIGURES=always``
+  forces it); the examples save through it. Example mesh exports (STL / OBJ /
+  VTK) are no longer committed.
+- mypy checks the bodies of unannotated functions in ``mesh/`` and flags unused
+  ``type: ignore`` comments there.
+- Docs: the stub pages left at the old report paths (``docs/REFACTOR_PLAN.md``,
+  ``docs/FORK.md``, ``docs/section/reports/*``, ``docs/blade/reports/*``) are
+  removed; links point into ``docs/internal/``. Public docs outside
+  ``docs/internal/FORK.md`` no longer name the fork source. The private-name
+  test also bans the private tidal rotor's name.
+- Release note missing from 0.9.3: ``shell_mesh`` meshes rib and tip-closure
+  cells as triangles (unstructured fill with boundary recovery), not as one
+  polygon of five or more nodes per cell. A consumer that fanned polygons must
+  take a 3-node cell as it is. A test now checks that the triangles at each
+  station plane neither fold nor overlap (G19).
+- CI: relative Markdown links are checked (``scripts/check_links.py``); a
+  ``consumers`` job runs downstream test suites against the PR's kernel when
+  the ``CONSUMER_REPOS`` repository variable lists them; actions move to the
+  Node 24 releases (``checkout@v5``, ``setup-python@v6``).
+- ``release.yml``: a ``v*`` tag must equal ``v`` + ``__version__``, then the
+  sdist and wheel are built. Upload to PyPI (trusted publishing) runs only when
+  the ``PYPI_PUBLISH`` variable is ``true``.
+- The 0.9.2 flat mesh paths import again, with a ``DeprecationWarning`` on each
+  name read, until 0.9.5: ``mesh.shell_mesh``, ``mesh.vtk``, ``mesh.polygon``,
+  ``mesh.polygon_voronoi`` and ``mesh.delaunay``. 0.9.3 removed them without the
+  release of warnings that the versioning rule asks for. ``mesh.shell_mesh`` the
+  function is unchanged.
+
 ## 0.9.3 (2026-11-21)
 
 - A web foot whose frozen ``web_y`` was resolved at a thinner skin raises
@@ -800,7 +863,7 @@ import that leaf. Public docs prefer `Airfoil.to_sdf()` and `SpanWeb`.
 
 The kernel is now the geometry of blade and wing cross-sections only, regrouped into
 `blade`, `section`, `sdf`, `frames`, `integration` and `contract`. See
-[docs/FORK.md](docs/FORK.md) for the full map from the old names.
+[docs/FORK.md](docs/internal/FORK.md) for the full map from the old names.
 
 - `SYSTEM_TYPE_KEYS`, `resolve_system_type` and `MidSurface` are exported from the top
   level.

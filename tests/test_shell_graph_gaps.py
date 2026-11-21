@@ -274,6 +274,20 @@ def test_wp6_te_classifier_is_oml_not_merged_loop():
     oml = classify_trailing_edge(ring)
     g = geo.section_at(4.0).shell_graph()
     stacked = classify_trailing_edge(g)
-    assert oml in {"sharp", "blunt"}
-    assert stacked in {"sharp", "blunt"}
-    assert oml == "sharp"
+    assert oml == stacked == "sharp"
+
+
+@pytest.mark.parametrize("code", ["0018", "2418", "4412"])
+@pytest.mark.parametrize("twist", [0.0, 10.0, -35.0, 60.0])
+@pytest.mark.parametrize("te", [0.0, 0.02, 0.05])
+def test_te_classifier_is_frame_free_on_oml_and_loop(code, twist, te):
+    """SG-032: a twisted flatback stays blunt; the largest-x point is not the TE."""
+    af = Airfoil.naca4(code).with_te_thickness(te) if te else Airfoil.naca4(code)
+    geo = BladeGeometry(
+        [Station(0.0, 2.0, af, pitch_axis=0.3, twist=twist), Station(10.0, 1.0, af, pitch_axis=0.3, twist=twist)],
+        "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
+        web_positions=(0.18, 0.48), pivot_fraction=0.3,
+    )
+    want = "blunt" if te else "sharp"
+    assert classify_trailing_edge(geo.oml_polyline(4.0)) == want
+    assert classify_trailing_edge(geo.section_at(4.0).shell_graph()) == want

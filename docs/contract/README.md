@@ -11,7 +11,7 @@ Hand-off types between station geometry and downstream mesh or beam models.
 
 Live types: `ShellMidlineStrip`, `StripBond`, `CellWallLoop`, `LaminateOffsetRegion`,
 `InfeasibleSectionGeometry`. Loads and Saint-Venant resultants are not in this
-kernel ([FORK.md](../FORK.md) 0.2.0). Frame sense lives in
+kernel ([FORK.md](../internal/FORK.md) 0.2.0). Frame sense lives in
 [frames](../frames/README.md). Names: [glossary](../glossary.md).
 
 Do not merge this package into the station worker. Downstream tools speak these

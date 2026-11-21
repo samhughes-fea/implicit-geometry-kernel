@@ -1,0 +1,35 @@
+name: Bug report
+description: Wrong geometry, a crash, or a mesh that fails a check
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not attach confidential blade data (aerofoil coordinates, layups).
+        A NACA or public reference blade that shows the same problem is ideal.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected and what you got (error text, wrong number, figure).
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Smallest script that shows it
+      render: python
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Kernel version
+      description: "python -c \"import implicit_geometry_kernel as k; print(k.__version__)\""
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Python, OS and GEOS source
+      placeholder: "3.12, Ubuntu 24.04, GEOS from the Shapely wheel"

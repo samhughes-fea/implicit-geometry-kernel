@@ -81,7 +81,7 @@ flowchart LR
 ### Phase 2 — Profiling and orchestration
 
 - Optional counters via `SECTION_GEOMETRY_PROFILE=1` (`src/implicit_geometry_kernel/sdf/profiling.py`).
-- Per-station `SectionEvalCache` in `section_geometry_impl` (`blade_structure_precompute (archived stages path)`).
+- Per-station `SectionEvalCache` in `section_geometry_impl` (the fork source's precompute package, archived stages path).
 - Two-tier grids: 384×180 for properties reference, 768×330 for plot PNGs.
 - Optional station parallelism via `ProcessPoolExecutor` when `section_solve_n_workers > 1`.
 
@@ -447,7 +447,7 @@ Profiling with `sdf_polygon_s` showed the polygon kernel was **~86%** of propert
 on 2D-CN depth-7 without Numba (~0.58 s of ~0.68 s). An `@njit(cache=True)` edge-loop in
 [`sdf/kernels/polygon_numba.py`](../../../../src/implicit_geometry_kernel/sdf/kernels/polygon_numba.py) is now the **sole** production path
 (`numba>=0.59` is a core package dependency). `sdf_polygon_numpy` remains for parity tests
-only. Parity: `blade_structure_utilities/tests/test_sdf_polygon_parity.py`.
+only. Parity: the fork source's `tests/test_sdf_polygon_parity.py`.
 
 <a id="phase-12"></a>
 ## Phase 12 — Topology substages + vectorized ring/ray kernels (E1–E3)

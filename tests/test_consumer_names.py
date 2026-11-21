@@ -45,7 +45,7 @@ def test_no_consumer_package_names_in_src_or_tests() -> None:
 
 # Private consumers are never named anywhere in this public repository, docs and
 # changelog included. Public sibling packages may be named in docs and history.
-PRIVATE = re.compile(r"tidalshell", re.IGNORECASE)
+PRIVATE = re.compile(r"tidalshell|cotide", re.IGNORECASE)
 TEXT = {".py", ".md", ".toml", ".yml", ".yaml", ".txt", ".cfg", ".rst"}
 
 

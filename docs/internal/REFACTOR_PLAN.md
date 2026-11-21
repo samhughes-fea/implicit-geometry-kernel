@@ -62,7 +62,7 @@ family with a root-circle blend, webs, caps, ribs, stringers) and out of windIO 
 | G16 | Finds windIO spar caps by layer name (`spar`, `cap`); a file that names layers by keypoint (10 MW) gets none | Identify caps by structure (the band between the web feet, uniaxial material) or take an explicit list | Done (`cap_id`: name rule default, `between_webs`, or a name list; BG-041) |
 | G17 | Sums ply thicknesses itself for skin, cap and web | Thickness per partition from the stack (decision D4) | Done (`StackThickness.from_layup`, `StackThickness.from_windio`) |
 | G18 | — | Webs that cross between stations (BG-037) | Done (web anchors follow the placed arcs) |
-| G19 | Splits rib and tip-closure polygon cells into triangles for a solver element that takes triangles. A fan split at a reflex corner put a triangle outside its cell, over the next one (0.09 % extra rib and tip area at a production size; nothing raised because each triangle was rewound to positive area) | Ship a valid split of each polygon cell (through reflex corners, every piece inside its cell, a piece outside raises), so the consumer takes cells or triangles from the kernel | To do |
+| G19 | Splits rib and tip-closure polygon cells into triangles for a solver element that takes triangles. A fan split at a reflex corner put a triangle outside its cell, over the next one (0.09 % extra rib and tip area at a production size; nothing raised because each triangle was rewound to positive area) | Ship a valid split of each polygon cell (through reflex corners, every piece inside its cell, a piece outside raises), so the consumer takes cells or triangles from the kernel | Done (0.9.3 meshes rib and tip cells as triangles, unstructured, with boundary recovery; `tests/test_rib_triangles_cover_cells.py` checks no fold and no overlap per station plane) |
 
 Not kernel work: the trailing-edge bond and core fill are materials inside the section,
 and plies, loads and solvers stay in consumers.
@@ -215,7 +215,12 @@ in-kernel mesh is `integration/quadtree`. Consumers own shell mesher jobs;
 | Agnostic | No consumer names, paths or special cases in `src/` or tests. Docs describe products and roles | `tests/test_consumer_names.py` (src and tests) |
 | Public API | Only names in the top-level `__all__` and `contract/` are public | API snapshot test |
 | Versioning | Semantic versions; removals only in a minor release (pre-1.0) after one release of deprecation warnings; tags never move. Releases stay on 0.9.x; do not tag `v1.0.0` (maintainer, 11 Nov: the public API is not worked out) | Changelog; tags by the maintainer |
-| Main branch | Every change through a PR with green CI (lint, tests on Python 3.11 to 3.13, examples, wheel build) | Branch protection on `main` |
+| Main branch | Every change through a PR with green CI (lint, doc links, tests on Python 3.11 to 3.13, examples, wheel build, consumer suites) | Branch protection on `main`, no bypass |
+| Releases | A `v*` tag equals `v` + `__version__`; wheels go to PyPI only when publishing is switched on | `release.yml` |
+| Docs site | Manual (the Markdown tree) plus an API reference from each package's `__all__`; built on every PR with warnings as errors, published to GitHub Pages from `main` | `docs.yml` |
+| Contributor files | CITATION.cff, CONTRIBUTING, SECURITY, issue and PR templates, Dependabot, pre-commit, API stability policy; rules in AGENTS.md, scope in SCOPE.md, decisions in docs/decisions/, CODEOWNERS | CI coverage report with a floor |
+| Module size | `mesh/shell/shell_mesh.py` (2625 lines) and `mesh/tables/tables.py` (1238) split by job in 0.9.4, no behaviour change; old module names still resolve every helper | mypy `check_untyped_defs` on `mesh/` |
+| Figures | PNGs rewritten only past 0.5 % changed pixels; mesh exports untracked; cross-machine font differences still exceed that, so regenerated PNGs are committed only when the example's subject changed | `figure_io.write_png` |
 | Numbers | Results reproducible between releases unless the changelog says otherwise | Golden-number test |
 | Dependencies | Runtime: numpy, numba. Offset/overlay: ctypes ``libgeos_c`` (system/conda GEOS). Extras: scipy, matplotlib, cadquery, gmsh, pyyaml, contourpy | Core-install CI job |
 | Typing | Ships `py.typed`; public API annotated | mypy on `src/` in CI |
@@ -422,7 +427,7 @@ Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays
   Do not advertise `[mesh]` (`gmsh`); it is leftover convenience. Consumers own
   shell mesher jobs and ply ABD/PCOMP.
 - G10/G11 are **closed for this kernel** (thin-wall adapter and PCOMP stay in
-  consumers). Remaining park: TE classifier on OML only. `StackThickness`
+  consumers). The TE classifier park is closed (SG-032). `StackThickness`
   ramps at cap edges; cores sit on default `shell_graph.solids`
   ([MERGED_SHELL_GAPS](section/reports/MERGED_SHELL_GAPS.md)).
   `LoftedPolygonSDF` BVH (`accelerate` / `accel_at`) is shipped.
@@ -436,5 +441,5 @@ Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays
 ## Risks
 
 - Silent number drift during moves: caught by the golden test.
-- Downstream breaks: caught by `check_consumer.py` on each PR; consumers stay on tags.
+- Downstream breaks: caught by the `consumers` CI job (`check_consumer.py` on each repository listed in the `CONSUMER_REPOS` variable) on each PR; consumers stay on tags.
 - Large shape-model changes: done (Phase 1 landed in PR #8 without number changes).

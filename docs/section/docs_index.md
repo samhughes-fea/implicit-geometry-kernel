@@ -95,16 +95,16 @@ flowchart TB
 
 ## Reports
 
-Index: [`reports/README.md`](reports/README.md).
+Index: [`reports/README.md`](../internal/section/reports/README.md).
 
 | Doc | Contents |
 |-----|----------|
-| [`reports/DUAL_REP_ACCEPTANCE.md`](reports/DUAL_REP_ACCEPTANCE.md) | Polygon vs SDF area acceptance |
-| [`reports/PERFORMANCE_WORK_SUMMARY.md`](reports/PERFORMANCE_WORK_SUMMARY.md) | Hybrid / quadtree performance notes |
-| [`reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md`](reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md) | SG-009 design spike — post-resample axis×cap junctions |
-| [`reports/MERGED_SHELL_GAPS.md`](reports/MERGED_SHELL_GAPS.md) | Pass 2 shell-graph gaps G1–G11 (G10/G11 closed here; G4 `T` locked) |
-| [`reports/SHELL_FE_REPLACEMENT_GAPS.md`](reports/SHELL_FE_REPLACEMENT_GAPS.md) | G-TE … G-ACC to retire a shell-FE consumer’s native kernel |
-| [`../blade/reports/GRAPHIFY_EXTRACTED_NEXT.md`](../blade/reports/GRAPHIFY_EXTRACTED_NEXT.md) | EXTRACTED graphify: no kernel-wide next step |
+| [`reports/DUAL_REP_ACCEPTANCE.md`](../internal/section/reports/DUAL_REP_ACCEPTANCE.md) | Polygon vs SDF area acceptance |
+| [`reports/PERFORMANCE_WORK_SUMMARY.md`](../internal/section/reports/PERFORMANCE_WORK_SUMMARY.md) | Hybrid / quadtree performance notes |
+| [`reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md`](../internal/section/reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md) | SG-009 design spike — post-resample axis×cap junctions |
+| [`reports/MERGED_SHELL_GAPS.md`](../internal/section/reports/MERGED_SHELL_GAPS.md) | Pass 2 shell-graph gaps G1–G11 (G10/G11 closed here; G4 `T` locked) |
+| [`reports/SHELL_FE_REPLACEMENT_GAPS.md`](../internal/section/reports/SHELL_FE_REPLACEMENT_GAPS.md) | G-TE … G-ACC to retire a shell-FE consumer’s native kernel |
+| [`../blade/reports/GRAPHIFY_EXTRACTED_NEXT.md`](../internal/blade/reports/GRAPHIFY_EXTRACTED_NEXT.md) | EXTRACTED graphify: no kernel-wide next step |
 | [`bug_log.md`](bug_log.md) | Debug log — junction/tolerance findings and the standing invariant |
 
 ## Module pages

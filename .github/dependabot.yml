@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels: [dependencies]
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly
+    labels: [dependencies]
+    # ruff and mypy are pinned on purpose; tool-drift.yml tracks their new releases.
+    ignore:
+      - dependency-name: ruff
+      - dependency-name: mypy
+    groups:
+      python:
+        patterns: ["*"]

@@ -98,6 +98,62 @@ def apply_presentation_style(presentation: bool) -> None:
     )
 
 
+FIGURES_ENV = "IGK_WRITE_FIGURES"
+"""Set to ``always`` to write every PNG even when it looks the same as the file on disk."""
+
+CHANGED_PIXELS = 0.005
+"""Fraction of pixels that must differ (by more than 16/255) for a PNG to count as changed."""
+
+
+def png_changed(new_png: bytes, old_path: Path | str, *, fraction: float = CHANGED_PIXELS) -> bool:
+    """Whether ``new_png`` differs from the PNG at ``old_path`` by more than font jitter.
+
+    A different size, a missing or unreadable old file, or more than ``fraction`` of
+    pixels off by more than 16/255 in any channel is a change. Smaller differences
+    are what another Matplotlib or FreeType build does to the same figure.
+    """
+    import io
+
+    import matplotlib.image as mpimg
+    import numpy as np
+
+    old = Path(old_path)
+    if not old.is_file():
+        return True
+    try:
+        a = np.asarray(mpimg.imread(old), float)
+        b = np.asarray(mpimg.imread(io.BytesIO(new_png), format="png"), float)
+    except Exception:
+        return True
+    if a.shape != b.shape:
+        return True
+    diff = np.abs(a - b)
+    if diff.ndim == 3:
+        diff = diff.max(axis=-1)
+    return float((diff > 16.0 / 255.0).mean()) > float(fraction)
+
+
+def write_png(fig: Any, path: Path | str, **savefig_kwargs: Any) -> bool:
+    """Save ``fig`` as PNG at ``path`` only when it changed (:func:`png_changed`).
+
+    Committed figures then stay byte-identical when an example is rerun on another
+    machine. Returns whether the file was written. ``IGK_WRITE_FIGURES=always``
+    writes regardless.
+    """
+    import io
+    import os
+
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    buffer = io.BytesIO()
+    fig.savefig(buffer, format="png", **savefig_kwargs)
+    data = buffer.getvalue()
+    if os.environ.get(FIGURES_ENV, "").lower() != "always" and not png_changed(data, out):
+        return False
+    out.write_bytes(data)
+    return True
+
+
 def save_figure(
     fig: Any,
     path: Path | str,
@@ -121,7 +177,10 @@ def save_figure(
         "bbox_inches": "tight",
     }
     kwargs.update(savefig_kwargs)
-    fig.savefig(out, **kwargs)
+    if out.suffix.lower() == ".png" and "format" not in kwargs:
+        write_png(fig, out, **kwargs)
+    else:
+        fig.savefig(out, **kwargs)
     return out
 
 
@@ -154,12 +213,16 @@ def resolve_save_dpi(*, presentation: bool, dpi: int | None = None) -> int:
 
 
 __all__ = [
+    "CHANGED_PIXELS",
     "DEFAULT_DPI",
+    "FIGURES_ENV",
     "PRESENTATION_DPI",
     "add_output_and_presentation_args",
     "apply_doc_style",
     "apply_presentation_style",
     "demo_output_dir",
+    "png_changed",
     "resolve_save_dpi",
     "save_figure",
+    "write_png",
 ]

@@ -1,6 +1,6 @@
 """
 implicit_geometry_kernel.sdf
-===================
+============================
 Generic 2-D signed distance field (SDF) and constructive solid geometry (CSG)
 toolbox.  No blade domain knowledge — reusable for any implicit geometry task.
 

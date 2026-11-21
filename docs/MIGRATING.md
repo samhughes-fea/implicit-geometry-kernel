@@ -79,7 +79,8 @@ part of the skin, not a rib.
 ## 0.9.2 to 0.9.3: flat mesh modules removed (K5)
 
 Import the conforming shell mesh and writers from the package or subpackages.
-The old flat module paths are gone.
+0.9.3 removed the old flat module paths; 0.9.4 brings them back with a
+`DeprecationWarning` on each name read, and 0.9.5 removes them.
 
 | Removed module path | Use instead |
 |---|---|
@@ -88,8 +89,9 @@ The old flat module paths are gone.
 | `implicit_geometry_kernel.mesh.polygon` / `polygon_voronoi` / `delaunay` | `mesh.fill` (`polygon_mesh_ring`, `triangulate_ring`, …) |
 | `mesh.mesh_rib_cells`, `mesh.mesh_shell`, `mesh.write_shell_msh` at the package root | `mesh.gmsh` (comparison only) |
 | `ShellMesh` per-element fields as lists | tuples; convert with `list(...)` where a list is needed |
+| rib and tip-closure cells: one polygon of 5 or more nodes each | triangles (`len(element) == 3`); a consumer that fanned polygons takes them as they are |
 
-Maintainer reports live under `docs/internal/` (stubs remain at the old paths).
+Maintainer reports live under `docs/internal/`. The stub pages at the old paths were removed in 0.9.4.
 
 ## 0.9.2 to 0.9.3: top-level barrel trim (K5)
 

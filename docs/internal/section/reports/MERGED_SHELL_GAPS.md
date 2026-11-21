@@ -3,8 +3,8 @@
 **Audience: internal.** Maintainer notes; not part of the library manual.
 
 Evidence for G1–G11 and extract/TE/BVH. Waves 0–7 are shipped. G10/G11 are
-closed for this kernel. Remaining park: TE classifier on OML only (WP6); BVH is
-shipped. Geometry still required before a conformal shell-FE consumer can
+closed for this kernel. WP6 is closed: the TE classifier works on the OML ring and
+the shell-graph loop in any frame (SG-032); BVH is shipped. Geometry still required before a conformal shell-FE consumer can
 delete its own kernel is a **separate** list (G-TE … G-ACC):
 [`SHELL_FE_REPLACEMENT_GAPS.md`](SHELL_FE_REPLACEMENT_GAPS.md).
 Characterization: [`tests/test_shell_graph_gaps.py`](../../../../tests/test_shell_graph_gaps.py).
@@ -28,7 +28,7 @@ Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm,
 | **G9** | shipped | Cores sit on `shell_graph.solids` by default; not on the loftable loop |
 | **G10** | closed for this kernel | No `thin_wall` module; consumers use `mid_surface` / `shell_graph` |
 | **G11** | closed for this kernel | No PCOMP / ply stagger; bind laminates via `offset_regions` / stacked `layers` |
-| **WP6** | parked | named `feature_curve(geo, name_a, name_b, zs)` exists; TE classifier stays an OML helper; OML BVH shipped |
+| **WP6** | closed | named `feature_curve(geo, name_a, name_b, zs)` exists; TE classifier is frame-free on OML ring and loop (SG-032); OML BVH shipped |
 
 Implementation sequence is [Waves](#waves) below. **G4:** `StackThickness` ramps across cap/skin vertices so `T` is continuous there.
 
@@ -157,14 +157,14 @@ Gauge tables still come from layer names.
 
 ## Former WP6 — feature-curve keys, TE on merged loop, BVH, IEA 10 tip
 
-Parked, not a new wave. Named `feature_curve(geo, name_a, name_b, zs)` already
-delegates to `partition_edge_curve`. The TE classifier remaining as an OML helper
-is parked.
+Closed 2026-11-21. Named `feature_curve(geo, name_a, name_b, zs)` already
+delegates to `partition_edge_curve`. The TE classifier takes an OML ring or a
+shell graph and no longer assumes the chord lies along +x (SG-032).
 
 | Item | Evidence |
 |---|---|
 | Feature-curve keys | named form exists; Newton form stays two SDFs + a guess |
-| TE on merged loop | `classify_trailing_edge(oml)` and on the stacked loop are both `sharp` on this NACA; the helper is still an **OML-ring** API |
+| TE on merged loop | `classify_trailing_edge` agrees on the OML ring and the stacked loop for sharp and flatback sections at twist -35 to 60 degrees (SG-032) |
 | BVH on `LoftedPolygonSDF` | shipped: `accelerate=True`, `accel_at(z)`, `bvh` mapping (BG-015) |
 | IEA 10 tip | G6: loft re-resolves / drops webs (Wave 4) |
 
@@ -246,7 +246,7 @@ Depends on Waves 0–2.
 
 - **G10** closed here (other repo owns the thin-wall adapter).
 - **G11** closed here (PCOMP / ply ABD stay in the shell-FE consumers).
-- TE classifier on OML vs loop: both `sharp` on the NACA fixture — retarget only if a blunt merged loop appears.
+- TE classifier on OML vs loop: closed by SG-032 (a twisted flatback was called sharp).
 
 ---
 

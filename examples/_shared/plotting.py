@@ -18,6 +18,7 @@ from matplotlib.patches import Patch  # noqa: E402
 
 from implicit_geometry_kernel.plotting.palette import NAVY, RED, RETRO_PANELS, TEAL, panel_colour  # noqa: E402, F401 (panel_colour is re-exported)
 from implicit_geometry_kernel.section.boundary import LineString, OPS  # noqa: E402
+from implicit_geometry_kernel.plotting.figure_io import write_png  # noqa: E402
 
 TEXT_SECONDARY = "#52514e"
 REFERENCE = "#0b0b0b"  # closed-form references are drawn in ink, dashed
@@ -179,7 +180,7 @@ def save(fig, script: str, name: str, *, dpi: int = 150) -> Path:
     out = Path(script).resolve().parent / "figures"
     out.mkdir(exist_ok=True)
     path = out / f"{name}.png"
-    fig.savefig(path, dpi=dpi, bbox_inches="tight")
+    write_png(fig, path, dpi=dpi, bbox_inches="tight")
     plt.close(fig)
     print(f"wrote {path.relative_to(Path(script).resolve().parents[2])}")
     return path

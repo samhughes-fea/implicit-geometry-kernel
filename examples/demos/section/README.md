@@ -136,7 +136,7 @@ consumes the prepared form only.
 Mesh strip demos belong in a downstream mesher, not this kernel.
 
 Dual-rep acceptance narrative:
-[`../../../docs/section/reports/DUAL_REP_ACCEPTANCE.md`](../../../docs/section/reports/DUAL_REP_ACCEPTANCE.md).
+[`../../../docs/internal/section/reports/DUAL_REP_ACCEPTANCE.md`](../../../docs/internal/section/reports/DUAL_REP_ACCEPTANCE.md).
 
 ---
 

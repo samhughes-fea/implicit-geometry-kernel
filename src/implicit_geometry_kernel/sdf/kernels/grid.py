@@ -4,7 +4,7 @@ Structured background grid for SDF evaluation and post-processing.
 SDFGrid wraps a 2-D Cartesian grid and provides:
   - Vectorised SDF evaluation for any callable
   - Gradient computation (∇φ via central finite differences)
-  - Gradient magnitude |∇φ|
+  - Gradient magnitude ``|∇φ|``
   - Zero-level-set extraction as a polyline (debug contour)
   - Masked interior / exterior arrays
   - Coarse 2-D quadrature for phi < 0 (debug only; product integrals live in
@@ -97,12 +97,12 @@ class SDFGrid:
         return gx, gy
 
     def grad_magnitude(self, phi):
-        """Return |∇φ| on the grid."""
+        """Return ``|∇φ|`` on the grid."""
         gx, gy = self.gradient(phi)
         return np.sqrt(gx**2 + gy**2)
 
     def eikonal_error(self, phi):
-        """Pointwise Eikonal residual  | |∇φ| − 1 |."""
+        """Pointwise Eikonal residual ``abs(|∇φ| − 1)``."""
         return np.abs(self.grad_magnitude(phi) - 1.0)
 
     def zero_contour(self, phi):

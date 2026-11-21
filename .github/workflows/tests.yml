@@ -13,8 +13,8 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install GEOS
@@ -26,12 +26,20 @@ jobs:
       - name: Install package
         run: pip install -e ".[dev]"
       - name: Lint
-        run: ruff check src tests examples scripts
+        run: |
+          ruff check src tests examples scripts
+          python scripts/check_links.py
       - name: Typecheck
         if: matrix.python-version != '3.12'
         run: mypy src/implicit_geometry_kernel
       - name: Run tests
+        if: matrix.python-version != '3.13'
         run: pytest -q
+      - name: Run tests with coverage
+        # 81 % at 0.9.4; the floor stops a large untested addition slipping in.
+        if: matrix.python-version == '3.13'
+        run: |
+          pytest -q --cov=implicit_geometry_kernel --cov-report=term --cov-report=markdown-append:"$GITHUB_STEP_SUMMARY" --cov-fail-under=78
       - name: Build sdist and wheel
         run: python -m build
 
@@ -39,8 +47,8 @@ jobs:
     # every module except plotting must import without Matplotlib or SciPy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install GEOS
@@ -68,8 +76,8 @@ jobs:
   examples:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install GEOS
@@ -82,3 +90,41 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Run every example and demo
         run: python scripts/run_examples.py --timeout 480
+
+  consumers:
+    # Downstream test suites against this checkout (scripts/check_consumer.py).
+    # The kernel names no consumer: the list is the repository variable
+    # CONSUMER_REPOS, a JSON list of {"name", "repo", "ref", "setup", "pytest"}.
+    # "setup" is shell run from the workspace root after the kernel is installed;
+    # the consumer is checked out at ./consumer. Unset: the job is skipped. A
+    # private consumer needs the CONSUMER_TOKEN secret (read access).
+    if: ${{ vars.CONSUMER_REPOS != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        consumer: ${{ fromJSON(vars.CONSUMER_REPOS || '[]') }}
+    name: consumer (${{ matrix.consumer.name }})
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ matrix.consumer.repo }}
+          ref: ${{ matrix.consumer.ref || 'main' }}
+          path: consumer
+          token: ${{ secrets.CONSUMER_TOKEN || github.token }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install GEOS
+        # libgeos_c from the Shapely wheel on PyPI: no apt mirror in the path.
+        run: |
+          python -m pip install "shapely==2.2.0"
+          python -c "import glob, os, shapely; d = os.path.join(os.path.dirname(shapely.__file__), os.pardir, 'shapely.libs'); print('GEOS_LIBRARY_PATH=' + os.path.abspath(sorted(glob.glob(os.path.join(d, 'libgeos_c*')))[0]))" >> "$GITHUB_ENV"
+      - name: Install the kernel checkout
+        run: pip install -e .
+      - name: Install the consumer and its dependencies
+        run: ${{ matrix.consumer.setup }}
+      - name: Run the consumer's tests against this kernel
+        run: python scripts/check_consumer.py consumer ${{ matrix.consumer.pytest }}
+

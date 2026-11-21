@@ -12,7 +12,7 @@ the NACA pivot, or flap/edge moment polarity outside `implicit_geometry_kernel.f
 
 Ply frames \(\mathrm{E}\) and \(\mathrm{M}\) retain tags `FRAME_E` and `FRAME_M`.
 The corresponding rotation matrices live in the constitutive laminate package
-([FORK.md](../FORK.md)).
+([FORK.md](../internal/FORK.md)).
 
 ## Contents
 

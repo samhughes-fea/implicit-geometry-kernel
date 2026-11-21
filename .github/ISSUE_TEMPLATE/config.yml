@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://samhughes-fea.github.io/implicit-geometry-kernel/
+    about: Manual and API reference.
+  - name: Security report
+    url: https://github.com/samhughes-fea/implicit-geometry-kernel/security/advisories/new
+    about: Report a vulnerability privately.

@@ -17,7 +17,7 @@ from implicit_geometry_kernel.sdf.kernels.primitives import sdf_polygon
 class AirfoilSDF:
     """Implicit SDF adapter for an airfoil contour.
 
-        Prefer ``Airfoil.naca4(...).to_sdf(chord=...)`` (or ``from_airfoil``).
+    Prefer ``Airfoil.naca4(...).to_sdf(chord=...)`` (or ``from_airfoil``).
     ``from_naca`` uses the same ``naca_four_digit_vertices`` generator as
     ``Airfoil.naca4`` (this module must not import ``blade``).
 

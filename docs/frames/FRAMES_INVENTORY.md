@@ -4,14 +4,14 @@
 transforms belong in [README.md](README.md) and [section_frames](section_frames/README.md).
 
 In this repository, live frame code is `src/implicit_geometry_kernel/frames/`.
-Rows below that name `blade_structure_*` or `material_utilities` are the fork
-baseline (see [FORK.md](../FORK.md)), not in-tree packages.
+Rows below that name the fork source's `*_precompute` / `*_utilities` packages or
+`material_utilities` are the fork baseline (see [FORK.md](../internal/FORK.md)), not in-tree packages.
 
 > **0.2.0:** the shell-frame home (`shell_frames/`: ply stress and strain rotations
 > E ↔ M and the shell-solver load channels) and the beam stiffness transform
 > (`section_frames/stiffness.py`) were removed. Ply transforms live in
 > laminate-constitutive-model (`laminate_mechanics.stress_transformation`,
-> `laminate_materials_3d.stress_rotation_3d`); see [FORK.md](../FORK.md). Mentions of
+> `laminate_materials_3d.stress_rotation_3d`); see [FORK.md](../internal/FORK.md). Mentions of
 > them below are history. The frame tags `FRAME_C`, `FRAME_E` and `FRAME_M` remain.
 
 **Programme:** Coordinate-Frame Safety (WP0 baseline)  
@@ -46,7 +46,7 @@ Status: `compliant` | `remediation-required` | `N/A` | `dated exception`.
 
 ## Package classification
 
-### `blade_structure_precompute/module`
+### Fork source: `*_precompute/module`
 
 | Package | Class | Status | Notes / WP |
 |---------|-------|--------|------------|
@@ -61,7 +61,7 @@ Status: `compliant` | `remediation-required` | `N/A` | `dated exception`.
 | `utilities/spanwise_schedule` | not frame-dependent | N/A | Span schedule only |
 | `utilities/core_budget` | not frame-dependent | N/A | Scalar budget |
 
-### `blade_structure_utilities`
+### Fork source: `*_utilities`
 
 | Package | Class | Status | Notes / WP |
 |---------|-------|--------|------------|

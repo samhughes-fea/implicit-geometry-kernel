@@ -1,5 +1,11 @@
 # implicit-geometry-kernel
 
+[![tests](https://github.com/samhughes-fea/implicit-geometry-kernel/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/samhughes-fea/implicit-geometry-kernel/actions/workflows/tests.yml)
+[![docs](https://github.com/samhughes-fea/implicit-geometry-kernel/actions/workflows/docs.yml/badge.svg?branch=main)](https://samhughes-fea.github.io/implicit-geometry-kernel/)
+[![release](https://img.shields.io/github/v/tag/samhughes-fea/implicit-geometry-kernel?label=release&sort=semver)](https://github.com/samhughes-fea/implicit-geometry-kernel/tags)
+[![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](pyproject.toml)
+[![licence](https://img.shields.io/badge/licence-MIT-green)](LICENSE)
+
 SDF geometry for aerofoil stations and span lofts — skins, webs, and caps —
 and the three products beam, thin-wall, and shell models consume.
 
@@ -11,19 +17,24 @@ this geometry; they must not keep a parallel aerofoil, planform, or layout
 model. The kernel does not own constitutive plies, stiffness, loads, solvers,
 or a mesh driver.
 
-[Manual](docs/README.md) · [examples](examples/README.md) · [glossary](docs/glossary.md) · [frames](docs/frames/README.md#which-array) · [catalogue WX-Y-Z-NR](docs/blade/concepts/taxonomy.md)
+[Docs site](https://samhughes-fea.github.io/implicit-geometry-kernel/) (manual and API reference) · [Manual](docs/README.md) · [examples](examples/README.md) · [glossary](docs/glossary.md) · [frames](docs/frames/README.md#which-array) · [catalogue WX-Y-Z-NR](docs/blade/concepts/taxonomy.md)
 
 ## Install
 
 ```bash
-pip install "implicit-geometry-kernel @ git+https://github.com/samhughes-fea/implicit-geometry-kernel"
-# or, from a clone
+# a release (recommended: pin the tag)
+pip install "implicit-geometry-kernel @ git+https://github.com/samhughes-fea/implicit-geometry-kernel@v0.9.4"
+# with plotting and spline extras
+pip install "implicit-geometry-kernel[plots,splines] @ git+https://github.com/samhughes-fea/implicit-geometry-kernel@v0.9.4"
+# development, from a clone
 pip install -e ".[dev]"
-# local HTML over the same Markdown (optional; not a second manual)
+# the docs site locally (manual plus API reference)
 pip install -e ".[docs]"
-sphinx-build -b html docs docs/_build/html
-# or: make -C docs html
+sphinx-build -W -b html docs docs/_build/html
 ```
+
+The kernel is not on PyPI yet. As a git submodule, pin a release tag, not a
+branch.
 
 Python 3.11 or newer. NumPy and Numba are required: the signed-distance kernels
 are compiled with Numba. Polygon offset and overlay need GEOS (`libgeos_c`;
@@ -168,13 +179,20 @@ hand-off; `extract` as a subpackage (off the kernel `__all__`). `sdf` imports
 nothing from `section` or `blade`. Matplotlib lives in `implicit_geometry_kernel.plotting`.
 
 `section`, `sdf`, `frames`, `integration` and `contract` started as a one-time fork;
-see [docs/FORK.md](docs/FORK.md) for where each part came from and how it was renamed.
+see [docs/FORK.md](docs/internal/FORK.md) for where each part came from and how it was renamed.
 
 ## Tests
 
 ```bash
 pytest -q
 ```
+
+See [SCOPE](SCOPE.md) for what belongs in the kernel, [AGENTS](AGENTS.md) for
+the repository rules, [decision records](docs/decisions/README.md) for past
+choices, [CONTRIBUTING](CONTRIBUTING.md) for every check CI runs, and
+[API stability](docs/conventions/api/STABILITY.md) for what counts as public.
+To cite the kernel, use [CITATION.cff](CITATION.cff) (GitHub's "Cite this
+repository" button).
 
 ## Limits
 

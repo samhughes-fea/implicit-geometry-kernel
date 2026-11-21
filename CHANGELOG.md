@@ -22,8 +22,8 @@
   spar-cap run-out gate and placement collision checks (previously 0 to 46 %
   covered).
 - Typing: ``integration`` is strict; ``sdf``, ``section`` and ``blade`` have
-  checked bodies and no stale ignores. ``compute_section_properties`` has
-  overloads, so ``with_mesh=True`` callers get a 3-tuple type.
+  checked bodies and no stale ignores. ``compute_section_properties`` is typed
+  ``tuple[Any, ...]``: it returns two items, or three with ``with_mesh=True``.
 
 ## 0.9.5 (2026-11-21)
 

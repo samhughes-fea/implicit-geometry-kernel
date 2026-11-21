@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Literal, overload
+from typing import Any, Literal
 
 import numpy as np
 
@@ -136,51 +136,6 @@ def _compute_hybrid(
     return props_map, mesh, meta_extra
 
 
-@overload
-def compute_section_properties(
-    section_geometry: Any,
-    *,
-    backend: PropsBackendArg | None = None,
-    grid: Any = None,
-    eval_cache: SectionEvalCache | None = None,
-    quadtree_spec: QuadtreeSpec | None = None,
-    chord: float = 1.0,
-    twist_rad: float = 0.0,
-    airfoil_for_spec: Any | None = None,
-    with_mesh: Literal[False] = False,
-) -> tuple[dict[str, dict[str, float]], dict[str, Any]]: ...
-
-
-@overload
-def compute_section_properties(
-    section_geometry: Any,
-    *,
-    backend: PropsBackendArg | None = None,
-    grid: Any = None,
-    eval_cache: SectionEvalCache | None = None,
-    quadtree_spec: QuadtreeSpec | None = None,
-    chord: float = 1.0,
-    twist_rad: float = 0.0,
-    airfoil_for_spec: Any | None = None,
-    with_mesh: Literal[True],
-) -> tuple[dict[str, dict[str, float]], dict[str, Any], Any]: ...
-
-
-@overload
-def compute_section_properties(
-    section_geometry: Any,
-    *,
-    backend: PropsBackendArg | None = None,
-    grid: Any = None,
-    eval_cache: SectionEvalCache | None = None,
-    quadtree_spec: QuadtreeSpec | None = None,
-    chord: float = 1.0,
-    twist_rad: float = 0.0,
-    airfoil_for_spec: Any | None = None,
-    with_mesh: bool = False,
-) -> tuple[Any, ...]: ...
-
-
 def compute_section_properties(
     section_geometry: Any,
     *,
@@ -192,7 +147,7 @@ def compute_section_properties(
     twist_rad: float = 0.0,
     airfoil_for_spec: Any | None = None,
     with_mesh: bool = False,
-) -> tuple[dict[str, dict[str, float]], dict[str, Any]] | tuple[dict[str, dict[str, float]], dict[str, Any], Any]:
+) -> tuple[Any, ...]:
     """Compute section properties for all labels using grid, quadtree, or hybrid.
 
     When ``with_mesh=True`` the return is a 3-tuple ``(data, meta, mesh)`` where

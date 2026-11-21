@@ -31,12 +31,16 @@ jobs:
         run: |
           ruff check src tests examples scripts
           python scripts/check_links.py
+          interrogate src/implicit_geometry_kernel
       - name: Typecheck
         if: matrix.python-version != '3.12'
         run: mypy src/implicit_geometry_kernel
       - name: Run tests
+        # On a pull request the full suite runs on 3.13 (with coverage) and the
+        # other versions skip the tests marked slow (tests/conftest.py); pushes to
+        # main run everything on every version.
         if: matrix.python-version != '3.13'
-        run: pytest -q
+        run: pytest -q ${{ github.event_name == 'pull_request' && '-m "not slow"' || '' }}
       - name: Run tests with coverage
         # 81 % at 0.9.4; the floor stops a large untested addition slipping in.
         if: matrix.python-version == '3.13'

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -30,7 +30,7 @@ class CoordinateFrameTransforms:
             self, "_span", SpanFrameTransforms(R=self.R, rR_grids=self.rR_grids)
         )
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Any:
         return getattr(object.__getattribute__(self, "_span"), name)
 
     def transform_second_moments_S_to_B(

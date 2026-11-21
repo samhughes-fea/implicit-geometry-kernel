@@ -1,0 +1,8 @@
+/* Landing page */
+.igk-hero { margin: 0.5rem 0 1.5rem; }
+.igk-hero p.lead { font-size: 1.15rem; line-height: 1.55; color: var(--color-foreground-secondary); }
+.igk-hero img { border-radius: 6px; margin-top: 0.75rem; }
+.sd-card { border-radius: 8px; }
+.sd-card-title { font-weight: 600; }
+/* Tables: keep wide tables scrollable rather than squashing them */
+article table.docutils { display: block; overflow-x: auto; }

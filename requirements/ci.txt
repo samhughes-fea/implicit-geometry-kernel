@@ -1,0 +1,217 @@
+accessible-pygments==0.0.5
+    # via furo
+alabaster==1.0.0
+    # via sphinx
+ast-serialize==0.13.1
+    # via mypy
+attrs==26.1.0
+    # via interrogate
+babel==2.18.0
+    # via sphinx
+beautifulsoup4==4.15.0
+    # via furo
+build==1.6.1
+    # via implicit-geometry-kernel (pyproject.toml)
+certifi==2026.11.20
+    # via requests
+charset-normalizer==3.5.2
+    # via requests
+click==8.5.1
+    # via interrogate
+colorama==0.4.6
+    # via
+    #   build
+    #   interrogate
+    #   pytest
+    #   sphinx
+contourpy==1.3.3 ; python_full_version < '3.12'
+    # via
+    #   implicit-geometry-kernel (pyproject.toml)
+    #   matplotlib
+contourpy==1.4.0 ; python_full_version >= '3.12'
+    # via
+    #   implicit-geometry-kernel (pyproject.toml)
+    #   matplotlib
+coverage==7.17.4
+    # via pytest-cov
+cycler==0.12.1
+    # via matplotlib
+docutils==0.22.4 ; python_full_version < '3.13'
+    # via
+    #   myst-parser
+    #   sphinx
+docutils==0.23 ; python_full_version >= '3.13'
+    # via
+    #   myst-parser
+    #   sphinx
+fonttools==4.68.0
+    # via matplotlib
+furo==2025.12.19
+    # via implicit-geometry-kernel (pyproject.toml)
+idna==3.20
+    # via requests
+imagesize==2.0.1
+    # via sphinx
+iniconfig==2.3.1
+    # via pytest
+interrogate==1.7.0
+    # via implicit-geometry-kernel (pyproject.toml)
+jinja2==3.1.6
+    # via
+    #   myst-parser
+    #   sphinx
+    #   sphinxcontrib-mermaid
+kiwisolver==1.5.1
+    # via matplotlib
+librt==0.17.0 ; platform_python_implementation != 'PyPy'
+    # via mypy
+llvmlite==0.50.0
+    # via numba
+markdown-it-py==4.3.0
+    # via
+    #   mdit-py-plugins
+    #   myst-parser
+markupsafe==3.0.4
+    # via jinja2
+matplotlib==3.11.2
+    # via implicit-geometry-kernel (pyproject.toml)
+mdit-py-plugins==0.7.0
+    # via myst-parser
+mdurl==0.1.2
+    # via markdown-it-py
+mypy==2.4.1
+    # via implicit-geometry-kernel (pyproject.toml)
+mypy-extensions==1.2.0
+    # via
+    #   librt
+    #   mypy
+myst-parser==5.2.0
+    # via implicit-geometry-kernel (pyproject.toml)
+numba==0.68.1
+    # via implicit-geometry-kernel (pyproject.toml)
+numpy==2.4.6 ; python_full_version < '3.12'
+    # via
+    #   implicit-geometry-kernel (pyproject.toml)
+    #   contourpy
+    #   matplotlib
+    #   numba
+    #   scipy
+numpy==2.5.5 ; python_full_version >= '3.12'
+    # via
+    #   implicit-geometry-kernel (pyproject.toml)
+    #   contourpy
+    #   matplotlib
+    #   numba
+    #   scipy
+packaging==26.3
+    # via
+    #   build
+    #   matplotlib
+    #   pytest
+    #   sphinx
+pathspec==1.1.1
+    # via mypy
+pillow==13.0.0
+    # via matplotlib
+pluggy==1.7.0
+    # via
+    #   pytest
+    #   pytest-cov
+py==1.11.0
+    # via interrogate
+pygments==2.21.0
+    # via
+    #   accessible-pygments
+    #   furo
+    #   pytest
+    #   sphinx
+pyparsing==3.3.3
+    # via matplotlib
+pyproject-hooks==1.3.3
+    # via build
+pytest==9.2.0
+    # via
+    #   implicit-geometry-kernel (pyproject.toml)
+    #   pytest-cov
+pytest-cov==7.1.0
+    # via implicit-geometry-kernel (pyproject.toml)
+python-dateutil==4.0.0
+    # via matplotlib
+pyyaml==6.0.4
+    # via
+    #   implicit-geometry-kernel (pyproject.toml)
+    #   myst-parser
+    #   sphinxcontrib-mermaid
+requests==2.34.2
+    # via sphinx
+roman-numerals==4.1.0
+    # via sphinx
+ruff==0.17.4
+    # via implicit-geometry-kernel (pyproject.toml)
+scipy==1.17.1 ; python_full_version < '3.12'
+    # via implicit-geometry-kernel (pyproject.toml)
+scipy==1.18.1 ; python_full_version >= '3.12'
+    # via implicit-geometry-kernel (pyproject.toml)
+snowballstemmer==3.1.1
+    # via sphinx
+soupsieve==2.10 ; python_full_version < '3.11.5'
+    # via beautifulsoup4
+soupsieve==4.1.3 ; python_full_version >= '3.11.5'
+    # via beautifulsoup4
+sphinx==9.0.4 ; python_full_version < '3.12'
+    # via
+    #   implicit-geometry-kernel (pyproject.toml)
+    #   furo
+    #   myst-parser
+    #   sphinx-basic-ng
+    #   sphinx-copybutton
+    #   sphinx-design
+    #   sphinxcontrib-mermaid
+sphinx==9.1.1 ; python_full_version == '3.12.*'
+    # via
+    #   implicit-geometry-kernel (pyproject.toml)
+    #   furo
+    #   myst-parser
+    #   sphinx-basic-ng
+    #   sphinx-copybutton
+    #   sphinx-design
+    #   sphinxcontrib-mermaid
+sphinx==9.2.0 ; python_full_version >= '3.13'
+    # via
+    #   implicit-geometry-kernel (pyproject.toml)
+    #   furo
+    #   myst-parser
+    #   sphinx-basic-ng
+    #   sphinx-copybutton
+    #   sphinx-design
+    #   sphinxcontrib-mermaid
+sphinx-basic-ng==1.0.0b2
+    # via furo
+sphinx-copybutton==0.5.2
+    # via implicit-geometry-kernel (pyproject.toml)
+sphinx-design==0.8.0
+    # via implicit-geometry-kernel (pyproject.toml)
+sphinxcontrib-applehelp==2.0.0
+    # via sphinx
+sphinxcontrib-devhelp==2.0.0
+    # via sphinx
+sphinxcontrib-htmlhelp==2.1.0
+    # via sphinx
+sphinxcontrib-jsmath==2.0.0
+    # via sphinx
+sphinxcontrib-mermaid==2.1.1
+    # via implicit-geometry-kernel (pyproject.toml)
+sphinxcontrib-qthelp==2.0.0
+    # via sphinx
+sphinxcontrib-serializinghtml==2.0.0
+    # via sphinx
+tabulate==0.10.0
+    # via interrogate
+typing-extensions==4.16.0
+    # via
+    #   beautifulsoup4
+    #   mypy
+tzdata==2026.6
+    # via python-dateutil
+urllib3==2.8.0
+    # via requests

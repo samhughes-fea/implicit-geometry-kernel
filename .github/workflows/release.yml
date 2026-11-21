@@ -56,4 +56,33 @@ jobs:
         with:
           name: dist
           path: dist/
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+
+  github-release:
+    # The GitHub release for the tag: notes are the tag's CHANGELOG.md section,
+    # with the sdist and wheel attached. A release candidate is a pre-release.
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+      - name: Notes from the changelog
+        run: |
+          v="${GITHUB_REF_NAME#v}"; v="${v%%rc*}"
+          awk -v v="$v" '
+            $0 ~ "^## " v "( |$)" {on=1; next}
+            on && /^## / {exit}
+            on {print}
+          ' CHANGELOG.md > notes.md
+          test -s notes.md || echo "See CHANGELOG.md." > notes.md
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        with:
+          body_path: notes.md
+          files: dist/*
+          prerelease: ${{ contains(github.ref_name, 'rc') }}
+          make_latest: ${{ !contains(github.ref_name, 'rc') }}

@@ -24,17 +24,23 @@ jobs:
           python -m pip install "shapely==2.2.0"
           python -c "import glob, os, shapely; d = os.path.join(os.path.dirname(shapely.__file__), os.pardir, 'shapely.libs'); print('GEOS_LIBRARY_PATH=' + os.path.abspath(sorted(glob.glob(os.path.join(d, 'libgeos_c*')))[0]))" >> "$GITHUB_ENV"
       - name: Install package
-        run: pip install -e ".[dev]"
+        # Pinned set (requirements/ci.txt) so a new upstream release cannot turn main red;
+        # Dependabot proposes the bumps. core-install below stays unpinned.
+        run: pip install -c requirements/ci.txt -e ".[dev]"
       - name: Lint
         run: |
           ruff check src tests examples scripts
           python scripts/check_links.py
+          interrogate src/implicit_geometry_kernel
       - name: Typecheck
         if: matrix.python-version != '3.12'
         run: mypy src/implicit_geometry_kernel
       - name: Run tests
+        # On a pull request the full suite runs on 3.13 (with coverage) and the
+        # other versions skip the tests marked slow (tests/conftest.py); pushes to
+        # main run everything on every version.
         if: matrix.python-version != '3.13'
-        run: pytest -q
+        run: pytest -q ${{ github.event_name == 'pull_request' && '-m "not slow"' || '' }}
       - name: Run tests with coverage
         # 81 % at 0.9.4; the floor stops a large untested addition slipping in.
         if: matrix.python-version == '3.13'
@@ -87,7 +93,9 @@ jobs:
           python -m pip install "shapely==2.2.0"
           python -c "import glob, os, shapely; d = os.path.join(os.path.dirname(shapely.__file__), os.pardir, 'shapely.libs'); print('GEOS_LIBRARY_PATH=' + os.path.abspath(sorted(glob.glob(os.path.join(d, 'libgeos_c*')))[0]))" >> "$GITHUB_ENV"
       - name: Install package
-        run: pip install -e ".[dev]"
+        # Pinned set (requirements/ci.txt) so a new upstream release cannot turn main red;
+        # Dependabot proposes the bumps. core-install below stays unpinned.
+        run: pip install -c requirements/ci.txt -e ".[dev]"
       - name: Run every example and demo
         run: python scripts/run_examples.py --timeout 480
 

@@ -30,10 +30,10 @@ splines = ["scipy>=1.8"]
 plots = ["matplotlib>=3.5"]
 cad = ["cadquery>=2.4"]
 contours = ["contourpy"]
-dev = ["scipy>=1.8", "matplotlib>=3.5", "pytest>=7", "pytest-cov>=7", "build>=1.0", "ruff==0.17.4", "mypy==2.4.1", "contourpy", "pyyaml>=6"]
+dev = ["scipy>=1.8", "matplotlib>=3.5", "pytest>=7", "pytest-cov>=7", "interrogate>=1.7", "build>=1.0", "ruff==0.17.4", "mypy==2.4.1", "contourpy", "pyyaml>=6"]
 reference = ["pyyaml>=6"]
 mesh = ["gmsh"]
-docs = ["sphinx>=7", "myst-parser>=3", "sphinxcontrib-mermaid>=0.9", "furo", "matplotlib>=3.5"]
+docs = ["sphinx>=7", "myst-parser>=3", "sphinxcontrib-mermaid>=0.9", "furo", "sphinx-copybutton", "sphinx-design", "matplotlib>=3.5"]
 
 [project.urls]
 Homepage = "https://github.com/samhughes-fea/implicit-geometry-kernel"
@@ -59,6 +59,7 @@ pythonpath = ["."]
 markers = [
     "frame_comparison: coordinate-frame convention checks from the forked geometry",
     "reference: needs the private reference-blades catalogue cloned beside the kernel",
+    "slow: takes 4 s or more; listed in tests/conftest.py",
 ]
 
 [tool.mypy]
@@ -84,6 +85,33 @@ disable_error_code = ["misc", "attr-defined", "return-value", "has-type"]
 module = ["implicit_geometry_kernel.mesh", "implicit_geometry_kernel.mesh.*"]
 check_untyped_defs = true
 warn_unused_ignores = true
+
+# Typing roadmap (docs/conventions/TYPING.md): packages move here once every
+# function is annotated. Next: integration, frames internals, section, blade, mesh.
+[[tool.mypy.overrides]]
+module = [
+    "implicit_geometry_kernel.structure.*",
+    "implicit_geometry_kernel.contract.*",
+    "implicit_geometry_kernel.frames.*",
+    "implicit_geometry_kernel.catalogue.*",
+    "implicit_geometry_kernel.extract.*",
+]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+
+[tool.interrogate]
+# Docstring coverage of public functions, classes and methods. 69.6 % at 0.9.4;
+# raise fail-under as coverage rises, never lower it.
+ignore-private = true
+ignore-semiprivate = true
+ignore-magic = true
+ignore-init-method = true
+ignore-module = true
+ignore-nested-functions = true
+exclude = ["src/implicit_geometry_kernel/plotting"]
+fail-under = 69
+verbose = 0
 
 [tool.ruff]
 line-length = 120

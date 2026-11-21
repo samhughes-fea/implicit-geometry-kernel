@@ -1,6 +1,36 @@
 # Changelog
 
-## 0.9.4 (2026-11-21)
+## 0.9.5 (2026-11-21)
+
+- Release note: the ``v0.9.4`` tag and GitHub release point at the 0.9.3
+  commit, so they carry 0.9.3 code. 0.9.5 is the first release with the
+  changes listed under 0.9.4 below as well as these. Tags never move
+  (``docs/conventions/RELEASING.md``), so ``v0.9.4`` stays as it is; pin
+  ``v0.9.5``.
+- The flat ``mesh.*`` deprecation shims are removed in 0.9.6, not 0.9.5, so
+  they ship in one tagged release first.
+- Docs site: new landing page with logo, cards and grouped sidebar (Getting
+  started, User guide, Reference, Project); ``ARCHITECTURE.md`` (data flow,
+  package layering, where to look) and a five-step tutorial that a test runs;
+  project files (changelog, contributing, scope, rules, security, conduct)
+  rendered on the site; copy buttons on code; repository links resolve to
+  GitHub; version shown from ``__version__``.
+- Releases: a tag now also makes a GitHub release with its changelog section
+  and the sdist and wheel attached (release candidates as pre-releases).
+- CI: CodeQL scanning (Python and workflows); dev and docs installs pinned by
+  ``requirements/ci.txt``; ``interrogate`` docstring coverage gate; tests of 4 s
+  or more marked ``slow`` so pull requests run fast tests on 3.11 and 3.12 and
+  the full suite on 3.13.
+- Actions: third-party actions are pinned to commit SHAs (with the version in a
+  comment, kept current by Dependabot); GitHub's own actions stay on major tags.
+- Typing: strict mypy on ``structure``, ``contract``, ``frames``, ``catalogue``
+  and ``extract``; roadmap in ``docs/conventions/TYPING.md``. The API snapshot
+  was regenerated because ``InfeasibleSectionGeometry`` gained annotations
+  (no behaviour change).
+- Workflow: issue-first traceability rules in ``docs/conventions/WORKFLOW.md``;
+  the PR template asks for ``Closes #N``.
+
+## 0.9.4 (2026-11-21, tag carries 0.9.3 code; see 0.9.5)
 
 - Commits: Conventional Commits on ``main`` (``docs/conventions/COMMITS.md``,
   decision 0012); PRs are squash-merged on their title and ``pr-title.yml``

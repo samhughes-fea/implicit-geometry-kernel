@@ -2,6 +2,7 @@
 
 Read this before changing the repository. It applies to people and to coding
 agents alike. [SCOPE.md](SCOPE.md) says what belongs here;
+[ARCHITECTURE.md](ARCHITECTURE.md) says where things live;
 [CONTRIBUTING.md](CONTRIBUTING.md) lists the checks; past choices are in
 [docs/decisions/](docs/decisions/README.md).
 
@@ -40,6 +41,9 @@ agents alike. [SCOPE.md](SCOPE.md) says what belongs here;
 
 ## Working conventions
 
+- Follow [the workflow](docs/conventions/WORKFLOW.md): an issue for non-trivial
+  work, `Closes #N` in the PR, the PR number on each changelog line, issue and PR
+  in bug-log entries.
 - Commit messages and PR titles follow [Conventional Commits](docs/conventions/COMMITS.md)
   (`fix(blade): ...`, `feat(mesh)!: ...`); PRs are squash-merged on their title.
 - Label every issue and PR per [the label rules](docs/conventions/LABELS.md):

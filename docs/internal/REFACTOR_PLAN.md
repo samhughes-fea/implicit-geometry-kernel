@@ -30,7 +30,9 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | K8 | Leading-edge and spanwise refinement controls | Done (#56, 0.9.2) |
 | K9 | windIO read on the blade's own sections: arcs by OML arc length at every z (corner to corner), per-side cap windows, two-foot webs, web span windows (BG-036) whose ends are mesh stations, tip closure on single-cell tips; station airfoils that reproduce their points (blunt corner, round end, base listed as points) | Done (#58) |
 | K5 | Trimmed top-level API (deprecate first), internal docs to `docs/internal/`; still 0.9.x | **Done** — `docs/internal/`, flat mesh shims removed, rare topology helpers demoted from top-level `__all__` with root `__getattr__` warnings (0.9.x). Stay 0.9.x, no 1.0 |
-| 0.9.3 | Release prep: CI green on the split `mesh/` packages (lint, mypy, fan-budget test, example runner), doc links after the `docs/internal/` move, `__version__` 0.9.3. Consumers then pin `v0.9.3` instead of the `K9` tag | PR open; tag is the maintainer's |
+| 0.9.3 | Release prep: CI green on the split `mesh/` packages (lint, mypy, fan-budget test, example runner), doc links after the `docs/internal/` move, `__version__` 0.9.3. Consumers then pin `v0.9.3` instead of the `K9` tag | Done (#78, tagged v0.9.3) |
+| 0.9.4 | Hardening: CI, docs site, module split, repository rules | Merged (#79); the `v0.9.4` tag sits on the 0.9.3 commit, so its code is 0.9.3 |
+| 0.9.5 | Release of #79 and #81 (docs site polish, GitHub releases, CodeQL, typing, slow-test split); flat mesh shims removed in 0.9.6 | PR #81; tag v0.9.5 is the maintainer's, then consumers move to it |
 
 #### Consumer adapter gaps (to do)
 
@@ -223,7 +225,13 @@ in-kernel mesh is `integration/quadtree`. Consumers own shell mesher jobs;
 | Figures | PNGs rewritten only past 0.5 % changed pixels; mesh exports untracked; cross-machine font differences still exceed that, so regenerated PNGs are committed only when the example's subject changed | `figure_io.write_png` |
 | Numbers | Results reproducible between releases unless the changelog says otherwise | Golden-number test |
 | Dependencies | Runtime: numpy, numba. Offset/overlay: ctypes ``libgeos_c`` (system/conda GEOS). Extras: scipy, matplotlib, cadquery, gmsh, pyyaml, contourpy | Core-install CI job |
-| Typing | Ships `py.typed`; public API annotated | mypy on `src/` in CI |
+| Typing | Ships `py.typed`; public API annotated; strict (`disallow_untyped_defs`) on structure, contract, frames, catalogue and extract, roadmap in `docs/conventions/TYPING.md` | mypy on `src/` in CI |
+| Docstrings | Public functions and classes documented; floor 69 % with plotting excluded, raised as coverage grows | `interrogate` in the lint job |
+| Tests | Tests of 4 s or more are marked `slow` in `tests/conftest.py`; PRs run the full suite on Python 3.13 and fast tests elsewhere | `tests.yml` |
+| CI installs | Dev and docs extras resolve from `requirements/ci.txt`; the core-install job stays unpinned | `tests.yml`, `docs.yml` |
+| Releases page | A tag makes a GitHub release with its changelog section and the wheel | `release.yml` `github-release` |
+| Security scan | CodeQL on Python and workflows, weekly and on PRs | `codeql.yml` |
+| Traceability | Issue first, PR says `Closes #N`, changelog lines end with the PR number | `docs/conventions/WORKFLOW.md`, PR template |
 | Data | No private reference-blade inputs in the repo; examples that need them skip without a local clone | Example 09 pattern |
 | Submodule use | `pip install -e path/to/kernel`, no build step or generated files | Wheel-build job |
 

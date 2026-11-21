@@ -14,7 +14,7 @@ Layout:
 triangles on ribs and the tip). Import from this package or the subpackages
 above (``mesh.shell``, ``mesh.export``, ``mesh.fill``). Flat module paths
 (``mesh.shell_mesh``, ``mesh.vtk``, ``mesh.polygon``, ``mesh.polygon_voronoi``,
-``mesh.delaunay``) still import in 0.9.4 with a ``DeprecationWarning`` and go in 0.9.5.
+``mesh.delaunay``) still import in 0.9.5 with a ``DeprecationWarning`` and go in 0.9.6.
 """
 
 from implicit_geometry_kernel.mesh.export import write_vtk

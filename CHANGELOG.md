@@ -14,6 +14,8 @@
   ``requirements/ci.txt``; ``interrogate`` docstring coverage gate; tests of 4 s
   or more marked ``slow`` so pull requests run fast tests on 3.11 and 3.12 and
   the full suite on 3.13.
+- Actions: third-party actions are pinned to commit SHAs (with the version in a
+  comment, kept current by Dependabot); GitHub's own actions stay on major tags.
 - Typing: strict mypy on ``structure``, ``contract``, ``frames``, ``catalogue``
   and ``extract``; roadmap in ``docs/conventions/TYPING.md``. The API snapshot
   was regenerated because ``InfeasibleSectionGeometry`` gained annotations

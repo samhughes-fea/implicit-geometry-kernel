@@ -60,6 +60,8 @@ Deviations are stated per entry.
 | [SG-029](#sg-029) | A spar cap was silently dropped from the skin loop at a concave skin vertex | **Fixed** — shared feet spread by cap arc length |
 | [SG-030](#sg-030) | The skin mid-line folds back on itself at a blunt trailing edge (IEA 15 ~16 % span) | **Fixed** — wrap corners are the thickness-aligned run |
 | [SG-031](#sg-031) | A max-gauge rebuild with web_y frozen at the floor skin could not place a web foot | **Fixed** — fast check before the foot search; the raise stays and says how to re-resolve |
+| [SG-032](#sg-032) | `classify_trailing_edge` called a twisted flatback sharp | **Fixed** — frame-free test on convex-hull corners |
+| [SG-033](#sg-033) | A section twisted exactly 90 degrees cannot place its web feet | **Logged** — reproducer below, not fixed |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -1317,6 +1319,13 @@ construction.
 Re-grep of `point_to_open_polyline_nearest`, `nearest_on_closed_polyline`, and
 production `np.argmin` under `section_geometry/` (2026-09-26).
 
+Re-checked 2026-11-21 (0.9.3): the listed sites keep the same roles at their new
+paths (`section/midlines/ring_geometry.py`, `section/midlines/skin_split.py`,
+`section/cells/builders.py`, `section/junctions/cap_skin_bonds.py`).
+`nearest_on_closed_polyline` still has no production caller. The package now has
+51 `argmin` sites, most added with the shell mesh in `mesh/` and `blade/`; they
+are not classified here. Nothing in this entry needs code.
+
 ## SG-019
 
 **Family-C constructive cap union omitted pad 0**
@@ -1788,3 +1797,54 @@ A cavity thinner than the skin still raises after the search, as before.
 `test_max_gauge_rebuild_with_frozen_web_y_fails_fast` (no foot search runs for
 the stale anchor; web x alone builds at max skin). The existing stale-anchor
 tests still pass.
+
+## SG-032
+
+**`classify_trailing_edge` called a twisted flatback sharp**
+
+**Status:** Fixed (0.9.4)
+**Area:** `extract/curves.py` `classify_trailing_edge`
+
+### Symptom
+A flatback (NACA 0018 with a 2 % or 5 % chord trailing edge) twisted 10 degrees
+classified `sharp`, on both the OML ring and the shell-graph loop. Untwisted, the
+same section classified `blunt`. The mesh path (`te_blunt_of_cut`) was right in
+both cases.
+
+### Root cause
+The test took the largest-x point as the trailing edge and looked for a vertical
+spread within `blunt_tol` of that x. That is only the trailing edge, and the edge
+is only vertical, when the chord lies along +x.
+
+### Fix
+The trailing edge is now the sharpest convex-hull corner. It is blunt when a
+neighbouring hull corner is also sharper than 150 degrees and lies more than
+`blunt_tol` away (the two ends of the flat). A smooth nose has no such corner, so
+the test needs no frame.
+
+### Verification
+`test_te_classifier_is_frame_free_on_oml_and_loop`: NACA 0018 / 2418 / 4412,
+sharp and two flatback thicknesses, twist -35 to 60 degrees, OML ring and
+shell-graph loop all classify as built.
+
+## SG-033
+
+**A section twisted exactly 90 degrees cannot place its web feet**
+
+**Status:** Logged (2026-11-21), not fixed
+**Area:** section build, web-foot placement (`section/cells/builders.py` `_node_of`)
+
+### Symptom
+`BladeGeometry([...twist=90...], "2D-F-LC-0R", ...).section_at(4.0)` raises
+"web 'shear_web_0' ends 1.212e-04 m from the nearest skin junction" for NACA
+0018, 2418 and 4412, sharp or flatback. Twist 60 builds.
+
+### Reproducer
+Two stations (chord 2.0 and 1.0 m, pitch axis 0.3, twist 90), `2D-F-LC-0R`,
+skin 4 mm, caps 8 mm, webs 4 mm at 0.18 and 0.48 chord, `pivot_fraction=0.3`.
+
+### Notes
+Twist this large is outside normal blade tables (root twist is usually under 20
+degrees), so it is logged rather than fixed. A vertical chord is the likely
+trigger: some step still searches or sorts along global x.
+

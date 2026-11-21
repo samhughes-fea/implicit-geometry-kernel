@@ -75,11 +75,39 @@ def feature_curve(a, b, zs, guess_xy=None, solver: GeometrySolver | None = None)
     return np.asarray(out)
 
 
+_TE_CORNER_DEG = 150.0
+"""A convex-hull vertex sharper than this is a trailing-edge corner; a smooth nose has none."""
+
+
+def _hull(pts: np.ndarray) -> np.ndarray:
+    """Counter-clockwise convex hull of 2D points (monotone chain), no repeated end."""
+    order = np.lexsort((pts[:, 1], pts[:, 0]))
+    p = pts[order]
+
+    def half(seq: np.ndarray) -> list[np.ndarray]:
+        out: list[np.ndarray] = []
+        for q in seq:
+            while len(out) >= 2:
+                a, b = out[-2], out[-1]
+                if (b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0]) > 0.0:
+                    break
+                out.pop()
+            out.append(q)
+        return out
+
+    lower, upper = half(p), half(p[::-1])
+    return np.asarray(lower[:-1] + upper[:-1], float)
+
+
 def classify_trailing_edge(ring_xy, blunt_tol: float = 1e-4) -> str:
-    """``sharp`` if the TE is a point; ``blunt`` if a finite chordwise edge remains.
+    """``sharp`` if the TE is a point; ``blunt`` if a finite edge remains.
 
     Accepts an OML ring ``(N, 2|3)`` or a :class:`~implicit_geometry_kernel.blade.shell_graph.ShellGraph`
-    (stacked skin loop via ``loop_polygon``). The OML helper is the same classifier.
+    (stacked skin loop via ``loop_polygon``). The test needs no frame: the
+    trailing edge is the sharpest convex-hull corner, and it is blunt when the
+    next hull corner is also sharper than ``_TE_CORNER_DEG`` and lies more than
+    ``blunt_tol`` from it (the two ends of a flatback). A twisted section
+    classifies the same as an untwisted one.
     """
     if hasattr(ring_xy, "loop_polygon"):
         pts = np.asarray(ring_xy.loop_polygon(), float)
@@ -88,8 +116,16 @@ def classify_trailing_edge(ring_xy, blunt_tol: float = 1e-4) -> str:
     pts = pts[:, :2]
     if np.linalg.norm(pts[0] - pts[-1]) < 1e-12:
         pts = pts[:-1]
-    i_te = int(np.argmax(pts[:, 0]))
-    x_te = pts[i_te, 0]
-    band = pts[np.abs(pts[:, 0] - x_te) <= blunt_tol]
-    span = float(np.ptp(band[:, 1])) if len(band) else 0.0
-    return "blunt" if span > blunt_tol else "sharp"
+    hull = _hull(pts)
+    n = len(hull)
+    if n < 3:
+        return "sharp"
+    into = hull - np.roll(hull, 1, axis=0)
+    out = np.roll(hull, -1, axis=0) - hull
+    cos = -(into * out).sum(1) / np.maximum(np.linalg.norm(into, axis=1) * np.linalg.norm(out, axis=1), 1e-300)
+    angle = np.degrees(np.arccos(np.clip(cos, -1.0, 1.0)))
+    i = int(np.argmin(angle))
+    for j in ((i - 1) % n, (i + 1) % n):
+        if angle[j] < _TE_CORNER_DEG and np.linalg.norm(hull[j] - hull[i]) > blunt_tol:
+            return "blunt"
+    return "sharp"

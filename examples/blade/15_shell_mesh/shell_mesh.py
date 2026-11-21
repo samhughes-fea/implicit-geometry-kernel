@@ -41,6 +41,7 @@ from _shared.plotting import (  # noqa: E402
 from implicit_geometry_kernel.mesh import ShellMesh, shell_mesh, write_mesh_tables, write_vtk  # noqa: E402
 from implicit_geometry_kernel.profiling import LOGGER_NAME, STAGE, collecting  # noqa: E402
 from implicit_geometry_kernel.mesh.fill import triangulate_ring  # noqa: E402
+from implicit_geometry_kernel.plotting.figure_io import write_png  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 REF = HERE.parents[0] / "08_reference_blades" / "reference_blades.py"
@@ -298,9 +299,9 @@ def _save(fig, name: str, *, folder: str | None = None, publish: bool = False) -
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"{name}.png"
     if publish:
-        fig.savefig(path, dpi=dpi, bbox_inches="tight", pad_inches=0.04)
+        write_png(fig, path, dpi=dpi, bbox_inches="tight", pad_inches=0.04)
     else:
-        fig.savefig(path, dpi=dpi, pad_inches=0.15)
+        write_png(fig, path, dpi=dpi, pad_inches=0.15)
     plt.close(fig)
     print(f"wrote {path.relative_to(HERE.parents[1])}")
 

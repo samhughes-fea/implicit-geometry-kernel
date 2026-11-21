@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- ``classify_trailing_edge`` no longer assumes the chord lies along +x: a
+  twisted flatback classified ``sharp`` (SG-032). The trailing edge is now the
+  sharpest convex-hull corner, blunt when a neighbouring hull corner is also a
+  corner. The WP6 park on this helper is closed. A section twisted exactly 90
+  degrees cannot place its web feet; logged as SG-033.
+- Figures: ``plotting.figure_io.write_png`` renders to memory and rewrites a PNG
+  only when more than 0.5 % of its pixels change (``IGK_WRITE_FIGURES=always``
+  forces it); the examples save through it. Example mesh exports (STL / OBJ /
+  VTK) are no longer committed.
+- mypy checks the bodies of unannotated functions in ``mesh/`` and flags unused
+  ``type: ignore`` comments there.
 - Docs: the stub pages left at the old report paths (``docs/REFACTOR_PLAN.md``,
   ``docs/FORK.md``, ``docs/section/reports/*``, ``docs/blade/reports/*``) are
   removed; links point into ``docs/internal/``. Public docs outside

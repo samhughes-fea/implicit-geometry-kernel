@@ -1709,11 +1709,11 @@ def _bay_weight(left_z: float, right_z: float, z: float) -> float:
     return float(np.clip((float(z) - float(left_z)) / span, 0.0, 1.0))
 
 
-def _run_units(runs, cut) -> list[tuple[object, np.ndarray | None]]:
+def _run_units(runs, cut) -> list[tuple[Any, np.ndarray | None]]:
     """Chord-normal polyline of each run, or ``None`` when the run has no points."""
     from implicit_geometry_kernel.blade.loft.span_place import to_chord_normal
 
-    out: list[tuple[object, np.ndarray | None]] = []
+    out: list[tuple[Any, np.ndarray | None]] = []
     for run in runs:
         pts = np.asarray(run.points, float)
         if pts.ndim != 2 or len(pts) == 0:

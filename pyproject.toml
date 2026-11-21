@@ -77,6 +77,13 @@ module = [
 ]
 disable_error_code = ["misc", "attr-defined", "return-value", "has-type"]
 
+# The mesh package is checked more strictly: bodies of unannotated functions are
+# type-checked and stale ignores are errors.
+[[tool.mypy.overrides]]
+module = ["implicit_geometry_kernel.mesh", "implicit_geometry_kernel.mesh.*"]
+check_untyped_defs = true
+warn_unused_ignores = true
+
 [tool.ruff]
 line-length = 120
 

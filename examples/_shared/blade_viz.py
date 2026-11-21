@@ -37,6 +37,7 @@ from implicit_geometry_kernel.section.boundary.labels import (
 from implicit_geometry_kernel.section.boundary.polygon_ops import oriented_rings
 from implicit_geometry_kernel.section.properties.backend import quadtree_spec_for_airfoil
 from implicit_geometry_kernel.section.properties.section_evaluator import SectionFieldEvaluator
+from implicit_geometry_kernel.plotting.figure_io import write_png
 
 CROSS_SECTIONS = "cross_sections"
 CSG_MESH = "csg_mesh"
@@ -719,9 +720,9 @@ def save_fig(fig, root: Path, stem: str, category: str, name: str, *,
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"{name}.png"
     try:
-        fig.savefig(path, dpi=dpi, bbox_inches="tight")
+        write_png(fig, path, dpi=dpi, bbox_inches="tight")
     except ValueError:
-        fig.savefig(path, dpi=dpi)
+        write_png(fig, path, dpi=dpi)
     plt.close(fig)
     if repo is not None:
         print(f"wrote {path.relative_to(repo)}")

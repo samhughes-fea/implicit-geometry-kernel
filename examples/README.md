@@ -145,7 +145,12 @@ python examples/section/01_layout_catalogue/layout_catalogue.py
 python scripts/run_examples.py
 ```
 
-Each numbered script writes figures into its own `figures/` folder.
+Each numbered script writes figures into its own `figures/` folder. A PNG is
+rewritten only when more than 0.5 % of its pixels change
+(`plotting.figure_io.write_png`; set `IGK_WRITE_FIGURES=always` to force it).
+Font rendering still differs between machines and Matplotlib versions, by more
+than that on some figures, so commit regenerated PNGs only when the example's
+subject changed. Mesh exports (`*.stl`, `*.obj`, `*.vtk`) are not committed.
 
 Bulk headless run: `python scripts/run_examples.py` (CI uses `--smoke` for
 `blade/09`; `python scripts/run_examples.py --full` draws every catalogue key).

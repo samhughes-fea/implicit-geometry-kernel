@@ -77,6 +77,7 @@ from implicit_geometry_kernel.blade.windio_arc import (  # noqa: E402
 )
 from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule  # noqa: E402
 from implicit_geometry_kernel.section.layout.section_layout import SectionLayout  # noqa: E402
+from implicit_geometry_kernel.plotting.figure_io import write_png  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 CASES = (
@@ -344,7 +345,7 @@ def save_fig(fig, stem: str, name: str, *, dpi: int = 150, category: str | None 
     if category:
         return save_viz(fig, FIGURES, stem, category, name, dpi=dpi, repo=REPO)
     path = _blade_dir(stem) / f"{name}.png"
-    fig.savefig(path, dpi=dpi, bbox_inches="tight")
+    write_png(fig, path, dpi=dpi, bbox_inches="tight")
     plt.close(fig)
     print(f"wrote {path.relative_to(REPO)}")
     return path

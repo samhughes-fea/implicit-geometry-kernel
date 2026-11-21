@@ -43,3 +43,7 @@ examples/blade/15_shell_mesh/figures/**/*.csv
 examples/blade/15_shell_mesh/figures/**/*.vtk
 examples/blade/15_shell_mesh/figures/**/*.txt
 
+# mesh exports the examples write (STL / OBJ / VTK); regenerated on each run
+examples/**/figures/*.stl
+examples/**/figures/*.obj
+examples/**/figures/*.vtk

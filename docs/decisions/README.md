@@ -16,3 +16,4 @@ new record that supersedes it; do not edit history.
 | [0008](0008-versioning.md) | Releases stay on 0.9.x; tags are the maintainer's | 2026-11-11 |
 | [0009](0009-consumer-gaps-are-kernel-work.md) | Geometry a consumer computes on top of the kernel is kernel work | 2026-11-12 |
 | [0010](0010-no-private-data.md) | No confidential blade data in this repository | 2026-11-05 |
+| [0011](0011-tags.md) | Tags name releases only and are permanent | 2026-11-21 |

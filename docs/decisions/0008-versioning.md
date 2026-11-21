@@ -8,5 +8,5 @@ tags and GitHub releases.
 patch numbers keep consumers' pins simple.
 
 **Follows.** Pull requests bump `__version__` and the changelog heading;
-`release.yml` refuses a tag that does not match. Removals follow
+`release.yml` refuses a tag that does not match. Tag rules: [0011](0011-tags.md). Removals follow
 [API stability](../conventions/api/STABILITY.md).

@@ -1,7 +1,11 @@
 # Changelog
 
-## 0.9.4 (unreleased; tag is the owner's)
+## 0.9.4 (2026-11-21)
 
+- Tags: [Tags and releases](docs/conventions/RELEASING.md) formalises them
+  (``v0.9.N`` / ``v0.9.NrcM`` only, on a ``main`` merge commit, never moved or
+  deleted, no working tags, maintainer only). ``release.yml`` now refuses a tag
+  with another name, on a commit not on ``main``, or without a changelog heading.
 - Rules and scope: ``AGENTS.md`` (with a ``CLAUDE.md`` pointer), ``SCOPE.md``,
   ``docs/decisions/`` (ten decision records), ``CODEOWNERS``,
   ``CODE_OF_CONDUCT.md`` and ``.editorconfig``.

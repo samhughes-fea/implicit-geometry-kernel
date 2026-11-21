@@ -20,8 +20,11 @@ agents alike. [SCOPE.md](SCOPE.md) says what belongs here;
 4. **Versions stay on 0.9.x.** Never set `__version__` to 1.0.0 or plan a 0.10.0.
    Bump the patch version and the `CHANGELOG.md` heading in the PR that prepares a
    release.
-5. **Tags and releases are the maintainer's.** Do not create tags or GitHub
-   releases; `release.yml` checks the tag equals `__version__`.
+5. **Tags follow [the release rules](docs/conventions/RELEASING.md).** Only the
+   maintainer creates tags and GitHub releases. A tag is `v0.9.N` (or
+   `v0.9.NrcM`) on a `main` merge commit, equals `__version__`, has a changelog
+   heading, and is never moved or deleted. No working tags: pin unreleased work
+   by commit SHA. Agents prepare the release PR and stop there.
 6. **Deprecate before removing.** A public name (see
    [API stability](docs/conventions/api/STABILITY.md)) keeps working with a
    `DeprecationWarning` for at least one released 0.9.x before it goes.

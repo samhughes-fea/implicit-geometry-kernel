@@ -39,9 +39,9 @@ sphinx-build -W -b html docs docs/_build/html   # with the [docs] extra
 - **Public API.** See [API stability](docs/conventions/api/STABILITY.md). Adding a
   public name is fine; removing or changing one needs a release of
   `DeprecationWarning` first.
-- **Versions.** Releases stay on `0.9.x`. Bump `__version__` and the
-  `CHANGELOG.md` heading in the PR; the maintainer makes the tag, and
-  `release.yml` checks it matches.
+- **Versions and tags.** Releases stay on `0.9.x`. Follow
+  [Tags and releases](docs/conventions/RELEASING.md): the release PR bumps
+  `__version__` and the changelog heading; the maintainer makes the tag.
 - **Plan doc.** Update the status in `docs/internal/REFACTOR_PLAN.md` in the same
   PR as the work.
 - **Generic code.** `src/` and `tests/` do not name downstream projects or special

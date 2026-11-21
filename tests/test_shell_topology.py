@@ -24,10 +24,6 @@ from implicit_geometry_kernel.blade.topology import (
     ShellTopologyTemplate,
     WallRegionGraph,
     WebMember,
-    _cluster_web_members,
-    _regularise_anchors,
-    _te_wrap_arc,
-    _template_from_cut,
     place_station_keys,
     rib_cell_polygons_from_samples,
     rib_cell_triangles_from_samples,
@@ -38,12 +34,16 @@ from implicit_geometry_kernel.blade.topology import (
     te_blunt_of_cut,
     te_is_blunt,
     te_opening,
+    te_ridge_point,
 )
+from implicit_geometry_kernel.blade.topology.graph import _cluster_web_members, _regularise_anchors
 from implicit_geometry_kernel.blade.topology.map_walk import (
     _chord_fracs,
     _skin_mid_loop,
     _te_corner_indices,
+    _te_wrap_arc,
 )
+from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut
 
 
 def _geo(key="2D-F-LC-0R", **kwargs):
@@ -303,6 +303,87 @@ def test_te_opening_classifies_ellipse_naca_flatback():
     assert te_blunt_of_cut(fcut)
 
 
+def _thin_face_blade():
+    """A NACA whose trailing face is real and still under the blunt cutoff."""
+    foil = Airfoil.naca4("0012").with_te_thickness(0.004)
+    stations = [
+        Station(0.0, 2.0, foil, pitch_axis=0.3),
+        Station(10.0, 1.0, foil, pitch_axis=0.3),
+    ]
+    return BladeGeometry(
+        stations, "2D-F-LC-0R", 0.004, pivot_fraction=0.3,
+        spar_cap_thickness=0.008, shear_web_thickness=0.004,
+        web_positions=(0.18, 0.48),
+    )
+
+
+def test_a_short_trailing_face_shares_the_midpoint_of_its_corners():
+    geo = _thin_face_blade()
+    cut = geo.section_at(4.0)
+    graph = cut.shell_graph()
+    pts = _skin_mid_loop(graph, float(cut.z))
+    opening = te_opening(cut, pts)
+    assert 1e-4 < opening < te_blunt_eps(cut)
+    _i_le, i_su, i_pr = _te_corner_indices(pts, cut)
+    assert i_su != i_pr
+    ridge = te_ridge_point(pts, cut, i_su, i_pr)
+    assert np.allclose(ridge, 0.5 * (pts[i_su] + pts[i_pr]))
+    keys = place_station_keys(cut, graph, geo.region_graph, float(cut.z), te_blunt=False)
+    assert np.allclose(keys[("te", "suction")], ridge)
+    assert np.allclose(keys[("te", "pressure")], ridge)
+
+    flipped = pts[::-1].copy()
+    _le, s2, p2 = _te_corner_indices(flipped, cut)
+    assert np.linalg.norm(te_ridge_point(flipped, cut, s2, p2) - ridge) < 1e-9
+
+    nudged = pts.copy()
+    frac = _chord_fracs(cut, pts)
+    loser = i_su if frac[i_su] <= frac[i_pr] else i_pr
+    away = pts[loser, :2] - pts[_i_le, :2]
+    away = away / max(float(np.linalg.norm(away)), 1e-12)
+    nudged[loser, 0] += 1e-9 * away[0]
+    nudged[loser, 1] += 1e-9 * away[1]
+    _le, s3, p3 = _te_corner_indices(nudged, cut)
+    assert np.linalg.norm(te_ridge_point(nudged, cut, s3, p3) - ridge) < 1e-9
+
+
+def test_a_sharp_ridge_is_the_vertex_and_a_flatback_keeps_both_corners():
+    naca = _geo(web_positions=(0.18, 0.48))
+    cut = naca.section_at(4.0)
+    graph = cut.shell_graph()
+    pts = _skin_mid_loop(graph, float(cut.z))
+    _i_le, i_su, i_pr = _te_corner_indices(pts, cut)
+    keys = place_station_keys(cut, graph, naca.region_graph, float(cut.z), te_blunt=False)
+    assert np.allclose(keys[("te", "suction")], pts[i_su])
+    assert np.allclose(keys[("te", "pressure")], pts[i_pr])
+
+    blunt = Airfoil.naca4("0018").with_te_thickness(0.05)
+    fb = BladeGeometry(
+        [Station(0.0, 2.0, blunt, pitch_axis=0.3), Station(10.0, 1.0, blunt, pitch_axis=0.3)],
+        "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004,
+        web_positions=(0.18, 0.48), pivot_fraction=0.3,
+    )
+    fcut = fb.section_at(0.0)
+    fkeys = place_station_keys(
+        fcut, fcut.shell_graph(), fb.region_graph, 0.0, te_blunt=True,
+    )
+    assert np.linalg.norm(fkeys[("te", "suction")] - fkeys[("te", "pressure")]) > 0.04
+
+
+def test_sampled_skins_end_on_the_shared_ridge():
+    geo = _thin_face_blade()
+    cut = geo.section_at(4.0)
+    graph = cut.shell_graph()
+    pts = _skin_mid_loop(graph, float(cut.z))
+    _i_le, i_su, i_pr = _te_corner_indices(pts, cut)
+    ridge = te_ridge_point(pts, cut, i_su, i_pr)
+    template = _template_from_cut(geo.region_graph, cut, float(cut.z), 8, te_blunt=False)
+    sampled = sample_region_polylines(cut, graph, template, geo.region_graph)
+    assert "te_su" in sampled and "te_pr" in sampled
+    assert np.allclose(sampled["te_su"][-1], ridge)
+    assert np.allclose(sampled["te_pr"][-1], ridge)
+
+
 def test_hold_te_blunt_hysteresis():
     assert hold_te_blunt([2.0, 0.8, 0.4, 0.2, 1.2], 1.0) == [
         True, False, False, False, True,
@@ -439,7 +520,8 @@ def test_le_te_loop_still_holds_web_keys_on_skin():
 
 
 def test_bowtie_quad_is_not_lofted():
-    from implicit_geometry_kernel.blade.topology import loft_mapped_strips, _quad_bowtie
+    from implicit_geometry_kernel.blade.topology import loft_mapped_strips
+    from implicit_geometry_kernel.blade.topology.map_loft import _quad_bowtie
 
     a = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]])
     assert not _quad_bowtie(a)

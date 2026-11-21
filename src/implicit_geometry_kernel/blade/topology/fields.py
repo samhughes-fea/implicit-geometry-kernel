@@ -11,21 +11,17 @@ from implicit_geometry_kernel.sdf.nodes.base import EvalCache, FeatureTable, Fie
 
 
 def _polyline_distance(xy: np.ndarray, poly: np.ndarray) -> np.ndarray:
+    """Unsigned distance from each query point to an open polyline.
+
+    Uses the same numba kernel as :class:`~implicit_geometry_kernel.sdf.nodes.tagged.PolylineBandSDF`.
+    """
+    from implicit_geometry_kernel.sdf.kernels.polygon_numba import sdf_polyline_unsigned_numba
+
     xy = np.asarray(xy, float)
     poly = np.asarray(poly, float)
     if len(poly) < 2 or len(xy) == 0:
         return np.full(len(xy), np.inf)
-    best = np.full(len(xy), np.inf)
-    for a, b in zip(poly[:-1], poly[1:]):
-        ab = b - a
-        L2 = float(np.dot(ab, ab))
-        if L2 < 1e-30:
-            d = np.linalg.norm(xy - a, axis=1)
-        else:
-            t = np.clip(((xy - a) @ ab) / L2, 0.0, 1.0)
-            d = np.linalg.norm(xy - (a + t[:, None] * ab), axis=1)
-        best = np.minimum(best, d)
-    return best
+    return sdf_polyline_unsigned_numba(xy[:, 0], xy[:, 1], poly)
 
 
 def _as_layup(layup):

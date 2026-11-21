@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
-from implicit_geometry_kernel.blade.topology.fields import StackThickness
+from implicit_geometry_kernel.blade.topology.fields import StackThickness, _polyline_distance
 
 
 def _blade():
@@ -30,6 +30,54 @@ def _point_on(cut, label):
                 point = np.array([point[0], point[1], cut.z])
             return point[:3]
     raise KeyError(label)
+
+
+def _polyline_distance_python(xy: np.ndarray, poly: np.ndarray) -> np.ndarray:
+    """Reference unsigned distance (pure NumPy / Python loops)."""
+    xy = np.asarray(xy, float)
+    poly = np.asarray(poly, float)
+    if len(poly) < 2 or len(xy) == 0:
+        return np.full(len(xy), np.inf)
+    out = np.full(len(xy), np.inf)
+    for i in range(len(poly) - 1):
+        a = poly[i]
+        b = poly[i + 1]
+        ab = b - a
+        denom = float(np.dot(ab, ab)) + 1e-30
+        for j, p in enumerate(xy):
+            t = float(np.clip(np.dot(p - a, ab) / denom, 0.0, 1.0))
+            d = float(np.linalg.norm(p - (a + t * ab)))
+            if d < out[j]:
+                out[j] = d
+    return out
+
+
+def test_polyline_distance_matches_python_reference():
+    rng = np.random.default_rng(0)
+    poly = np.column_stack([np.linspace(0.0, 1.0, 17), 0.1 * np.sin(np.linspace(0.0, np.pi, 17))])
+    xy = rng.normal(size=(64, 2)) * 0.3 + np.array([0.5, 0.0])
+    got = _polyline_distance(xy, poly)
+    ref = _polyline_distance_python(xy, poly)
+    np.testing.assert_allclose(got, ref, rtol=0.0, atol=1e-12)
+
+
+def test_stack_thickness_samples_match_nearest_run_assignment():
+    geo = _blade()
+    cut = geo.section_at(1.0)
+    graph = cut.shell_graph()
+    field = StackThickness(geo)
+    samples = []
+    for run in list(graph.loop) + list(graph.webs):
+        mid = np.asarray(run.points, float)[len(run.points) // 2]
+        if mid.size == 2:
+            mid = np.array([mid[0], mid[1], cut.z])
+        samples.append(mid[:3])
+    pts = np.asarray(samples, float)
+    T = field(pts)
+    assert T.shape == (len(pts),)
+    assert np.all(np.isfinite(T))
+    assert float(np.min(T)) >= 0.003 - 1e-12
+    assert float(np.max(T)) <= 0.003 + 0.008 + 1e-12
 
 
 def test_a_layup_replaces_the_cap_stack_and_leaves_the_skin():

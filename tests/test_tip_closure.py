@@ -17,10 +17,10 @@ from implicit_geometry_kernel import (
     topology_diff,
 )
 from implicit_geometry_kernel.blade.topology import (
-    _template_from_cut,
     rib_cell_polygons_from_samples,
     sample_region_polylines,
 )
+from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut
 
 
 def _stations():

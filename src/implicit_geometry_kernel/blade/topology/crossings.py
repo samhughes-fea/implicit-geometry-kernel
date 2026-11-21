@@ -11,16 +11,67 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from implicit_geometry_kernel.blade.topology.ribs import _station_side_fracs, section_cut_near
+import numpy as np
 
 _SIDES = ("suction", "pressure")
 
 
+def _cap_fraction_map(windows) -> dict[str, float]:
+    """Chord fractions of one cap window, or of a sequence of windows."""
+    if isinstance(windows, dict):
+        return {}
+    values = np.asarray(windows, float)
+    if values.size == 0:
+        return {}
+    pairs = values.reshape(1, -1) if values.ndim == 1 else values.reshape(values.shape[0], -1)
+    if pairs.shape[1] < 2:
+        return {}
+    out = {}
+    one = len(pairs) == 1
+    for i, pair in enumerate(pairs):
+        lo = "cap_lo" if one else f"cap_{i}_lo"
+        hi = "cap_hi" if one else f"cap_{i}_hi"
+        out[lo] = float(pair[0])
+        out[hi] = float(pair[1])
+    return out
+
+
+def _fractions(geo, z: float, side: str) -> dict[str, float]:
+    """Authored chord fractions at ``z``. Both sides share a window unless the cap law says otherwise.
+
+    These are the span laws the section is built from. Reading them does not
+    execute a section.
+    """
+    graph = geo.region_graph
+    fracs = {
+        str(name): float(value)
+        for name, value in graph.evaluate_anchors(float(z))
+        if name not in ("le", "te")
+    }
+    for web in getattr(graph, "webs", ()) or ():
+        if web.active(float(z)):
+            fracs.setdefault(web.name or f"web_{web.index}", float(web.at(float(z))))
+    positions = getattr(geo, "_web_positions_fn", None)
+    if positions is not None:
+        raw = np.atleast_1d(np.asarray(positions(float(z)), float)).ravel()
+        for i, frac in enumerate(raw):
+            fracs[f"web_{i}"] = float(frac)
+    caps = getattr(geo, "_cap_windows_fn", None)
+    if caps is None:
+        return fracs
+    windows = caps(float(z))
+    if isinstance(windows, dict):
+        windows = windows.get(side)
+    if windows is None:
+        return fracs
+    for name in [key for key in fracs if str(key).startswith("cap_")]:
+        del fracs[name]
+    fracs.update(_cap_fraction_map(windows))
+    return fracs
+
+
 def _side_fracs_at(geo, z: float) -> dict[str, dict[str, float]] | None:
-    cut = section_cut_near(geo, float(z))
-    if cut is None:
-        return None
-    return _station_side_fracs(geo.region_graph, cut, cut.shell_graph(), float(cut.z), True)
+    return {side: _fractions(geo, float(z), side) for side in _SIDES}
 
 
 def _swapped_pairs(a: dict[str, dict[str, float]], b: dict[str, dict[str, float]]
@@ -76,7 +127,10 @@ def key_crossing_stations(geo, zs: Sequence[float], *, rel_tol: float = 1e-9) ->
             z = _crossing_z(geo, side, n1, n2, za, zb, fa[side][n1] - fa[side][n2], tol)
             if z is not None and za < z < zb:
                 found.add(round(z, 12))
-    return tuple(sorted(found))
+    found_z = tuple(sorted(found))
+    previous = tuple(getattr(geo, "_mesh_crossings", ()) or ())
+    geo._mesh_crossings = tuple(sorted(set(previous) | set(found_z)))
+    return found_z
 
 
 __all__ = ["key_crossing_stations"]

@@ -5,10 +5,10 @@ import pytest
 
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
 from implicit_geometry_kernel.blade.topology import (
-    _template_from_cut,
     place_station_keys,
     sample_region_polylines,
 )
+from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut
 from implicit_geometry_kernel.blade.topology.sizing import (
     H_MAX_OVER_C,
     H_MIN_OVER_T,

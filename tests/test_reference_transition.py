@@ -169,10 +169,10 @@ def test_iea10_cap_loft_key_stable_along_span():
 def test_iea22_te_corners_do_not_chatter():
     from implicit_geometry_kernel.blade.topology import (
         ShellTopologyTemplate,
-        _chord_fracs,
-        _cut_tc,
         sample_region_polylines,
     )
+    from implicit_geometry_kernel.blade.topology.graph import _cut_tc
+    from implicit_geometry_kernel.blade.topology.map_walk import _chord_fracs
 
     ns = _08_ns()
     _name, geo, _ = ns["load_windio"](ns["catalogue_yaml"](_catalogue(), "iea22/IEA-22-280-RWT.yaml"))
@@ -211,7 +211,7 @@ def test_iea10_cylinder_has_spar_webs_not_te_plug():
     # the file's fore and rear webs start at 3 % span, the TE web at 5 %
     for z in (z0, z0 + 0.02 * span, z0 + 0.04 * span):
         cut = geo.section_at(float(z))
-        from implicit_geometry_kernel.blade.topology import _cut_tc
+        from implicit_geometry_kernel.blade.topology.graph import _cut_tc
         from implicit_geometry_kernel.blade.topology.ribs import _live_web_fracs
 
         t = ShellTopologyTemplate.from_region_graph(

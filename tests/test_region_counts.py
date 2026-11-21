@@ -7,13 +7,13 @@ import pytest
 
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
 from implicit_geometry_kernel.blade.topology import (
-    _template_from_cut,
     loft_mapped_strips,
     sample_region_polylines,
     section_cut_near,
 )
 from implicit_geometry_kernel.blade.topology.map_loft import _transition_quads
 from implicit_geometry_kernel.blade.topology.region_counts import _held_edges, _odd_nodes, region_counts
+from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut
 
 
 def _geo():
@@ -34,12 +34,12 @@ def test_odd_nodes_follow_length():
 
 def test_counts_are_held_while_the_element_size_stays_within_h_over_2_and_h():
     h = 0.1
-    assert _held_edges(1.0, None, h, 3) == 10
-    assert _held_edges(0.9, 10, h, 3) == 10  # 0.09 per element: held
-    assert _held_edges(0.5, 10, h, 3) == 10  # h / 2 exactly: held
-    assert _held_edges(0.49, 10, h, 3) == 6  # below h / 2: from length
-    assert _held_edges(1.01, 10, h, 3) == 12  # past h: from length
-    assert _held_edges(0.0, 4, h, 3) == 2
+    assert _held_edges(1.0, None, h, 3) == (10, "length")
+    assert _held_edges(0.9, 10, h, 3) == (10, "held")  # 0.09 per element: held
+    assert _held_edges(0.5, 10, h, 3) == (10, "held")  # h / 2 exactly: held
+    assert _held_edges(0.49, 10, h, 3) == (8, "step")  # below h / 2: one step of two
+    assert _held_edges(1.01, 10, h, 3) == (12, "step")  # past h: one step of two
+    assert _held_edges(0.0, 4, h, 3) == (2, "step")
 
 
 def test_sized_strips_are_quads_and_share_station_nodes():
@@ -59,8 +59,10 @@ def test_sized_strips_are_quads_and_share_station_nodes():
             length = float(np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1)))
             edges = len(pts) - 1
             assert edges % 2 == 0, name
-            assert length / edges <= h * (1 + 1e-9), name
-            assert edges == 2 or length / edges >= 0.5 * h * (1 - 1e-9), name
+    for name in smps[0]:
+        counts = [len(smp[name]) - 1 for smp in smps if name in smp]
+        for a, b in zip(counts, counts[1:]):
+            assert abs(a - b) <= 2, (name, a, b)
     # counts follow length: the longest region gets more nodes than the shortest
     lengths = {n: float(np.sum(np.linalg.norm(np.diff(p, axis=0), axis=1))) for n, p in smps[0].items()}
     assert len(smps[0][max(lengths, key=lengths.get)]) > len(smps[0][min(lengths, key=lengths.get)])

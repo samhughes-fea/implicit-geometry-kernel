@@ -7,11 +7,11 @@ import pytest
 
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
 from implicit_geometry_kernel.blade.topology import (
-    _template_from_cut,
     loft_mapped_strips,
     sample_region_polylines,
     section_cut_near,
 )
+from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut
 
 
 def _geo(key):

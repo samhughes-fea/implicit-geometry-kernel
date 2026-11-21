@@ -111,12 +111,12 @@ def test_cap_edge_passing_a_web_gets_a_station_and_stays_conforming():
 
     from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
     from implicit_geometry_kernel.blade.topology import (
-        _template_from_cut,
         loft_mapped_strips,
         sample_region_polylines,
         section_cut_near,
     )
     from implicit_geometry_kernel.blade.topology.crossings import key_crossing_stations
+    from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut
 
     # the cap's fore edge (0.20 + 0.04 z) passes the fore web (0.26) at z = 1.5
     geo = BladeGeometry(

@@ -32,6 +32,7 @@ from implicit_geometry_kernel.blade.topology.map_walk import (
     _te_wrap_arc as _te_wrap_arc,
     _xyz_at_frac,
     te_is_blunt,
+    te_ridge_point,
 )
 from implicit_geometry_kernel.blade.topology.map_loft import (
     _resample_keys,
@@ -68,7 +69,9 @@ def place_station_keys(cut, graph: ShellGraph, region_graph: WallRegionGraph, z:
     """Project authored anchors onto the TE-started skin-mid loop.
 
     Keys are ``(anchor_name, side)`` with ``side`` in ``suction`` / ``pressure``.
-    Blunt TE keys are the real edge corners; sharp TE is one shared ridge.
+    Blunt TE keys are the real edge corners. A sharp TE is one shared ridge,
+    the midpoint of those corners, so a short face cannot swap which corner
+    the seam stores.
     """
     pts = _skin_mid_loop(graph, z)
     keys: dict[tuple[str, str], np.ndarray] = {}
@@ -76,14 +79,16 @@ def place_station_keys(cut, graph: ShellGraph, region_graph: WallRegionGraph, z:
         return keys
     i_le, i_su, i_pr = _te_corner_indices(pts, cut)
     blunt = te_is_blunt(cut, pts) if te_blunt is None else bool(te_blunt)
-    if not blunt:
-        i_ridge = int(np.argmax(_chord_fracs(cut, pts)))
-        i_su = i_pr = i_ridge
     su, pr = _side_arcs(pts, cut, i_le, i_su, i_pr)
     su_f, pr_f = _chord_fracs(cut, su), _chord_fracs(cut, pr)
     anchors = dict(region_graph.evaluate_anchors(z))
-    keys[("te", "suction")] = pts[int(i_su)].copy()
-    keys[("te", "pressure")] = pts[int(i_pr)].copy()
+    if blunt:
+        keys[("te", "suction")] = pts[int(i_su)].copy()
+        keys[("te", "pressure")] = pts[int(i_pr)].copy()
+    else:
+        ridge = te_ridge_point(pts, cut, i_su, i_pr)
+        keys[("te", "suction")] = ridge
+        keys[("te", "pressure")] = ridge.copy()
     for side, arc, fr in (("suction", su, su_f), ("pressure", pr, pr_f)):
         keys[("le", side)] = arc[-1].copy()
         for name, frac in anchors.items():
@@ -196,6 +201,39 @@ def _merge_met_keys(keys: dict, template: ShellTopologyTemplate, tol: float) -> 
             keys[k1] = mid.copy()
 
 
+def _share_adjacent_skin_ends(out: dict[str, np.ndarray], template: ShellTopologyTemplate) -> None:
+    """Pin TE-side starts onto the previous skin end where the station must meet.
+
+    Same-key joins (web foot / region join) share one coordinate. When a
+    zero-length panel is omitted from ``out``, the next live region inherits
+    the previous end so the TE/LE seam does not open (BG-049). Web feet are
+    then snapped back onto the updated skin wall.
+    """
+    loop = [branch for branch in template.loop if not branch.wrap]
+    live = [(index, branch) for index, branch in enumerate(loop) if branch.name in out]
+    for (i0, left), (i1, right) in zip(live, live[1:]):
+        if left.side != right.side:
+            continue
+        same_key = _key_name(left.end) == _key_name(right.start)
+        omitted = i1 > i0 + 1
+        if not same_key and not omitted:
+            continue
+        pts = np.asarray(out[right.name], float).copy()
+        pts[0] = np.asarray(out[left.name][-1], float).copy()
+        out[right.name] = pts
+    skin = [out[branch.name] for branch in loop if branch.name in out]
+    if not skin:
+        return
+    wall = np.vstack(skin)
+    for web in template.webs:
+        if web.name not in out:
+            continue
+        pts = np.asarray(out[web.name], float).copy()
+        for end in (0, -1):
+            pts[end] = wall[int(np.argmin(np.linalg.norm(wall - pts[end], axis=1)))]
+        out[web.name] = pts
+
+
 def _odd_count(n: int) -> int:
     """Nodes per region: odd, so each region has an even number of edges.
 
@@ -227,9 +265,6 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
     if len(pts) < 3 or not keys:
         return out
     i_le, i_su, i_pr = _te_corner_indices(pts, cut)
-    if not wrap_on:
-        i_ridge = int(np.argmax(_chord_fracs(cut, pts)))
-        i_su = i_pr = i_ridge
     su, pr = _side_arcs(pts, cut, i_le, i_su, i_pr)
     arcs = {"suction": su, "pressure": pr}
 
@@ -297,6 +332,7 @@ def sample_region_polylines(cut, graph: ShellGraph, template: ShellTopologyTempl
         name = f"te_{tag}"
         if te_xyz is not None and name in out and len(out[name]):
             out[name][-1] = np.asarray(te_xyz, float)
+    _share_adjacent_skin_ends(out, template)
     skin = [out[b.name] for b in template.loop if b.name in out]
     if skin:
         wall = np.vstack(skin)

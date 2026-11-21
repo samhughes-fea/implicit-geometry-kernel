@@ -238,6 +238,52 @@ def _te_corner_indices(pts: np.ndarray, cut) -> tuple[int, int, int]:
     return i_le, i1, i0
 
 
+def te_wrap_for_mesh(cut, pts: np.ndarray, h: float) -> bool:
+    """Keep the wrap while one bay of length ``h`` can close it above 20°.
+
+    The apex of a face of width ``w`` gathered over a bay ``h`` is about
+    ``2 * atan((w / 2) / h)``. That stays at 20° when ``w = 2 * h * tan(10°)``.
+    A shorter face is a sharp ridge: both skin keys are the shared midpoint.
+    :func:`te_face_open` remains the test that the corners have not yet met.
+    """
+    if not te_face_open(cut, pts) or float(h) <= 0.0:
+        return False
+    return te_opening(cut, pts) >= 2.0 * float(h) * float(np.tan(np.radians(10.0)))
+
+
+def te_face_open(cut, pts: np.ndarray) -> bool:
+    """True while the two aft corners are distinct, so the trailing face is still a strip.
+
+    ``te_is_blunt`` still names a flatback. A shorter face keeps its wrap until
+    the corners meet, which is the same test :func:`te_ridge_point` uses to
+    return the single vertex.
+    """
+    if len(pts) < 3:
+        return False
+    _i_le, i_su, i_pr = _te_corner_indices(pts, cut)
+    chord = max(float(getattr(cut, "chord", 0.0) or 0.0), 1e-12)
+    if int(i_su) == int(i_pr):
+        return False
+    opening = float(np.linalg.norm(np.asarray(pts[int(i_su)], float) - np.asarray(pts[int(i_pr)], float)))
+    return opening > 1e-9 * chord
+
+
+def te_ridge_point(pts: np.ndarray, cut, i_su: int, i_pr: int) -> np.ndarray:
+    """The one point a sharp trailing edge shares.
+
+    The two aft corners of a short face tie on chord fraction, so ``argmax``
+    stores one corner and then the other along the span. Their midpoint does
+    not move when the indices swap, and it is the single vertex when the
+    corners already coincide.
+    """
+    a = np.asarray(pts[int(i_su)], float).reshape(-1).copy()
+    b = np.asarray(pts[int(i_pr)], float).reshape(-1).copy()
+    chord = max(float(getattr(cut, "chord", 0.0) or 0.0), 1e-12)
+    if int(i_su) == int(i_pr) or float(np.linalg.norm(a - b)) <= 1e-9 * chord:
+        return a
+    return 0.5 * (a + b)
+
+
 def _te_wrap_arc(pts: np.ndarray, a: np.ndarray, b: np.ndarray, i_le: int,
                  i_te: int | None = None) -> np.ndarray | None:
     """Skin-mid walk from TE suction to TE pressure that does not pass the LE.

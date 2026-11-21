@@ -6,9 +6,6 @@ from implicit_geometry_kernel.blade.topology.graph import (
     Region,
     WallRegionGraph,
     WebMember,
-    _cluster_web_members,
-    _cut_tc,
-    _regularise_anchors,
 )
 from implicit_geometry_kernel.blade.topology.signatures import (
     role_atom,
@@ -22,7 +19,6 @@ from implicit_geometry_kernel.blade.topology.template import (
     zone_region_graphs,
 )
 from implicit_geometry_kernel.blade.topology.map import (
-    _key_name,
     place_station_keys,
     sample_region_polylines,
     station_key_points,
@@ -32,20 +28,15 @@ from implicit_geometry_kernel.blade.topology.sizing import (
     size_field_h,
     station_live_thickness,
 )
-from implicit_geometry_kernel.blade.topology.map_loft import (
-    _quad_bowtie,
-    loft_mapped_strips,
-)
+from implicit_geometry_kernel.blade.topology.map_loft import loft_mapped_strips
 from implicit_geometry_kernel.blade.topology.map_walk import (
-    _chord_fracs,
-    _oml_te_xyz,
-    _te_wrap_arc,
     hold_te_blunt,
     te_blunt_eps,
     te_blunt_flags_for_cuts,
     te_blunt_of_cut,
     te_is_blunt,
     te_opening,
+    te_ridge_point,
 )
 from implicit_geometry_kernel.blade.topology.ribs import (
     ear_clip_ring,
@@ -58,8 +49,6 @@ from implicit_geometry_kernel.blade.topology.ribs import (
     tip_closure_polygons,
 )
 
-# Private helpers used by BladeGeometry.write_mid_surfaces
-from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut  # noqa: F401
 from implicit_geometry_kernel.blade.topology.network import (
     StationNetwork,
     WallBranch,
@@ -81,15 +70,6 @@ __all__ = [
     "WebBranch",
     "WebMember",
     "ZonedShellTopology",
-    "_chord_fracs",
-    "_cluster_web_members",
-    "_cut_tc",
-    "_key_name",
-    "_oml_te_xyz",
-    "_quad_bowtie",
-    "_regularise_anchors",
-    "_te_wrap_arc",
-    "_template_from_cut",
     "hold_te_blunt",
     "loft_mapped_strips",
     "ear_clip_ring",
@@ -116,6 +96,7 @@ __all__ = [
     "te_blunt_of_cut",
     "te_is_blunt",
     "te_opening",
+    "te_ridge_point",
     "templates_along",
     "zone_region_graphs",
 ]

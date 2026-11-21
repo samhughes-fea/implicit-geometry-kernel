@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Release note missing from 0.9.3: ``shell_mesh`` meshes rib and tip-closure
+  cells as triangles (unstructured fill with boundary recovery), not as one
+  polygon of five or more nodes per cell. A consumer that fanned polygons must
+  take a 3-node cell as it is. A test now checks that the triangles at each
+  station plane neither fold nor overlap (G19).
 - CI: relative Markdown links are checked (``scripts/check_links.py``); a
   ``consumers`` job runs downstream test suites against the PR's kernel when
   the ``CONSUMER_REPOS`` repository variable lists them; actions move to the

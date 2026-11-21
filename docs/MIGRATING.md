@@ -89,6 +89,7 @@ Import the conforming shell mesh and writers from the package or subpackages.
 | `implicit_geometry_kernel.mesh.polygon` / `polygon_voronoi` / `delaunay` | `mesh.fill` (`polygon_mesh_ring`, `triangulate_ring`, …) |
 | `mesh.mesh_rib_cells`, `mesh.mesh_shell`, `mesh.write_shell_msh` at the package root | `mesh.gmsh` (comparison only) |
 | `ShellMesh` per-element fields as lists | tuples; convert with `list(...)` where a list is needed |
+| rib and tip-closure cells: one polygon of 5 or more nodes each | triangles (`len(element) == 3`); a consumer that fanned polygons takes them as they are |
 
 Maintainer reports live under `docs/internal/` (stubs remain at the old paths).
 

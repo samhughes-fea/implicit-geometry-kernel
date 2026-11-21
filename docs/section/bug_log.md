@@ -61,7 +61,8 @@ Deviations are stated per entry.
 | [SG-030](#sg-030) | The skin mid-line folds back on itself at a blunt trailing edge (IEA 15 ~16 % span) | **Fixed** — wrap corners are the thickness-aligned run |
 | [SG-031](#sg-031) | A max-gauge rebuild with web_y frozen at the floor skin could not place a web foot | **Fixed** — fast check before the foot search; the raise stays and says how to re-resolve |
 | [SG-032](#sg-032) | `classify_trailing_edge` called a twisted flatback sharp | **Fixed** — frame-free test on convex-hull corners |
-| [SG-033](#sg-033) | A section twisted exactly 90 degrees cannot place its web feet | **Logged** — reproducer below, not fixed |
+| [SG-033](#sg-033) | A section twisted exactly 90 degrees cannot place its web feet | **Fixed** (0.9.6) — flapwise webs within 1° of the chord raise `InfeasibleSectionGeometry` |
+| [SG-034](#sg-034) | Station key points took LE and TE as the smallest and largest blade-frame x | **Fixed** (0.9.6) — chord fraction in the section frame |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -1831,8 +1832,8 @@ shell-graph loop all classify as built.
 
 **A section twisted exactly 90 degrees cannot place its web feet**
 
-**Status:** Logged (2026-11-21), not fixed
-**Area:** section build, web-foot placement (`section/cells/builders.py` `_node_of`)
+**Status:** Fixed (0.9.6)
+**Area:** section build, web-foot placement (`section/cells/builders.py` `_node_of`); check in `section/assembly/plan.py`
 
 ### Symptom
 `BladeGeometry([...twist=90...], "2D-F-LC-0R", ...).section_at(4.0)` raises
@@ -1845,6 +1846,46 @@ skin 4 mm, caps 8 mm, webs 4 mm at 0.18 and 0.48 chord, `pivot_fraction=0.3`.
 
 ### Notes
 Twist this large is outside normal blade tables (root twist is usually under 20
-degrees), so it is logged rather than fixed. A vertical chord is the likely
-trigger: some step still searches or sorts along global x.
+degrees).
 
+### Root cause
+`2D-F` webs are flapwise: they stay plumb in the blade frame whatever the twist.
+At 90 degrees the chord is plumb too, so each web runs along the chord instead of
+across the section. Its two feet then land on the leading and trailing edges and
+the skin cannot be split where they meet it. Between 89.9 and 90 degrees the
+failure shows as an open skin ring or a web foot off its junction. Chord-normal
+(`CN`) webs turn with the section and build at 90 degrees. So this is a request
+with no section, not a search along global x.
+
+### Fix
+`plan_section` raises `InfeasibleSectionGeometry` (with `web_index` and `web_x`)
+when a flapwise web lies within `FLAPWISE_WEB_MIN_ANGLE_TO_CHORD_DEG` (1 degree) of
+the chord, before any foot search. The message points to a chord-normal layout.
+
+### Verification
+`tests/section/test_flapwise_twist_limit.py`: 90, -90, 270 and 89.5 degrees raise.
+60 and 88.9 degrees still build with `2D-F`, and `2D-CN` builds at 90 degrees.
+
+## SG-034
+
+**Station key points took LE and TE as the smallest and largest blade-frame x**
+
+**Status:** Fixed (0.9.6)
+**Area:** `blade/topology/map.py` `station_key_points` (`BladeCut.key_points`, `LoftGeometry.key_points`)
+
+### Symptom
+At 30 degrees of twist on a 1.59 m NACA 0018 chord, `key_points()["LE"]` sat
+0.028 m from the true leading edge (about 1.7 % of chord). Found while re-checking
+the nearest / `argmin` sites for SG-018.
+
+### Root cause
+The OML points are in the blade frame. Under twist, the smallest x is a point on
+the skin, not the nose.
+
+### Fix
+LE and TE are the smallest and largest chord fractions in the section's own
+frame (`_chord_fracs`), the rule `map_walk` already used.
+
+### Verification
+`tests/test_blade_completeness.py::test_key_points_le_and_te_follow_the_twisted_chord`:
+at 30 degrees, LE and TE are the farthest pair of OML points.

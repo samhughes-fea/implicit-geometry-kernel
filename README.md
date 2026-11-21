@@ -187,7 +187,8 @@ see [docs/FORK.md](docs/internal/FORK.md) for where each part came from and how 
 pytest -q
 ```
 
-See [SCOPE](SCOPE.md) for what belongs in the kernel, [AGENTS](AGENTS.md) for
+See [ARCHITECTURE](ARCHITECTURE.md) for how the packages fit together,
+[SCOPE](SCOPE.md) for what belongs in the kernel, [AGENTS](AGENTS.md) for
 the repository rules, [decision records](docs/decisions/README.md) for past
 choices, [CONTRIBUTING](CONTRIBUTING.md) for every check CI runs, and
 [API stability](docs/conventions/api/STABILITY.md) for what counts as public.

@@ -127,7 +127,7 @@ class RunnerLifecycleMixin:
             self._airfoil,
             skin_thickness=self._t_skin,
             spar_cap_thickness=self._t_spar,
-            shear_web_thickness=self._t_web,  # type: ignore
+            shear_web_thickness=self._t_web,
             twist_rad=self._twist_rad,
             outputs=self._outputs,
             web_x_positions_m=web_x,

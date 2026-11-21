@@ -147,3 +147,23 @@ def test_insert_polygon_matches_shoelace():
         "_af": airfoil, "skin_thickness": 0.006, "x_start": 0.85,
     })())
     assert float(emitted.area) == pytest.approx(float(poly.area), rel=1e-6)
+
+
+def test_key_points_le_and_te_follow_the_twisted_chord():
+    # SG-034: under twist the smallest blade-frame x is not the leading edge.
+    from implicit_geometry_kernel import Airfoil, BladeGeometry, Station
+
+    stations = [
+        Station(0.0, 2.0, Airfoil.naca4("0018"), twist=30.0, pitch_axis=0.3),
+        Station(10.0, 1.0, Airfoil.naca4("0018"), twist=30.0, pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(
+        stations, "2D-F-LC-0R", skin_thickness=0.004, pivot_fraction=0.3,
+        spar_cap_thickness=0.008, shear_web_thickness=0.004, web_positions=(0.18, 0.48),
+    )
+    pts = geo.key_points(4.0)
+    oml = np.vstack([w.points for w in geo.section_at(4.0).walls_of("skin")])[:, :2]
+    gaps = np.linalg.norm(oml[:, None] - oml[None], axis=2)
+    i, j = np.unravel_index(int(np.argmax(gaps)), gaps.shape)
+    ends = {tuple(np.round(oml[i], 9)), tuple(np.round(oml[j], 9))}
+    assert {tuple(np.round(pts["LE"][:2], 9)), tuple(np.round(pts["TE"][:2], 9))} == ends

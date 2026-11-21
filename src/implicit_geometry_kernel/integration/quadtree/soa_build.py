@@ -61,7 +61,13 @@ def _refine_soa(
     # Centre φ stash: finite for early-stop leaves (probe[0]); NaN = must eval in attach.
     lctr_chunks: dict[str, list[np.ndarray]] = {lbl: [] for lbl in labels}
 
-    def _emit(mask, b, lev, cor, centers=None):
+    def _emit(
+        mask: np.ndarray,
+        b: np.ndarray,
+        lev: np.ndarray,
+        cor: dict[str, np.ndarray],
+        centers: dict[str, np.ndarray] | None = None,
+    ) -> None:
         lb_chunks.append(b[mask])
         lv_chunks.append(lev[mask])
         k = int(np.count_nonzero(mask))

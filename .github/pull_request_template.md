@@ -1,5 +1,9 @@
 ## What and why
 
+## Labels
+
+One type, one or more areas, and any flag that applies (`deprecation`, `golden-change`, `consumer-gap`, `release`); see [LABELS](../docs/conventions/LABELS.md).
+
 ## Checks
 
 - [ ] `pytest -q` passes; golden numbers unchanged, or `python scripts/snapshots.py --update` with the reason in `CHANGELOG.md`

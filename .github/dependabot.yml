@@ -4,6 +4,7 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    labels: [dependencies]
     groups:
       actions:
         patterns: ["*"]
@@ -11,6 +12,7 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    labels: [dependencies]
     # ruff and mypy are pinned on purpose; tool-drift.yml tracks their new releases.
     ignore:
       - dependency-name: ruff

@@ -1,0 +1,73 @@
+# Source of truth for this repository's labels; label-sync.yml applies it on main.
+# Rules: docs/conventions/LABELS.md. Labels not listed here are deleted.
+
+# Type: one per issue or pull request
+- name: bug
+  color: "d73a4a"
+  description: Wrong geometry, a crash, or a mesh that fails a check
+- name: enhancement
+  color: "a2eeef"
+  description: New geometry capability or option
+- name: documentation
+  color: "0075ca"
+  description: Manual, docstrings, examples text or the docs site
+- name: maintenance
+  color: "c5def5"
+  description: CI, tooling, refactors with no behaviour change
+- name: dependencies
+  color: "0366d6"
+  description: Dependency or GitHub Actions version updates
+
+# Area: one or more
+- name: "area: sdf"
+  color: "fef2c0"
+  description: Signed distance fields and CSG (sdf/)
+- name: "area: section"
+  color: "fef2c0"
+  description: One cross-section (section/, catalogue/)
+- name: "area: blade"
+  color: "fef2c0"
+  description: Lofted blade, cuts, shell graph, windIO (blade/)
+- name: "area: structure"
+  color: "fef2c0"
+  description: Spanwise members and schemes (structure/)
+- name: "area: mesh"
+  color: "fef2c0"
+  description: Shell mesh, tables and health (mesh/)
+- name: "area: docs-site"
+  color: "fef2c0"
+  description: Sphinx site, API reference, Pages
+- name: "area: examples"
+  color: "fef2c0"
+  description: Worked examples and figures
+
+# Flags: change how a pull request is reviewed
+- name: deprecation
+  color: "e99695"
+  description: Retires a public name; needs a release of warnings first
+- name: golden-change
+  color: "e99695"
+  description: Moves golden numbers on purpose; reason in the changelog
+- name: consumer-gap
+  color: "bfd4f2"
+  description: A consumer adapter gap (G table in the plan doc)
+- name: release
+  color: "0e8a16"
+  description: Release-prep pull request
+- name: needs-decision
+  color: "fbca04"
+  description: Waiting on the maintainer's decision
+
+# Closing
+- name: duplicate
+  color: "cfd3d7"
+  description: Already reported
+- name: wontfix
+  color: "ffffff"
+  description: Out of scope or not planned (see SCOPE.md)
+- name: question
+  color: "d876e3"
+  description: Usage question
+- name: good first issue
+  color: "7057ff"
+  description: Small and well defined

@@ -40,6 +40,8 @@ agents alike. [SCOPE.md](SCOPE.md) says what belongs here;
 
 ## Working conventions
 
+- Label every issue and PR per [the label rules](docs/conventions/LABELS.md):
+  one type, its areas, and any review flag. Never remove `needs-decision`.
 - Work through pull requests; `main` is protected. Keep one concern per commit.
 - Run the checks in [CONTRIBUTING.md](CONTRIBUTING.md) before pushing. After a
   failure, re-run only what failed while fixing it.

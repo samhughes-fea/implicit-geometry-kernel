@@ -2,6 +2,8 @@
 
 ## 0.9.4 (2026-11-21)
 
+- Labels: ``.github/labels.yml`` defines a type / area / flag scheme, synced by
+  ``label-sync.yml`` from ``main``; rules in ``docs/conventions/LABELS.md``.
 - Tags: [Tags and releases](docs/conventions/RELEASING.md) formalises them
   (``v0.9.N`` / ``v0.9.NrcM`` only, on a ``main`` merge commit, never moved or
   deleted, no working tags, maintainer only). ``release.yml`` now refuses a tag

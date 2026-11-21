@@ -1,0 +1,22 @@
+name: label-sync
+
+# Applies .github/labels.yml to the repository's labels. Labels not in the file
+# are deleted (rules: docs/conventions/LABELS.md).
+on:
+  push:
+    branches: [main]
+    paths: [".github/labels.yml"]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: EndBug/label-sync@v2
+        with:
+          config-file: .github/labels.yml
+          delete-other-labels: true

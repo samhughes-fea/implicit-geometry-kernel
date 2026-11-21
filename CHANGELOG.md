@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.6 (unreleased)
+
+- A flapwise web within 1 degree of the chord (a section twisted 90 degrees)
+  raises ``InfeasibleSectionGeometry`` naming the web and pointing to a
+  chord-normal layout, instead of a web-foot or open-ring error deep in the
+  build (SG-033).
+- ``key_points()`` takes LE and TE by chord fraction in the section frame; under
+  twist they were the smallest and largest blade-frame x, 1.7 % of chord off at
+  30 degrees (SG-034).
+
 ## 0.9.5 (2026-11-21)
 
 - Release note: the ``v0.9.4`` tag and GitHub release point at the 0.9.3

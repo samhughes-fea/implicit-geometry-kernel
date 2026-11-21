@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Docs: the stub pages left at the old report paths (``docs/REFACTOR_PLAN.md``,
+  ``docs/FORK.md``, ``docs/section/reports/*``, ``docs/blade/reports/*``) are
+  removed; links point into ``docs/internal/``. Public docs outside
+  ``docs/internal/FORK.md`` no longer name the fork source. The private-name
+  test also bans the private tidal rotor's name.
 - Release note missing from 0.9.3: ``shell_mesh`` meshes rib and tip-closure
   cells as triangles (unstructured fill with boundary recovery), not as one
   polygon of five or more nodes per cell. A consumer that fanned polygons must
@@ -820,7 +825,7 @@ import that leaf. Public docs prefer `Airfoil.to_sdf()` and `SpanWeb`.
 
 The kernel is now the geometry of blade and wing cross-sections only, regrouped into
 `blade`, `section`, `sdf`, `frames`, `integration` and `contract`. See
-[docs/FORK.md](docs/FORK.md) for the full map from the old names.
+[docs/FORK.md](docs/internal/FORK.md) for the full map from the old names.
 
 - `SYSTEM_TYPE_KEYS`, `resolve_system_type` and `MidSurface` are exported from the top
   level.

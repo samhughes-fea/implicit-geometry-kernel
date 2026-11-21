@@ -819,7 +819,7 @@ Cap-end junctions stay at emit (`_insert_web_cap_junction_nodes`).
 `intersect_open_polylines_2d` remains for tools; it is not topology truth.
 
 Design record:
-[`reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md`](reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md).
+[`reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md`](../internal/section/reports/SG009_JUNCTION_PRIMITIVES_SPIKE.md).
 
 ### Verification
 
@@ -1363,12 +1363,12 @@ Reading the status plan as a to-do list implied further architecture steps.
 Phase 2d still described string-prefix wall dispatch as “today”; the efficiency
 report said “Shapely remains”; STEP/`[cad]` was still “wait until after step 6”;
 the public package map advertised `[mesh]` (`gmsh`) against the written decision
-not to advertise it. A reader could also infer a live import of blade-structure
+not to advertise it. A reader could also infer a live import of the fork source's
 `section_geometry`.
 
 ### Evidence
 
-[docs/REFACTOR_PLAN.md](../REFACTOR_PLAN.md) status table already marked steps
+[docs/REFACTOR_PLAN.md](../internal/REFACTOR_PLAN.md) status table already marked steps
 1–8 **Done** and step 9 **Declined**; CHANGELOG 0.7.0 closed the programme.
 `pyproject.toml` runtime deps are numpy and numba only. `SectionGeometry` has
 one definition (`section/spec/runner.py`).
@@ -1390,7 +1390,7 @@ are `station_webs` / `station_family`.
 ### Verification
 
 Grep of live docs: no “Today kinds are still”, no “wait until after step 6”, no
-public `mesh extra` edge. One `SectionGeometry` class. No `blade_structure`
+public `mesh extra` edge. One `SectionGeometry` class. No fork-source
 import in `src/`.
 
 ## SG-021

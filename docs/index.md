@@ -28,5 +28,5 @@ integration/README.md
 :maxdepth: 1
 
 conventions/README.md
-REFACTOR_PLAN.md
+internal/REFACTOR_PLAN.md
 ```

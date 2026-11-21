@@ -91,7 +91,7 @@ Import the conforming shell mesh and writers from the package or subpackages.
 | `ShellMesh` per-element fields as lists | tuples; convert with `list(...)` where a list is needed |
 | rib and tip-closure cells: one polygon of 5 or more nodes each | triangles (`len(element) == 3`); a consumer that fanned polygons takes them as they are |
 
-Maintainer reports live under `docs/internal/` (stubs remain at the old paths).
+Maintainer reports live under `docs/internal/`. The stub pages at the old paths were removed in 0.9.4.
 
 ## 0.9.2 to 0.9.3: top-level barrel trim (K5)
 

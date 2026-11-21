@@ -118,7 +118,7 @@ mesh: eccentricity is `LaminateOffsetRegion.eccentricity_m` for the consumer
 laminate. `StackThickness` is still a **step** (8 mm cap jump on the 2D-F fixture);
 that jump is a thickness oracle, not the mid-surface field.
 
-Numbers and parked G10/G11 notes: [`MERGED_SHELL_GAPS.md`](../reports/MERGED_SHELL_GAPS.md).
+Numbers and parked G10/G11 notes: [`MERGED_SHELL_GAPS.md`](../../internal/section/reports/MERGED_SHELL_GAPS.md).
 
 `ShellMidlineStrip` is unchanged. Shell loft uses `shell_strips_from_graph` /
 `shell_graph` (no extra cap surface). If a run name is missing at a station,
@@ -310,5 +310,5 @@ equals intercept `DroppedWeb.index` ([blade bug log](../../blade/bug_log.md)).
 
 G10/G11 stay out of this kernel (closed here: consumer thin-wall; PCOMP).
 G4 keeps the nearest-run `T` step (no geometric taper).
-([`MERGED_SHELL_GAPS.md`](../reports/MERGED_SHELL_GAPS.md)).
+([`MERGED_SHELL_GAPS.md`](../../internal/section/reports/MERGED_SHELL_GAPS.md)).
 Do not treat cores or inserts as missing from `shell_graph()`.

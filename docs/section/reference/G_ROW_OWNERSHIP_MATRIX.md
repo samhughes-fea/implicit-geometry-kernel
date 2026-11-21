@@ -159,5 +159,5 @@ products). Unification is shared **input** (recipes), not a collapsed folder.
 
 - [`ADR_ZERO_WEB_SHELL_MESH.md`](ADR_ZERO_WEB_SHELL_MESH.md) — zero-web shell handoff
 - [blade-concept taxonomy](../../blade/concepts/taxonomy.md) — catalogue decode
-- [`../reports/DUAL_REP_ACCEPTANCE.md`](../reports/DUAL_REP_ACCEPTANCE.md) — polygon vs SDF
+- [`../reports/DUAL_REP_ACCEPTANCE.md`](../../internal/section/reports/DUAL_REP_ACCEPTANCE.md) — polygon vs SDF
 - Module READMEs under [`../README.md`](../docs_index.md) module pages

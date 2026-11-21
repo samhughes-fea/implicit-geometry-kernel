@@ -138,9 +138,12 @@ def section_properties_S(
         Cx_total = sum(p['A'] * p['Cx'] for p in polygon_props) / A_total
         Cy_total = sum(p['A'] * p['Cy'] for p in polygon_props) / A_total
 
-        Ixx_total = sum(p['Ixx'] for p in polygon_props) - sum(p['A'] * (p['Cy'])**2 for p in polygon_props) + A_total * (Cy_total)**2
-        Iyy_total = sum(p['Iyy'] for p in polygon_props) - sum(p['A'] * (p['Cx'])**2 for p in polygon_props) + A_total * (Cx_total)**2
-        Ixy_total = sum(p['Ixy'] for p in polygon_props) - sum(p['A'] * p['Cx'] * p['Cy'] for p in polygon_props) + A_total * Cx_total * Cy_total
+        # Each part's moments are about the S-frame origin already, so they add
+        # (SG-036: shifting them through the combined centroid dropped each
+        # part's offset from it).
+        Ixx_total = sum(p['Ixx'] for p in polygon_props)
+        Iyy_total = sum(p['Iyy'] for p in polygon_props)
+        Ixy_total = sum(p['Ixy'] for p in polygon_props)
 
         return (float(A_total), (float(Cx_total), float(Cy_total)), float(Ixx_total), float(Iyy_total), float(Ixy_total))
 

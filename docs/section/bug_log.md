@@ -64,6 +64,7 @@ Deviations are stated per entry.
 | [SG-033](#sg-033) | A section twisted exactly 90 degrees cannot place its web feet | **Fixed** (0.9.6) — flapwise webs within 1° of the chord raise `InfeasibleSectionGeometry` |
 | [SG-034](#sg-034) | Station key points took LE and TE as the smallest and largest blade-frame x | **Fixed** (0.9.6) — chord fraction in the section frame |
 | [SG-035](#sg-035) | Web ends snapped to the nearest skin vertex with no tolerance | **Logged** (2026-11-21) — measured, fix proposed |
+| [SG-036](#sg-036) | `section_properties_S` on a MultiPolygon lost each part's offset from the combined centroid | **Fixed** (0.9.6) — parts' origin moments add |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -1947,3 +1948,33 @@ Everywhere else the move is exactly 0: the foot is already a skin vertex.
 
 This moves mesh nodes in the three cases above, so the reference-mesh tests and
 any golden mesh counts there need review in the same PR.
+
+## SG-036
+
+**`section_properties_S` on a MultiPolygon lost each part's offset from the combined centroid**
+
+**Status:** Fixed (0.9.6)
+**Area:** `integration/shoelace.py` `section_properties_S` (public in `implicit_geometry_kernel.integration`)
+
+### Symptom
+Two unit squares centred at x = -1.5 and +1.5 gave Iyy = 0.167 m^4 about the
+S-frame origin, not 4.667 m^4. Found by a new closed-form test; no test covered
+the MultiPolygon branch before.
+
+### Root cause
+Each part's moments come back about the origin. The branch subtracted
+`A_i c_i^2` and added `A c^2` (the combined centroid), which only gives the right
+answer when every part shares the combined centroid.
+
+### Impact
+The section property pipeline does not use this branch:
+`section/properties/polygons.py` `_origin_moments` sums the parts itself, so
+section results and golden numbers do not change. Only direct callers of
+`integration.section_properties_S` / `section_properties_Sprime` with a
+MultiPolygon got wrong second moments.
+
+### Fix
+Sum the parts' origin moments.
+
+### Verification
+`tests/test_shoelace_and_csg_kernels.py::test_multipolygon_sums_its_parts`.

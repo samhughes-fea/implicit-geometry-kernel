@@ -12,6 +12,15 @@
 - Bug log: SG-018 now classifies all 51 nearest / ``argmin`` sites. Three sites
   move web ends onto the skin with no tolerance (up to 48 mm on one reference
   mesh); they are logged as SG-035 with a proposed fix.
+- ``integration.section_properties_S`` (and ``section_properties_Sprime``) on a
+  ``MultiPolygon``: second moments are the sum of the parts' origin moments; they
+  dropped each part's offset from the combined centroid (SG-036). Section
+  properties were not affected: they sum parts separately.
+- ``sdf.kernels.csg.union_all`` / ``intersect_all`` accept a mix of scalar and
+  array fields.
+- Tests: closed-form tests for the shoelace properties and SDF CSG kernels, the
+  spar-cap run-out gate and placement collision checks (previously 0 to 46 %
+  covered).
 - Typing: ``integration`` is strict; ``sdf``, ``section`` and ``blade`` have
   checked bodies and no stale ignores. ``compute_section_properties`` has
   overloads, so ``with_mesh=True`` callers get a 3-tuple type.

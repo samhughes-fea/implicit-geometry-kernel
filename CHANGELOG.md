@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Docs site: ``docs/api/`` documents each package's ``__all__`` with autodoc
+  (furo theme); ``docs.yml`` builds the site on every PR with warnings as
+  errors and publishes it to GitHub Pages from ``main``. A few docstrings were
+  fixed so they render.
+- ``mesh/shell/shell_mesh.py`` is split into ``stations``, ``spanwise``,
+  ``section_blend`` and ``orient`` beside it, and ``mesh/tables/tables.py``
+  into ``records``, ``geometry``, ``checks`` and ``dump``. No behaviour change:
+  ``shell_mesh`` and ``tables`` still expose every helper they had, but a
+  monkeypatch of a module-level name must now target the module that uses it.
 - ``classify_trailing_edge`` no longer assumes the chord lies along +x: a
   twisted flatback classified ``sharp`` (SG-032). The trailing edge is now the
   sharpest convex-hull corner, blunt when a neighbouring hull corner is also a

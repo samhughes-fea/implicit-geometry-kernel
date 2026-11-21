@@ -74,7 +74,7 @@ def offset(f, amount):
 
 
 def shell(f, thickness):
-    """Extract a shell of given thickness around a surface.  φ_shell = |φ_f| − thickness/2."""
+    """Extract a shell of given thickness around a surface.  ``φ_shell = |φ_f| − thickness / 2``."""
     half = thickness / 2.0
     def _op(x, y):
         return np.abs(_eval(f, x, y)) - half

@@ -1,8 +1,9 @@
 # implicit-geometry-kernel
 
 This HTML site is `sphinx-build` over the **same** Markdown already in the
-repository. GitHub still renders those files in the code tab; there is no
-`docs/manual/` copy and no autodoc dump of `src/`.
+repository, plus an [API reference](api/index.md) generated from the docstrings
+of each package's public names. GitHub still renders the Markdown in the code
+tab; there is no `docs/manual/` copy.
 
 Start at the [documentation hub](README.md) or the [glossary](glossary.md).
 
@@ -21,6 +22,7 @@ catalogue/README.md
 contract/README.md
 extract/README.md
 integration/README.md
+api/index.md
 ```
 
 ```{toctree}

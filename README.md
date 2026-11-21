@@ -11,7 +11,7 @@ this geometry; they must not keep a parallel aerofoil, planform, or layout
 model. The kernel does not own constitutive plies, stiffness, loads, solvers,
 or a mesh driver.
 
-[Manual](docs/README.md) · [examples](examples/README.md) · [glossary](docs/glossary.md) · [frames](docs/frames/README.md#which-array) · [catalogue WX-Y-Z-NR](docs/blade/concepts/taxonomy.md)
+[Docs site](https://samhughes-fea.github.io/implicit-geometry-kernel/) (manual and API reference) · [Manual](docs/README.md) · [examples](examples/README.md) · [glossary](docs/glossary.md) · [frames](docs/frames/README.md#which-array) · [catalogue WX-Y-Z-NR](docs/blade/concepts/taxonomy.md)
 
 ## Install
 

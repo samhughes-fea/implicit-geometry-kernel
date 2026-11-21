@@ -6,18 +6,23 @@ laminate and section models build those on top of it.
 
 Public API
 ----------
+
+========== ==================================================================
 Airfoils   Airfoil (from coordinates, ``Airfoil.naca4``, ``Airfoil.ellipse``)
 Catalogue  SYSTEM_TYPE_KEYS and resolve_system_type (WX-Y-Z-NR tokens)
 Concept    BladeConcept (catalogue or parametric layout plus spanwise extras)
 Station    Station (span position, chord, twist, pitch axis, offset),
            SkinRegion, ShearWeb
-Loft       BladeGeometry (layout lofted between stations; optional span tables),
-           interpolate(z), section_at(z) -> SectionCut, oml_polyline, oml_sdf.
-           Scalars interpolate linearly; airfoils stay 2-D linear blends.
-Section    implicit_geometry_kernel.section — one-station SectionSpec / SectionGeometry
+Loft       BladeGeometry (layout lofted between stations; optional span
+           tables), interpolate(z), section_at(z) -> SectionCut,
+           oml_polyline, oml_sdf. Scalars interpolate linearly; airfoils
+           stay 2-D linear blends.
+Section    implicit_geometry_kernel.section: one-station SectionSpec /
+           SectionGeometry
 Feature    FieldSample.meta ids, GeometrySolver, wall_meta / wall_mid_sdf,
            shell_graph / ShellGraph, LockedLoftPlan / resample_locked,
            WallRegionGraph / loft_mapped_strips.
+========== ==================================================================
 
 Rare topology helpers (``TopologyDiff``, ``ShellTopologyTemplate``, …) live under
 ``implicit_geometry_kernel.blade`` / ``blade.topology``. Importing them from the

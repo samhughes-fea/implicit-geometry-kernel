@@ -255,7 +255,7 @@
  "implicit_geometry_kernel.contract.InfeasibleSectionGeometry": {
   "kind": "class",
   "members": {},
-  "signature": "(*args, web_index: 'int | None' = None, web_x: 'float | None' = None)"
+  "signature": "(*args: 'object', web_index: 'int | None' = None, web_x: 'float | None' = None) -> 'None'"
  },
  "implicit_geometry_kernel.contract.LaminateOffsetRegion": {
   "kind": "class",

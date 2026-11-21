@@ -152,7 +152,7 @@ def test_span_mids_project_the_interior_together():
 def test_off_station_seam_blends_the_station_keys(monkeypatch):
     import importlib
 
-    mesh_mod = importlib.import_module("implicit_geometry_kernel.mesh.shell.shell_mesh")
+    mesh_mod = importlib.import_module("implicit_geometry_kernel.mesh.shell.section_blend")
 
     def refuse(*_args, **_kwargs):
         raise AssertionError("off-station seam built a section")

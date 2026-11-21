@@ -8,10 +8,10 @@ Conforming shell meshes, fills, quality metrics, and health classification.
 
 | Subpackage | Role |
 |---|---|
-| `shell/` | Blade shell mesh (`shell_mesh`, stations, recipe) |
+| `shell/` | Blade shell mesh: `shell_mesh.py` (entry point, `ShellMesh`, `MeshRecipe`), `stations.py`, `spanwise.py`, `section_blend.py`, `orient.py` |
 | `health/` | Flag registry (`run_mesh_health`, `HealthHit`) — classify only |
 | `quality/` | Element metrics and `MeshCheck` rollups |
-| `tables/` | Edges, corners, seams, CSV dump |
+| `tables/` | Mesh tables: `records.py`, `geometry.py` (edges, corners), `checks.py` (failure queries), `dump.py` (CSV), `tables.py` (`assemble`) |
 | `export/` | VTK writers |
 | `fill/` | Polygon Voronoi and Steiner Delaunay |
 | `gmsh/` | Optional Gmsh comparison (`[mesh]` extra) |

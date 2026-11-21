@@ -14,11 +14,11 @@ def locate_shell_vertex(geo, vid, zs, n_chord: int = 8) -> np.ndarray:
     straight chord between stations. Infeasible stations are omitted.
     """
     from implicit_geometry_kernel.blade.topology import (
-        _key_name,
-        _template_from_cut,
         place_station_keys,
         section_cut_near,
     )
+    from implicit_geometry_kernel.blade.topology.map import _key_name
+    from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut
 
     out = []
     for z in np.asarray(zs, float).ravel():

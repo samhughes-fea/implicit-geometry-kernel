@@ -15,9 +15,11 @@ from _shared.plotting import (
 )
 from implicit_geometry_kernel.blade.topology.network import wall_meta_from_cut
 from implicit_geometry_kernel.blade.topology import (
-    _chord_fracs, _template_from_cut, role_atom,
+    role_atom,
     sample_region_polylines,
 )
+from implicit_geometry_kernel.blade.topology.map_walk import _chord_fracs
+from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut
 from implicit_geometry_kernel.contract import InfeasibleSectionGeometry
 from implicit_geometry_kernel.integration.quadtree import build_shared_quadtree, leaf_bounds
 from implicit_geometry_kernel.integration.quadtree.quadrature import (

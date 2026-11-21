@@ -20,11 +20,17 @@ def _as_xy(coords) -> np.ndarray:
     return np.ascontiguousarray(arr[:, :2], dtype=float)
 
 
-def _signed_area(xy: np.ndarray) -> float:
-    if xy.shape[0] < 3:
-        return 0.0
+def signed_area(xy: np.ndarray) -> float:
+    """Shoelace area of a ring. Fewer than three vertices is the caller's concern."""
     x, y = xy[:, 0], xy[:, 1]
     return 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
+
+
+def _signed_area(xy: np.ndarray) -> float:
+    """Shoelace area; a ring shorter than a triangle is empty (area 0)."""
+    if xy.shape[0] < 3:
+        return 0.0
+    return signed_area(xy)
 
 
 def _hausdorff(a: np.ndarray, b: np.ndarray) -> float:

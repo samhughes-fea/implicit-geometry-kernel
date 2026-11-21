@@ -16,27 +16,13 @@ import numpy as np  # noqa: E402
 from matplotlib.colors import BoundaryNorm, ListedColormap, to_rgba  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
-from implicit_geometry_kernel.plotting.palette import NAVY, RED, TEAL  # noqa: E402
+from implicit_geometry_kernel.plotting.palette import NAVY, RED, RETRO_PANELS, TEAL, panel_colour  # noqa: E402
 from implicit_geometry_kernel.section.boundary import LineString, OPS  # noqa: E402
 
 TEXT_SECONDARY = "#52514e"
 REFERENCE = "#0b0b0b"  # closed-form references are drawn in ink, dashed
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#6250d6"]
 WALL_COLOURS = {"skin": NAVY, "cap": RED, "web": TEAL}
-# rust, mustard, olive, teal, burgundy, ochre, slate, terracotta,
-# forest, gold, brick, plum, cadet, sienna, pine, wine,
-# dusty blue, copper, sage, maroon, khaki, indigo, rust-rose, olive-grey,
-# pewter, apricot, moss, claret, sand, steel, persimmon, umber
-RETRO_PANELS = (
-    "#c45c26", "#d4a017", "#6b7f3a", "#2e6b6a",
-    "#8b2942", "#c4893c", "#4a6080", "#b85c38",
-    "#3d5c45", "#c9a227", "#9c3b2a", "#6e4a7a",
-    "#3d6e7a", "#a0673b", "#2f4f3e", "#7a3a4a",
-    "#5b7fa6", "#b87333", "#7a9e72", "#6b1c2a",
-    "#c2b280", "#3f3d7a", "#c46b6b", "#6d7058",
-    "#6e7a86", "#e09a5a", "#4f6f4a", "#7b2d4e",
-    "#d8c08a", "#4a6678", "#d0603a", "#5c4033",
-)
 MESH_EDGE = "#1f2937"
 MESH_EDGE_ALPHA = 0.82
 MESH_LW_3D = 0.40
@@ -44,21 +30,12 @@ MESH_LW_FLAT = 0.28
 MESH_LW_RIB = MESH_LW_3D
 
 
-def panel_colour(role: str) -> str:
-    """Stable loft colour for a region / web / rib role (not draw order)."""
-    key = str(role)
-    h = 0
-    for ch in key:
-        h = (h * 16777619) ^ ord(ch)
-    return RETRO_PANELS[h % len(RETRO_PANELS)]
-
-
 def mesh_edge_rgba(n: int):
     """Broadcast loft-quad stroke for ``n`` faces."""
     return np.broadcast_to(to_rgba(MESH_EDGE, MESH_EDGE_ALPHA), (max(int(n), 0), 4)).copy()
 
 
-def add_faces_3d(ax, faces, **kwargs):
+def add_faces_3d(ax, faces, *, scale: bool = True, **kwargs):
     """Add polygons to a 3D axes and set the data limits from their real vertices.
 
     Matplotlib pads faces of unequal vertex count (loft quads next to rib polygons) into
@@ -66,14 +43,22 @@ def add_faces_3d(ax, faces, **kwargs):
     the limits pick up whatever was in that memory: wrong limits, or "Axis limits cannot
     be NaN or Inf". The collection is therefore added without autoscaling and the limits
     come from the vertices themselves.
+
+    A ``(n, k, 3)`` array is one equal-length sheet (the quad mesh). ``scale=False``
+    leaves limits to the caller, which already holds that array.
     """
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-    faces = [np.asarray(f, float) for f in faces]
-    coll = Poly3DCollection(faces, **kwargs)
+    if isinstance(faces, np.ndarray) and faces.ndim == 3:
+        verts = np.asarray(faces, float)
+        pts = verts.reshape(-1, 3)
+    else:
+        verts = [np.asarray(f, float) for f in faces]
+        pts = np.concatenate(verts) if verts else np.zeros((0, 3))
+    coll = Poly3DCollection(verts, **kwargs)
     ax.add_collection3d(coll, autolim=False)
-    pts = np.concatenate(faces)
-    ax.auto_scale_xyz(pts[:, 0], pts[:, 1], pts[:, 2], had_data=ax.has_data())
+    if scale and len(pts):
+        ax.auto_scale_xyz(pts[:, 0], pts[:, 1], pts[:, 2], had_data=ax.has_data())
     return coll
 
 
@@ -189,12 +174,12 @@ def note(fig, text: str) -> None:
     fig.text(0.01, 0.005, text, fontsize=7.5, color=TEXT_SECONDARY, ha="left", va="bottom")
 
 
-def save(fig, script: str, name: str) -> Path:
+def save(fig, script: str, name: str, *, dpi: int = 150) -> Path:
     """Write ``figures/<name>.png`` next to ``script`` and close the figure."""
     out = Path(script).resolve().parent / "figures"
     out.mkdir(exist_ok=True)
     path = out / f"{name}.png"
-    fig.savefig(path, dpi=150, bbox_inches="tight")
+    fig.savefig(path, dpi=dpi, bbox_inches="tight")
     plt.close(fig)
     print(f"wrote {path.relative_to(Path(script).resolve().parents[2])}")
     return path

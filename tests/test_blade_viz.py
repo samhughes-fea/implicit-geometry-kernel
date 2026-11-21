@@ -41,7 +41,7 @@ from implicit_geometry_kernel.section.boundary.labels import (  # noqa: E402
 )
 from implicit_geometry_kernel import Airfoil, BladeGeometry, Station  # noqa: E402
 from implicit_geometry_kernel.blade.concepts import BladeConcept  # noqa: E402
-from implicit_geometry_kernel.blade.topology import _chord_fracs  # noqa: E402
+from implicit_geometry_kernel.blade.topology.map_walk import _chord_fracs  # noqa: E402
 
 
 def test_is_suction_role_matches_authored_loop_names():

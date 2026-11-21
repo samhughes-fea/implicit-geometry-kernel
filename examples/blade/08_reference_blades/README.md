@@ -7,14 +7,13 @@ catalogue, lofted and cut with the kernel. This pass uses the five windIO files
 made-up planform (not these YAML files) live in [09_blade_concepts](../09_blade_concepts/).
 
 The catalogue is the **only** git history those YAML/PDF files belong in. This project
-clones it locally as `reference_blades/` and **gitignores** that path. Do not commit
-`.gitmodules`, a submodule gitlink, or copies of the files (see that repo's README).
+records that checkout as the `reference_blades/` submodule, not as copied files.
 
-If the catalogue is missing the script prints how to clone it and exits 0, so
+If the catalogue is missing the script prints how to initialise it and exits 0, so
 `scripts/run_examples.py` stays green in CI.
 
 ```bash
-git clone https://github.com/samhughes-fea/reference-blades.git reference_blades
+git submodule update --init reference_blades
 pip install -e ".[plots,reference]"
 python examples/blade/08_reference_blades/reference_blades.py
 ```

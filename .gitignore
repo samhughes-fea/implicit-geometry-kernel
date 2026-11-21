@@ -37,3 +37,9 @@ examples/blade/08_reference_blades/figures/**/*.msh
 examples/blade/09_blade_concepts/figures/**/*.obj
 examples/blade/09_blade_concepts/figures/**/*.npz
 examples/blade/09_blade_concepts/figures/**/*.vtk
+
+# example 15 mesh dumps (PNG stays tracked)
+examples/blade/15_shell_mesh/figures/**/*.csv
+examples/blade/15_shell_mesh/figures/**/*.vtk
+examples/blade/15_shell_mesh/figures/**/*.txt
+

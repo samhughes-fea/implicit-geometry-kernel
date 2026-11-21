@@ -18,6 +18,7 @@ from implicit_geometry_kernel.section.boundary.polygon_ops import (
     OFFSET_MITRE_LIMIT,
     OFFSET_QUAD_SEGS,
     PolygonOps,
+    _signed_area,
     oriented_rings,
 )
 
@@ -47,11 +48,6 @@ def _map_xy(geom, fn):
         xy = fn(np.array([[float(geom.x), float(geom.y)]], float))[0]
         return Point(float(xy[0]), float(xy[1]))
     return geom
-
-
-def _signed_area(xy: np.ndarray) -> float:
-    x, y = xy[:, 0], xy[:, 1]
-    return 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
 
 
 class GeosPolygonOps:

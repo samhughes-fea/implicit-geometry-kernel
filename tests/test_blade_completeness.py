@@ -44,6 +44,23 @@ def test_ply_drop_ramps_thickness_field():
     assert 0.003 < edge < 0.013
 
 
+def test_thickness_at_matches_scalar_on_a_grid():
+    drop = PlyDrop("cap_drop", s0=0.2, s1=0.5, z0=2.0, z1=6.0, thickness=0.01, taper=0.2)
+    geo = _geo(ply_drops=(drop,))
+    zs = np.linspace(0.0, 10.0, 11)
+    ss = np.linspace(0.0, 1.0, 9)
+    zz, ss_grid = np.meshgrid(zs, ss, indexing="ij")
+    batched = geo.thickness_at(zz, ss_grid)
+    scalar = np.empty_like(batched)
+    for i, z in enumerate(zs):
+        for j, s in enumerate(ss):
+            t = float(geo._skin(float(z)))
+            for d in geo.ply_drops:
+                t += d.extra(float(z), float(s))
+            scalar[i, j] = t
+    np.testing.assert_allclose(batched, scalar, rtol=0.0, atol=1e-15)
+
+
 def test_key_points_le_te_caps_webs():
     pts = _geo().key_points(5.0)
     assert "LE" in pts and "TE" in pts
@@ -71,6 +88,22 @@ def test_batched_query_and_validate():
     assert out["frame"].shape == (2, 3, 3)
     assert out["member"].shape == (2,)
     assert geo.validate() == []
+
+
+def test_query_thickness_matches_thickness_at_at_unique_stations():
+    geo = _geo()
+    cut = geo.section_at(5.0)
+    pts = np.vstack([w.points[:: max(1, len(w.points) // 4)] for w in cut.walls_of("skin")])
+    if pts.shape[1] == 2:
+        pts = np.column_stack([pts, np.full(len(pts), cut.z)])
+    out = geo.query(pts)
+    chord, twist, pitch, _, _ = geo.interpolate(float(cut.z))
+    s = np.clip((pts[:, 0] + pitch * chord) / max(chord, 1e-15), 0.0, 1.0)
+    np.testing.assert_allclose(out["thickness"], geo.thickness_at(pts[:, 2], s))
+    c, si = np.cos(np.radians(twist)), np.sin(np.radians(twist))
+    expected = np.array([[c, -si, 0.0], [si, c, 0.0], [0.0, 0.0, 1.0]])
+    for frame in out["frame"]:
+        np.testing.assert_allclose(frame, expected)
     from implicit_geometry_kernel import TransverseMember
 
     broken = BladeGeometry(

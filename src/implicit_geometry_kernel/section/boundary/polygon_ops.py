@@ -11,6 +11,8 @@ from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 
+from implicit_geometry_kernel.geos.geom import signed_area as _signed_area
+
 OFFSET_QUAD_SEGS = 16
 OFFSET_JOIN_STYLE = 2  # mitre
 OFFSET_MITRE_LIMIT = 5.0
@@ -38,11 +40,6 @@ class PolygonOps(Protocol):
     def envelope(self, minx: float, miny: float, maxx: float, maxy: float) -> Any: ...
     def orient(self, poly: Any, *, sign: float = 1.0) -> Any: ...
     def translate(self, geom: Any, xoff: float, yoff: float) -> Any: ...
-
-
-def _signed_area(xy: np.ndarray) -> float:
-    x, y = xy[:, 0], xy[:, 1]
-    return 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
 
 
 def oriented_rings(geom) -> list[np.ndarray]:

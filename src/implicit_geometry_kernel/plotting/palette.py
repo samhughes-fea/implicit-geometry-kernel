@@ -2,10 +2,12 @@
 
 Two jobs:
 
-1. **One palette.** Region colours are keyed on the region label, so
-   ``shear_web_0`` is the same green in the anatomy figure, the expression-tree
-   figure and the fly-through. The accent tokens match the conference deck
-   chrome (``docs/conferences/CDFAM-2026``), so a figure dropped on a slide does
+1. **One palette.** :func:`region_color` keys structural region labels
+   (``shear_web_0`` is the same teal everywhere). :data:`RETRO_PANELS` and
+   :func:`panel_colour` are the role colours for loft and shell figures: a
+   strip or rib-cell name hashes to one entry, so every geometry plot can
+   share it. The accent tokens match the conference deck chrome
+   (``docs/conferences/CDFAM-2026``), so a figure dropped on a slide does
    not read as a foreign object.
 
 2. **Distance fields that look like distance fields.** Every SDF panel used to
@@ -82,6 +84,37 @@ REGION_PALETTE: dict[str, str] = {
 
 #: Fallback for a label the palette has never seen.
 REGION_FALLBACK = MUTED
+
+
+# rust, mustard, olive, teal, burgundy, ochre, slate, terracotta,
+# forest, gold, brick, plum, cadet, sienna, pine, wine,
+# dusty blue, copper, sage, maroon, khaki, indigo, rust-rose, olive-grey,
+# pewter, apricot, moss, claret, sand, steel, persimmon, umber
+#: Role colours for loft and shell figures. A name hashes to one entry, so the
+#: same strip or rib cell is the same colour in every geometry plot.
+RETRO_PANELS = (
+    "#c45c26", "#d4a017", "#6b7f3a", "#2e6b6a",
+    "#8b2942", "#c4893c", "#4a6080", "#b85c38",
+    "#3d5c45", "#c9a227", "#9c3b2a", "#6e4a7a",
+    "#3d6e7a", "#a0673b", "#2f4f3e", "#7a3a4a",
+    "#5b7fa6", "#b87333", "#7a9e72", "#6b1c2a",
+    "#c2b280", "#3f3d7a", "#c46b6b", "#6d7058",
+    "#6e7a86", "#e09a5a", "#4f6f4a", "#7b2d4e",
+    "#d8c08a", "#4a6678", "#d0603a", "#5c4033",
+)
+
+
+def panel_colour(role: str) -> str:
+    """Stable retro colour for a region, web, or rib-cell name.
+
+    The colour follows the name, not the order the faces are drawn. Loft and
+    shell figures share this palette.
+    """
+    key = str(role)
+    hashed = 0
+    for ch in key:
+        hashed = (hashed * 16777619) ^ ord(ch)
+    return RETRO_PANELS[hashed % len(RETRO_PANELS)]
 
 
 def region_color(label: str) -> str:
@@ -282,12 +315,14 @@ __all__ = [
     "RED",
     "REGION_FALLBACK",
     "REGION_PALETTE",
+    "RETRO_PANELS",
     "SDF_COLORMAP",
     "SURFACE",
     "TEAL",
     "distance_field_norm",
     "distance_field_scales",
     "draw_distance_field",
+    "panel_colour",
     "region_color",
     "strip_axes_chrome",
     "tighten_to_section",

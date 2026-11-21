@@ -9,6 +9,7 @@ from typing import Any, Callable
 import numpy as np
 
 from implicit_geometry_kernel.integration.spec import QuadtreeSpec
+from implicit_geometry_kernel.profiling import stage
 from implicit_geometry_kernel.integration.quadtree.tree import (
     QuadCell,
     QuadTreeMesh,
@@ -101,7 +102,8 @@ def _refine_soa(
         n_el = eb.shape[0]
 
         probe_pts = _refine_points_for_bounds(eb, spec).reshape(-1, 2)
-        batch = batch_eval(probe_pts)
+        with stage("implicit_geometry_kernel", "quadtree_phi"):
+            batch = batch_eval(probe_pts)
         interior_true = {
             lbl: np.asarray(batch[lbl], dtype=float).reshape(n_el, n_probes) for lbl in labels
         }

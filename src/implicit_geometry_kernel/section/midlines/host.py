@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, cast, runtime_checkable
 
 
 @runtime_checkable
 class ShellComponentLike(Protocol):
     """Chord-frame shell solid that can emit a midline polyline.
 
-    Narrower runtime-checkable Protocols
+    Narrower Protocols
     (:class:`SkinShellComponentLike`, :class:`WebShellComponentLike`,
-    :class:`CapShellComponentLike`) add the thickness / alignment / cap
-    accessors that :mod:`shell_midline_export` uses for strip kind.
+    :class:`CapShellComponentLike`) document the ABI shape of thickness /
+    alignment / cap accessors. Strip **kind** is chosen by recipe +
+    :func:`~implicit_geometry_kernel.section.assembly.members.wall_type_for_label`,
+    not by ``isinstance`` on these Protocols.
     """
 
     def midline_polyline(self, n: int = ...) -> Any:
@@ -22,7 +24,10 @@ class ShellComponentLike(Protocol):
 
 @runtime_checkable
 class SkinShellComponentLike(Protocol):
-    """Outer-skin solid: closed midline + wall thickness."""
+    """Outer-skin solid ABI: closed midline + wall thickness.
+
+    Kind discrimination stays on ``wall_type_for_label`` / recipes.
+    """
 
     thickness: float
 
@@ -32,7 +37,10 @@ class SkinShellComponentLike(Protocol):
 
 @runtime_checkable
 class WebShellComponentLike(Protocol):
-    """Shear-web solid: open midline + thickness + alignment."""
+    """Shear-web solid ABI: open midline + thickness + alignment.
+
+    Kind discrimination stays on ``wall_type_for_label`` / recipes.
+    """
 
     thickness: float
     alignment: str
@@ -43,7 +51,11 @@ class WebShellComponentLike(Protocol):
 
 @runtime_checkable
 class CapShellComponentLike(Protocol):
-    """Spar-cap solid: open midline + cap height + surface side."""
+    """Spar-cap solid ABI: open midline + ``cap_height`` + ``surface``.
+
+    Solids emit via :func:`~implicit_geometry_kernel.section.midlines.export.build_solid_cap_strips`
+    reading recipe attrs; kind is not decided by ``isinstance`` on this Protocol.
+    """
 
     cap_height: float
     surface: str
@@ -58,8 +70,8 @@ class SectionMidlineHost(Protocol):
 
     Implementations expose chord-frame component maps via *public* properties
     (not private ``_`` attributes) so mesh / export seams stay ABI-shaped.
+    This is the DIP seam; Skin/Web/Cap Protocols below are shape docs only.
     """
-
     @property
     def airfoil(self) -> Any:
         """Airfoil SDF / outline carrier used for LE/TE and chord."""
@@ -80,12 +92,25 @@ class SectionMidlineHost(Protocol):
         """Chord-frame spar-cap components keyed by label (may be empty)."""
         ...
 
+    @property
+    def components(self) -> Mapping[str, Any]:
+        """Active labelled component map. May be twisted; emit prefers the chord-frame map."""
+        ...
 
-def resolve_section_host(section: Any) -> Any:
+    @property
+    def labels(self) -> Any:
+        """Component labels in map order."""
+        ...
+
+    def __getitem__(self, key: str) -> Any:
+        """Component stored under ``key``."""
+        ...
+
+
+def resolve_section_host(section: Any) -> SectionMidlineHost:
     """Unwrap wrappers that expose ``underlying_section`` when present."""
-    if hasattr(section, "underlying_section"):
-        return section.underlying_section
-    return section
+    host = section.underlying_section if hasattr(section, "underlying_section") else section
+    return cast(SectionMidlineHost, host)
 
 
 __all__ = [

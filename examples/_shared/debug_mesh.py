@@ -83,7 +83,8 @@ def span_metrics(walls: list, faces: np.ndarray, roles: np.ndarray, geo=None) ->
     for zi, _tmpl, samples in walls:
         oml_te_pt = None
         if geo is not None:
-            from implicit_geometry_kernel.blade.topology import _oml_te_xyz, section_cut_near
+            from implicit_geometry_kernel.blade.topology import section_cut_near
+            from implicit_geometry_kernel.blade.topology.map_walk import _oml_te_xyz
 
             cut = section_cut_near(geo, float(zi))
             ridge = _oml_te_xyz(cut) if cut is not None else None

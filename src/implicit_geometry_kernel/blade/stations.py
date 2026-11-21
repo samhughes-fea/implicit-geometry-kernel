@@ -14,6 +14,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
+import numpy as np
+
 from implicit_geometry_kernel.blade.airfoil import Airfoil
 
 
@@ -195,6 +197,15 @@ class PlyDrop:
         ws = _ramp(float(s), self.s0, self.s1, self.taper)
         return float(self.thickness) * min(wz, ws)
 
+    def extra_many(self, z, s) -> np.ndarray:
+        """Vectorised :meth:`extra` for broadcastable ``z`` and ``s``."""
+        z = np.asarray(z, float)
+        s = np.asarray(s, float)
+        z, s = np.broadcast_arrays(z, s)
+        wz = _ramp_many(z, self.z0, self.z1, self.taper)
+        ws = _ramp_many(s, self.s0, self.s1, self.taper)
+        return float(self.thickness) * np.minimum(wz, ws)
+
 
 def _ramp(x: float, lo: float, hi: float, taper: float) -> float:
     if x < lo - taper or x > hi + taper:
@@ -204,3 +215,19 @@ def _ramp(x: float, lo: float, hi: float, taper: float) -> float:
     if x > hi:
         return 0.0 if taper <= 0.0 else ((hi + taper) - x) / taper
     return 1.0
+
+
+def _ramp_many(x, lo: float, hi: float, taper: float) -> np.ndarray:
+    """Vectorised :func:`_ramp` (same edge cases, including ``taper == 0``)."""
+    x = np.asarray(x, float)
+    out = np.ones(x.shape, dtype=np.float64)
+    out[(x < lo - taper) | (x > hi + taper)] = 0.0
+    if taper <= 0.0:
+        out[x < lo] = 0.0
+        out[x > hi] = 0.0
+        return out
+    left = (x >= lo - taper) & (x < lo)
+    right = (x > hi) & (x <= hi + taper)
+    out[left] = (x[left] - (lo - taper)) / taper
+    out[right] = ((hi + taper) - x[right]) / taper
+    return out

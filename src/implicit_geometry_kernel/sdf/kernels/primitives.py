@@ -10,7 +10,12 @@ Sign convention:
     phi > 0  →  exterior
 """
 
+import time
+
 import numpy as np
+
+from implicit_geometry_kernel.profiling import profiling_enabled, record_sdf_polygon
+from implicit_geometry_kernel.sdf.kernels.polygon_numba import sdf_polygon_numba
 
 
 # ---------------------------------------------------------------------------
@@ -151,12 +156,6 @@ def sdf_polygon(x, y, vertices):
     vertices : array-like, shape (N, 2)
         Polygon vertices in order (need not be closed; last edge wraps).
     """
-    import time
-
-    from implicit_geometry_kernel.sdf.kernels.polygon_numba import (
-        sdf_polygon_numba,
-    )
-
     x_b, y_b = np.broadcast_arrays(_ensure_f64(x), _ensure_f64(y))
     verts = _ensure_f64(vertices)
     if int(len(verts)) < 3:
@@ -165,14 +164,6 @@ def sdf_polygon(x, y, vertices):
     t0 = time.perf_counter()
     out = sdf_polygon_numba(x_b.ravel(), y_b.ravel(), verts).reshape(x_b.shape)
     elapsed = time.perf_counter() - t0
-    try:
-        from implicit_geometry_kernel.profiling import (
-            profiling_enabled,
-            record_sdf_polygon,
-        )
-
-        if profiling_enabled():
-            record_sdf_polygon(m, elapsed_s=elapsed)
-    except Exception:
-        pass
+    if profiling_enabled():
+        record_sdf_polygon(m, elapsed_s=elapsed)
     return out

@@ -1,9 +1,9 @@
 """Cut published reference blades (windIO) with the kernel; loft the OML in 3-D.
 
-The private catalogue https://github.com/samhughes-fea/reference-blades is cloned
-locally as ``reference_blades/`` (gitignored; do not commit a submodule gitlink).
+The catalogue https://github.com/samhughes-fea/reference-blades is the
+``reference_blades/`` submodule.
 
-    git clone https://github.com/samhughes-fea/reference-blades.git reference_blades
+    git submodule update --init reference_blades
     python examples/blade/08_reference_blades/reference_blades.py
 
 Optional Gmsh wall-strip mesh (IEA 15 MW only)::
@@ -59,13 +59,13 @@ from implicit_geometry_kernel import (  # noqa: E402
     loft_mapped_strips,
 )
 from implicit_geometry_kernel.blade.topology import (  # noqa: E402
-    _template_from_cut,
     rib_cell_polygons_from_samples,
     sample_region_polylines,
     section_cut_near,
     te_blunt_flags_for_cuts,
 )
-from implicit_geometry_kernel.mesh.polygon import fill_rib_cells  # noqa: E402
+from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut  # noqa: E402
+from implicit_geometry_kernel.mesh.fill import fill_rib_cells  # noqa: E402
 from implicit_geometry_kernel.blade.windio import (  # noqa: E402
     cap_window_table_from_windio_structure,
     transverse_members_from_windio,
@@ -770,8 +770,8 @@ def gmsh_shell_probe(geo: BladeGeometry, stem: str) -> None:
 def main() -> int:
     root = catalogue_root()
     if root is None:
-        print("No reference-blades catalogue found. Clone it (gitignored, not a committed submodule):")
-        print("  git clone https://github.com/samhughes-fea/reference-blades.git reference_blades")
+        print("No reference-blades catalogue found. Initialise the submodule:")
+        print("  git submodule update --init reference_blades")
         print("or set REFERENCE_BLADES to that checkout.")
         return 0
     print(f"catalogue: {root}")

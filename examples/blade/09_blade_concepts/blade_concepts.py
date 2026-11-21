@@ -55,13 +55,13 @@ from implicit_geometry_kernel import (  # noqa: E402
     loft_mapped_strips,
 )
 from implicit_geometry_kernel.blade.topology import (  # noqa: E402
-    _template_from_cut,
     rib_cell_polygons_from_samples,
     sample_region_polylines,
     section_cut_near,
     te_blunt_flags_for_cuts,
 )
-from implicit_geometry_kernel.mesh.polygon import fill_rib_cells  # noqa: E402
+from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut  # noqa: E402
+from implicit_geometry_kernel.mesh.fill import fill_rib_cells  # noqa: E402
 KEYS = (
     "2D-F-LC-0R", "2D-F-LC-4R", "2D-F-LC-10R",
     "2D-F-LE-0R", "2D-F-LE-4R", "2D-F-LE-10R",

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from implicit_geometry_kernel.section.midlines.host import SectionMidlineHost
+
 from implicit_geometry_kernel.section.boundary import MultiPolygon, Polygon
 from implicit_geometry_kernel.section.boundary import OPS, unary_union
 
@@ -107,7 +109,7 @@ def _keep_poly(poly: Polygon | MultiPolygon | None) -> bool:
 
 
 def emit_constructive_polygons(
-    section: Any,
+    section: SectionMidlineHost,
     *,
     stage_sink: dict[str, float] | None = None,
 ) -> dict[str, Polygon | MultiPolygon]:
@@ -120,11 +122,11 @@ def emit_constructive_polygons(
     ``emit_wall_solids`` / ``emit_unions`` / ``emit_cavity`` / ``emit_cores``.
     """
     host = _resolve_host(section)
-    twist = float(getattr(host, "twist_rad", 0.0) or 0.0)
+    twist = float(host.twist_rad or 0.0)
 
     # Emit wall solids in chord frame first so cores can subtract without twist games.
     comps = _component_map(section)
-    discrete = getattr(host, "spar_cap_components_unrotated", None) or {}
+    discrete = dict(host.spar_cap_components_unrotated)
     wall_chord: dict[str, Polygon | MultiPolygon] = {}
     web_polys: list[Polygon | MultiPolygon] = []
     core_items = [

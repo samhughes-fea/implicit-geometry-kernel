@@ -11,7 +11,11 @@ or FE package.
 **Strip order:** ``build_shell_midline_strips`` yields skins and webs in
 ``components_unrotated`` dict-insertion order. Caps are partitions on the
 skin-mid loop (``shell_strips_from_graph`` / ``offset_regions``), not a
-second polyline.
+second polyline. Stacked cap **solids** use ``build_solid_cap_strips``.
+
+**Kind SoT:** strip kind comes from wall recipes +
+``wall_type_for_label``. Re-exported Skin/Web Protocols describe ABI shape
+only; they are not runtime discriminators (no ``isinstance`` branches here).
 """
 
 from __future__ import annotations
@@ -20,6 +24,7 @@ from typing import Any
 
 from implicit_geometry_kernel.contract.shell_midline_strip import ShellMidlineStrip
 from implicit_geometry_kernel.section.midlines.host import (
+    CapShellComponentLike,
     SectionMidlineHost,
     SkinShellComponentLike,
     WebShellComponentLike,
@@ -264,4 +269,5 @@ __all__ = [
     "SectionMidlineHost",
     "SkinShellComponentLike",
     "WebShellComponentLike",
+    "CapShellComponentLike",
 ]

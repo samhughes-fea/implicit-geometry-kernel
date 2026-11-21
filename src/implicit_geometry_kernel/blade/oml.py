@@ -82,12 +82,12 @@ def write_mid_surfaces(
 ) -> str:
     """One lofted patch per authored region / web, as STL or OBJ (groups)."""
     from implicit_geometry_kernel.blade.topology import (
-        _template_from_cut,
         loft_mapped_strips,
         rib_cell_polygons_from_samples,
         sample_region_polylines,
         section_cut_near,
     )
+    from implicit_geometry_kernel.blade.topology.ribs import _template_from_cut
 
     path = Path(path)
     if path.suffix.lower() in {".step", ".stp"}:

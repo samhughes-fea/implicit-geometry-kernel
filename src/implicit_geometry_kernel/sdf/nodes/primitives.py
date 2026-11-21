@@ -126,7 +126,9 @@ class Polygon(_Leaf):
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "_hash", hash(self.vertices))
-        object.__setattr__(self, "_array", np.asarray(self.vertices, dtype=float))
+        object.__setattr__(
+            self, "_array", np.ascontiguousarray(np.asarray(self.vertices, dtype=np.float64))
+        )
 
     def __hash__(self) -> int:
         return self._hash

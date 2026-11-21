@@ -8,6 +8,7 @@ from implicit_geometry_kernel.section.boundary import MultiPolygon, Polygon
 from implicit_geometry_kernel.section.boundary import OPS, unary_union
 
 from implicit_geometry_kernel.section.midlines.host import (
+    SectionMidlineHost,
     resolve_section_host,
 )
 
@@ -30,20 +31,20 @@ def _label_key(label: Any) -> str:
     return str(getattr(label, "value", label))
 
 
-def _resolve_host(section: Any) -> Any:
+def _resolve_host(section: Any) -> SectionMidlineHost:
     return resolve_section_host(section)
 
 
 def _component_map(section: Any) -> dict[str, Any]:
     host = _resolve_host(section)
-    unrot = getattr(host, "components_unrotated", None)
-    if isinstance(unrot, dict) and unrot:
+    unrot = host.components_unrotated
+    if unrot:
         return dict(unrot)
-    comps = getattr(host, "components", None)
-    if isinstance(comps, dict):
+    comps = host.components
+    if comps:
         return dict(comps)
     out = {}
-    for lbl in getattr(host, "labels", ()) or list(host):
+    for lbl in host.labels:
         key = _label_key(lbl)
         out[key] = host[key]
     return out
@@ -284,8 +285,8 @@ def emit_wall_solid_polygons(section: Any) -> dict[str, Polygon | MultiPolygon]:
     """
     host = _resolve_host(section)
     comps = _component_map(section)
-    twist = float(getattr(host, "twist_rad", 0.0) or 0.0)
-    discrete = getattr(host, "spar_cap_components_unrotated", None) or {}
+    twist = float(host.twist_rad or 0.0)
+    discrete = dict(host.spar_cap_components_unrotated)
 
     out: dict[str, Polygon | MultiPolygon] = {}
     web_polys: list[Polygon | MultiPolygon] = []

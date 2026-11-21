@@ -31,11 +31,14 @@ imports every non-plotting module because extras are lazy at the call site.
 | profiling | none | `profiling.py` | timers; not on root `__all__` |
 
 `mesh` may import `blade`, `extract`, `contract`, `geos`, and `profiling`.
-Kernel polygon fill lives in `mesh/polygon.py` (Qhull Voronoi + numba clip;
-faces have more than four nodes). Numpy Steiner Delaunay is `mesh/delaunay.py`.
-The Gmsh backend is `mesh/gmsh/` (`shell.py` mapped strips, `plane.py` planar
-cells). That extra is leftover convenience. The kernel station/CSG mesh is
-`integration/quadtree` (`build_shared_quadtree`).
+Kernel polygon fill lives in `mesh/fill/` (Qhull Voronoi + numba clip in
+`polygon.py` / `polygon_voronoi.py`; faces have more than four nodes). Numpy
+Steiner Delaunay is `mesh/fill/delaunay.py`. Conforming blade shells are
+`mesh/shell/`; health flags `mesh/health/`; quality metrics `mesh/quality/`;
+CSV/edge tables `mesh/tables/`; VTK `mesh/export/`. The Gmsh backend is
+`mesh/gmsh/` (`shell.py` mapped strips, `plane.py` planar cells). That extra is
+leftover convenience. The kernel station/CSG mesh is `integration/quadtree`
+(`build_shared_quadtree`).
 
 ## House-rule splits
 

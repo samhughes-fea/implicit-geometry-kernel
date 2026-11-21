@@ -26,6 +26,7 @@ Names: [glossary](glossary.md). Frames: [which array](frames/README.md#which-arr
 | Frames | `frames` | R / B / S / S′ / C transforms | [frames](frames/README.md) | [examples/frames](../examples/frames/) | [tests/frames](../tests/frames/) |
 | Integration | `build_shared_quadtree` | area/moments; CSG occupancy mesh | [integration](integration/README.md) | [examples/integration](../examples/integration/), example 09 `csg_mesh` | [tests/integration](../tests/integration/) |
 | Hand-off | `contract` | `ShellMidlineStrip`, `LaminateOffsetRegion`, `CellWallLoop` | [contract](contract/README.md) | [contract/01](../examples/contract/01_three_products_dtos/), teaching `05` | [tests/contract](../tests/contract/) |
+| Shell mesh | `mesh.shell_mesh` / `mesh.shell` (`[mesh]`) | conformal shell mesh + health | [mesh README](../src/implicit_geometry_kernel/mesh/README.md), [geometry to mesh](section/guides/geometry_to_mesh.md) | [15_shell_mesh](../examples/blade/15_shell_mesh/) | [tests/mesh](../tests/mesh/) |
 | Extract | `extract` | zero loops, feature curves | [extract](extract/README.md) | [examples/extract](../examples/extract/) | [tests/extract](../tests/extract/) |
 | Plotting | `plotting` (`[plots]`) | figures | [visualisation](section/visualisation/README.md) | [demos](../examples/demos/) | [tests](../tests/README.md) |
 
@@ -109,6 +110,7 @@ flowchart LR
 ## Internal
 
 Maintainer notes. Style is terse; each page carries an **Audience: internal** banner.
+Long-form reports live under [internal/](internal/README.md) (K5).
 
 | Topic | Page |
 |---|---|
@@ -118,7 +120,7 @@ Maintainer notes. Style is terse; each page carries an **Audience: internal** ba
 | Section loft bugs | [section/bug_log.md](section/bug_log.md) |
 | Span loft bugs | [blade/bug_log.md](blade/bug_log.md) |
 | Frame bugs | [frames/bug_log.md](frames/bug_log.md) |
-| Architecture steps | [REFACTOR_PLAN.md](REFACTOR_PLAN.md) |
-| Provenance | [FORK.md](FORK.md) |
+| Architecture steps | [internal/REFACTOR_PLAN.md](internal/REFACTOR_PLAN.md) |
+| Provenance | [internal/FORK.md](internal/FORK.md) |
 | Section-local TOC | [section/docs_index.md](section/docs_index.md) |
-| Reports and ADRs | [section/reports](section/reports/README.md), [ADR_ZERO_WEB_SHELL_MESH](section/reference/ADR_ZERO_WEB_SHELL_MESH.md) |
+| Reports and ADRs | [internal/section/reports](internal/section/reports/README.md), [ADR_ZERO_WEB_SHELL_MESH](section/reference/ADR_ZERO_WEB_SHELL_MESH.md) |

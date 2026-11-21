@@ -69,6 +69,15 @@ entries are from a retired repo-root log.
 | [BG-043](#bg-043) | Round trailing end bulged aft of its end point and was scrambled (0.1 mm at 5.4 m chord) | **Fixed** (K9) |
 | [BG-044](#bg-044) | windIO web feet and cap edges interpolated in chord fraction between grid points (up to 10 mm) | **Fixed** (K9) |
 | [BG-045](#bg-045) | A partial-span web started and ended at the nearest mesh station, not at its own ends | **Fixed** (K9) |
+| [BG-046](#bg-046) | Columnar mesh tables broke edge CSV and trailing-face checks | **Fixed** |
+| [BG-047](#bg-047) | Ruled strip index path emitted illegal 3-node TE skin faces | **Fixed** |
+| [BG-048](#bg-048) | `ShellMesh.stations` as a list broke the chord-default-off test | **Fixed** |
+| [BG-049](#bg-049) | NREL default-h mesh has open spanwise edges off the root on `te_su` / `le_pr` | **Fixed** |
+| [BG-050](#bg-050) | Per-station edge counts remeshed the same curve twice (`step_patch` / fan) | **Fixed** |
+| [BG-051](#bg-051) | Block-max count on collapsing skin made fans under 20° | **Fixed** |
+| [BG-052](#bg-052) | Key-snapped seam folded a three-node collapse fan flat | **Fixed** |
+| [BG-053](#bg-053) | Tip weld missed by 1 ulp; collinear TE left a T-junction | **Fixed** |
+| [BG-054](#bg-054) | `_window_key` crashed on windIO side-window dicts | **Fixed** |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -1066,3 +1075,203 @@ after rounding (by 2e-10 here).
 **Fix.** `forced_stations()` includes the wall-region graph's web window ends,
 and span windows include their ends to the station key resolution (1e-9).
 **Fixed** (K9).
+
+## BG-050
+
+**Symptom.** The NREL tip `h/c = 5%` mesh was not a structured conformal sheet:
+73 `step_patch` strips (440 quads) and 18 `fan` quads that left open loops and
+T-junctions, even when `transition_band_failures` was empty.
+
+**Evidence.** `strips.csv` / element constructors on
+`examples/blade/15_shell_mesh/figures/nrel_5mw` after the equal-taper work;
+`te_pr` alone ran from 13 to 39 edges between stations.
+
+**Root cause.** `region_counts` gave every station its own even-edge count, then
+`loft_mapped_strips` invented a `step_patch` or a `fan` to join the two
+polylines. The shared curve was meshed twice.
+
+**Fix.** One edge count per region between topology events: the largest even
+count any station in that contiguous run asks for; every station in the block
+takes that count and is resampled. The product loft fills equal counts with
+`_ruled_quads` and no longer calls `_step_quads`. A bay whose regions all match
+is not an event, so it does not grow a mid-span row.
+
+**Verification.** `test_a_long_step_shares_the_taper`,
+`test_a_mild_shell_bay_is_ruled`, `test_a_block_takes_the_finer_station_count`,
+`test_an_oversized_edge_takes_the_block_count`. NREL and DOE RM1 meshes:
+constructors are `ruled`, `midspan_split`, and a collapsed `fan` only where a
+region appears or ends; no `step_patch`. **Fixed.**
+
+## BG-051
+
+**Symptom.** After BG-050, the NREL mesh still failed the transition-band check:
+collapse fans at `bay_su_0`, `bay_pr_0` and `cap_pr` had corners of a few
+degrees when the long side kept the block's fine count.
+
+**Evidence.** Local loft of the four NREL collapse bays; a 0.05 m arc over a
+0.07 m bay at 15 nodes had fan min angles about 4°.
+
+**Root cause.** The block took the max ask for the whole life of a skin region.
+A terminal pinch of a few centimetres cannot carry that many edges through the
+3-quad fan split and still keep every corner ≥ 20° and areas within 2× of the
+median.
+
+**Fix.** `_fan_edges(length, bay)` caps a skin run that opens or closes to the
+most even edges the collapsed arc can carry. Regions that never open or close
+(for example `te_pr`) keep the true max, including edges below `h/2`.
+
+**Verification.** `test_a_closing_run_keeps_the_fan_budget`. NREL collapse
+probe: `te` 5→1, `bay_su_0` / `bay_pr_0` / `cap_pr` 3↔1, all min angles ≥ 20°
+and area/median in [0.5, 2]. Full NREL and RM1: 0 quads under 20°. **Fixed.**
+
+## BG-052
+
+**Symptom.** With the fan budget in place, NREL still reported nine bad collapse
+quads: two corners at 0° and one healthy-angle quad per fan for `bay_su_0`,
+`bay_pr_0` and `cap_pr`.
+
+**Evidence.** Constructors `{'ruled': 10060, 'midspan_split': 54, 'fan': 5}`;
+the healthy angles (55.12, 53.81, 46.46) matched an unprojected 3-node fan, so
+the node count was already legal.
+
+**Root cause.** `_band_seams` projected every spanwise mid with `at_end=True`
+(nearest station key). On a 4–5 cm / 3-node pinch the two mids snapped onto
+corners and two of the three fan quads folded flat; the area median went to ~0
+and the remaining healthy quad failed the 2× area test.
+
+**Fix.** A three-node skin collapse (not the trailing edge) keeps its seam on
+the midline (`at_end=False`). The trailing edge still snaps to the key so the
+tip ring does not gain a duplicate node in the middle of the flatback. The fan
+centroid stays unprojected (`section=None`).
+
+**Verification.** Local projected-seam probe of the four NREL collapses; full
+NREL and RM1 remesh with empty `transition_band_failures`. **Fixed.**
+
+## BG-053
+
+**Symptom.** `test_a_closing_flatback_leaves_a_legal_trailing_face` failed with
+one T-junction: station node 189 on tip edge 158–180 by 2.22e-16, and open tip
+loops at the tip station.
+
+**Evidence.** Tip triangle `(180, 158, 189)` after weld; corners had been
+written as new `interior` nodes 2.22e-16 from the station nodes until a coarse
+key was added.
+
+**Root cause.** Exact `_point_key` missed tip corners by 1 ulp, so the tip ring
+was not welded to the sheet. After a 1e-8 coarse weld fixed the corners, the
+straight three-node TE still put the middle station node on the chord of a tip
+triangle; splitting that triangle left a zero-area sibling that kept the full
+chord as an edge.
+
+**Fix.** `_weld_triangles` falls back to `round(coord, 8)` against nodes already
+in the mesh. `_split_crossed_triangles` then drops any tip or rib triangle
+whose area is ≤ 1e-12 after the split.
+
+**Verification.** `test_a_closing_flatback_leaves_a_legal_trailing_face`;
+`mesh.junctions == ()` and every loop `is_root` on that fixture; NREL and RM1
+meshes have no T-junction. Off-root open loops on those blades were a separate
+defect (BG-049), now fixed. **Fixed.**
+
+## BG-054
+
+**Symptom.** Example 15 remesh of NREL crashed before any figure was written:
+`TypeError: float() argument must be a string or a real number, not 'dict'` in
+`_window_key`.
+
+**Evidence.** Traceback in `_shape_keys` → `_window_key` while placing the first
+stations of the NREL blade loaded through `cap_side_windows_fn_from_windio_structure`.
+
+**Root cause.** That reader returns `{"suction": (lo, hi), "pressure": (lo, hi)}`.
+`_window_key` passed the dict straight to `np.asarray(..., float)`.
+
+**Fix.** When the raw window is a `Mapping`, flatten the sorted sides' `(lo, hi)`
+pairs into the hashable tuple; numeric tables stay on the array path.
+
+**Verification.** NREL and DOE RM1 remesh through example 15 complete; tables,
+span/tip PNGs and VTK written under `figures/nrel_5mw` and `figures/rm1`.
+**Fixed.**
+
+## BG-046
+
+**Symptom.** After edges and corners became structured arrays, writing mesh
+tables and the trailing-face failure query crashed.
+
+**Evidence.** `tests/test_shell_layers.py::test_mesh_tables_and_vtk_carry_the_record`
+raised `TypeError: sequence item 0: expected str instance, int found` in the
+edge CSV. `test_a_closing_flatback_leaves_a_legal_trailing_face` raised
+`ValueError: The truth value of an array with more than one element is ambiguous`
+on `diagonal_min`.
+
+**Root cause.** Edge element ids were joined with `" ".join(_edge_users(edge))`
+without `str`. `diagonal_mins` returned an ndarray, and
+`getattr(..., ()) or ()` / `if mesh.diagonal_min` treated that array as a
+boolean.
+
+**Fix.** Join with `str(i)`. Read diagonal and name columns with an explicit
+`len(...)` check. `tests/test_shell_layers.py` passes. **Fixed**.
+
+## BG-047
+
+**Symptom.** NREL `shell_mesh(geo, 21)` raised
+`element of 'te' has 3 nodes; skin and webs are quads` while building strips.
+
+**Evidence.** The failure was inside `add()` on a skin/web face from the ruled
+strip path. Event bays and a loft-only forced path still hit illegal faces when
+a bay mixed kept quads with bowties or collapsed corners.
+
+**Root cause.** The ruled index emitter welded polylines and emitted every
+kept cell, including bowties split into triangles that then failed the skin/web
+quad rule. A bay that is not a clean run of four-corner quads must stay on
+`loft_mapped_strips`.
+
+**Fix.** `_plain_ruled` accepts a bay only when every strip has equal length at
+least 2 and every quad is kept with no bowtie; otherwise the bay uses the face
+loft. Default-h NREL mesh rebuilds (83 198 nodes, 83 051 quads). **Fixed**.
+
+## BG-048
+
+**Symptom.** `test_an_explicit_size_or_count_leaves_the_chord_default_off`
+asserted `counted.stations == mesh_stations(...)` and failed because the mesh
+held a list.
+
+**Evidence.** `ShellMesh.stations` was built as a list so assemble would not
+copy tuples twice; `mesh_stations` returns a tuple.
+
+**Root cause.** List/tuple inequality under `==`.
+
+**Fix.** Store `stations=tuple(...)`. The explicit-size test passes. **Fixed**.
+
+## BG-049
+
+**Symptom.** NREL 5 MW default-h shell mesh (`examples/blade/15_shell_mesh`)
+shows a trailing-edge defect in the span figure: open edges off the root along
+the suction TE and pressure LE.
+
+**Evidence.** Published dump and a fresh `shell_mesh(geo)`: 94 open edges off
+the root — 46 spanwise on `te_su` for z ≈ 29.1–36.7 m, 46 on `le_pr`, plus one
+each on `cap_su_2` / `cap_pr`. `summary.txt` reported non-root open loops without
+region or z. Tip `te_su` / `te_pr` quads were fine. Probe stations z ≈ 28–38
+reproduced the spanwise opens. Align / loft-only / walls-on bisects on the probe
+left the open count unchanged. Sample endpoints: site-pack lerp from z ≈ 29.04
+(zero-length `cap_su_2`) to z ≈ 36.93 (finite `cap_su_2`) omitted the mid panel,
+so `cap_su_1` ended at `web_1` while `te_su` started at `cap_hi` (gap grew to
+~50 mm). The first open edge's rootward node sat on `cap_su_1`, `te_su`, and
+`Web_aft`.
+
+**Root cause.** Bay lerp kept only left-site region names. A skin panel collapsed
+at the rootward site never reappeared mid-bay even after the keys separated, so
+adjacent TE/LE strips did not share a station node (use 1 on the forward
+spanwise edge). Health dumps counted open loops without region or z-range.
+
+**Fix.** After sampling (and again after place/lerp/count), pin each skin
+region's start to the previous live region's end on that side when they share a
+station key or when an omitted zero-length panel sits between them; snap web
+feet back onto the updated skin wall
+(`_share_adjacent_skin_ends` in `map.py`). `summary.txt` / `off_root_open_edges`
+report off-root opens by region, kind, and z-range.
+
+**Verification.** NREL probe: shared skin endpoints exact, no spanwise opens off
+the free ends. Full NREL default-h and RM1: `off_root_open_edges == ()`, no
+non-root loops, empty junctions, node/quad counts ~84k. Example 15 NREL span
+figure regenerated. `test_nrel_te_cap_seam_shares_endpoints_on_probe_stations`.
+**Fixed.**

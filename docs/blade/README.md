@@ -28,7 +28,9 @@ A `Station` carries span \(z\), chord \(c\), geometric twist \(\theta\), pitch-a
 fraction, offset, and an `Airfoil`. `interpolate(z)` blends those scalars and the
 aerofoil. `section_at(z)` then builds the section. Outer-mould and wall oracles
 (`oml_polyline`, `oml_sdf`, `wall_mid_sdf`, `wall_meta`) are extra fields on the
-same interpolant, not a second geometry engine.
+same interpolant, not a second geometry engine. Skin+ply thickness is
+`thickness_at` / `query()["thickness"]`; cavity IML uses `StackThickness` via
+`cavity_sdf` ([which thickness?](../section/guides/geometry_to_mesh.md#which-thickness)).
 
 ```mermaid
 flowchart LR
@@ -196,6 +198,7 @@ Public names: [glossary](../glossary.md) (loft group). On this package:
 | [12_locked_loft_zones](../../examples/blade/12_locked_loft_zones/) | `LockedLoftPlan`, `resample_locked` |
 | [13_planform_csv_roundtrip](../../examples/blade/13_planform_csv_roundtrip/) | `read_planform_csv`, `write_windio` |
 | [14_geometric_centroid](../../examples/blade/14_geometric_centroid/) | Geometric centroid of the walls (three routes) |
+| [15_shell_mesh](../../examples/blade/15_shell_mesh/) | Conformal `shell_mesh` twin ([geometry to mesh](../section/guides/geometry_to_mesh.md)) |
 
 ---
 
@@ -208,5 +211,5 @@ Public names: [glossary](../glossary.md) (loft group). On this package:
 - Catalogue / LC/LE/PA: [taxonomy](concepts/taxonomy.md)
 - Geometry to mesh: [geometry_to_mesh.md](../section/guides/geometry_to_mesh.md)
 - Loft bug log: [bug_log.md](bug_log.md)
-- Structure probes: [reports/STRUCTURE_PROBES.md](reports/STRUCTURE_PROBES.md)
-- Graphify EXTRACTED (no next kernel step): [reports/GRAPHIFY_EXTRACTED_NEXT.md](reports/GRAPHIFY_EXTRACTED_NEXT.md)
+- Structure probes: [STRUCTURE_PROBES](../internal/blade/reports/STRUCTURE_PROBES.md)
+- Graphify EXTRACTED (no next kernel step): [GRAPHIFY_EXTRACTED_NEXT](../internal/blade/reports/GRAPHIFY_EXTRACTED_NEXT.md)

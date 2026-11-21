@@ -13,9 +13,11 @@ Turn gated midlines into downstream mesh inputs. Overview:
 3. [Adapter](#adapter)
 4. [What `ShellMeshInputs` carries](#what-shellmeshinputs-carries)
 5. [Optional coarse strip mesh](#optional-coarse-strip-mesh)
-6. [Oracle policy](#oracle-policy-wave-0)
-7. [Sizing policy](#sizing-policy)
-8. [What next](#what-next)
+6. [Strip products](#strip-products-three-entry-points)
+7. [Which thickness?](#which-thickness)
+8. [Oracle policy](#oracle-policy-wave-0)
+9. [Sizing policy](#sizing-policy)
+10. [What next](#what-next)
 
 ---
 
@@ -69,19 +71,46 @@ kernel. Colouring and conformal loft belong downstream, querying these fields.
 
 ---
 
+## Strip products (three entry points)
+
+Three builders, on purpose. Do not merge solids with the conformal shell.
+
+| Builder | Product | When to use |
+|---|---|---|
+| `build_shell_midline_strips` | Station skin + web `ShellMidlineStrip`s in \(\mathrm{B}\) | Gated station emit / hand-off (`SectionGeometryResult.midline_strips`) |
+| `build_solid_cap_strips` | Cap recipe midlines for stacked **solids** on `cut.walls` | Bond/split input; not the conformal mesh product |
+| `shell_strips_from_graph` | Loop + web strips from `shell_graph` (caps as partitions) | Conformal shell loft / mesh; eccentricity via `offset_regions()` |
+
+Bond/split (`bond_caps_to_skin`, `split_skin_at_cap_footprints`) sit between solid
+caps and the graph. Kind on skin/web strips comes from recipes +
+`wall_type_for_label`, not from Skin/Web/Cap Protocols.
+
+## Which thickness?
+
+Two thickness oracles, on purpose:
+
+| API | Role | Consumers |
+|---|---|---|
+| `geo.thickness_at(z, s)` / `query()["thickness"]` | Skin gauge + ply-drop windows in \((z,s)\) | Field query, ply-drop figures |
+| `StackThickness` → `cavity_sdf` (`oml + T`) | Nearest-run stack on `shell_graph`, ramped at cap edges | IML / cavity, conformal shell gauge |
+
+Do not use `query()["thickness"]` when you meant stack `T`. Ownership of
+overlapping `wall_meta` bands is `KIND_PRIORITY` on `FeatureTable` (cap beats
+skin); that is meta ownership, not a third thickness law.
+
 ## Oracle policy (Wave 0)
 
-Two oracles, on purpose:
+Two mid-surface oracles, on purpose:
 
 | Use | Source |
 |---|---|
 | Loft / conformal strips | Discrete `cut.shell_graph()` polylines |
 | In-plane snap | `geo.wall_mid_sdf()` + `GeometrySolver.project(..., plane=True)` (`snap_wall_mid`) |
 
-`T` is a **step**: skin gauge everywhere, `t_skin + t_cap` inside cap footprints
-(`StackThickness`). No geometric taper (not ply stagger). On the 2D-F inventory
-fixture that jump is **8 mm**; a shared cap/skin vertex may evaluate as either
-3 mm or 11 mm.
+Stack `T` is a **step**: skin gauge everywhere, `t_skin + t_cap` inside cap
+footprints (`StackThickness`). No geometric taper (not ply stagger). On the
+2D-F inventory fixture that jump is **8 mm**; a shared cap/skin vertex may
+evaluate as either 3 mm or 11 mm.
 
 `wall_mid_sdf` is the signed polygon SDF of that **skin-mid** loop, so partition
 vertices are on `φ = 0` as well as run interiors. Cap-end kinks are not in the
@@ -177,8 +206,14 @@ Held count is a lock derived from `h`, not an authored 8.
 CSG conformal viz (`_paint_mesh_nodes`) uses `h` (`sample_region_polylines(...,
 size_field=True)`). `LockedLoftPlan` still holds an authored `n_chord`. Next:
 promote `h` into that plan as derived `n_held`; keep the quadtree on `t` /
-Lipschitz. Downstream rib/tip rings seed from these skin/web nodes; interior
-rib meshing is not sized here.
+Lipschitz.
+
+The structural shell is a separate product, `mesh.shell_mesh`. Its node source
+is the skin and web quad sheet. Every interior rib and the tip closure indexes
+that sheet, and the polygon fill adds interior nodes only. With no size and no
+station count the edge is 5% of the local chord (`tip_h_over_c`). An explicit
+`h` in metres, or `n_span`, leaves that default off. `size_field_h` stays the
+occupancy and viz discretisation above. It does not size the shell.
 
 ---
 

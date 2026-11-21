@@ -15,7 +15,7 @@ Keep one documentation tree. Do not duplicate a `docs/manual/` copy.
 | Audience | Who | Location | Voice |
 |---|---|---|---|
 | **Manual** | Library users and developers of consuming tools | Package READMEs, guides, theory/reference, repository README, example indexes | Academic English; schematics; numbered equations |
-| **Internal** | Maintainers of this repository | `docs/conventions/`, `bug_log.md`, `reports/`, ADRs, `REFACTOR_PLAN.md`, `FORK.md`, deep `docs/section/{assembly,cells,junctions,…}` pipeline pages | Terse; one-line **Audience: internal** banner |
+| **Internal** | Maintainers of this repository | `docs/conventions/`, `bug_log.md`, `docs/internal/` (reports, `REFACTOR_PLAN`, `FORK`), ADRs, deep `docs/section/{assembly,cells,junctions,…}` pipeline pages | Terse; one-line **Audience: internal** banner |
 
 `docs/README.md` owns two maps: Manual (capability table) and Internal (conventions, bug logs, reports).
 
@@ -131,4 +131,4 @@ the code fix.
 ## Consumer names
 
 Live `src/` and `tests/` must not name consuming packages
-(`tests/test_consumer_names.py`). `docs/FORK.md` and scripts may.
+(`tests/test_consumer_names.py`). `docs/internal/FORK.md` and scripts may.

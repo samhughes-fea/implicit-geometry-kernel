@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.9.4 (unreleased; tag is the owner's)
 
 - Docs site: ``docs/api/`` documents each package's ``__all__`` with autodoc
   (furo theme); ``docs.yml`` builds the site on every PR with warnings as

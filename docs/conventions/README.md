@@ -1,4 +1,4 @@
-# conventions
+# Conventions
 
 **Audience: internal.** Minimal standards this repository cites. They describe
 documentation layering and import/API shape.

@@ -223,7 +223,13 @@ in-kernel mesh is `integration/quadtree`. Consumers own shell mesher jobs;
 | Figures | PNGs rewritten only past 0.5 % changed pixels; mesh exports untracked; cross-machine font differences still exceed that, so regenerated PNGs are committed only when the example's subject changed | `figure_io.write_png` |
 | Numbers | Results reproducible between releases unless the changelog says otherwise | Golden-number test |
 | Dependencies | Runtime: numpy, numba. Offset/overlay: ctypes ``libgeos_c`` (system/conda GEOS). Extras: scipy, matplotlib, cadquery, gmsh, pyyaml, contourpy | Core-install CI job |
-| Typing | Ships `py.typed`; public API annotated | mypy on `src/` in CI |
+| Typing | Ships `py.typed`; public API annotated; strict (`disallow_untyped_defs`) on structure, contract, frames, catalogue and extract, roadmap in `docs/conventions/TYPING.md` | mypy on `src/` in CI |
+| Docstrings | Public functions and classes documented; floor 69 % with plotting excluded, raised as coverage grows | `interrogate` in the lint job |
+| Tests | Tests of 4 s or more are marked `slow` in `tests/conftest.py`; PRs run the full suite on Python 3.13 and fast tests elsewhere | `tests.yml` |
+| CI installs | Dev and docs extras resolve from `requirements/ci.txt`; the core-install job stays unpinned | `tests.yml`, `docs.yml` |
+| Releases page | A tag makes a GitHub release with its changelog section and the wheel | `release.yml` `github-release` |
+| Security scan | CodeQL on Python and workflows, weekly and on PRs | `codeql.yml` |
+| Traceability | Issue first, PR says `Closes #N`, changelog lines end with the PR number | `docs/conventions/WORKFLOW.md`, PR template |
 | Data | No private reference-blade inputs in the repo; examples that need them skip without a local clone | Example 09 pattern |
 | Submodule use | `pip install -e path/to/kernel`, no build step or generated files | Wheel-build job |
 

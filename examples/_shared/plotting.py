@@ -16,7 +16,7 @@ import numpy as np  # noqa: E402
 from matplotlib.colors import BoundaryNorm, ListedColormap, to_rgba  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
-from implicit_geometry_kernel.plotting.palette import NAVY, RED, RETRO_PANELS, TEAL, panel_colour  # noqa: E402
+from implicit_geometry_kernel.plotting.palette import NAVY, RED, RETRO_PANELS, TEAL, panel_colour  # noqa: E402, F401 (panel_colour is re-exported)
 from implicit_geometry_kernel.section.boundary import LineString, OPS  # noqa: E402
 
 TEXT_SECONDARY = "#52514e"

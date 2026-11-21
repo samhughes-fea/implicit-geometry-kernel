@@ -9,6 +9,7 @@ import csv
 import math
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Sequence
 
 import numpy as np
 
@@ -364,7 +365,7 @@ def _diagonal_min(nodes: np.ndarray, element) -> float:
     return 0.0 if best is math.inf else best
 
 
-def diagonal_mins(mesh) -> tuple[float, ...]:
+def diagonal_mins(mesh) -> np.ndarray:
     """One ``diagonal_min`` per element. A quad has two diagonals; a polygon uses the same rule."""
     nodes = np.asarray(mesh.nodes, float)
     out = np.zeros(len(mesh.elements), float)
@@ -397,10 +398,10 @@ def _chain_turns(edges: np.ndarray, nodes: np.ndarray, names, normals) -> None:
         return
     name_of = np.asarray([str(n) for n in names], dtype=object)
     groups: dict[tuple[str, ...], list[int]] = {}
-    for index in span:
-        users = _edge_users(edges[index])
+    for span_index in span:
+        users = _edge_users(edges[span_index])
         pair = tuple(sorted({str(name_of[i]) for i in users}))
-        groups.setdefault(pair, []).append(int(index))
+        groups.setdefault(pair, []).append(int(span_index))
     query_index: list[int] = []
     prev_rows: list[np.ndarray] = []
     vector_rows: list[np.ndarray] = []
@@ -560,7 +561,7 @@ def _chain_open(edges: np.ndarray, nodes: np.ndarray, z_root: float) -> tuple[Op
     return tuple(loops)
 
 
-def valence_per_node(mesh, edges: np.ndarray) -> tuple[int, ...]:
+def valence_per_node(mesh, edges: np.ndarray) -> np.ndarray:
     """Skin-edge valence when the node is on the skin, otherwise the valence on its own surface."""
     n_nodes = len(mesh.nodes)
     skin_node = np.zeros(n_nodes, bool)
@@ -717,7 +718,7 @@ def t_junctions(nodes: np.ndarray, edges: np.ndarray, tol: float = 1e-5) -> tupl
     return tuple(Seam("t_junction", ia, ib, node, dist) for ia, ib, node, dist in found)
 
 
-def _ruled_valence_defects(mesh, edges: np.ndarray, valence: tuple[int, ...]) -> tuple[int, ...]:
+def _ruled_valence_defects(mesh, edges: np.ndarray, valence: Sequence[int] | np.ndarray) -> tuple[int, ...]:
     """Interior skin nodes of a ruled bay whose valence is not 4.
 
     A skin edge used by one skin element is the boundary of the sheet, including
@@ -845,8 +846,8 @@ def mesh_failures(mesh, *, angle: float = 20.0, skew: float | None = None,
             if kept is None or float(corner["angle_deg"]) < float(kept["angle_deg"]):
                 worst_at[element_id] = corner
     groups = []
-    for (constructor, bay), elements in hits_by_key.items():
-        elements = tuple(dict.fromkeys(elements))
+    for (constructor, bay), hit_elements in hits_by_key.items():
+        elements = tuple(dict.fromkeys(hit_elements))
         z0 = float(mesh.z0[elements[0]]) if mesh.z0 else 0.0
         z1 = float(mesh.z1[elements[0]]) if mesh.z1 else 0.0
         worst = None
@@ -1065,7 +1066,7 @@ def build_corners(mesh, edges: np.ndarray | None = None) -> np.ndarray:
         for k, node_id in enumerate(ids):
             nxt = next_ids[cursor + k]
             key = (node_id, int(nxt)) if node_id < nxt else (int(nxt), node_id)
-            neighbor = _other_face(element_id, users.get(key, ()), surfaces)
+            neighbor = _other_face(element_id, users.get(key, []), surfaces)
             if neighbor is not None:
                 neighbor_ids[cursor + k] = neighbor
         cursor = stop
@@ -1141,7 +1142,7 @@ def write_mesh_tables(mesh, directory) -> Path:
                       "constructor", "flipped", "diagonal_min"]
     if len(quality) == n_elements and quality.dtype.names:
         element_header.extend(quality.dtype.names)
-    node_cols = [[""] * n_elements for _ in range(width)]
+    node_cols: list[list[int | str]] = [[""] * n_elements for _ in range(width)]
     for i, element in enumerate(mesh.elements):
         for k, node in enumerate(element):
             node_cols[k][i] = int(node)
@@ -1182,7 +1183,7 @@ def write_mesh_tables(mesh, directory) -> Path:
             edges["kind"], edges["meet"], edges["sagitta"],
         ]
     else:
-        edge_columns = [[] for _ in edge_header]
+        edge_columns = [np.asarray([]) for _ in edge_header]
     count_rows = [{
         "z": c.z, "region": c.region, "length": c.length, "edge": c.edge,
         "edge_from": c.edge_from, "previous": c.previous, "count": c.count, "reason": c.reason,
@@ -1201,7 +1202,7 @@ def write_mesh_tables(mesh, directory) -> Path:
                      "yaw_deg", "pitch_deg", "roll_deg", "dx_in", "dy_in", "dz_in",
                      "dx_out", "dy_out", "dz_out", "prev_id", "next_id",
                      "constructor", "bay", "region", "surface"]
-    corner_columns = [corners[name] for name in corner_header] if len(corners) else [[] for _ in corner_header]
+    corner_columns = [corners[name] for name in corner_header] if len(corners) else [np.asarray([]) for _ in corner_header]
     loop_rows = [{
         "z": lp.z, "n_edges": lp.n_edges, "is_root": int(lp.is_root),
         "nodes": " ".join(str(k) for k in lp.nodes),

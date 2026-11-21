@@ -16,11 +16,11 @@ Graphify EXTRACTED follow-up (no further kernel step):
 
 ## 1. SRP — `SectionCut` snapshot vs graph builders
 
-[`shell_graph(cut)`](../../../src/implicit_geometry_kernel/blade/shell_graph.py)
+[`shell_graph(cut)`](../../../../src/implicit_geometry_kernel/blade/shell_graph.py)
 (L326) calls `_mid_surface(cut)` (L333).
-[`SectionCut.shell_graph`](../../../src/implicit_geometry_kernel/blade/cut.py)
+[`SectionCut.shell_graph`](../../../../src/implicit_geometry_kernel/blade/cut.py)
 (L154–161) and `.mid_surface` (L123–137) lazy-import those builders.
-[`shell_strips_from_graph`](../../../src/implicit_geometry_kernel/blade/shell_graph.py)
+[`shell_strips_from_graph`](../../../../src/implicit_geometry_kernel/blade/shell_graph.py)
 (L270) uses `shell_graph(cut).runs()`.
 
 **Findings.** Import cycle remains: `cut.py` lazy-imports `shell_graph` /
@@ -51,7 +51,7 @@ forward to free functions.
 
 ## 2. ISP — `StationNetwork` vs `ShellGraph`
 
-[`station_network(cut)`](../../../src/implicit_geometry_kernel/blade/topology/network.py)
+[`station_network(cut)`](../../../../src/implicit_geometry_kernel/blade/topology/network.py)
 (L59–70) wraps `shell_graph(cut).runs()` in `WallBranch` plus `FeatureTable`.
 The package barrel exports both `ShellGraph` and `StationNetwork`.
 `station_network_from_meta` remains a meta split (`thickness=0.0`).
@@ -71,13 +71,13 @@ split.
 
 ## 3. DIP — `SectionCut.host`
 
-Field at [`cut.py` L104](../../../src/implicit_geometry_kernel/blade/cut.py):
+Field at [`cut.py` L104](../../../../src/implicit_geometry_kernel/blade/cut.py):
 `host: SectionMidlineHost | None`. Bond `host_label` is a different name.
 
 **Findings.** Loft assigns `host` as `result.section` in
-[`loft/loft_cut.py`](../../../src/implicit_geometry_kernel/blade/loft/loft_cut.py)
+[`loft/loft_cut.py`](../../../../src/implicit_geometry_kernel/blade/loft/loft_cut.py)
 L197. `SectionGeometryResult.section` is
-[`SectionMidlineHost`](../../../src/implicit_geometry_kernel/section/midlines/host.py)
+[`SectionMidlineHost`](../../../../src/implicit_geometry_kernel/section/midlines/host.py)
 (`section/spec/results.py` L145). Reader:
 `examples/_shared/blade_viz.py` (`_sample_property_qt` requires `cut.host`,
 then `SectionFieldEvaluator.from_section`). Test:
@@ -90,10 +90,10 @@ it; viz depends on it.
 
 ## 4. SRP — `key_points` vs `place_station_keys`
 
-[`station_key_points`](../../../src/implicit_geometry_kernel/blade/topology/map.py)
+[`station_key_points`](../../../../src/implicit_geometry_kernel/blade/topology/map.py)
 (L41) builds LE/TE, cap-edge vertices and web feet via `shell_graph(cut)` and
-`wall_type_for_label`. [`SectionCut.key_points`](../../../src/implicit_geometry_kernel/blade/cut.py)
-(L163–167) is a one-line call. [`place_station_keys`](../../../src/implicit_geometry_kernel/blade/topology/map.py)
+`wall_type_for_label`. [`SectionCut.key_points`](../../../../src/implicit_geometry_kernel/blade/cut.py)
+(L163–167) is a one-line call. [`place_station_keys`](../../../../src/implicit_geometry_kernel/blade/topology/map.py)
 (L65) takes cut, graph, region graph, and `z`.
 
 **Findings.** `SectionCut.key_points` / `BladeGeometry.key_points(z)` (mixin
@@ -110,7 +110,7 @@ Move the LE/TE/cap/web-foot logic next to `place_station_keys` in `topology/`.
 
 ## 5. SRP / composition — `BladeGeometry` mixins
 
-[`BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin)`](../../../src/implicit_geometry_kernel/blade/loft/loft.py)
+[`BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin)`](../../../../src/implicit_geometry_kernel/blade/loft/loft.py)
 (L73). After the class body, `loft.py` L292–297 copies public callables from
 `LoftCutMixin` and `LoftFieldsMixin` onto `BladeGeometry`. Mixins are not
 imported as public types from `blade/__init__.py`.

@@ -87,7 +87,7 @@ def write_vtk(mesh: ShellMesh, path: str | Path, title: str = "shell mesh") -> t
         np.savetxt(handle, nodes, fmt="%.16g")
         handle.write(f"CELLS {n_cells} {size}\n")
         sizes = np.fromiter((len(e) for e in mesh.elements), np.int64, count=n_cells)
-        max_n = int(sizes.max()) if n_cells else 0
+        max_n = int(np.max(sizes)) if n_cells else 0
         if n_cells and np.all(sizes == sizes[0]):
             block = np.empty((n_cells, 1 + int(sizes[0])), np.int64)
             block[:, 0] = sizes

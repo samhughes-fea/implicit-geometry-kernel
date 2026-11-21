@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import csv
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
@@ -543,10 +543,10 @@ def detect_sheet_intersection(mesh, gap: float = 1e-6,
                         break
                 if not crossed:
                     continue
-                key = (min(ei, ej), max(ei, ej))
-                if key in seen:
+                pair = (min(ei, ej), max(ei, ej))
+                if pair in seen:
                     continue
-                seen.add(key)
+                seen.add(pair)
                 meta = _meta(mesh, ei)
                 hits.append(_hit(
                     "sheet_intersection", element=ei,

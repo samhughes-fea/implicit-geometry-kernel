@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field, replace
-from typing import Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 import numpy as np
 
@@ -156,7 +156,7 @@ class ShellMesh:
         return out
 
 
-def _unique_z(zs: Sequence[float], *, abs_tol: float = 1e-3) -> tuple[float, ...]:
+def _unique_z(zs: Iterable[float], *, abs_tol: float = 1e-3) -> tuple[float, ...]:
     """Sorted stations merged when closer than ``abs_tol`` (metres).
 
     A key-crossing can land within a millimetre of an anchor; those must
@@ -663,8 +663,8 @@ def _split_crossed_triangles(elements: list, rows: list, meta: list,
         edges_c: list[int] = []
         edges_ei: list[int] = []
         for ei in tri:
-            a, b, c = (int(v) for v in elements[ei])
-            for u, v, w in ((a, b, c), (b, c, a), (c, a, b)):
+            i0, i1, i2 = (int(v) for v in elements[ei])
+            for u, v, w in ((i0, i1, i2), (i1, i2, i0), (i2, i0, i1)):
                 edges_a.append(u)
                 edges_b.append(v)
                 edges_c.append(w)
@@ -704,9 +704,10 @@ def _split_crossed_triangles(elements: list, rows: list, meta: list,
                 pts, np.asarray(edge_ids, np.int64), nodes_here, a, b, pa, ab, span2, lo, hi, tol,
             )
             for ia, ib, node, _gap in hits:
-                edge = edge_of.get((ia, ib))
-                if edge is None:
+                hit_edge = edge_of.get((ia, ib))
+                if hit_edge is None:
                     continue
+                edge = hit_edge
                 owned = {int(a[edge]), int(b[edge]), int(c_of[edge])}
                 if node in owned:
                     continue
@@ -753,7 +754,7 @@ def _weld_triangles(faces: np.ndarray, index: dict[tuple[float, float, float], i
     _unique, first, inverse = np.unique(void, return_index=True, return_inverse=True)
 
     def _coarse(p) -> tuple[float, float, float]:
-        return tuple(round(float(p[k]), 8) for k in range(3))
+        return (round(float(p[0]), 8), round(float(p[1]), 8), round(float(p[2]), 8))
 
     near = {_coarse(p): i for i, p in enumerate(nodes)}
     ids = np.empty(len(first), np.int64)
@@ -837,9 +838,9 @@ def _closest_on_loop(loop: np.ndarray, xyz: np.ndarray) -> np.ndarray:
     return _closest_on_loop_many(loop, np.asarray(xyz, float).reshape(1, 3))[0]
 
 
-def _le_te_points(geo, zs: Sequence[float]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _le_te_points(geo, zs_in: Sequence[float]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Placed leading and trailing edges at each ``z``, and the local chord."""
-    zs = np.asarray([float(z) for z in zs], float)
+    zs = np.asarray([float(z) for z in zs_in], float)
     empty = np.zeros((0, 3), float)
     if len(zs) == 0:
         return empty, empty, np.zeros(0, float)
@@ -863,7 +864,7 @@ def _le_te_points(geo, zs: Sequence[float]) -> tuple[np.ndarray, np.ndarray, np.
     return at(i_le), at(i_te), np.asarray(chord, float)
 
 
-def _fill_le_te_cache(geo, zs: Sequence[float], cache: dict) -> None:
+def _fill_le_te_cache(geo, zs: Iterable[float], cache: dict) -> None:
     """Store leading edge, trailing edge, and chord for each missing ``z``."""
     need = [float(z) for z in zs if round(float(z), 9) not in cache]
     if not need:
@@ -873,7 +874,7 @@ def _fill_le_te_cache(geo, zs: Sequence[float], cache: dict) -> None:
         cache[round(float(z), 9)] = (le[i], te[i], float(chord[i]))
 
 
-def _span_edges(geo, zs: Sequence[float], *, cache: dict | None = None):
+def _span_edges(geo, zs_in: Sequence[float], *, cache: dict | None = None):
     """Placed leading and trailing edges, and each bay's sagitta and budget.
 
     The edge point is the unit-chord extreme of the interpolated airfoil, placed
@@ -882,7 +883,7 @@ def _span_edges(geo, zs: Sequence[float], *, cache: dict | None = None):
     ruling, so it does not build a section. ``cache`` keeps evaluated edges
     across freeze rounds.
     """
-    zs = np.asarray([float(z) for z in zs], float)
+    zs = np.asarray([float(z) for z in zs_in], float)
     empty = np.zeros((0, 3), float)
     if len(zs) == 0:
         return empty, empty, np.zeros(0), np.zeros(0), np.zeros(0)
@@ -953,7 +954,8 @@ def _sagitta_pending(geo, zs: Sequence[float], h: float | None, fraction: float 
     return pending, refused
 
 
-def _freeze_sagitta(geo, zs: Sequence[float], h: float | None, fraction: float | None) -> tuple[float, ...]:
+def _freeze_sagitta(geo, zs: Sequence[float], h: float | None,
+                    fraction: float | None) -> tuple[tuple[float, ...], dict[float, str]]:
     """Insert mid-bay stations until the leading and trailing edges hold the budget.
 
     This runs before any section is built. Eight rounds is the same depth the
@@ -1252,7 +1254,7 @@ def _section_projector(geo, web_names: set[str]):
         for key in dict.fromkeys(zkey.tolist()):
             chosen = np.flatnonzero(zkey == key)
             loop, keys = slot(float(xyz[int(chosen[0]), 2]))
-            pending = list(chosen)
+            pending = [int(i) for i in chosen]
             if at_end and keys:
                 pending = []
                 for i in chosen:
@@ -1374,13 +1376,13 @@ def _window_key(geo, z: float) -> tuple[float, ...]:
     if raw is None:
         return ()
     if isinstance(raw, Mapping):
-        flat = []
+        parts: list[float] = []
         for side in sorted(raw):
             window = raw[side]
             if window is None:
                 continue
-            flat.extend(float(v) for v in window)
-        return tuple(round(v, 6) for v in flat)
+            parts.extend(float(v) for v in window)
+        return tuple(round(v, 6) for v in parts)
     flat = np.atleast_1d(np.asarray(raw, float)).ravel()
     return tuple(round(float(v), 6) for v in flat)
 
@@ -1527,7 +1529,7 @@ def _live_fractions(geo, z: float) -> dict[str, float]:
     if positions is not None:
         raw = np.atleast_1d(np.asarray(positions(z), float)).ravel()
     width = len(raw) // len(webs) if webs and raw is not None and len(raw) % len(webs) == 0 else 0
-    if webs and width:
+    if webs and width and raw is not None:
         table = raw.reshape(len(webs), width)
         for i, web in enumerate(webs):
             if not web.active(z):
@@ -1631,7 +1633,7 @@ def _cache_graph(cut):
     return graph
 
 
-def _ensure_site_cuts(geo) -> list[tuple[float, object]]:
+def _ensure_site_cuts(geo) -> list[tuple[float, Any]]:
     """Execute one section at each site and keep its shell graph."""
     cached = geo.__dict__.get("_mesh_site_list")
     if cached is not None:
@@ -2165,7 +2167,7 @@ def _shell_mesh_body(geo, n_span: int | None = None, *, h: float | None = None,
     if region_h and h is None and fraction is None:
         raise ValueError("region_h needs h or h_over_c")
     started = time.perf_counter()
-    if explicit:
+    if zs is not None:
         zs = tuple(sorted(float(z) for z in zs))
     else:
         zs = mesh_stations(geo, n_span, h=h, h_over_c=fraction, refine=refine)
@@ -2433,9 +2435,9 @@ def _shell_mesh_body(geo, n_span: int | None = None, *, h: float | None = None,
         grouped: dict[tuple[int, str], list] = {}
         for item in queries:
             grouped.setdefault((item[0], item[1]), []).append(item)
-        run_of: dict[tuple[int, int], object] = {}
-        for (tip, surface), items in grouped.items():
-            station = i + 1 if tip else i
+        run_of: dict[tuple[int, int], Any] = {}
+        for (at_tip, surface), items in grouped.items():
+            station = i + 1 if at_tip else i
             runs = graphs[station].webs if surface == "web" else graphs[station].loop
             chosen = _nearest_runs(runs, np.stack([item[2] for item in items]))
             for run, item in zip(chosen, items):
@@ -2479,7 +2481,7 @@ def _shell_mesh_body(geo, n_span: int | None = None, *, h: float | None = None,
     started = time.perf_counter()
     for si, (z, tmpl, smp) in enumerate(zip(zs, tmpls, smps)):
         members: list = [m for m in geo.transverse if abs(float(m.z) - z) <= 1e-8]
-        rings: list[tuple[str, str, np.ndarray, object]] = []
+        rings: list[tuple[str, str, np.ndarray, Any]] = []
         for m in members:
             for name, ring in rib_cell_polygons_from_samples(tmpl, smp, m):
                 rings.append((name, "rib", np.asarray(ring, float), m))
@@ -2490,39 +2492,39 @@ def _shell_mesh_body(geo, n_span: int | None = None, *, h: float | None = None,
         station: list[tuple[tuple, np.ndarray]] = []
         for name, surface, ring, member in rings:
             for p in ring:
-                key = _point_key(p)
-                k = index.get(key)
-                if k is None or k >= n_source:
+                pkey = _point_key(p)
+                hit = index.get(pkey)
+                if hit is None or hit >= n_source:
                     raise ValueError(f"partition ring vertex at z = {z} is not a skin or web node")
             if surface == "rib":
-                row = (name, surface, str(member.name), float(member.thickness), 0.0,
+                ring_row = (name, surface, str(member.name), float(member.thickness), 0.0,
                        (str(member.name),), (float(member.thickness),))
             else:
                 t_tip = float(geo.tip_closure_thickness())
-                row = (name, surface, str(member.partition), t_tip, 0.0,
+                ring_row = (name, surface, str(member.partition), t_tip, 0.0,
                        (str(member.partition),), (t_tip,))
-            faces = triangulate_ring(
+            ring_faces = triangulate_ring(
                 ring, size=polygon_size, pattern="unstructured", split_boundary=False,
             )
-            if len(faces) == 0:
+            if len(ring_faces) == 0:
                 continue
-            station.append((row, np.asarray(faces, float)))
+            station.append((ring_row, np.asarray(ring_faces, float)))
         if not station:
             continue
         welded = _weld_triangles(
-            np.concatenate([faces for _row, faces in station], axis=0),
+            np.concatenate([ring_faces for _ring_row, ring_faces in station], axis=0),
             index, nodes, origins,
         )
         offset = 0
-        for row, faces in station:
-            block = welded[offset:offset + len(faces)]
-            offset += len(faces)
+        for ring_row, ring_faces in station:
+            block = welded[offset:offset + len(ring_faces)]
+            offset += len(ring_faces)
             for tri in block:
                 if int(tri[0]) < 0:
                     continue
                 ids = [int(k) for k in tri]
                 kind = "interior" if any(k >= n_source for k in ids) else "inherited"
-                add(ids, row, (si, float(z), float(z), kind, 0, 0))
+                add(ids, ring_row, (si, float(z), float(z), kind, 0, 0))
     _mark("shell_ribs", started, stations=len(zs))
 
     with stage("implicit_geometry_kernel", "shell_quality"):
@@ -2576,31 +2578,31 @@ def _shell_mesh_body(geo, n_span: int | None = None, *, h: float | None = None,
     )
     mesh = ShellMesh(
         nodes=pts,
-        elements=elements,
-        name=[r[0] for r in rows],
-        surface=[r[1] for r in rows],
-        partition=partition,
+        elements=tuple(elements),
+        name=tuple(r[0] for r in rows),
+        surface=tuple(r[1] for r in rows),
+        partition=tuple(partition),
         thickness=thickness,
         eccentricity=np.array([r[4] for r in rows], float),
-        layers=[r[5] for r in rows],
-        layer_thicknesses=[r[6] for r in rows],
+        layers=tuple(r[5] for r in rows),
+        layer_thicknesses=tuple(r[6] for r in rows),
         stations=tuple(float(z) for z in zs),
         quality=(),
         recipe=recipe,
         element_quality=table,
         n_source=n_source,
-        bay=[m[0] for m in meta],
-        z0=[m[1] for m in meta],
-        z1=[m[2] for m in meta],
-        constructor=[m[3] for m in meta],
-        n0=[m[4] for m in meta],
-        n1=[m[5] for m in meta],
-        flipped=flip_flags,
-        node_origin=origins,
+        bay=tuple(m[0] for m in meta),
+        z0=tuple(m[1] for m in meta),
+        z1=tuple(m[2] for m in meta),
+        constructor=tuple(m[3] for m in meta),
+        n0=tuple(m[4] for m in meta),
+        n1=tuple(m[5] for m in meta),
+        flipped=tuple(flip_flags),
+        node_origin=tuple(origins),
         section_distance=distance,
-        counts=count_log,
+        counts=tuple(count_log),
         station_log=station_log,
-        strips=strips,
+        strips=tuple(strips),
         edge_sagitta=edge_sagitta,
     )
     facts = assemble(mesh, float(zs[0]))

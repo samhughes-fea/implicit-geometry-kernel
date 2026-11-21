@@ -329,7 +329,7 @@ def _recover_boundary(pts: np.ndarray, tris: np.ndarray, n_boundary: int) -> np.
     Boundary vertices stay as given. Interior points may sit in a boundary
     edge's diametral circle; the flip puts that edge back.
     """
-    faces = [tuple(int(x) for x in t) for t in tris]
+    faces: list[tuple[int, int, int]] = [(int(t[0]), int(t[1]), int(t[2])) for t in tris]
     if n_boundary < 3 or not faces:
         return tris
 

@@ -30,6 +30,7 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | K8 | Leading-edge and spanwise refinement controls | Done (#56, 0.9.2) |
 | K9 | windIO read on the blade's own sections: arcs by OML arc length at every z (corner to corner), per-side cap windows, two-foot webs, web span windows (BG-036) whose ends are mesh stations, tip closure on single-cell tips; station airfoils that reproduce their points (blunt corner, round end, base listed as points) | Done (#58) |
 | K5 | Trimmed top-level API (deprecate first), internal docs to `docs/internal/`; still 0.9.x | **Done** — `docs/internal/`, flat mesh shims removed, rare topology helpers demoted from top-level `__all__` with root `__getattr__` warnings (0.9.x). Stay 0.9.x, no 1.0 |
+| 0.9.3 | Release prep: CI green on the split `mesh/` packages (lint, mypy, fan-budget test, example runner), doc links after the `docs/internal/` move, `__version__` 0.9.3. Consumers then pin `v0.9.3` instead of the `K9` tag | PR open; tag is the maintainer's |
 
 #### Consumer adapter gaps (to do)
 
@@ -61,6 +62,7 @@ family with a root-circle blend, webs, caps, ribs, stringers) and out of windIO 
 | G16 | Finds windIO spar caps by layer name (`spar`, `cap`); a file that names layers by keypoint (10 MW) gets none | Identify caps by structure (the band between the web feet, uniaxial material) or take an explicit list | Done (`cap_id`: name rule default, `between_webs`, or a name list; BG-041) |
 | G17 | Sums ply thicknesses itself for skin, cap and web | Thickness per partition from the stack (decision D4) | Done (`StackThickness.from_layup`, `StackThickness.from_windio`) |
 | G18 | — | Webs that cross between stations (BG-037) | Done (web anchors follow the placed arcs) |
+| G19 | Splits rib and tip-closure polygon cells into triangles for a solver element that takes triangles. A fan split at a reflex corner put a triangle outside its cell, over the next one (0.09 % extra rib and tip area at a production size; nothing raised because each triangle was rewound to positive area) | Ship a valid split of each polygon cell (through reflex corners, every piece inside its cell, a piece outside raises), so the consumer takes cells or triangles from the kernel | To do |
 
 Not kernel work: the trailing-edge bond and core fill are materials inside the section,
 and plies, loads and solvers stay in consumers.
@@ -425,7 +427,7 @@ Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays
   ([MERGED_SHELL_GAPS](section/reports/MERGED_SHELL_GAPS.md)).
   `LoftedPolygonSDF` BVH (`accelerate` / `accel_at`) is shipped.
 - Mapped loft freeze: loft webs follow intercept `DroppedWeb.index`; no
-  per-blade branches in loft code ([blade bug log](blade/bug_log.md)).
+  per-blade branches in loft code ([blade bug log](../blade/bug_log.md)).
 - Efficiency is an **open scan**, not an infinite emit track
   ([PERFORMANCE_WORK_SUMMARY](section/reports/PERFORMANCE_WORK_SUMMARY.md)
   kernel scan 2026-11-10). Resume code only with a named timing; do not reopen

@@ -34,8 +34,10 @@ SMOKE_ARGS = {
 SLOW = {
     "blade/09_blade_concepts/blade_concepts.py": 720.0,
 }
+# Imported modules and command-line tools (compare_studies.py diffs two figure
+# folders given on the command line), not examples to run on their own.
 HELPERS = {"_ensure_repo_path.py", "_plot_debug.py", "_taxonomy_cases.py", "cell_wall_loops_case_payload.py",
-           "feature_flythrough_specs.py"}
+           "feature_flythrough_specs.py", "compare_studies.py"}
 
 
 def scripts() -> list[Path]:

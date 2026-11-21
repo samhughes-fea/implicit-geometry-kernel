@@ -26,7 +26,7 @@ Names: [glossary](glossary.md). Frames: [which array](frames/README.md#which-arr
 | Frames | `frames` | R / B / S / S′ / C transforms | [frames](frames/README.md) | [examples/frames](../examples/frames/) | [tests/frames](../tests/frames/) |
 | Integration | `build_shared_quadtree` | area/moments; CSG occupancy mesh | [integration](integration/README.md) | [examples/integration](../examples/integration/), example 09 `csg_mesh` | [tests/integration](../tests/integration/) |
 | Hand-off | `contract` | `ShellMidlineStrip`, `LaminateOffsetRegion`, `CellWallLoop` | [contract](contract/README.md) | [contract/01](../examples/contract/01_three_products_dtos/), teaching `05` | [tests/contract](../tests/contract/) |
-| Shell mesh | `mesh.shell_mesh` / `mesh.shell` (`[mesh]`) | conformal shell mesh + health | [mesh README](../src/implicit_geometry_kernel/mesh/README.md), [geometry to mesh](section/guides/geometry_to_mesh.md) | [15_shell_mesh](../examples/blade/15_shell_mesh/) | [tests/mesh](../tests/mesh/) |
+| Shell mesh | `mesh.shell_mesh` / `mesh.shell` (`[mesh]`) | conformal shell mesh + health | [mesh README](../src/implicit_geometry_kernel/mesh/README.md), [geometry to mesh](section/guides/geometry_to_mesh.md) | [15_shell_mesh](../examples/blade/15_shell_mesh/) | [tests/test_shell_mesh.py](../tests/test_shell_mesh.py) |
 | Extract | `extract` | zero loops, feature curves | [extract](extract/README.md) | [examples/extract](../examples/extract/) | [tests/extract](../tests/extract/) |
 | Plotting | `plotting` (`[plots]`) | figures | [visualisation](section/visualisation/README.md) | [demos](../examples/demos/) | [tests](../tests/README.md) |
 

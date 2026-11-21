@@ -12,6 +12,9 @@
 - Bug log: SG-018 now classifies all 51 nearest / ``argmin`` sites. Three sites
   move web ends onto the skin with no tolerance (up to 48 mm on one reference
   mesh); they are logged as SG-035 with a proposed fix.
+- Typing: ``integration`` is strict; ``sdf``, ``section`` and ``blade`` have
+  checked bodies and no stale ignores. ``compute_section_properties`` has
+  overloads, so ``with_mesh=True`` callers get a 3-tuple type.
 
 ## 0.9.5 (2026-11-21)
 

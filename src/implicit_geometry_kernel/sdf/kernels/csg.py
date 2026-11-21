@@ -103,7 +103,7 @@ def union_all(fields):
         return _single
 
     def _op(x, y):
-        return np.minimum.reduce([_eval(f, x, y) for f in fields])
+        return np.min(np.asarray([_eval(f, x, y) for f in fields]), axis=0)
 
     return _op
 
@@ -123,6 +123,6 @@ def intersect_all(fields):
         return _single
 
     def _op(x, y):
-        return np.maximum.reduce([_eval(f, x, y) for f in fields])
+        return np.max(np.asarray([_eval(f, x, y) for f in fields]), axis=0)
 
     return _op

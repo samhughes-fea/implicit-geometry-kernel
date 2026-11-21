@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.9.5 (unreleased)
+
+- Docs site: new landing page with logo, cards and grouped sidebar (Getting
+  started, User guide, Reference, Project); ``ARCHITECTURE.md`` (data flow,
+  package layering, where to look) and a five-step tutorial that a test runs;
+  project files (changelog, contributing, scope, rules, security, conduct)
+  rendered on the site; copy buttons on code; repository links resolve to
+  GitHub; version shown from ``__version__``.
+- Releases: a tag now also makes a GitHub release with its changelog section
+  and the sdist and wheel attached (release candidates as pre-releases).
+- CI: CodeQL scanning (Python and workflows); dev and docs installs pinned by
+  ``requirements/ci.txt``; ``interrogate`` docstring coverage gate; tests of 4 s
+  or more marked ``slow`` so pull requests run fast tests on 3.11 and 3.12 and
+  the full suite on 3.13.
+- Typing: strict mypy on ``structure``, ``contract``, ``frames``, ``catalogue``
+  and ``extract``; roadmap in ``docs/conventions/TYPING.md``. The API snapshot
+  was regenerated because ``InfeasibleSectionGeometry`` gained annotations
+  (no behaviour change).
+- Workflow: issue-first traceability rules in ``docs/conventions/WORKFLOW.md``;
+  the PR template asks for ``Closes #N``.
+
 ## 0.9.4 (2026-11-21)
 
 - Commits: Conventional Commits on ``main`` (``docs/conventions/COMMITS.md``,

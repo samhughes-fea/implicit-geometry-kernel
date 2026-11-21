@@ -11,7 +11,7 @@ _EDGES = ((0, 1), (1, 2), (2, 3), (3, 0))
 _CORNERS = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
 
 
-def _interp(p0, p1, v0, v1):
+def _interp(p0: np.ndarray, p1: np.ndarray, v0: float, v1: float) -> np.ndarray:
     t = v0 / (v0 - v1 + 1e-30)
     return p0 + t * (p1 - p0)
 

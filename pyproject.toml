@@ -85,6 +85,20 @@ module = ["implicit_geometry_kernel.mesh", "implicit_geometry_kernel.mesh.*"]
 check_untyped_defs = true
 warn_unused_ignores = true
 
+# Typing roadmap (docs/conventions/TYPING.md): packages move here once every
+# function is annotated. Next: integration, frames internals, section, blade, mesh.
+[[tool.mypy.overrides]]
+module = [
+    "implicit_geometry_kernel.structure.*",
+    "implicit_geometry_kernel.contract.*",
+    "implicit_geometry_kernel.frames.*",
+    "implicit_geometry_kernel.catalogue.*",
+    "implicit_geometry_kernel.extract.*",
+]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+
 [tool.ruff]
 line-length = 120
 

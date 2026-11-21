@@ -54,6 +54,8 @@ sphinx-build -W -b html docs docs/_build/html   # with the [docs] extra
 - **Figures.** Example PNGs are committed and shown in the example READMEs. Font
   rendering differs between machines, so commit a regenerated PNG only when the
   example's subject changed. Mesh exports (STL, OBJ, VTK) are not committed.
+- **Types.** Follow the [typing roadmap](docs/conventions/TYPING.md); a package
+  never moves down a level.
 - **Docs.** The manual is the Markdown under `docs/`; the API reference is built
   from docstrings (NumPy style). Keep both building with `-W`.
 

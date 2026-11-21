@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
+from numpy.typing import ArrayLike
 
 from implicit_geometry_kernel.sdf.solve import GeometrySolver
 
 
-def locate_shell_vertex(geo, vid, zs, n_chord: int = 8) -> np.ndarray:
+def locate_shell_vertex(geo: Any, vid: Any, zs: ArrayLike, n_chord: int = 8) -> np.ndarray:
     """XYZ of a :data:`~implicit_geometry_kernel.blade.topology.ShellVertexId` at each ``z``.
 
     Uses the authored keys on the live section (OML TE snap, web feet), not a
@@ -43,7 +46,8 @@ def locate_shell_vertex(geo, vid, zs, n_chord: int = 8) -> np.ndarray:
     return np.vstack(out) if out else np.zeros((0, 3), dtype=float)
 
 
-def feature_curve(a, b, zs, guess_xy=None, solver: GeometrySolver | None = None) -> np.ndarray:
+def feature_curve(a: Any, b: Any, zs: ArrayLike, guess_xy: ArrayLike | None = None,
+                  solver: GeometrySolver | None = None) -> np.ndarray:
     """Trace a spanwise feature.
 
     Newton form: ``feature_curve(phi_a, phi_b, zs, guess_xy)`` intersects
@@ -99,7 +103,7 @@ def _hull(pts: np.ndarray) -> np.ndarray:
     return np.asarray(lower[:-1] + upper[:-1], float)
 
 
-def classify_trailing_edge(ring_xy, blunt_tol: float = 1e-4) -> str:
+def classify_trailing_edge(ring_xy: Any, blunt_tol: float = 1e-4) -> str:
     """``sharp`` if the TE is a point; ``blunt`` if a finite edge remains.
 
     Accepts an OML ring ``(N, 2|3)`` or a :class:`~implicit_geometry_kernel.blade.shell_graph.ShellGraph`

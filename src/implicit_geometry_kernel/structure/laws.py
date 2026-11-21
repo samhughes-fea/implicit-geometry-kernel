@@ -14,16 +14,17 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 
 class SpanLaw(ABC):
     """A scalar as a function of ``z``. Subclasses implement :meth:`_eval`."""
 
-    def __call__(self, z) -> np.ndarray:
+    def __call__(self, z: ArrayLike) -> np.ndarray:
         zz = np.asarray(z, dtype=np.float64)
         if zz.size > 1:
             flat = zz.ravel()
-            if flat.min() == flat.max():  # one section plane, the common case
+            if np.min(flat) == np.max(flat):  # one section plane, the common case
                 return np.full(zz.shape, self._eval(flat[:1])[0])
         return self._eval(zz)
 
@@ -49,7 +50,7 @@ class ThicknessLaw(ABC):
     """
 
     @abstractmethod
-    def __call__(self, z, s) -> np.ndarray:
+    def __call__(self, z: ArrayLike, s: ArrayLike) -> np.ndarray:
         """Broadcast ``z`` and ``s``; return thickness in metres."""
 
     @classmethod
@@ -61,7 +62,7 @@ class _SpanThickness(ThicknessLaw):
     def __init__(self, law: SpanLaw) -> None:
         self.law = law
 
-    def __call__(self, z, s) -> np.ndarray:
+    def __call__(self, z: ArrayLike, s: ArrayLike) -> np.ndarray:
         zz, ss = np.broadcast_arrays(np.asarray(z, dtype=np.float64), np.asarray(s, dtype=np.float64))
         return np.reshape(self.law(zz.ravel()), zz.shape)
 

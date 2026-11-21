@@ -26,7 +26,7 @@ class InfeasibleSectionGeometry(ValueError):
     re-anchor), when the caller knows it.
     """
 
-    def __init__(self, *args, web_index: int | None = None, web_x: float | None = None):
+    def __init__(self, *args: object, web_index: int | None = None, web_x: float | None = None) -> None:
         super().__init__(*args)
         self.web_index = web_index
         self.web_x = web_x

@@ -215,7 +215,8 @@ in-kernel mesh is `integration/quadtree`. Consumers own shell mesher jobs;
 | Agnostic | No consumer names, paths or special cases in `src/` or tests. Docs describe products and roles | `tests/test_consumer_names.py` (src and tests) |
 | Public API | Only names in the top-level `__all__` and `contract/` are public | API snapshot test |
 | Versioning | Semantic versions; removals only in a minor release (pre-1.0) after one release of deprecation warnings; tags never move. Releases stay on 0.9.x; do not tag `v1.0.0` (maintainer, 11 Nov: the public API is not worked out) | Changelog; tags by the maintainer |
-| Main branch | Every change through a PR with green CI (lint, tests on Python 3.11 to 3.13, examples, wheel build) | Branch protection on `main` |
+| Main branch | Every change through a PR with green CI (lint, doc links, tests on Python 3.11 to 3.13, examples, wheel build, consumer suites) | Branch protection on `main`, no bypass |
+| Releases | A `v*` tag equals `v` + `__version__`; wheels go to PyPI only when publishing is switched on | `release.yml` |
 | Numbers | Results reproducible between releases unless the changelog says otherwise | Golden-number test |
 | Dependencies | Runtime: numpy, numba. Offset/overlay: ctypes ``libgeos_c`` (system/conda GEOS). Extras: scipy, matplotlib, cadquery, gmsh, pyyaml, contourpy | Core-install CI job |
 | Typing | Ships `py.typed`; public API annotated | mypy on `src/` in CI |
@@ -436,5 +437,5 @@ Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays
 ## Risks
 
 - Silent number drift during moves: caught by the golden test.
-- Downstream breaks: caught by `check_consumer.py` on each PR; consumers stay on tags.
+- Downstream breaks: caught by the `consumers` CI job (`check_consumer.py` on each repository listed in the `CONSUMER_REPOS` variable) on each PR; consumers stay on tags.
 - Large shape-model changes: done (Phase 1 landed in PR #8 without number changes).

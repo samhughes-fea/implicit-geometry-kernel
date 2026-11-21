@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- CI: relative Markdown links are checked (``scripts/check_links.py``); a
+  ``consumers`` job runs downstream test suites against the PR's kernel when
+  the ``CONSUMER_REPOS`` repository variable lists them; actions move to the
+  Node 24 releases (``checkout@v5``, ``setup-python@v6``).
+- ``release.yml``: a ``v*`` tag must equal ``v`` + ``__version__``, then the
+  sdist and wheel are built. Upload to PyPI (trusted publishing) runs only when
+  the ``PYPI_PUBLISH`` variable is ``true``.
 - The 0.9.2 flat mesh paths import again, with a ``DeprecationWarning`` on each
   name read, until 0.9.5: ``mesh.shell_mesh``, ``mesh.vtk``, ``mesh.polygon``,
   ``mesh.polygon_voronoi`` and ``mesh.delaunay``. 0.9.3 removed them without the

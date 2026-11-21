@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- The 0.9.2 flat mesh paths import again, with a ``DeprecationWarning`` on each
+  name read, until 0.9.5: ``mesh.shell_mesh``, ``mesh.vtk``, ``mesh.polygon``,
+  ``mesh.polygon_voronoi`` and ``mesh.delaunay``. 0.9.3 removed them without the
+  release of warnings that the versioning rule asks for. ``mesh.shell_mesh`` the
+  function is unchanged.
+
 ## 0.9.3 (2026-11-21)
 
 - A web foot whose frozen ``web_y`` was resolved at a thinner skin raises

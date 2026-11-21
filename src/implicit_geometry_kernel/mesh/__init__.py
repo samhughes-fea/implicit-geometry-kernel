@@ -13,7 +13,8 @@ Layout:
 ``shell_mesh`` is the blade's conforming shell mesh (quads on the skin and webs,
 triangles on ribs and the tip). Import from this package or the subpackages
 above (``mesh.shell``, ``mesh.export``, ``mesh.fill``). Flat module paths
-(``mesh.shell_mesh``, ``mesh.vtk``, ``mesh.polygon``, …) were removed in 0.9.x (K5).
+(``mesh.shell_mesh``, ``mesh.vtk``, ``mesh.polygon``, ``mesh.polygon_voronoi``,
+``mesh.delaunay``) still import in 0.9.4 with a ``DeprecationWarning`` and go in 0.9.5.
 """
 
 from implicit_geometry_kernel.mesh.export import write_vtk
@@ -23,6 +24,10 @@ from implicit_geometry_kernel.mesh.health import (
     diff_study_folders, run_mesh_health,
 )
 from implicit_geometry_kernel.mesh.quality import MeshCheck, MeshRunQuality, mesh_check, mesh_quality
+# Register the deprecated flat module first: binding the function below then wins
+# the ``mesh.shell_mesh`` attribute, and a later ``import mesh.shell_mesh`` finds the
+# module in sys.modules without rebinding it.
+from implicit_geometry_kernel.mesh import shell_mesh as _flat_shell_mesh  # noqa: F401
 from implicit_geometry_kernel.mesh.shell import MeshRecipe, ShellMesh, mesh_stations, shell_mesh
 from implicit_geometry_kernel.mesh.tables import (
     mesh_failures, off_root_open_edges, trailing_face_failures, transition_band_failures,

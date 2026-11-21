@@ -79,7 +79,8 @@ part of the skin, not a rib.
 ## 0.9.2 to 0.9.3: flat mesh modules removed (K5)
 
 Import the conforming shell mesh and writers from the package or subpackages.
-The old flat module paths are gone.
+0.9.3 removed the old flat module paths; 0.9.4 brings them back with a
+`DeprecationWarning` on each name read, and 0.9.5 removes them.
 
 | Removed module path | Use instead |
 |---|---|

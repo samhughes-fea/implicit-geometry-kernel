@@ -74,19 +74,11 @@ def arc_resample_open(pts: np.ndarray, n: int) -> np.ndarray:
         if out.shape[1] == 2:
             out = np.column_stack([out, np.zeros(n)])
         return out
-    t = np.linspace(0.0, s[-1], n)
-    cols = pts.shape[1]
-    out = np.empty((n, cols))
-    for j, tj in enumerate(t):
-        k = int(np.searchsorted(s, tj, side="right") - 1)
-        k = min(max(k, 0), len(seg) - 1)
-        u = (tj - s[k]) / max(seg[k], 1e-15)
-        out[j] = pts[k] + u * (pts[k + 1] - pts[k])
-    if cols == 2:
-        out = np.column_stack([out, np.zeros(n)])
-    out[0] = pts[0] if pts.shape[1] == out.shape[1] else np.append(pts[0], 0.0)
-    last = pts[-1] if pts.shape[1] == out.shape[1] else np.append(pts[-1], 0.0)
-    out[-1] = last
+    from implicit_geometry_kernel.blade.loft.span_place import resample_open_many
+
+    out = resample_open_many(pts[None, :, :], n)[0]
+    if out.shape[1] == 2:
+        out = np.column_stack([out, np.zeros(len(out))])
     return out
 
 

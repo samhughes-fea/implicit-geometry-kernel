@@ -44,6 +44,9 @@ class SdfProfilingStats:
     plot_s: float = 0.0
     phi_eval_count: int = 0
     quadtree_leaf_count: int = 0
+    section_at_hits: int = 0
+    section_at_misses: int = 0
+    section_at_unique_keys: int = 0
     extra: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -57,6 +60,9 @@ class SdfProfilingStats:
             "station_build_s": float(self.station_build_s),
             "properties_s": float(self.properties_s),
             "plot_s": float(self.plot_s),
+            "section_at_hits": int(self.section_at_hits),
+            "section_at_misses": int(self.section_at_misses),
+            "section_at_unique_keys": int(self.section_at_unique_keys),
             **{str(k): v for k, v in self.extra.items()},
         }
 

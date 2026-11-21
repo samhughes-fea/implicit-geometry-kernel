@@ -3,15 +3,17 @@ from __future__ import annotations
 
 import re
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 
-if TYPE_CHECKING:
-    from implicit_geometry_kernel.blade.loft import BladeGeometry
+from implicit_geometry_kernel.blade.loft.loft_protocol import LoftGeometry
 
 from implicit_geometry_kernel.blade.cut import CellPolygon, SectionCut, SectionWall, _twist_offset
-from implicit_geometry_kernel.blade.loft.loft_tables import _FORK_TWIST_SIGN, _match, _morph_surfaces
+from implicit_geometry_kernel.blade.loft.loft_tables import (
+    _FORK_TWIST_SIGN,
+    _match,
+    _morph_surfaces,
+    _morph_surfaces_many,
+)
 from implicit_geometry_kernel.contract.errors import InfeasibleSectionGeometry
 from implicit_geometry_kernel.section.layout.thickness_limits import (
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M as _MIN_SKIN,
@@ -119,7 +121,7 @@ def _tilted_feet(fracs, tilt_deg, x, upper, lower):
 
 
 class LoftCutMixin:
-    def interpolate(self: BladeGeometry, z: float):
+    def interpolate(self: LoftGeometry, z: float):
         """(chord, twist, pitch_axis, offset, (x, upper, lower)) interpolated at z.
 
         Circle-like parents morph with a smoothstep blend; otherwise surfaces follow
@@ -166,20 +168,102 @@ class LoftCutMixin:
             offset = (ox, oy)
         return (chord, twist, pitch, offset, (x, upper, lower))
 
-    def _placement_twist(self: BladeGeometry, twist_deg: float) -> float:
+    def _span_scalar_many(self: LoftGeometry, table, values, zs: np.ndarray) -> np.ndarray:
+        zs = np.asarray(zs, float)
+        if table is None:
+            station_z = np.asarray([s.z for s in self.stations], dtype=np.float64)
+            return np.interp(zs, station_z, np.asarray(values, dtype=np.float64))
+        return np.array([float(table(float(z))) for z in zs], float)
+
+    def interpolate_many(self: LoftGeometry, zs) -> tuple:
+        """``interpolate`` for many ``z``.
+
+        Each defining-station bay is blended once. Chord, twist, pitch and offset
+        come back as ``(n,)`` arrays (offset is ``(n, 2)``), and the surfaces as
+        ``(n, m)``.
+        """
+        zs = np.asarray(zs, float).reshape(-1)
+        station_z = np.asarray([s.z for s in self.stations], float)
+        if len(zs) == 0:
+            empty = np.zeros(0, float)
+            return empty, empty, empty, np.zeros((0, 2)), np.zeros(0), np.zeros((0, 0)), np.zeros((0, 0))
+        lo = station_z[0] - 1e-12 * max(1.0, abs(station_z[0]))
+        hi = station_z[-1] + 1e-12 * max(1.0, abs(station_z[-1]))
+        if np.any(zs < lo) or np.any(zs > hi):
+            raise ValueError(f"z lies outside the stations ({station_z[0]} to {station_z[-1]})")
+        bay = np.clip(np.searchsorted(station_z, zs, side="right") - 1, 0, len(station_z) - 2)
+        span = np.maximum(station_z[bay + 1] - station_z[bay], 1e-30)
+        weight = np.clip((zs - station_z[bay]) / span, 0.0, 1.0)
+        samples = getattr(self, "_section_samples", None)
+        if samples is not None:
+            x = np.asarray(samples[0].x, float)
+            upper = np.empty((len(zs), len(x)), float)
+            lower = np.empty_like(upper)
+            chord = np.empty(len(zs), float)
+            twist = np.empty(len(zs), float)
+            pitch = np.empty(len(zs), float)
+            offset = np.empty((len(zs), 2), float)
+            for index in np.unique(bay):
+                mask = bay == index
+                w = weight[mask]
+                a, b = samples[int(index)], samples[int(index) + 1]
+                s = w[:, None]
+                upper[mask] = (1.0 - s) * np.asarray(a.upper, float) + s * np.asarray(b.upper, float)
+                lower[mask] = (1.0 - s) * np.asarray(a.lower, float) + s * np.asarray(b.lower, float)
+                chord[mask] = (1.0 - w) * float(a.chord) + w * float(b.chord)
+                twist[mask] = (1.0 - w) * float(a.twist) + w * float(b.twist)
+                pitch[mask] = (1.0 - w) * float(a.pivot_fraction) + w * float(b.pivot_fraction)
+                offset[mask, 0] = (1.0 - w) * float(a.offset[0]) + w * float(b.offset[0])
+                offset[mask, 1] = (1.0 - w) * float(a.offset[1]) + w * float(b.offset[1])
+            return chord, twist, pitch, offset, x, upper, lower
+        x = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, self.n_airfoil_points)))
+        upper = np.empty((len(zs), len(x)), float)
+        lower = np.empty_like(upper)
+        rule = getattr(self, "airfoil_morph", "auto")
+        for index in np.unique(bay):
+            mask = bay == index
+            a, b = self.stations[int(index)], self.stations[int(index) + 1]
+            upper[mask], lower[mask] = _morph_surfaces_many(a.airfoil, b.airfoil, weight[mask], x, rule)
+        chord = self._span_scalar_many(self._chord, [s.chord for s in self.stations], zs)
+        twist = self._span_scalar_many(self._twist, [s.twist for s in self.stations], zs)
+        pitch = np.array([float(self._pitch(float(z))) for z in zs], float)
+        if self._offset is not None:
+            offset = np.array([self._offset(float(z)) for z in zs], float).reshape(-1, 2)
+        else:
+            offset = np.column_stack([
+                self._span_scalar_many(None, [s.offset[0] for s in self.stations], zs),
+                self._span_scalar_many(None, [s.offset[1] for s in self.stations], zs),
+            ])
+        return chord, twist, pitch, offset, x, upper, lower
+
+    def oml_polylines(self: LoftGeometry, zs) -> np.ndarray:
+        """Closed outer mould lines at each ``z``, shape ``(n, p, 3)``.
+
+        The same placement as :meth:`oml_polyline`.
+        """
+        zs = np.asarray(zs, float).reshape(-1)
+        chord, twist, pitch, offset, x, upper, lower = self.interpolate_many(zs)
+        if len(zs) == 0:
+            return np.zeros((0, 0, 3), float)
+        from implicit_geometry_kernel.blade.loft.span_place import place_oml
+
+        signed = np.array([self._placement_twist(float(t)) for t in twist], float)
+        return place_oml(chord, signed, pitch, offset, x, upper, lower, zs)
+
+    def _placement_twist(self: LoftGeometry, twist_deg: float) -> float:
         """Degrees passed to the nose-up placement. ``nose_down`` negates them."""
         twist = float(twist_deg)
         if getattr(self, "twist_sense", "nose_up") == "nose_down":
             return -twist
         return twist
 
-    def _span_scalar(self: BladeGeometry, table, values, z: float) -> float:
+    def _span_scalar(self: LoftGeometry, table, values, z: float) -> float:
         if table is not None:
             return float(table(z))
         zs = np.asarray([s.z for s in self.stations], dtype=np.float64)
         return float(np.interp(z, zs, np.asarray(values, dtype=np.float64)))
 
-    def oml_polyline(self: BladeGeometry, z: float) -> np.ndarray:
+    def oml_polyline(self: LoftGeometry, z: float) -> np.ndarray:
         """Closed outer mould line in the blade frame at ``z``, shape ``(N, 3)``.
 
         Same interpolator and placement as ``section_at`` (pitch axis, twist, offset).
@@ -195,7 +279,7 @@ class LoftCutMixin:
         return np.vstack([pts, pts[0]])
 
     # ------------------------------------------------------------ cutting
-    def section_at(self: BladeGeometry, z: float) -> SectionCut:
+    def section_at(self: LoftGeometry, z: float) -> SectionCut:
         """The wall midlines, thicknesses, labels and cell loops of the section at z.
 
         Cuts are cached per ``round(z, 9)`` (LRU 256). ``CutWallMetaSDF`` and
@@ -209,7 +293,20 @@ class LoftCutMixin:
         hit = self._section_cache.get(z)
         if hit is not None:
             self._section_cache.move_to_end(z)
+            from implicit_geometry_kernel.profiling import get_stats
+
+            stats = get_stats()
+            if stats is not None:
+                stats.section_at_hits += 1
             return hit
+        from implicit_geometry_kernel.profiling import get_stats
+
+        stats = get_stats()
+        if stats is not None:
+            stats.section_at_misses += 1
+            seen = stats.extra.setdefault("section_at_keys", set())
+            seen.add(z)
+            stats.section_at_unique_keys = len(seen)
         chord, twist, pitch, offset, (x, upper, lower) = self.interpolate(z)
         layout = self._layout_at(z)
         t_skin, t_cap, t_web = self._skin(z), (self._cap(z) if layout.has_spar_caps else 0.0), self._web(z)

@@ -86,6 +86,11 @@ def _smoothstep(w: float) -> float:
     return w * w * (3.0 - 2.0 * w)
 
 
+def _smoothstep_many(w: np.ndarray) -> np.ndarray:
+    w = np.clip(np.asarray(w, float), 0.0, 1.0)
+    return w * w * (3.0 - 2.0 * w)
+
+
 def _near_circle(foil) -> bool:
     name = str(getattr(foil, "name", "")).lower()
     return float(foil.max_thickness) >= 0.6 or "ellipse" in name
@@ -152,6 +157,69 @@ def _morph_surfaces(fa, fb, w: float, x: np.ndarray, rule: str = "auto") -> tupl
     mid = 0.5 * (float(upper[-1]) + float(lower[-1]))
     upper[-1] = mid + 0.5 * gap
     lower[-1] = mid - 0.5 * gap
+    return upper, lower
+
+
+def _morph_surfaces_many(fa, fb, w: np.ndarray, x: np.ndarray, rule: str = "auto"
+                         ) -> tuple[np.ndarray, np.ndarray]:
+    """``_morph_surfaces`` for a weight vector. Parents are sampled once per bay."""
+    w = np.clip(np.asarray(w, float), 0.0, 1.0)
+    x = np.asarray(x, float)
+    if rule not in _MORPH_RULES:
+        raise ValueError(f"airfoil_morph must be one of {', '.join(_MORPH_RULES)}; got {rule!r}")
+    ua = np.asarray(fa.surface("upper", x), float)
+    la = np.asarray(fa.surface("lower", x), float)
+    ub = np.asarray(fb.surface("upper", x), float)
+    lb = np.asarray(fb.surface("lower", x), float)
+    upper = np.broadcast_to(ua, (len(w), len(x))).copy()
+    lower = np.broadcast_to(la, (len(w), len(x))).copy()
+    end_a = w <= 1e-15
+    end_b = w >= 1.0 - 1e-15
+    live = ~end_a & ~end_b
+    if np.any(end_b):
+        upper[end_b] = ub
+        lower[end_b] = lb
+    if not np.any(live):
+        return upper, lower
+    wl = w[live]
+
+    def blend(s: np.ndarray, xs_u_a, xs_u_b, xs_l_a, xs_l_b) -> tuple[np.ndarray, np.ndarray]:
+        s = s[:, None]
+        return (1.0 - s) * xs_u_a + s * xs_u_b, (1.0 - s) * xs_l_a + s * xs_l_b
+
+    neither = not (_near_circle(fa) or _near_circle(fb))
+    circle_diff = _near_circle(fa) != _near_circle(fb)
+    by_thickness = rule == "thickness" or (rule == "auto" and neither)
+    if by_thickness:
+        dense = np.linspace(0.0, 1.0, 401)
+        dua = np.asarray(fa.surface("upper", dense), float)
+        dla = np.asarray(fa.surface("lower", dense), float)
+        dub = np.asarray(fb.surface("upper", dense), float)
+        dlb = np.asarray(fb.surface("lower", dense), float)
+        ta = float(np.max(dua - dla))
+        tb = float(np.max(dub - dlb))
+        t_c = (1.0 - wl) * ta + wl * tb
+        s = np.zeros_like(wl) if abs(tb - ta) < 1e-15 else (t_c - ta) / (tb - ta)
+        du, dl = blend(s, dua, dub, dla, dlb)
+        peak = np.max(du - dl, axis=1)
+        scale = np.divide(t_c, peak, out=np.ones_like(t_c), where=peak > 0.0)
+        yu, yl = blend(s, ua, ub, la, lb)
+        camber = 0.5 * (yu + yl)
+        thick = yu - yl
+        yu = camber + 0.5 * thick * scale[:, None]
+        yl = camber - 0.5 * thick * scale[:, None]
+    elif rule == "smoothstep" or (rule == "auto" and circle_diff):
+        yu, yl = blend(_smoothstep_many(wl), ua, ub, la, lb)
+    else:
+        yu, yl = blend(wl, ua, ub, la, lb)
+    gap_a = abs(float(np.asarray(fa.surface("upper", 1.0)) - np.asarray(fa.surface("lower", 1.0))))
+    gap_b = abs(float(np.asarray(fb.surface("upper", 1.0)) - np.asarray(fb.surface("lower", 1.0))))
+    gap = (1.0 - wl) * gap_a + wl * gap_b
+    mid = 0.5 * (yu[:, -1] + yl[:, -1])
+    yu[:, -1] = mid + 0.5 * gap
+    yl[:, -1] = mid - 0.5 * gap
+    upper[live] = yu
+    lower[live] = yl
     return upper, lower
 
 def _match(polyline: np.ndarray, points: np.ndarray, tol: float = 1e-9) -> np.ndarray:

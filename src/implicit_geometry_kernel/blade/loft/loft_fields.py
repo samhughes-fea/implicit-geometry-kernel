@@ -1,32 +1,29 @@
 """SDF oracles, query and size fields for BladeGeometry."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 
-if TYPE_CHECKING:
-    from implicit_geometry_kernel.blade.loft import BladeGeometry
+from implicit_geometry_kernel.blade.loft.loft_protocol import LoftGeometry
 
 from implicit_geometry_kernel.blade.cut import _twist_offset
 from implicit_geometry_kernel.blade.shell_graph import PartitionEdge
 
 
 class LoftFieldsMixin:
-    def oml_sdf(self: BladeGeometry, meta: int = 0):
+    def oml_sdf(self: LoftGeometry, meta: int = 0):
         """Exact 2-D polygon SDF of ``oml_polyline(z)`` at each point's own ``z``."""
         from implicit_geometry_kernel.sdf.nodes.lofted import LoftedPolygonSDF
 
         return LoftedPolygonSDF(lambda z: self.oml_polyline(float(z))[:, :2], meta=meta)
 
-    def cavity_sdf(self: BladeGeometry, meta: int = 0):
+    def cavity_sdf(self: LoftGeometry, meta: int = 0):
         """Inner mould line: ``oml + T``. ``T`` ramps across cap edges (skin, plus cap inside footprints)."""
         from implicit_geometry_kernel.blade.topology.fields import StackThickness
         from implicit_geometry_kernel.sdf.nodes.tagged import FieldOffsetNode
 
         return FieldOffsetNode(self.oml_sdf(meta), StackThickness(self), scale=1.0)
 
-    def wall_mid_sdf(self: BladeGeometry, meta: int = 0):
+    def wall_mid_sdf(self: LoftGeometry, meta: int = 0):
         """Signed polygon SDF of the ``shell_graph`` skin loop at each point's ``z``.
 
         The graph loop is the spec (run interiors and partition vertices on
@@ -43,14 +40,14 @@ class LoftFieldsMixin:
 
         return LoftedPolygonSDF(provider, meta=meta)
 
-    def wall_meta(self: BladeGeometry, table=None):
+    def wall_meta(self: LoftGeometry, table=None):
         """Tagged wall-strip DAG: ``evaluate((x,y,z)).meta`` is the region at that ``z``."""
         from implicit_geometry_kernel.blade.topology.fields import CutWallMetaSDF
         from implicit_geometry_kernel.sdf.nodes.base import FeatureTable
 
         return CutWallMetaSDF(self, table if table is not None else FeatureTable())
 
-    def thickness_law(self: BladeGeometry):
+    def thickness_law(self: LoftGeometry):
         """:class:`~implicit_geometry_kernel.structure.laws.ThicknessLaw` over ``(z, s)``."""
         from implicit_geometry_kernel.structure.laws import ThicknessLaw
 
@@ -62,7 +59,7 @@ class LoftFieldsMixin:
 
         return _BladeThickness()
 
-    def named_edges(self: BladeGeometry, z: float):
+    def named_edges(self: LoftGeometry, z: float):
         """Partition edges and ply-drop ``s`` bounds at ``z`` (mesher feature curves)."""
 
         z = float(z)
@@ -81,7 +78,7 @@ class LoftFieldsMixin:
                 edges.append(PartitionEdge(z, name, name, pt))
         return tuple(edges)
 
-    def size_fields(self: BladeGeometry, points) -> dict[str, np.ndarray]:
+    def size_fields(self: LoftGeometry, points) -> dict[str, np.ndarray]:
         """Distance, thickness and a polyline curvature estimate at 3-D points."""
         pts = np.asarray(points, float).reshape(-1, 3)
         out = self.query(pts)
@@ -102,69 +99,104 @@ class LoftFieldsMixin:
         out["curvature"] = curv
         return out
 
-    def thickness_at(self: BladeGeometry, z, s) -> np.ndarray:
-        """Skin thickness at span ``z`` and chord fraction ``s``, plus ply-drop ramps."""
+    def thickness_at(self: LoftGeometry, z, s) -> np.ndarray:
+        """Skin thickness at span ``z`` and chord fraction ``s``, plus ply-drop ramps.
+
+        Skin gauge is evaluated once per unique ``round(z, 9)`` (same key as the
+        section cache). Ply-drop windows are applied with vectorised ramps.
+        """
         z = np.asarray(z, float)
         s = np.asarray(s, float)
         z, s = np.broadcast_arrays(z, s)
-        out = np.empty(z.shape, dtype=float)
-        for idx in np.ndindex(z.shape):
-            t = float(self._skin(float(z[idx])))
-            for drop in self.ply_drops:
-                t += drop.extra(float(z[idx]), float(s[idx]))
-            out[idx] = t
-        return out
+        flat_z = np.ravel(z)
+        flat_s = np.ravel(s)
+        keys = np.round(flat_z, 9)
+        uniq, inv = np.unique(keys, return_inverse=True)
+        skin = np.array([float(self._skin(float(u))) for u in uniq], dtype=np.float64)
+        out = skin[inv].copy()
+        for drop in self.ply_drops:
+            out += np.ravel(drop.extra_many(flat_z, flat_s))
+        return out.reshape(z.shape)
 
-    def shell_graph(self: BladeGeometry, z: float, include_solids: bool = True):
+    def shell_graph(self: LoftGeometry, z: float, include_solids: bool = True):
         """Loftable shell graph at ``z``. Sandwich cores sit on ``solids`` by default."""
         return self.section_at(z).shell_graph(include_solids=include_solids)
 
-    def key_points(self: BladeGeometry, z: float) -> dict[str, np.ndarray]:
+    def key_points(self: LoftGeometry, z: float) -> dict[str, np.ndarray]:
         """Named points at ``z``: LE, TE, cap edges, web feet."""
         return self.section_at(z).key_points()
 
-    def query(self: BladeGeometry, points) -> dict[str, np.ndarray]:
-        """Batched thickness, owning member, local frame and OML distance at 3-D points."""
+    def query(self: LoftGeometry, points) -> dict[str, np.ndarray]:
+        """Batched thickness, owning member, local frame and OML distance at 3-D points.
+
+        ``interpolate`` runs once per unique ``round(z, 9)``. Thickness is the
+        skin+ply field (:meth:`thickness_at`), not :class:`~implicit_geometry_kernel.blade.topology.fields.StackThickness`.
+        """
+        from implicit_geometry_kernel.sdf.nodes.base import NO_FEATURE
+
         pts = np.asarray(points, float).reshape(-1, 3)
+        n = int(pts.shape[0])
+        if n == 0:
+            return {
+                "thickness": np.zeros(0, float),
+                "member": np.array([], dtype=object),
+                "kind": np.array([], dtype=object),
+                "distance": np.zeros(0, float),
+                "frame": np.zeros((0, 3, 3), float),
+            }
         oml = self.oml_sdf().evaluate(pts)
         field = self.wall_meta()
         sample = field.evaluate(pts)
         table = field.table
-        names, kinds = [], []
-        for m in sample.meta.astype(int):
-            if m <= 0:
-                names.append("")
-                kinds.append("")
-            else:
-                spec = table[int(m)]
-                names.append(spec.name)
-                kinds.append(spec.kind)
-        s = []
-        for p in pts:
-            chord, _, pitch, _, _ = self.interpolate(float(p[2]))
-            s.append(float(np.clip((p[0] + pitch * chord) / max(chord, 1e-15), 0.0, 1.0)))
-        T = np.array([float(np.ravel(self.thickness_at(p[2], ss))[0]) for p, ss in zip(pts, s)])
-        frames = []
-        for p in pts:
-            _, twist, _, _, _ = self.interpolate(float(p[2]))
-            c, si = np.cos(np.radians(twist)), np.sin(np.radians(twist))
-            frames.append(np.array([[c, -si, 0.0], [si, c, 0.0], [0.0, 0.0, 1.0]]))
+        meta = np.asarray(sample.meta, dtype=np.int32)
+        name_lut = np.empty(len(table), dtype=object)
+        kind_lut = np.empty(len(table), dtype=object)
+        for spec in table:
+            name_lut[spec.id] = spec.name
+            kind_lut[spec.id] = spec.kind
+        names = np.full(n, "", dtype=object)
+        kinds = np.full(n, "", dtype=object)
+        valid = (meta >= 0) & (meta < len(table)) & (meta != NO_FEATURE)
+        names[valid] = name_lut[meta[valid]]
+        kinds[valid] = kind_lut[meta[valid]]
+
+        keys = np.round(pts[:, 2], 9)
+        uniq, first, inv = np.unique(keys, return_index=True, return_inverse=True)
+        chord = np.empty(len(uniq), float)
+        twist = np.empty(len(uniq), float)
+        pitch = np.empty(len(uniq), float)
+        for i, iz in enumerate(first):
+            c, tw, p, _, _ = self.interpolate(float(pts[int(iz), 2]))
+            chord[i], twist[i], pitch[i] = float(c), float(tw), float(p)
+        chord_p = chord[inv]
+        twist_p = twist[inv]
+        pitch_p = pitch[inv]
+        s = np.clip((pts[:, 0] + pitch_p * chord_p) / np.maximum(chord_p, 1e-15), 0.0, 1.0)
+        T = self.thickness_at(pts[:, 2], s)
+        rad = np.radians(twist_p)
+        c, si = np.cos(rad), np.sin(rad)
+        frames = np.zeros((n, 3, 3), float)
+        frames[:, 0, 0] = c
+        frames[:, 0, 1] = -si
+        frames[:, 1, 0] = si
+        frames[:, 1, 1] = c
+        frames[:, 2, 2] = 1.0
         return {
-            "thickness": T,
-            "member": np.array(names, dtype=object),
-            "kind": np.array(kinds, dtype=object),
+            "thickness": np.asarray(T, float),
+            "member": names,
+            "kind": kinds,
             "distance": oml.phi,
-            "frame": np.stack(frames, axis=0),
+            "frame": frames,
         }
 
-    def write_oml(self: BladeGeometry, path, n_span: int = 41, n_chord: int = 81) -> str:
+    def write_oml(self: LoftGeometry, path, n_span: int = 41, n_chord: int = 81) -> str:
         """Watertight OML as STL or OBJ from a quad grid of span rings."""
         from implicit_geometry_kernel.blade.oml import write_oml as _write_oml
 
         return _write_oml(self, path, n_span=n_span, n_chord=n_chord)
 
     def write_mid_surfaces(
-        self: BladeGeometry,
+        self: LoftGeometry,
         path,
         n_span: int = 41,
         n_chord: int = 81,
@@ -179,7 +211,7 @@ class LoftFieldsMixin:
             members=members, include_solids=include_solids,
         )
 
-    def validate(self: BladeGeometry) -> list[str]:
+    def validate(self: LoftGeometry) -> list[str]:
         """Named station/member checks: span order, thin walls, members outside the OML."""
         issues = []
         zs = [s.z for s in self.stations]
@@ -215,14 +247,14 @@ class LoftFieldsMixin:
                     issues.append(f"station z={z:g} member {wall.label}: too thin")
         return issues
 
-    def snap_oml(self: BladeGeometry, points, solver=None):
+    def snap_oml(self: LoftGeometry, points, solver=None):
         """Project points onto the OML in each point's own ``z``-plane."""
         from implicit_geometry_kernel.sdf.solve import GeometrySolver
 
         solver = solver or GeometrySolver(tolerance=1e-8, max_step=0.05)
         return solver.project(self.oml_sdf(), np.asarray(points, float), plane=True)
 
-    def snap_wall_mid(self: BladeGeometry, points, solver=None):
+    def snap_wall_mid(self: LoftGeometry, points, solver=None):
         """Project onto the ``shell_graph`` loop field in each point's ``z``-plane."""
         from implicit_geometry_kernel.sdf.solve import GeometrySolver
 

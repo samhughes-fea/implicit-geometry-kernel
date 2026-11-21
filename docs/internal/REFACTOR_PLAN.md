@@ -218,6 +218,7 @@ in-kernel mesh is `integration/quadtree`. Consumers own shell mesher jobs;
 | Main branch | Every change through a PR with green CI (lint, doc links, tests on Python 3.11 to 3.13, examples, wheel build, consumer suites) | Branch protection on `main`, no bypass |
 | Releases | A `v*` tag equals `v` + `__version__`; wheels go to PyPI only when publishing is switched on | `release.yml` |
 | Docs site | Manual (the Markdown tree) plus an API reference from each package's `__all__`; built on every PR with warnings as errors, published to GitHub Pages from `main` | `docs.yml` |
+| Contributor files | CITATION.cff, CONTRIBUTING, SECURITY, issue and PR templates, Dependabot, pre-commit, API stability policy | CI coverage report with a floor |
 | Module size | `mesh/shell/shell_mesh.py` (2625 lines) and `mesh/tables/tables.py` (1238) split by job in 0.9.4, no behaviour change; old module names still resolve every helper | mypy `check_untyped_defs` on `mesh/` |
 | Figures | PNGs rewritten only past 0.5 % changed pixels; mesh exports untracked; cross-machine font differences still exceed that, so regenerated PNGs are committed only when the example's subject changed | `figure_io.write_png` |
 | Numbers | Results reproducible between releases unless the changelog says otherwise | Golden-number test |

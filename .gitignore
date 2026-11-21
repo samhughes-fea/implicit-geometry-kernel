@@ -47,3 +47,7 @@ examples/blade/15_shell_mesh/figures/**/*.txt
 examples/**/figures/*.stl
 examples/**/figures/*.obj
 examples/**/figures/*.vtk
+
+# coverage data
+.coverage
+coverage.xml

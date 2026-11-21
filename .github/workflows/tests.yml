@@ -33,7 +33,13 @@ jobs:
         if: matrix.python-version != '3.12'
         run: mypy src/implicit_geometry_kernel
       - name: Run tests
+        if: matrix.python-version != '3.13'
         run: pytest -q
+      - name: Run tests with coverage
+        # 81 % at 0.9.4; the floor stops a large untested addition slipping in.
+        if: matrix.python-version == '3.13'
+        run: |
+          pytest -q --cov=implicit_geometry_kernel --cov-report=term --cov-report=markdown-append:"$GITHUB_STEP_SUMMARY" --cov-fail-under=78
       - name: Build sdist and wheel
         run: python -m build
 

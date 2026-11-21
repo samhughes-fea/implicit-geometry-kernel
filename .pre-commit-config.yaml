@@ -1,0 +1,29 @@
+# pip install pre-commit && pre-commit install
+# Runs the same lint and link checks as CI, on the files you commit.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]
+      - id: end-of-file-fixer
+        exclude: '\.(png|stl|obj|vtk|csv|dat)$'
+      - id: trailing-whitespace
+        exclude: '\.(png|stl|obj|vtk|csv|dat)$'
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^(src|tests|examples|scripts)/
+  - repo: local
+    hooks:
+      - id: check-links
+        name: relative Markdown links
+        entry: python scripts/check_links.py
+        language: system
+        pass_filenames: false
+        files: '\.md$'

@@ -2,6 +2,12 @@
 
 ## 0.9.4 (unreleased; tag is the owner's)
 
+- Release readiness: ``CITATION.cff``, ``CONTRIBUTING.md``, ``SECURITY.md``,
+  issue and pull-request templates, Dependabot (monthly, actions and pip; the
+  pinned ruff and mypy stay with ``tool-drift.yml``), a ``pre-commit`` config
+  (ruff, link check, whitespace), README badges and a tag-pinned install, CI
+  coverage, and an [API stability](docs/conventions/api/STABILITY.md) page that
+  says what is public and how a public name is retired.
 - Docs site: ``docs/api/`` documents each package's ``__all__`` with autodoc
   (furo theme); ``docs.yml`` builds the site on every PR with warnings as
   errors and publishes it to GitHub Pages from ``main``. A few docstrings were

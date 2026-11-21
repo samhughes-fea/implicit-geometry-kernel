@@ -1,0 +1,21 @@
+name: Feature request
+description: A geometry capability the kernel should own
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The kernel owns geometry only: aerofoils, planform, layouts, members, span
+        topology and the shell mesh. Materials, stiffness, loads and solvers belong
+        in the packages built on it.
+  - type: textarea
+    id: need
+    attributes:
+      label: What you need and why
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What you do today instead
+      description: Any geometry you compute on top of the kernel is a gap worth naming.

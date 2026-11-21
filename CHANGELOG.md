@@ -2,6 +2,9 @@
 
 ## 0.9.4 (unreleased; tag is the owner's)
 
+- Rules and scope: ``AGENTS.md`` (with a ``CLAUDE.md`` pointer), ``SCOPE.md``,
+  ``docs/decisions/`` (ten decision records), ``CODEOWNERS``,
+  ``CODE_OF_CONDUCT.md`` and ``.editorconfig``.
 - Release readiness: ``CITATION.cff``, ``CONTRIBUTING.md``, ``SECURITY.md``,
   issue and pull-request templates, Dependabot (monthly, actions and pip; the
   pinned ruff and mypy stay with ``tool-drift.yml``), a ``pre-commit`` config

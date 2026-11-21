@@ -1,6 +1,7 @@
 # Contributing
 
-Thanks for helping. The kernel owns blade and wing **geometry** only: aerofoils,
+Thanks for helping. Read [AGENTS.md](AGENTS.md) (the rules) and
+[SCOPE.md](SCOPE.md) (what belongs here) first. The kernel owns blade and wing **geometry** only: aerofoils,
 planform, the layout catalogue, gauges in metres, spanwise members, span topology
 and the shell mesh. Materials, stiffness, loads and solvers belong in packages
 built on top of it.

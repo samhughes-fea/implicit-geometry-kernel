@@ -30,5 +30,6 @@ api/index.md
 :maxdepth: 1
 
 conventions/README.md
+decisions/README.md
 internal/REFACTOR_PLAN.md
 ```

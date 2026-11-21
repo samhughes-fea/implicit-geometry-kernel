@@ -187,7 +187,9 @@ see [docs/FORK.md](docs/internal/FORK.md) for where each part came from and how 
 pytest -q
 ```
 
-See [CONTRIBUTING](CONTRIBUTING.md) for every check CI runs, and
+See [SCOPE](SCOPE.md) for what belongs in the kernel, [AGENTS](AGENTS.md) for
+the repository rules, [decision records](docs/decisions/README.md) for past
+choices, [CONTRIBUTING](CONTRIBUTING.md) for every check CI runs, and
 [API stability](docs/conventions/api/STABILITY.md) for what counts as public.
 To cite the kernel, use [CITATION.cff](CITATION.cff) (GitHub's "Cite this
 repository" button).

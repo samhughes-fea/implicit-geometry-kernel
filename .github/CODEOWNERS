@@ -1,0 +1,6 @@
+# The maintainer reviews everything; these paths need extra care.
+*                      @samhughes-fea
+/src/                  @samhughes-fea
+/tests/golden/         @samhughes-fea
+/.github/workflows/    @samhughes-fea
+/pyproject.toml        @samhughes-fea

@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- K5: top-level ``__all__`` drops rare topology helpers
+  (``TopologyDiff``, ``ShellTopologyTemplate``, ``PartitionEdge``,
+  ``shell_strips_from_graph``, …). They remain on ``blade`` /
+  ``blade.topology``; a root import still resolves with
+  ``DeprecationWarning`` for one 0.9.x window. Flat mesh module shims were
+  already removed. Stay on 0.9.x (no 1.0). See ``docs/MIGRATING.md``.
+- G-ACC: editable pin + thin adapter + landmark/mesh/property gates green via
+  ``scripts/check_consumer.py``; reference ``shell_mesh`` conforming and
+  default 5% chord edge gates green. Rename-gap loft absorb keeps station
+  edges covered when a panel dies without a meet-set apex.
+- Field profile gate: under an example-15-like load, ``StackThickness`` is no
+  longer hotter than ``cavity_sdf`` / ``wall_meta`` after the numba polyline
+  path; nearest-of-runs batching stays parked.
 - ``StackThickness`` is continuous at cap/skin partition vertices: the field
   ramps across each thickness jump instead of stepping. Interiors keep the
   nearest-run value (skin, plus cap inside footprints).

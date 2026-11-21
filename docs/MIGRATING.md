@@ -76,6 +76,37 @@ part of the skin, not a rib.
 | mesh `cap_*` regions bounded by one chord window on both sides | bounded by each side's cap edges in the cut; on a twisted blade the region keys move by up to ~0.1 chord |
 | a cap whose skin is concave under it could be missing from `shell_graph().loop` | it is always there (SG-029) |
 
+## 0.9.x: flat mesh modules removed (K5)
+
+Import the conforming shell mesh and writers from the package or subpackages.
+The old flat module paths are gone.
+
+| Removed module path | Use instead |
+|---|---|
+| `implicit_geometry_kernel.mesh.shell_mesh` | `from implicit_geometry_kernel.mesh import shell_mesh` or `mesh.shell` |
+| `implicit_geometry_kernel.mesh.vtk` | `from implicit_geometry_kernel.mesh import write_vtk` or `mesh.export` |
+| `implicit_geometry_kernel.mesh.polygon` / `polygon_voronoi` / `delaunay` | `mesh.fill` (`polygon_mesh_ring`, `triangulate_ring`, …) |
+
+Maintainer reports live under `docs/internal/` (stubs remain at the old paths).
+
+## 0.9.x: top-level barrel trim (K5)
+
+Rare topology helpers left the top-level `__all__`. Import them from
+`implicit_geometry_kernel.blade` (or `blade.topology`). A root import still
+works in 0.9.x with a `DeprecationWarning`.
+
+| Left the barrel | Import from |
+|---|---|
+| `TopologyDiff`, `TopologyEvent`, `topology_diff` | `blade` |
+| `ShellTopologyTemplate`, `Region` | `blade` / `blade.topology` |
+| `PartitionEdge`, `partition_edge_curve`, `ShellRun`, `MidSurface` | `blade` |
+| `CellPolygon`, `SectionWall` | `blade` |
+| `shared_loft_names`, `signatures_compatible`, `zone_region_graphs` | `blade` |
+| `shell_strips_from_graph`, `station_network_from_meta`, `refine_section_samples` | `blade` |
+
+Loft, station, SDF and catalogue names the consumer already imports at the
+root stay on `__all__`.
+
 ## Checking a consumer
 
 Run the consumer's tests against a kernel checkout:

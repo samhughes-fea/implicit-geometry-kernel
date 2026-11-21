@@ -16,9 +16,12 @@ Loft       BladeGeometry (layout lofted between stations; optional span tables),
            Scalars interpolate linearly; airfoils stay 2-D linear blends.
 Section    implicit_geometry_kernel.section — one-station SectionSpec / SectionGeometry
 Feature    FieldSample.meta ids, GeometrySolver, wall_meta / wall_mid_sdf,
-           shell_graph / partition_edges / station_network,
-           shell_loft_zones / LockedLoftPlan / resample_locked,
+           shell_graph / ShellGraph, LockedLoftPlan / resample_locked,
            WallRegionGraph / loft_mapped_strips.
+
+Rare topology helpers (``TopologyDiff``, ``ShellTopologyTemplate``, …) live under
+``implicit_geometry_kernel.blade`` / ``blade.topology``. Importing them from the
+package root still works in 0.9.x with a ``DeprecationWarning``.
 
 Subpackages
 -----------
@@ -30,6 +33,7 @@ integration   quadtree and shoelace integrals
 contract      ShellMidlineStrip, CellWallLoop (public DTOs)
 extract       in-plane zero loops and feature curves (not a mesh)
 catalogue     WX-Y-Z-NR tokens
+mesh          conforming shell mesh (``shell_mesh``); Gmsh comparison stays on ``mesh.gmsh``
 
 Dependencies: numpy and numba; system/conda GEOS (``libgeos_c``) for polygon
 offset and overlay; scipy (``[splines]``) for spline-resampled airfoils.
@@ -38,27 +42,22 @@ by geometry modules. Offset and overlay call GEOS through
 ``implicit_geometry_kernel.geos``. Public products are numpy.
 """
 
+from __future__ import annotations
+
+import warnings
+
 from implicit_geometry_kernel.blade import (
     Airfoil,
     Anchor,
     BladeConcept,
     BladeGeometry,
-    CellPolygon,
-    MidSurface,
-    SectionCut,
-    SectionWall,
     GeometricIntegrals,
     geometric_integrals,
     ShearWeb,
     LockedLoftPlan,
     SectionSample,
-    PartitionEdge,
-    Region,
+    SectionCut,
     ShellGraph,
-    ShellRun,
-    ShellTopologyTemplate,
-    TopologyDiff,
-    TopologyEvent,
     SkinRegion,
     Station,
     StationNetwork,
@@ -72,23 +71,15 @@ from implicit_geometry_kernel.blade import (
     loft_mapped_strips,
     read_planform_csv,
     write_windio,
-    partition_edge_curve,
     resample_locked,
     rib_face_polygons,
     section_at,
-    shared_loft_names,
-    signatures_compatible,
     shell_graph,
     shell_loft_zones,
-    shell_strips_from_graph,
-    topology_diff,
-    transverse_members_from_windio,
-    zone_region_graphs,
     station_network,
-    station_network_from_meta,
     tip_closure_polygons,
+    transverse_members_from_windio,
     wall_meta_from_cut,
-    refine_section_samples,
 )
 from implicit_geometry_kernel.sdf import (
     FeatureTable,
@@ -107,20 +98,59 @@ from implicit_geometry_kernel.catalogue import (
 
 __version__ = "0.9.2"
 
+# Topology helpers demoted from the barrel in 0.9.x (K5). Still importable from
+# ``blade`` / ``blade.topology``; root import warns once per name this process.
+_DEPRECATED_ROOT = {
+    "CellPolygon": "implicit_geometry_kernel.blade",
+    "MidSurface": "implicit_geometry_kernel.blade",
+    "PartitionEdge": "implicit_geometry_kernel.blade",
+    "Region": "implicit_geometry_kernel.blade",
+    "SectionWall": "implicit_geometry_kernel.blade",
+    "ShellRun": "implicit_geometry_kernel.blade",
+    "ShellTopologyTemplate": "implicit_geometry_kernel.blade",
+    "TopologyDiff": "implicit_geometry_kernel.blade",
+    "TopologyEvent": "implicit_geometry_kernel.blade",
+    "partition_edge_curve": "implicit_geometry_kernel.blade",
+    "refine_section_samples": "implicit_geometry_kernel.blade",
+    "shared_loft_names": "implicit_geometry_kernel.blade",
+    "signatures_compatible": "implicit_geometry_kernel.blade",
+    "shell_strips_from_graph": "implicit_geometry_kernel.blade",
+    "station_network_from_meta": "implicit_geometry_kernel.blade",
+    "topology_diff": "implicit_geometry_kernel.blade",
+    "zone_region_graphs": "implicit_geometry_kernel.blade",
+}
+
 __all__ = [
-    "Airfoil", "Anchor", "BladeConcept", "BladeGeometry", "CellPolygon", "FeatureTable", "FieldSample", "GeometrySolver",
-    "LoftedPolygonSDF", "LockedLoftPlan", "MidSurface", "NO_FEATURE", "PriorityUnionNode", "SYSTEM_TYPE_KEYS",
-    "SYSTEM_TYPE_LAYOUT_KEYS",
+    "Airfoil", "Anchor", "BladeConcept", "BladeGeometry", "FeatureTable", "FieldSample",
+    "GeometrySolver", "LoftedPolygonSDF", "LockedLoftPlan", "NO_FEATURE", "PriorityUnionNode",
+    "SYSTEM_TYPE_KEYS", "SYSTEM_TYPE_LAYOUT_KEYS",
     "GeometricIntegrals", "geometric_integrals",
-    "PartitionEdge", "Region", "SectionCut", "SectionWall", "ShearWeb", "ShellGraph", "ShellRun",
-    "ShellTopologyTemplate", "SkinRegion",
-    "Station", "StationNetwork", "Stringer", "TagNode", "TopologyDiff", "TopologyEvent",
+    "SectionCut", "ShearWeb", "ShellGraph", "SkinRegion",
+    "Station", "StationNetwork", "Stringer", "TagNode",
     "SpanwiseScheme", "TipClosure", "TransverseMember", "WallRegionGraph", "WebMember", "PlyDrop",
-    "loft_mapped_strips", "partition_edge_curve", "read_planform_csv", "refine_section_samples", "write_windio", "resolve_system_type",
+    "loft_mapped_strips", "read_planform_csv", "write_windio", "resolve_system_type",
     "SectionSample",
     "resample_locked", "rib_face_polygons",
     "section_at",
-    "shared_loft_names", "signatures_compatible", "shell_graph", "shell_loft_zones",
-    "shell_strips_from_graph",     "station_network", "station_network_from_meta", "tip_closure_polygons", "topology_diff",
-    "transverse_members_from_windio", "wall_meta_from_cut", "zone_region_graphs",
+    "shell_graph", "shell_loft_zones",
+    "station_network", "tip_closure_polygons",
+    "transverse_members_from_windio", "wall_meta_from_cut",
 ]
+
+
+def __getattr__(name: str):
+    home = _DEPRECATED_ROOT.get(name)
+    if home is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    warnings.warn(
+        f"importing {name!r} from implicit_geometry_kernel is deprecated; "
+        f"import it from {home} instead (removed from the top-level barrel in 0.9.x, K5)",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    import importlib
+
+    module = importlib.import_module(home)
+    value = getattr(module, name)
+    globals()[name] = value
+    return value

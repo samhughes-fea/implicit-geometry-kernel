@@ -42,37 +42,35 @@
  "implicit_geometry_kernel.BladeGeometry": {
   "kind": "class",
   "members": {
-   "cavity_sdf": "(self: 'BladeGeometry', meta: 'int' = 0)",
+   "cavity_sdf": "(self: 'LoftGeometry', meta: 'int' = 0)",
    "concept": "",
    "forced_stations": "(self) -> 'tuple[float, ...]'",
    "from_concept": "",
-   "interpolate": "(self: 'BladeGeometry', z: 'float')",
-   "key_points": "(self: 'BladeGeometry', z: 'float') -> 'dict[str, np.ndarray]'",
-   "named_edges": "(self: 'BladeGeometry', z: 'float')",
-   "oml_polyline": "(self: 'BladeGeometry', z: 'float') -> 'np.ndarray'",
-   "oml_sdf": "(self: 'BladeGeometry', meta: 'int' = 0)",
-   "query": "(self: 'BladeGeometry', points) -> 'dict[str, np.ndarray]'",
-   "section_at": "(self: 'BladeGeometry', z: 'float') -> 'SectionCut'",
-   "shell_graph": "(self: 'BladeGeometry', z: 'float', include_solids: 'bool' = True)",
-   "size_fields": "(self: 'BladeGeometry', points) -> 'dict[str, np.ndarray]'",
-   "snap_oml": "(self: 'BladeGeometry', points, solver=None)",
-   "snap_wall_mid": "(self: 'BladeGeometry', points, solver=None)",
-   "thickness_at": "(self: 'BladeGeometry', z, s) -> 'np.ndarray'",
-   "thickness_law": "(self: 'BladeGeometry')",
+   "from_section": "",
+   "interpolate": "(self: 'LoftGeometry', z: 'float')",
+   "interpolate_many": "(self: 'LoftGeometry', zs) -> 'tuple'",
+   "key_points": "(self: 'LoftGeometry', z: 'float') -> 'dict[str, np.ndarray]'",
+   "named_edges": "(self: 'LoftGeometry', z: 'float')",
+   "oml_polyline": "(self: 'LoftGeometry', z: 'float') -> 'np.ndarray'",
+   "oml_polylines": "(self: 'LoftGeometry', zs) -> 'np.ndarray'",
+   "oml_sdf": "(self: 'LoftGeometry', meta: 'int' = 0)",
+   "query": "(self: 'LoftGeometry', points) -> 'dict[str, np.ndarray]'",
+   "section_at": "(self: 'LoftGeometry', z: 'float') -> 'SectionCut'",
+   "shell_graph": "(self: 'LoftGeometry', z: 'float', include_solids: 'bool' = True)",
+   "size_fields": "(self: 'LoftGeometry', points) -> 'dict[str, np.ndarray]'",
+   "snap_oml": "(self: 'LoftGeometry', points, solver=None)",
+   "snap_wall_mid": "(self: 'LoftGeometry', points, solver=None)",
+   "thickness_at": "(self: 'LoftGeometry', z, s) -> 'np.ndarray'",
+   "thickness_law": "(self: 'LoftGeometry')",
    "tip_closure_thickness": "(self) -> 'float'",
    "tip_closure_z": "",
-   "validate": "(self: 'BladeGeometry') -> 'list[str]'",
-   "wall_meta": "(self: 'BladeGeometry', table=None)",
-   "wall_mid_sdf": "(self: 'BladeGeometry', meta: 'int' = 0)",
-   "write_mid_surfaces": "(self: 'BladeGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81, members=None, include_solids: 'bool' = False) -> 'str'",
-   "write_oml": "(self: 'BladeGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81) -> 'str'"
+   "validate": "(self: 'LoftGeometry') -> 'list[str]'",
+   "wall_meta": "(self: 'LoftGeometry', table=None)",
+   "wall_mid_sdf": "(self: 'LoftGeometry', meta: 'int' = 0)",
+   "write_mid_surfaces": "(self: 'LoftGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81, members=None, include_solids: 'bool' = False) -> 'str'",
+   "write_oml": "(self: 'LoftGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81) -> 'str'"
   },
   "signature": "(stations: 'Sequence[Station]', layout: 'str | SystemLayoutSpec | SectionLayout', skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness | Sequence[float]' = 0.0, shear_web_thickness: 'Thickness | Sequence[float]' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, pivot_fraction: 'Optional[Union[float, SpanTable]]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), ply_drops: 'Sequence[PlyDrop]' = (), merge_cap_and_skin: 'bool' = False, region_graph=None, tip_closure: 'Optional[TipClosure]' = None, airfoil_morph: 'str' = 'auto', web_x_from_pitch: 'Optional[SpanTable]' = None, cap_x_from_pitch: 'Optional[SpanTable]' = None, twist_sense: 'str' = 'nose_up', cap_edge_reference: 'str' = 'midplane', web_tilt_deg: 'Optional[SpanTable]' = None, wall_reference: 'str' = 'mid')"
- },
- "implicit_geometry_kernel.CellPolygon": {
-  "kind": "class",
-  "members": {},
-  "signature": "(id: 'int', points: 'np.ndarray', area: 'float', wall_labels: 'Tuple[str, ...]') -> None"
  },
  "implicit_geometry_kernel.FeatureTable": {
   "kind": "class",
@@ -86,6 +84,11 @@
   "kind": "class",
   "members": {},
   "signature": "(phi: 'np.ndarray', meta: 'np.ndarray') -> None"
+ },
+ "implicit_geometry_kernel.GeometricIntegrals": {
+  "kind": "class",
+  "members": {},
+  "signature": "(area: 'float', centroid: 'tuple[float, float]', ixx: 'float', iyy: 'float', ixy: 'float', ixx_origin: 'float', iyy_origin: 'float', ixy_origin: 'float') -> None"
  },
  "implicit_geometry_kernel.GeometrySolver": {
   "kind": "class",
@@ -114,26 +117,15 @@
   },
   "signature": "(provider: 'SectionPolygon', meta: 'int' = -1, cache_size: 'int' = 4096, accelerate: 'bool' = True) -> 'None'"
  },
- "implicit_geometry_kernel.MidSurface": {
-  "kind": "class",
-  "members": {
-   "length": ""
-  },
-  "signature": "(points: 'np.ndarray', segments: 'Tuple[MidSegment, ...]', z: 'float' = 0.0) -> None"
- },
  "implicit_geometry_kernel.NO_FEATURE": {
   "kind": "int",
   "signature": ""
  },
- "implicit_geometry_kernel.PartitionEdge": {
-  "kind": "class",
-  "members": {},
-  "signature": "(z: 'float', name_a: 'str', name_b: 'str', point: 'np.ndarray') -> None"
- },
  "implicit_geometry_kernel.PlyDrop": {
   "kind": "class",
   "members": {
-   "extra": "(self, z: 'float', s: 'float') -> 'float'"
+   "extra": "(self, z: 'float', s: 'float') -> 'float'",
+   "extra_many": "(self, z, s) -> 'np.ndarray'"
   },
   "signature": "(name: 'str', s0: 'float', s1: 'float', z0: 'float', z1: 'float', thickness: 'float', taper: 'float' = 0.05) -> None"
  },
@@ -143,11 +135,6 @@
    "children": "(self) -> 'tuple[SDFNode, ...]'"
   },
   "signature": "(nodes: 'Sequence[SDFNode]', priorities: 'Sequence[int]') -> 'None'"
- },
- "implicit_geometry_kernel.Region": {
-  "kind": "class",
-  "members": {},
-  "signature": "(name: 'str', start: 'str', end: 'str', is_cap: 'bool' = False, side: 'str' = 'suction', wrap: 'bool' = False) -> None"
  },
  "implicit_geometry_kernel.SYSTEM_TYPE_KEYS": {
   "kind": "tuple",
@@ -170,15 +157,10 @@
   },
   "signature": "(z: 'float', chord: 'float', twist: 'float', pitch_axis: 'float', offset: 'Tuple[float, float]', layout: 'str', walls: 'Tuple[SectionWall, ...]', cells: 'Tuple[CellPolygon, ...]', dropped_webs: 'Tuple[str, ...]' = (), transverse: 'Tuple[TransverseMember, ...]' = (), stringers: 'Tuple[Stringer, ...]' = (), host: 'SectionMidlineHost | None' = None, scale: 'float' = 1.0, dropped_web_indices: 'Tuple[int, ...]' = (), station_webs: 'int' = 0, station_family: 'str' = '', tip_closure: 'Optional[TipClosure]' = None) -> None"
  },
- "implicit_geometry_kernel.SectionWall": {
+ "implicit_geometry_kernel.SectionSample": {
   "kind": "class",
-  "members": {
-   "length": "",
-   "lookup_keys": "",
-   "region": "",
-   "xy": ""
-  },
-  "signature": "(label: 'str', kind: 'str', points: 'np.ndarray', thickness: 'float', side: 'Optional[str]' = None, bonds: 'Dict[str, Tuple[np.ndarray, np.ndarray]]' = <factory>) -> None"
+  "members": {},
+  "signature": "(z: 'float', chord: 'float', twist: 'float', pivot_fraction: 'float', offset: 'tuple[float, float]', x: 'np.ndarray', upper: 'np.ndarray', lower: 'np.ndarray') -> None"
  },
  "implicit_geometry_kernel.ShearWeb": {
   "kind": "class",
@@ -197,19 +179,6 @@
    "with_web_feet_on_loop": "(self) -> \"'ShellGraph'\""
   },
   "signature": "(z: 'float', loop: 'Tuple[ShellRun, ...]', webs: 'Tuple[ShellRun, ...]', faces: 'Tuple[ShellRun, ...]' = (), branches: 'Tuple[ShellRun, ...]' = (), solids: 'Tuple[ShellRun, ...]' = ()) -> None"
- },
- "implicit_geometry_kernel.ShellRun": {
-  "kind": "class",
-  "members": {},
-  "signature": "(name: 'str', surface: 'str', kind: 'str', layers: 'Tuple[str, ...]', points: 'np.ndarray', thickness: 'float', requires_eccentricity: 'bool' = False, eccentricity_m: 'float' = 0.0, layer_thicknesses_m: 'Tuple[float, ...]' = (), skin_side: 'str | None' = None, reference_surface: 'str' = 'skin_mid') -> None"
- },
- "implicit_geometry_kernel.ShellTopologyTemplate": {
-  "kind": "class",
-  "members": {
-   "from_region_graph": "",
-   "map_vertex": "(self, vid: 'ShellVertexId', other: \"'ShellTopologyTemplate'\") -> 'ShellVertexId'"
-  },
-  "signature": "(z: 'float', signature: 'tuple', loop: 'tuple[LoopBranch, ...]', webs: 'tuple[WebBranch, ...]', vertices: 'tuple[ShellVertexId, ...]', n_chord: 'int' = 2) -> None"
  },
  "implicit_geometry_kernel.SkinRegion": {
   "kind": "class",
@@ -250,16 +219,6 @@
   "kind": "class",
   "members": {},
   "signature": "(name: 'str' = 'tip_closure', thickness: 'Optional[float]' = None, partition: 'str' = 'skin') -> None"
- },
- "implicit_geometry_kernel.TopologyDiff": {
-  "kind": "class",
-  "members": {},
-  "signature": "(shared: 'Tuple[str, ...]', events: 'Tuple[TopologyEvent, ...]') -> None"
- },
- "implicit_geometry_kernel.TopologyEvent": {
-  "kind": "class",
-  "members": {},
-  "signature": "(kind: 'str', name: 'str', side: 'str') -> None"
  },
  "implicit_geometry_kernel.TransverseMember": {
   "kind": "class",
@@ -317,13 +276,13 @@
   "members": {},
   "signature": "(host_label: 'str', points: 'NDArray[np.float64]', host_points: 'NDArray[np.float64]') -> None"
  },
+ "implicit_geometry_kernel.geometric_integrals": {
+  "kind": "function",
+  "signature": "(source: 'SectionCut | list[SectionWall]') -> 'GeometricIntegrals'"
+ },
  "implicit_geometry_kernel.loft_mapped_strips": {
   "kind": "function",
-  "signature": "(s0: 'Mapping[str, np.ndarray]', s1: 'Mapping[str, np.ndarray]', t0: 'ShellTopologyTemplate', t1: 'ShellTopologyTemplate') -> 'list[tuple[str, np.ndarray, bool]]'"
- },
- "implicit_geometry_kernel.partition_edge_curve": {
-  "kind": "function",
-  "signature": "(geo, name_a: 'str', name_b: 'str', zs) -> 'np.ndarray'"
+  "signature": "(s0: 'Mapping[str, np.ndarray]', s1: 'Mapping[str, np.ndarray]', t0: 'ShellTopologyTemplate', t1: 'ShellTopologyTemplate', *, on_section=None, strip_log: 'list | None' = None, pairs: 'list | None' = None) -> 'list'"
  },
  "implicit_geometry_kernel.read_planform_csv": {
   "kind": "function",
@@ -345,10 +304,6 @@
   "kind": "function",
   "signature": "(stations: 'Sequence[Station]', z: 'float', layout, skin_thickness: 'Thickness', **options) -> 'SectionCut'"
  },
- "implicit_geometry_kernel.shared_loft_names": {
-  "kind": "function",
-  "signature": "(names_a, names_b) -> 'Tuple[str, ...]'"
- },
  "implicit_geometry_kernel.shell_graph": {
   "kind": "function",
   "signature": "(cut: 'SectionCut', include_solids: 'bool' = True) -> 'ShellGraph'"
@@ -357,21 +312,9 @@
   "kind": "function",
   "signature": "(graphs: 'Sequence[ShellGraph]') -> 'list[slice]'"
  },
- "implicit_geometry_kernel.shell_strips_from_graph": {
-  "kind": "function",
-  "signature": "(cut: 'SectionCut')"
- },
- "implicit_geometry_kernel.signatures_compatible": {
-  "kind": "function",
-  "signature": "(a, b) -> 'bool'"
- },
  "implicit_geometry_kernel.station_network": {
   "kind": "function",
   "signature": "(cut: 'SectionCut', table: 'FeatureTable | None' = None) -> 'StationNetwork'"
- },
- "implicit_geometry_kernel.station_network_from_meta": {
-  "kind": "function",
-  "signature": "(wall_mid: 'SDFNode', wall_meta: 'SDFNode', z: 'float', bounds: 'tuple[float, float, float, float]', table: 'FeatureTable', n: 'int' = 48) -> 'StationNetwork'"
  },
  "implicit_geometry_kernel.structure.BranchContribution": {
   "kind": "class",
@@ -512,10 +455,6 @@
   "kind": "function",
   "signature": "(geo, *, n_chord: 'int' = 12) -> 'list[tuple[str, np.ndarray]]'"
  },
- "implicit_geometry_kernel.topology_diff": {
-  "kind": "function",
-  "signature": "(a: 'ShellGraph', b: 'ShellGraph') -> 'TopologyDiff'"
- },
  "implicit_geometry_kernel.transverse_members_from_windio": {
   "kind": "function",
   "signature": "(structure: 'Mapping[str, Any]', z_of_s: 'np.ndarray | Sequence | None' = None) -> 'tuple[TransverseMember, ...]'"
@@ -527,9 +466,5 @@
  "implicit_geometry_kernel.write_windio": {
   "kind": "function",
   "signature": "(geo: 'BladeGeometry') -> 'dict[str, Any]'"
- },
- "implicit_geometry_kernel.zone_region_graphs": {
-  "kind": "function",
-  "signature": "(templates: 'Sequence[ShellTopologyTemplate]') -> 'ZonedShellTopology'"
  }
 }

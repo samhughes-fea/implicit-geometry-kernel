@@ -23,6 +23,6 @@ Optional extras (not geometry layers; geometry must not import them):
 | Extra | Docs | Notes |
 |---|---|---|
 | [plotting](plotting/README.md) (`[plots]`) | [visualisation](../../../docs/section/visualisation/README.md) | matplotlib |
-| `mesh/` (`[mesh]`) | leftover Gmsh convenience; **not advertised** | kernel mesh is `integration` quadtree |
+| [mesh/](mesh/README.md) | shell, health, quality, tables, export, fill; `[mesh]` = Gmsh only | station/CSG mesh stays `integration` quadtree |
 | [blade/cad.py](blade/cad.py) (`[cad]`) | STEP writer | lazy cadquery |
 | `profiling.py` | timers | `SECTION_GEOMETRY_PROFILE=1`; not on root `__all__` |

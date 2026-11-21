@@ -20,7 +20,7 @@ def forward(old: str, new: str) -> Callable[[str], Any]:
             raise AttributeError(f"module {old!r} has no attribute {name!r}") from None
         warnings.warn(
             f"{old} is deprecated; import {name} from {new} (or implicit_geometry_kernel.mesh). "
-            "The flat path is removed in 0.9.5.",
+            "The flat path is removed in 0.9.6.",
             DeprecationWarning,
             stacklevel=2,
         )

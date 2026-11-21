@@ -16,7 +16,7 @@ constructive solid geometry, with no materials, loads or solvers.</p>
 ![IEA 15 MW blade, true-scale close-ups from root to tip](../examples/blade/08_reference_blades/figures/iea15/full_blade/closeups.png)
 
 ```bash
-pip install "implicit-geometry-kernel @ git+https://github.com/samhughes-fea/implicit-geometry-kernel@v0.9.4"
+pip install "implicit-geometry-kernel @ git+https://github.com/samhughes-fea/implicit-geometry-kernel@v0.9.5"
 ```
 
 ::::{grid} 1 2 2 2

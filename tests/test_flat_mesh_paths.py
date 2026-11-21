@@ -1,4 +1,4 @@
-"""The 0.9.2 flat ``mesh.*`` module paths still import, with a warning, until 0.9.5."""
+"""The 0.9.2 flat ``mesh.*`` module paths still import, with a warning, until 0.9.6."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ FLAT = {
 def test_a_flat_path_warns_and_forwards(old):
     name, new = FLAT[old]
     legacy = importlib.import_module(f"implicit_geometry_kernel.mesh.{old}")
-    with pytest.warns(DeprecationWarning, match="removed in 0.9.5"):
+    with pytest.warns(DeprecationWarning, match="removed in 0.9.6"):
         value = getattr(legacy, name)
     assert value is getattr(importlib.import_module(new), name)
 

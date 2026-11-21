@@ -1,7 +1,7 @@
 """Deprecated flat path: use ``implicit_geometry_kernel.mesh.fill.polygon``.
 
 Kept for one 0.9.x release so callers get a warning before the path goes
-(removal in 0.9.5, docs/MIGRATING.md). Importing this module does not warn;
+(removal in 0.9.6, docs/MIGRATING.md). Importing this module does not warn;
 reading a name from it does.
 """
 

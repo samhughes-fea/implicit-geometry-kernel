@@ -23,9 +23,9 @@ or a mesh driver.
 
 ```bash
 # a release (recommended: pin the tag)
-pip install "implicit-geometry-kernel @ git+https://github.com/samhughes-fea/implicit-geometry-kernel@v0.9.4"
+pip install "implicit-geometry-kernel @ git+https://github.com/samhughes-fea/implicit-geometry-kernel@v0.9.5"
 # with plotting and spline extras
-pip install "implicit-geometry-kernel[plots,splines] @ git+https://github.com/samhughes-fea/implicit-geometry-kernel@v0.9.4"
+pip install "implicit-geometry-kernel[plots,splines] @ git+https://github.com/samhughes-fea/implicit-geometry-kernel@v0.9.5"
 # development, from a clone
 pip install -e ".[dev]"
 # the docs site locally (manual plus API reference)

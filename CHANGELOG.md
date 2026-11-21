@@ -1,7 +1,14 @@
 # Changelog
 
-## 0.9.5 (unreleased)
+## 0.9.5 (2026-11-21)
 
+- Release note: the ``v0.9.4`` tag and GitHub release point at the 0.9.3
+  commit, so they carry 0.9.3 code. 0.9.5 is the first release with the
+  changes listed under 0.9.4 below as well as these. Tags never move
+  (``docs/conventions/RELEASING.md``), so ``v0.9.4`` stays as it is; pin
+  ``v0.9.5``.
+- The flat ``mesh.*`` deprecation shims are removed in 0.9.6, not 0.9.5, so
+  they ship in one tagged release first.
 - Docs site: new landing page with logo, cards and grouped sidebar (Getting
   started, User guide, Reference, Project); ``ARCHITECTURE.md`` (data flow,
   package layering, where to look) and a five-step tutorial that a test runs;
@@ -23,7 +30,7 @@
 - Workflow: issue-first traceability rules in ``docs/conventions/WORKFLOW.md``;
   the PR template asks for ``Closes #N``.
 
-## 0.9.4 (2026-11-21)
+## 0.9.4 (2026-11-21, tag carries 0.9.3 code; see 0.9.5)
 
 - Commits: Conventional Commits on ``main`` (``docs/conventions/COMMITS.md``,
   decision 0012); PRs are squash-merged on their title and ``pr-title.yml``

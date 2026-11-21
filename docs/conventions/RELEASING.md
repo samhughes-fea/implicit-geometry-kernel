@@ -31,12 +31,17 @@ and permanent. `release.yml` enforces the checkable ones.
 2. CI is green and the PR is merged into `main`.
 3. The maintainer tags the merge commit:
    `git tag -a v0.9.N -m "implicit-geometry-kernel 0.9.N" && git push origin v0.9.N`,
-   or creates the release on GitHub's release page with a new `v0.9.N` tag on
-   `main`.
+   or creates the release on GitHub's release page with a new `v0.9.N` tag and
+   **Target** `main`, only after the release PR is merged. Check that the target
+   commit is the release PR's merge (its `__version__` is `0.9.N`): the v0.9.4
+   tag was made on the commit before the release PR merged and so carries 0.9.3
+   code.
 4. `release.yml` checks the tag name, that the commit is on `main`, the
    changelog heading and `__version__`, then builds the sdist and wheel
    (and uploads to PyPI only when `PYPI_PUBLISH` is `true`).
-5. The GitHub release notes are the changelog section.
+5. `release.yml` makes the GitHub release, with the changelog section as its
+   notes and the sdist and wheel attached. If the release page made the release
+   first, the job adds the files to it.
 6. Consumers move their pins from the old tag to the new one in their own PRs.
 
 The rule for `main` between releases is: `__version__` is the next release

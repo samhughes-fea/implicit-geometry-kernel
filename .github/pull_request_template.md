@@ -1,3 +1,5 @@
+<!-- Title: a Conventional Commit, e.g. "fix(blade): ..." (docs/conventions/COMMITS.md). It becomes the squash commit. -->
+
 ## What and why
 
 ## Labels

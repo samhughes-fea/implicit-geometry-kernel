@@ -12,7 +12,7 @@ built on top of it.
 git clone https://github.com/samhughes-fea/implicit-geometry-kernel
 cd implicit-geometry-kernel
 pip install -e ".[dev]"
-pre-commit install          # optional: ruff and the link check on each commit
+pre-commit install --hook-type pre-commit --hook-type commit-msg   # optional: ruff, links, commit messages
 ```
 
 GEOS is needed for polygon offset and overlay; see [Install](README.md#install).
@@ -33,6 +33,8 @@ sphinx-build -W -b html docs docs/_build/html   # with the [docs] extra
 
 ## Rules
 
+- **Commits.** Conventional Commits, checked on the PR title, which becomes the
+  squash commit: see [Commit messages](docs/conventions/COMMITS.md).
 - **Golden numbers.** A refactor leaves `tests/golden/*.json` unchanged. A change
   that moves geometry on purpose runs `python scripts/snapshots.py --update` and
   says why in `CHANGELOG.md`.

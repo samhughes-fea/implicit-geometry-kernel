@@ -40,6 +40,8 @@ agents alike. [SCOPE.md](SCOPE.md) says what belongs here;
 
 ## Working conventions
 
+- Commit messages and PR titles follow [Conventional Commits](docs/conventions/COMMITS.md)
+  (`fix(blade): ...`, `feat(mesh)!: ...`); PRs are squash-merged on their title.
 - Label every issue and PR per [the label rules](docs/conventions/LABELS.md):
   one type, its areas, and any review flag. Never remove `needs-decision`.
 - Work through pull requests; `main` is protected. Keep one concern per commit.

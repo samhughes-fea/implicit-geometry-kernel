@@ -2,6 +2,9 @@
 
 ## 0.9.4 (2026-11-21)
 
+- Commits: Conventional Commits on ``main`` (``docs/conventions/COMMITS.md``,
+  decision 0012); PRs are squash-merged on their title and ``pr-title.yml``
+  checks it; ``pre-commit`` has a ``commit-msg`` hook.
 - Labels: ``.github/labels.yml`` defines a type / area / flag scheme, synced by
   ``label-sync.yml`` from ``main``; rules in ``docs/conventions/LABELS.md``.
 - Tags: [Tags and releases](docs/conventions/RELEASING.md) formalises them

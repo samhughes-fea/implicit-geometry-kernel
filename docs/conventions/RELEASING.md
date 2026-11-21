@@ -24,7 +24,7 @@ and permanent. `release.yml` enforces the checkable ones.
 
 ## Release steps
 
-1. A release PR bumps `__version__` to `0.9.N`, renames the changelog section
+1. A release PR (`chore(release): prepare 0.9.N`) bumps `__version__` to `0.9.N`, renames the changelog section
    to `## 0.9.N (date)`, updates [MIGRATING](../MIGRATING.md) when anything is
    deprecated or removed, updates `CITATION.cff` `version`, and records the release
    in the plan doc status table.

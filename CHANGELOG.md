@@ -9,6 +9,9 @@
 - ``key_points()`` takes LE and TE by chord fraction in the section frame; under
   twist they were the smallest and largest blade-frame x, 1.7 % of chord off at
   30 degrees (SG-034).
+- Bug log: SG-018 now classifies all 51 nearest / ``argmin`` sites. Three sites
+  move web ends onto the skin with no tolerance (up to 48 mm on one reference
+  mesh); they are logged as SG-035 with a proposed fix.
 
 ## 0.9.5 (2026-11-21)
 

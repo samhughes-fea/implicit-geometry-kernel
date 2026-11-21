@@ -280,3 +280,49 @@ def test_frozen_runner_resolution_does_not_retry_reanchor():
             SectionOptions(outputs=("midlines", "cell_wall_loops")),
             resolution=frozen,
         ).execute()
+
+
+def test_max_gauge_rebuild_with_frozen_web_y_fails_fast(monkeypatch):
+    """SG-031: a web_y resolved at the floor skin raises before the foot search at max skin.
+
+    The anchor sits outboard of the thicker skin's mid-surface, so no outward
+    foot exists. The check raises without running the ring solve or the axis
+    march, and the message says how to re-resolve. Web x positions alone
+    re-resolve the feet and build.
+    """
+    from implicit_geometry_kernel.contract.errors import InfeasibleSectionGeometry
+    from implicit_geometry_kernel.section.midlines import junction_primitives
+    from implicit_geometry_kernel.section.spec.worker import (
+        build_section_geometry,
+        resolve_station_layout,
+    )
+
+    af = AirfoilSDF.from_naca("4418", n_points=200, chord=0.3)
+    layout = resolve_system_type("1B-CN-LC-0R")
+    floor, ceiling = 0.004, 0.012
+    res = resolve_station_layout(layout, af, skin_thickness=floor)
+    web_x = list(res.web_x_positions_m)
+    assert web_x
+
+    def spec(skin, **web):
+        return SectionSpec.from_kwargs(
+            layout, af, skin_thickness=skin, shear_web_thickness=0.004,
+            spar_cap_thickness=0.0, web_offsets=web_x, **web,
+        )
+
+    options = SectionOptions(outputs=("midlines", "cell_wall_loops"))
+    assert build_section_geometry(spec(floor, web_y_coords=list(res.web_y_coords)), options=options).cell_wall_loops
+
+    searched = []
+    real = junction_primitives.solve_web_foot_on_skin_mid
+
+    def counted(*args, **kwargs):
+        searched.append(args)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(junction_primitives, "solve_web_foot_on_skin_mid", counted)
+    with pytest.raises(InfeasibleSectionGeometry, match="frozen web_y.*Re-resolve web_y"):
+        build_section_geometry(spec(ceiling, web_y_coords=list(res.web_y_coords)), options=options)
+    assert searched == []
+    monkeypatch.undo()
+    assert build_section_geometry(spec(ceiling), options=options).cell_wall_loops

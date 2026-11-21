@@ -207,7 +207,7 @@ Call after `setup_section_axes` for aerofoil section figures.
 |-------|--------|
 | Shared storage + plot contract for B/S/S′ | Canon in this home; helpers enforce plot remap |
 | Midline emit uses `chord_to_blade` | Exact at geometry→shell handoff |
-| Twisted `MultiCellSectionlabel` query space | Still **rotated-NACA-about-LE** in places — **not** full B until a dedicated B-eval adapter; do not treat SDF query coords as B without mapping ([plot_subcomponents](../../../plotting/plot_subcomponents.py) documents the bridge) |
+| Twisted `MultiCellSectionlabel` query space | Still **rotated-NACA-about-LE** in places — **not** full B until a dedicated B-eval adapter; do not treat SDF query coords as B without mapping ([plot_subcomponents](../../../src/implicit_geometry_kernel/plotting/plot_subcomponents.py) documents the bridge) |
 | `rotate_S_to_B_swapped_order` | Legacy quarantine; prefer canonical order |
 | Negating \(Y\) for display | **Forbidden** |
 

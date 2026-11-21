@@ -1,7 +1,29 @@
 # Changelog
 
-## Unreleased
+## 0.9.3 (2026-11-21)
 
+- A web foot whose frozen ``web_y`` was resolved at a thinner skin raises
+  ``InfeasibleSectionGeometry`` before the foot search, not after it. The
+  message gives the distance outboard of the mid-surface and says to
+  re-resolve: pass the web x positions without ``web_y_coords``, or run
+  ``resolve_station_layout`` at this skin (SG-031). The raise itself is
+  unchanged.
+- CI is green again on the 0.9.3 tree: two unused imports, the typing of the
+  split ``mesh/`` packages (``mesh.shell``, ``mesh.tables``, ``mesh.health``,
+  ``mesh.quality``, ``mesh.fill``, ``mesh.export``) and the example runner,
+  which now treats ``15_shell_mesh/compare_studies.py`` as a command-line tool
+  and not an example to run.
+- ``ShellMesh`` per-element fields (``elements``, ``name``, ``surface``,
+  ``partition``, ``layers``, ``layer_thicknesses``, ``bay``, ``z0``, ``z1``,
+  ``constructor``, ``n0``, ``n1``, ``flipped``, ``node_origin``, ``counts``,
+  ``strips``) are tuples, as the dataclass declares. ``shell_mesh`` built them
+  as lists. Values are unchanged.
+- Region counts: the size ceiling ``h`` wins over the fan budget of a run that
+  opens or closes. A fan count that would put any station's edges over ``h`` is
+  refused and the run keeps the block count (``test_shell_layers`` checks both
+  rules).
+- Relative links in the docs and package READMEs resolve again after the move
+  to ``docs/internal/``.
 - K5: top-level ``__all__`` drops rare topology helpers
   (``TopologyDiff``, ``ShellTopologyTemplate``, ``PartitionEdge``,
   ``shell_strips_from_graph``, …). They remain on ``blade`` /

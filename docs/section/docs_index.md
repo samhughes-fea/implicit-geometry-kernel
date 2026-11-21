@@ -89,7 +89,7 @@ flowchart TB
 |-----|----------|
 | [`reference/G_ROW_OWNERSHIP_MATRIX.md`](reference/G_ROW_OWNERSHIP_MATRIX.md) | Internal G-row ownership matrix |
 | [`../glossary.md`](../glossary.md) | Public names (manual) |
-| [`../../blade/concepts/taxonomy.md`](../../blade/concepts/taxonomy.md) | Blade-concept token decode (WX-Y-Z-NR) |
+| [`../blade/concepts/taxonomy.md`](../blade/concepts/taxonomy.md) | Blade-concept token decode (WX-Y-Z-NR) |
 | [`reference/structural_systems_gallery.md`](reference/structural_systems_gallery.md) | All 40 layout cores (gallery figures) |
 | [`reference/ADR_ZERO_WEB_SHELL_MESH.md`](reference/ADR_ZERO_WEB_SHELL_MESH.md) | `0A`/`0B` shell-mesh handoff (N = 0 strips) |
 

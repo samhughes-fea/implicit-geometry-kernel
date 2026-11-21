@@ -215,7 +215,8 @@ def _volume_ratio(elements: Sequence[Sequence[int]], volume: np.ndarray) -> np.n
     ratio = np.ones(len(elements), float)
     by_edge: dict[tuple[int, int], list[int]] = {}
     for i, element in enumerate(elements):
-        for a, b in zip(element, element[1:] + element[:1]):
+        ring = list(element)
+        for a, b in zip(ring, ring[1:] + ring[:1]):
             by_edge.setdefault((a, b) if a < b else (b, a), []).append(i)
     for users in by_edge.values():
         if len(users) < 2:

@@ -5,10 +5,10 @@
 Design spike + migration note. The production rewrite landed 2026-08-30:
 `insert_cap_web_interior_junctions` now uses post-resample web-axis x final-cap
 solves (`intersect_web_axis_open_polyline_2d`). Bug status: **Fixed**
-([`bug_log` SG-009](../bug_log.md#sg-009)).
+([`bug_log` SG-009](../../../section/bug_log.md#sg-009)).
 
-↑ [`docs index`](../docs_index.md) · [`bug_log` SG-009](../bug_log.md#sg-009) ·
-[`section_geometry`](../docs_index.md)
+↑ [`docs index`](../../../section/docs_index.md) · [`bug_log` SG-009](../../../section/bug_log.md#sg-009) ·
+[`section_geometry`](../../../section/docs_index.md)
 
 ## Table of contents
 

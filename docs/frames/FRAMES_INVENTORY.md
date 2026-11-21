@@ -18,7 +18,7 @@ baseline (see [FORK.md](../FORK.md)), not in-tree packages.
 **Date:** 2026-09-23  
 **Authority:** this file is the programme status source. Semantics and transforms
 remain in [`README.md`](README.md) / [`section_frames/`](../../src/implicit_geometry_kernel/frames/) /
-[`shell_frames/`](../../src/implicit_geometry_kernel/frames/shell_frames/). Cross-cutting MUST rules:
+`shell_frames/` (removed in 0.2.0). Cross-cutting MUST rules:
 `docs/conventions/api/API_STANDARDS.md`
 and `ARCH-MUST-016` in
 `MODULE_ARCHITECTURE_STANDARDS.md`.

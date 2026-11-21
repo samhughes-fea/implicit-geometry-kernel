@@ -14,10 +14,10 @@ use the polygon path for integration by default. Residual φ remains available
 when an insert recipe opts into `emission_maturity='residual_phi'`. This page
 is the numeric parity check (polygon ≠ exact SDF zero set).
 
-↑ [`section_geometry`](../docs_index.md) ·
-[`../constructive/`](../constructive/README.md) ·
-[`../props/`](../props/README.md) ·
-[`../recipes/`](../recipes/README.md)
+↑ [`section_geometry`](../../../section/docs_index.md) ·
+[`../constructive/`](../../../section/constructive/README.md) ·
+[`../props/`](../../../section/props/README.md) ·
+[`../recipes/`](../../../section/recipes/README.md)
 
 ## Table of contents
 
@@ -56,7 +56,7 @@ Backend: `SECTION_GEOMETRY_PROPS_BACKEND=hybrid|quadtree|grid` (default **hybrid
 | Area parity (constructive labels) | Relative area error vs dense-grid SDF occupancy | same JSON `wall_solid_boundary_metrics.*.area_rel_err` |
 | Insert constructive | Inserts on constructive labels under hybrid | `constructive_labels` includes LE/TE when present |
 | Twist cases | Twisted solids in props / dual-rep demos | props dashboard + dual-rep demo |
-| Overlap policy | Per-label moments independent (skin∩cap may double-count) | [`../constructive/README.md`](../constructive/README.md) |
+| Overlap policy | Per-label moments independent (skin∩cap may double-count) | [`../constructive/README.md`](../../../section/constructive/README.md) |
 
 Exact rtol/atol for CI live in tests. Perf history:
 [`PERFORMANCE_WORK_SUMMARY.md`](PERFORMANCE_WORK_SUMMARY.md).

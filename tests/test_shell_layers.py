@@ -266,6 +266,17 @@ def test_an_oversized_edge_takes_the_block_count():
 
 def test_a_closing_run_keeps_the_fan_budget():
     """A short closing arc limits the shared count to the edges its fan can carry."""
+    from implicit_geometry_kernel.blade.topology.region_counts import _block_counts
+
+    asked = [{"panel": 6, "web_0": 4}, {"panel": 6, "web_0": 4}, {"web_0": 4}]
+    lengths = [{"panel": 1.0, "web_0": 0.4}, {"panel": 0.05, "web_0": 0.4}, {"web_0": 0.4}]
+    out = _block_counts(asked, lengths, (0.0, 1.0, 1.07), {"panel"})
+    assert [row["panel"] for row in out[:2]] == [2, 2]
+    assert [row["web_0"] for row in out] == [4, 4, 4]
+
+
+def test_the_size_ceiling_wins_over_the_fan_budget():
+    """The fan is refused when its count would put a station's edges over ``h``."""
     from implicit_geometry_kernel.blade.topology.region_counts import region_counts
     from implicit_geometry_kernel.blade.topology.template import LoopBranch, ShellTopologyTemplate, WebBranch
 
@@ -288,8 +299,10 @@ def test_a_closing_run_keeps_the_fan_budget():
         0.2, zs=(0.0, 1.0, 1.07), chords=(1.0, 0.95, 0.9), log=log,
     )
     panel = [row for row in log if row.region == "panel"]
-    assert [row.count for row in panel] == [2, 2]
-    assert panel[0].reason == "block"
+    # A fan of 2 would give 0.5 m edges at the root station, over h = 0.2 m.
+    assert [row.count for row in panel] == [6, 6]
+    assert all(row.edge <= 0.2 + 1e-12 for row in panel)
+    assert panel[1].reason == "block"
 
 
 def _scaled(z1: float, chord: float, h: float):

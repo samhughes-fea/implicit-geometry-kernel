@@ -7,11 +7,11 @@ closed for this kernel. Remaining park: TE classifier on OML only (WP6); BVH is
 shipped. Geometry still required before a conformal shell-FE consumer can
 delete its own kernel is a **separate** list (G-TE … G-ACC):
 [`SHELL_FE_REPLACEMENT_GAPS.md`](SHELL_FE_REPLACEMENT_GAPS.md).
-Characterization: [`tests/test_shell_graph_gaps.py`](../../../tests/test_shell_graph_gaps.py).
+Characterization: [`tests/test_shell_graph_gaps.py`](../../../../tests/test_shell_graph_gaps.py).
 
 Fixture unless noted: 2D-F, `z = 4` m, NACA 0024→0018, chord 1.6 m, skin 3 mm, cap 8 mm, webs 2 mm at chord fractions `(0.18, 0.48)`.
 
-↑ [`geometry_to_mesh`](../guides/geometry_to_mesh.md)
+↑ [`geometry_to_mesh`](../../../section/guides/geometry_to_mesh.md)
 
 ## Summary
 
@@ -40,7 +40,7 @@ Oracles (Wave 0): **loft strips** from `shell_graph` polylines; **in-plane snap*
 
 **Status:** Wave 3 shipped.
 
-**Today:** [`build_shell_midline_strips`](../../../src/implicit_geometry_kernel/section/midlines/export.py) is skin+web (conformal mesh). Cap solids stay on [`cut.walls`](../../../src/implicit_geometry_kernel/blade/cut.py) with bonds; they are not a second mesh polyline. [`shell_strips_from_graph`](../../../src/implicit_geometry_kernel/blade/shell_graph.py) is the shell producer: one `ShellMidlineStrip` per graph run (`T = t_skin` on the loop, cap as partition `kind`, OFFSET on `offset_regions()`). [`ShellMidlineStrip`](../../../src/implicit_geometry_kernel/contract/shell_midline_strip.py) is **not** versioned.
+**Today:** [`build_shell_midline_strips`](../../../../src/implicit_geometry_kernel/section/midlines/export.py) is skin+web (conformal mesh). Cap solids stay on [`cut.walls`](../../../../src/implicit_geometry_kernel/blade/cut.py) with bonds; they are not a second mesh polyline. [`shell_strips_from_graph`](../../../../src/implicit_geometry_kernel/blade/shell_graph.py) is the shell producer: one `ShellMidlineStrip` per graph run (`T = t_skin` on the loop, cap as partition `kind`, OFFSET on `offset_regions()`). [`ShellMidlineStrip`](../../../../src/implicit_geometry_kernel/contract/shell_midline_strip.py) is **not** versioned.
 
 **Evidence (2D-F, z=4):** 10 `SectionWall` rows vs 8 shell strips / `ShellRun`s.
 
@@ -54,7 +54,7 @@ Oracles (Wave 0): **loft strips** from `shell_graph` polylines; **in-plane snap*
 
 **Status:** Wave 1 shipped (colouring in Pass 1; named edges on `ShellGraph`).
 
-**Today:** `ShellRun.kind` is `cap` on stacked partitions; example 09 and `wall_meta` colour by that. Partition **edges** are only polyline endpoints. [`feature_curve`](../../../src/implicit_geometry_kernel/extract/curves.py) is `(field_a, field_b, zs, guess_xy)` with no names. [`station_network_from_meta`](../../../src/implicit_geometry_kernel/blade/topology/network.py) splits the mid loop by meta id and sets `thickness=0.0`.
+**Today:** `ShellRun.kind` is `cap` on stacked partitions; example 09 and `wall_meta` colour by that. Partition **edges** are only polyline endpoints. [`feature_curve`](../../../../src/implicit_geometry_kernel/extract/curves.py) is `(field_a, field_b, zs, guess_xy)` with no names. [`station_network_from_meta`](../../../../src/implicit_geometry_kernel/blade/topology/network.py) splits the mid loop by meta id and sets `thickness=0.0`.
 
 **API:** `ShellGraph.partition_edges()` / `.edge(name_a, name_b)` and
 `partition_edge_curve(geo, name_a, name_b, zs)` (omit if missing; no lerp).
@@ -69,7 +69,7 @@ stays `0.0`.
 
 **Status:** Wave 2 shipped.
 
-**Today:** example 09 [`_wall_faces`](../../../examples/blade/08_reference_blades/reference_blades.py) lofts `a.keys() & b.keys()`. Missing names are omitted. No kernel `TopologyEvent`. Fixture `dropped_webs` at z=4 is empty. Cap runout / bay split would lerp silently if someone interpolated by index instead of name; the example does not lerp.
+**Today:** example 09 [`_wall_faces`](../../../../examples/blade/08_reference_blades/reference_blades.py) lofts `a.keys() & b.keys()`. Missing names are omitted. No kernel `TopologyEvent`. Fixture `dropped_webs` at z=4 is empty. Cap runout / bay split would lerp silently if someone interpolated by index instead of name; the example does not lerp.
 
 **API:** `topology_diff(a, b)` emits `cap_runout` / `dropped_web` / `bay_split`
 (and onset / added_web / bay_merge). `shared_loft_names` is the loft rule.
@@ -83,7 +83,7 @@ Example 09 uses it. No silent label lerp.
 
 **Status:** shipped (continuous at cap edges).
 
-**Today:** [`StackThickness`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) assigns nearest loop-run `T` and ramps across each cap/skin vertex over a distance equal to the thickness jump. Interior cap `T = 11` mm, interior skin `T = 3` mm on the 2D-F fixture; both endpoints of a cap run evaluate to the same blended value. Not ply stagger.
+**Today:** [`StackThickness`](../../../../src/implicit_geometry_kernel/blade/topology/fields.py) assigns nearest loop-run `T` and ramps across each cap/skin vertex over a distance equal to the thickness jump. Interior cap `T = 11` mm, interior skin `T = 3` mm on the 2D-F fixture; both endpoints of a cap run evaluate to the same blended value. Not ply stagger.
 
 **Non-goals:** ply-drop stagger of the constitutive stack.
 
@@ -95,7 +95,7 @@ Example 09 uses it. No silent label lerp.
 
 **Today:** both oracles sit on the **skin mid**. `shell_graph` no longer moves cap-footprint vertices toward the stack NA. Cap-end `|φ|` matches run interiors. Constitutive eccentricity is `offset_regions()` (`t_cap/2` inward), not a geometric kink.
 
-**Policy:** loft / conformal strips use `shell_graph` polylines; in-plane snap uses `wall_mid_sdf` + `GeometrySolver`. Characterization stays in [`tests/test_shell_graph_gaps.py`](../../../tests/test_shell_graph_gaps.py).
+**Policy:** loft / conformal strips use `shell_graph` polylines; in-plane snap uses `wall_mid_sdf` + `GeometrySolver`. Characterization stays in [`tests/test_shell_graph_gaps.py`](../../../../tests/test_shell_graph_gaps.py).
 
 ---
 
@@ -103,7 +103,7 @@ Example 09 uses it. No silent label lerp.
 
 **Status:** Wave 4 shipped.
 
-**Today:** [`ShellGraph.with_web_feet_on_loop`](../../../src/implicit_geometry_kernel/blade/cut.py) snaps web endpoints onto the stacked loop (applied by `shell_graph()`). 2D-F feet already shared vertices (gap **0**); unmerged skin walls remain ~`t_cap/2` away. Family D solids/recipes are unchanged.
+**Today:** [`ShellGraph.with_web_feet_on_loop`](../../../../src/implicit_geometry_kernel/blade/cut.py) snaps web endpoints onto the stacked loop (applied by `shell_graph()`). 2D-F feet already shared vertices (gap **0**); unmerged skin walls remain ~`t_cap/2` away. Family D solids/recipes are unchanged.
 
 **IEA 10 tip:** `SectionGeometryRunner.execute` (when layout is **not** a frozen sizing resolution) retries live `web_y` then drops webs that cannot re-anchor under twist. Passing `resolution=` still raises (SG-002).
 
@@ -113,7 +113,7 @@ Example 09 uses it. No silent label lerp.
 
 **Status:** Wave 5 shipped.
 
-**Today:** [`BladeGeometry.section_at`](../../../src/implicit_geometry_kernel/blade/loft/loft.py) caches cuts per `round(z, 9)` (LRU 256). [`CutWallMetaSDF`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) and `StackThickness` keep derived LRU 256 on that same key. [`LoftedPolygonSDF`](../../../src/implicit_geometry_kernel/sdf/nodes/lofted.py) caches station polygons and, with ``accelerate=True`` (default), a uniform-grid AABB (`accel_at` / `bvh`). That is not the cut LRU.
+**Today:** [`BladeGeometry.section_at`](../../../../src/implicit_geometry_kernel/blade/loft/loft.py) caches cuts per `round(z, 9)` (LRU 256). [`CutWallMetaSDF`](../../../../src/implicit_geometry_kernel/blade/topology/fields.py) and `StackThickness` keep derived LRU 256 on that same key. [`LoftedPolygonSDF`](../../../../src/implicit_geometry_kernel/sdf/nodes/lofted.py) caches station polygons and, with ``accelerate=True`` (default), a uniform-grid AABB (`accel_at` / `bvh`). That is not the cut LRU.
 
 ---
 
@@ -121,7 +121,7 @@ Example 09 uses it. No silent label lerp.
 
 **Status:** Wave 6 shipped.
 
-**Today:** [`web_positions_from_windio_structure`](../../../src/implicit_geometry_kernel/blade/windio.py) maps `structure.anchors` `nd_arc` (0/1 = TE, ~0.5 = LE) to span-median chord fractions. Example 09 `load_windio` passes that tuple into `BladeGeometry.web_positions` for any web count. [`cap_chord_windows_from_windio_structure`](../../../src/implicit_geometry_kernel/blade/windio.py) reads spar/cap layer windows; loft still places Family D caps from the webs.
+**Today:** [`web_positions_from_windio_structure`](../../../../src/implicit_geometry_kernel/blade/windio.py) maps `structure.anchors` `nd_arc` (0/1 = TE, ~0.5 = LE) to span-median chord fractions. Example 09 `load_windio` passes that tuple into `BladeGeometry.web_positions` for any web count. [`cap_chord_windows_from_windio_structure`](../../../../src/implicit_geometry_kernel/blade/windio.py) reads spar/cap layer windows; loft still places Family D caps from the webs.
 
 Gauge tables still come from layer names.
 

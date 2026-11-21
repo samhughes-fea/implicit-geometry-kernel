@@ -2,7 +2,7 @@
 
 **Audience: internal.** Maintainer notes; not part of the library manual.
 
-↑ [`docs index`](../docs_index.md) · [docs hub](../../README.md)
+↑ [`docs index`](../../../section/docs_index.md) · [docs hub](../../README.md)
 
 Engineering records. Do not rewrite historical reports to the current manual
 voice.
@@ -15,4 +15,4 @@ voice.
 | Historical | [`../../blade/reports/GRAPHIFY_EXTRACTED_NEXT.md`](../../blade/reports/GRAPHIFY_EXTRACTED_NEXT.md) — EXTRACTED graphify 2026-11-10: no kernel restructure |
 | Historical | [`SG009_JUNCTION_PRIMITIVES_SPIKE.md`](SG009_JUNCTION_PRIMITIVES_SPIKE.md) — SG-009 design spike |
 | Historical | [`DUAL_REP_ACCEPTANCE.md`](DUAL_REP_ACCEPTANCE.md) — polygon vs SDF area |
-| Reference | [`ADR_ZERO_WEB_SHELL_MESH.md`](../reference/ADR_ZERO_WEB_SHELL_MESH.md) — `0A`/`0B` shell-mesh handoff |
+| Reference | [`ADR_ZERO_WEB_SHELL_MESH.md`](../../../section/reference/ADR_ZERO_WEB_SHELL_MESH.md) — `0A`/`0B` shell-mesh handoff |

@@ -4,7 +4,7 @@
 
 > **Status:** Historical performance handoff. Paths that cite deleted
 > `engine/` / `interface/` / `core/` trees are **stale** — those homes are gone
-> (see [G_ROW_OWNERSHIP_MATRIX](../reference/G_ROW_OWNERSHIP_MATRIX.md)). Prefer
+> (see [G_ROW_OWNERSHIP_MATRIX](../../../section/reference/G_ROW_OWNERSHIP_MATRIX.md)). Prefer
 > live domain homes (`sdf/`, `section.walls`, `section.properties`, …) when following links.
 > Citations of `sdf/ir.py` now mean `sdf/nodes/` (the CSG expression tree).
 > There is no `section_geometry_efficiency_review.md` in this tree; this file is
@@ -12,7 +12,7 @@
 
 Phase timings for computational-efficiency work on `section_geometry`.
 
-↑ [`docs index`](../docs_index.md) · [`section_geometry`](../docs_index.md)
+↑ [`docs index`](../../../section/docs_index.md) · [`section_geometry`](../../../section/docs_index.md)
 
 ## Table of contents
 
@@ -445,7 +445,7 @@ floor (~0.4 s); the dominant remaining levers are elsewhere (export property rec
 
 Profiling with `sdf_polygon_s` showed the polygon kernel was **~86%** of properties wall
 on 2D-CN depth-7 without Numba (~0.58 s of ~0.68 s). An `@njit(cache=True)` edge-loop in
-[`sdf/_polygon_numba.py`](../../../src/implicit_geometry_kernel/sdf/_polygon_numba.py) is now the **sole** production path
+[`sdf/kernels/polygon_numba.py`](../../../../src/implicit_geometry_kernel/sdf/kernels/polygon_numba.py) is now the **sole** production path
 (`numba>=0.59` is a core package dependency). `sdf_polygon_numpy` remains for parity tests
 only. Parity: `blade_structure_utilities/tests/test_sdf_polygon_parity.py`.
 
@@ -513,7 +513,7 @@ justified** (props remain constructive/hybrid shoelace, not a multi-union spike)
 ## Phase 14 — Cap–web topology vectorize + props stage keys (T1–T2)
 
 **T1:** batched edge×edge intersections via `intersect_open_polylines_2d` in
-[`ring_geometry.py`](../../../src/implicit_geometry_kernel/section/midlines/ring_geometry.py), used by
+[`ring_geometry.py`](../../../../src/implicit_geometry_kernel/section/midlines/ring_geometry.py), used by
 `insert_cap_web_interior_junctions`.
 `topology_cap_web` ~0.004 → ~0.0005 s on 2D-CN.
 
@@ -622,7 +622,7 @@ track parked** pending evidence that BSP sizing is still wall-bound on geometry
 
 ## Kernel scan 2026-11-10
 
-Graphify-first pass over [`graphify-out/`](../../../graphify-out/GRAPH_REPORT.md)
+Graphify-first pass over `graphify-out/` (a local report, not in the repo)
 (3064 nodes after `--update` on `src/implicit_geometry_kernel`, 2026-11-10).
 Queries used communities Quadtree SOA Refine, Polygon SDF BVH, Mapped Strip Loft,
 GEOS, Section Eval Cache, BladeGeometry Core.

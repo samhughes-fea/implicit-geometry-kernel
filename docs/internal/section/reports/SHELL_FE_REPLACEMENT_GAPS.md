@@ -9,7 +9,7 @@ shell-FE consumer uses after it deletes its own `kernel` / `structure` /
 inventory done-when rows.
 
 ↑ [`reports`](README.md) · [`MERGED_SHELL_GAPS`](MERGED_SHELL_GAPS.md) ·
-[`geometry_to_mesh`](../guides/geometry_to_mesh.md)
+[`geometry_to_mesh`](../../../section/guides/geometry_to_mesh.md)
 
 G1–G11 in [`MERGED_SHELL_GAPS.md`](MERGED_SHELL_GAPS.md) are the **shell-graph
 handoff** programme (Waves 0–7 shipped; G10/G11 closed here; G4 `T` locked).
@@ -32,7 +32,7 @@ oracles.
 
 **Stay in the consumer (not gaps here):** Gmsh topology/driver; PCOMP / ply
 stagger / ABD; loads and solvers. Matches closed G10/G11 and
-[`geometry_to_mesh.md`](../guides/geometry_to_mesh.md).
+[`geometry_to_mesh.md`](../../../section/guides/geometry_to_mesh.md).
 
 **Already covered (not gaps):** airfoil/planform loft; WX-Y-Z-NR catalogue;
 `BladeGeometry.section_at` → `SectionCut`; `shell_graph` /
@@ -79,9 +79,9 @@ that package graph.
 
 | Product | API |
 |---------|-----|
-| Wall gauge | [`StackThickness`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) nearest-run field, ramped at cap edges; polygon `wall_mid_sdf`; `cavity_sdf` via `FieldOffsetNode`. Combined skin+cap thickness is the stack field on the shell graph. |
-| Station product | Authored [`shell_graph`](../../../src/implicit_geometry_kernel/blade/shell_graph.py) → [`station_network`](../../../src/implicit_geometry_kernel/blade/topology/network.py). Caps are partitions, not extra loops. `station_network_from_meta` is a meta split, not a second spine. |
-| Trailing edge | Sharp vs blunt: [`classify_trailing_edge`](../../../src/implicit_geometry_kernel/extract/curves.py), `te_blunt_*`, `place_station_keys`, TE wrap. A finite blunt edge on the shell graph is the solid trailing edge. G9 cores sit on `shell_graph.solids` by default. |
+| Wall gauge | [`StackThickness`](../../../../src/implicit_geometry_kernel/blade/topology/fields.py) nearest-run field, ramped at cap edges; polygon `wall_mid_sdf`; `cavity_sdf` via `FieldOffsetNode`. Combined skin+cap thickness is the stack field on the shell graph. |
+| Station product | Authored [`shell_graph`](../../../../src/implicit_geometry_kernel/blade/shell_graph.py) → [`station_network`](../../../../src/implicit_geometry_kernel/blade/topology/network.py). Caps are partitions, not extra loops. `station_network_from_meta` is a meta split, not a second spine. |
+| Trailing edge | Sharp vs blunt: [`classify_trailing_edge`](../../../../src/implicit_geometry_kernel/extract/curves.py), `te_blunt_*`, `place_station_keys`, TE wrap. A finite blunt edge on the shell graph is the solid trailing edge. G9 cores sit on `shell_graph.solids` by default. |
 | Zoning stations | `forced_stations()`, `topology_diff`, `shell_loft_zones` |
 | Solver | `GeometrySolver.project`, `intersect`, `zero_along`; `feature_curve` / `partition_edge_curve` |
 | Domains | WindIO webs/caps, catalogue layouts, planform CSV / `BladeGeometry`. Section CST (`Airfoil.cst`) and `sdf_rounded_box` stay section/SDF primitives. |
@@ -110,7 +110,7 @@ supersedes those done-when criteria.
 | | |
 |--|--|
 | **Consumer contract** | SHARP / BLUNT / MERGED; mid-surface corners; span `closure_jumps`; medial shell + closure; regime-driven station network |
-| **Here** | [`classify_trailing_edge`](../../../src/implicit_geometry_kernel/extract/curves.py) sharp/blunt; WP6 parked as OML-ring helper ([MERGED_SHELL_GAPS](MERGED_SHELL_GAPS.md#former-wp6--feature-curve-keys-te-on-merged-loop-bvh-iea-10-tip)); **no** `solid_edge` |
+| **Here** | [`classify_trailing_edge`](../../../../src/implicit_geometry_kernel/extract/curves.py) sharp/blunt; WP6 parked as OML-ring helper ([MERGED_SHELL_GAPS](MERGED_SHELL_GAPS.md#former-wp6--feature-curve-keys-te-on-merged-loop-bvh-iea-10-tip)); **no** `solid_edge` |
 | **Done when** | Classifier on stacked mid and OML; MERGED when medial shell ≥ δ; span closure-jump and regime-change events; medial-shell and closure APIs a consumer can project onto |
 | **Evidence** | Synthetic blunt→sharp; blunt published lofts; parity with the consumer’s TE and solid-edge tests |
 
@@ -119,7 +119,7 @@ supersedes those done-when criteria.
 | | |
 |--|--|
 | **Consumer contract** | OML polygon loop (never contoured), inward-bisector offset to wall mid, swallowtail drop, blunt corner keys, wall meta transitions, clipped branch curves, ply-stop arcs, TE-aware signature compatibility and vertex map |
-| **Here** | [`station_network`](../../../src/implicit_geometry_kernel/blade/topology/network.py) / `station_network_from_meta` (thickness often `0.0`); [`shell_graph`](../../../src/implicit_geometry_kernel/blade/shell_graph.py) loop; no bisector-offset / solid-zone exclusion / ply-stop story |
+| **Here** | [`station_network`](../../../../src/implicit_geometry_kernel/blade/topology/network.py) / `station_network_from_meta` (thickness often `0.0`); [`shell_graph`](../../../../src/implicit_geometry_kernel/blade/shell_graph.py) loop; no bisector-offset / solid-zone exclusion / ply-stop story |
 | **Done when** | One public station product: conformal loop, named keys, branches with the same physical graph rules used for zoning (vanishing TE wrap, three-sided patches) |
 | **Evidence** | Landmark stations on RM1, SNL61.5, IEA 3.4/15 against frozen consumer networks (vertex keys, branch counts) |
 
@@ -128,7 +128,7 @@ supersedes those done-when criteria.
 | | |
 |--|--|
 | **Consumer contract** | Continuous wall `T(points)` → field-offset wall reference and cavity; partition meta; combined skin+cap mid-surface |
-| **Here** | [`StackThickness`](../../../src/implicit_geometry_kernel/blade/topology/fields.py) nearest-run **step** (**G4 locked**); `PlyDrop` ramps on the skin law only; loft `wall_mid_sdf` is the skin-loop polygon SDF. `FieldOffsetNode` exists under `sdf/` / `structure/` but is not the loft wall oracle |
+| **Here** | [`StackThickness`](../../../../src/implicit_geometry_kernel/blade/topology/fields.py) nearest-run **step** (**G4 locked**); `PlyDrop` ramps on the skin law only; loft `wall_mid_sdf` is the skin-loop polygon SDF. `FieldOffsetNode` exists under `sdf/` / `structure/` but is not the loft wall oracle |
 | **Done when** | Either (a) a continuous `T(points)` plus `wall_mid`/`cavity` fields usable for projection without discrete millimetre jumps at partition vertices, **or** (b) G4 stands and the consumer proves conformity ≤ 0.1 mm on reference blades anyway |
 | **Open decision** | Reopen G4 versus prove step-`T`. Not resolved here. |
 
@@ -146,7 +146,7 @@ supersedes those done-when criteria.
 | | |
 |--|--|
 | **Consumer contract** | Spanwise feature-curve tracker; `project`, `intersect`, `zero_along`, `first_zero_along`, `extreme_point`; junction wall ∩ branch; own-side wall offset; solid-edge placement |
-| **Here** | `partition_edge_curve`, `feature_curve`, [`GeometrySolver.project`](../../../src/implicit_geometry_kernel/sdf); weaker or undocumented intersect / ray-zero / own-side / solid-edge placement |
+| **Here** | `partition_edge_curve`, `feature_curve`, [`GeometrySolver.project`](../../../../src/implicit_geometry_kernel/sdf); weaker or undocumented intersect / ray-zero / own-side / solid-edge placement |
 | **Done when** | Documented oracle set so the consumer projector, conformity and fidelity call this kernel only |
 | **Evidence** | Consumer conformity ≤ 0.1 mm and edge-sag gates after an adapter, without a parallel Newton geometry in the consumer |
 
@@ -155,7 +155,7 @@ supersedes those done-when criteria.
 | | |
 |--|--|
 | **Consumer contract** | CST planform; windIO arc-layered combined wall; sector layup; rounded-box family with part-span member extents |
-| **Here** | NACA/airfoil loft, catalogue layouts, [`web_positions_from_windio_structure`](../../../src/implicit_geometry_kernel/blade/windio.py) / cap windows, transverse members; not a proven drop-in for CST tidal, arc-layered wall, or wing-box |
+| **Here** | NACA/airfoil loft, catalogue layouts, [`web_positions_from_windio_structure`](../../../../src/implicit_geometry_kernel/blade/windio.py) / cap windows, transverse members; not a proven drop-in for CST tidal, arc-layered wall, or wing-box |
 | **Done when** | Published and parametric inputs compile to `BladeGeometry` (or equivalent) whose `shell_graph`/`oml_sdf` cover every domain the consumer currently gates |
 | **Evidence** | Consumer benchmark matrix and lofted-mesh blades build without that repo’s geometry assemblers |
 
@@ -170,8 +170,8 @@ supersedes those done-when criteria.
 
 | Topic | Status | Action |
 |-------|--------|--------|
-| Curvature sizing `h` | [`size_fields`](../../../src/implicit_geometry_kernel/blade/loft/loft_fields.py) / [`polyline_kappa`](../../../src/implicit_geometry_kernel/blade/topology/sizing.py) partial | Consumer may keep chordal-tolerance sizing |
-| Marching squares | Quadtree MS for properties ([`integration/quadtree`](../../../src/implicit_geometry_kernel/integration/quadtree)) | Needed here only if station extract leaves a graph-only path |
+| Curvature sizing `h` | [`size_fields`](../../../../src/implicit_geometry_kernel/blade/loft/loft_fields.py) / [`polyline_kappa`](../../../../src/implicit_geometry_kernel/blade/topology/sizing.py) partial | Consumer may keep chordal-tolerance sizing |
+| Marching squares | Quadtree MS for properties ([`integration/quadtree`](../../../../src/implicit_geometry_kernel/integration/quadtree)) | Needed here only if station extract leaves a graph-only path |
 | Dual contouring 3D | Not in this repo | Consumer, or port if non-planar features are required |
 | Cores / TE inserts on loop | G9 solids | Default `shell_graph` puts cores on `solids`, not the loop |
 | Versioned `ShellMidlineStrip` | Parked | Not required |

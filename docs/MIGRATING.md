@@ -76,7 +76,7 @@ part of the skin, not a rib.
 | mesh `cap_*` regions bounded by one chord window on both sides | bounded by each side's cap edges in the cut; on a twisted blade the region keys move by up to ~0.1 chord |
 | a cap whose skin is concave under it could be missing from `shell_graph().loop` | it is always there (SG-029) |
 
-## 0.9.x: flat mesh modules removed (K5)
+## 0.9.2 to 0.9.3: flat mesh modules removed (K5)
 
 Import the conforming shell mesh and writers from the package or subpackages.
 The old flat module paths are gone.
@@ -86,10 +86,12 @@ The old flat module paths are gone.
 | `implicit_geometry_kernel.mesh.shell_mesh` | `from implicit_geometry_kernel.mesh import shell_mesh` or `mesh.shell` |
 | `implicit_geometry_kernel.mesh.vtk` | `from implicit_geometry_kernel.mesh import write_vtk` or `mesh.export` |
 | `implicit_geometry_kernel.mesh.polygon` / `polygon_voronoi` / `delaunay` | `mesh.fill` (`polygon_mesh_ring`, `triangulate_ring`, …) |
+| `mesh.mesh_rib_cells`, `mesh.mesh_shell`, `mesh.write_shell_msh` at the package root | `mesh.gmsh` (comparison only) |
+| `ShellMesh` per-element fields as lists | tuples; convert with `list(...)` where a list is needed |
 
 Maintainer reports live under `docs/internal/` (stubs remain at the old paths).
 
-## 0.9.x: top-level barrel trim (K5)
+## 0.9.2 to 0.9.3: top-level barrel trim (K5)
 
 Rare topology helpers left the top-level `__all__`. Import them from
 `implicit_geometry_kernel.blade` (or `blade.topology`). A root import still

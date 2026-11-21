@@ -110,6 +110,20 @@ class ShearWebComponent(SectionComponent):
             return np.asarray(anchor, dtype=float)
         step = step / norm
         origin = np.asarray(anchor, dtype=float)
+        phi_mid = offset(self._af, -half_gauge)
+        # Fast check (SG-031): an anchor resolved at a thinner skin sits outboard
+        # of this skin's mid-surface. Walking outward cannot reach that
+        # mid-surface, so raise before the foot search instead of after it.
+        outboard = float(phi_mid(np.array([origin[0]]), np.array([origin[1]]))[0])
+        if outboard > 1e-9 * max(1.0, float(self.skin_thickness)):
+            raise InfeasibleSectionGeometry(
+                "ShearWebComponent foot cannot reach the skin mid-surface: the frozen web_y "
+                f"anchor {origin.tolist()} lies {outboard:.6g} m outboard of the mid-surface "
+                f"of this skin (skin_thickness={float(self.skin_thickness):.6g}), so it was "
+                "resolved for a thinner skin. Re-resolve web_y at this skin: pass the web x "
+                "positions without web_y_coords, or run resolve_station_layout again at "
+                "this skin thickness."
+            )
         # Span well past IML and OML so tip / twist / stale-anchor cases still
         # register as interior segment hits on the mid ring.
         search = max(8.0 * half_gauge, 4.0 * float(self.skin_thickness), 1e-3)
@@ -142,8 +156,6 @@ class ShearWebComponent(SectionComponent):
                 return picked
         except Exception:
             pass
-
-        phi_mid = offset(self._af, -half_gauge)
 
         def phi_at(t):
             p = origin + float(t) * step

@@ -2,6 +2,12 @@
 
 ## 0.9.3 (2026-11-21)
 
+- A web foot whose frozen ``web_y`` was resolved at a thinner skin raises
+  ``InfeasibleSectionGeometry`` before the foot search, not after it. The
+  message gives the distance outboard of the mid-surface and says to
+  re-resolve: pass the web x positions without ``web_y_coords``, or run
+  ``resolve_station_layout`` at this skin (SG-031). The raise itself is
+  unchanged.
 - CI is green again on the 0.9.3 tree: two unused imports, the typing of the
   split ``mesh/`` packages (``mesh.shell``, ``mesh.tables``, ``mesh.health``,
   ``mesh.quality``, ``mesh.fill``, ``mesh.export``) and the example runner,

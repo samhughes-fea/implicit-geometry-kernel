@@ -59,6 +59,7 @@ Deviations are stated per entry.
 | [SG-028](#sg-028) | `AirfoilSDF.from_naca` via `Airfoil.naca4` broke sdf↔blade and vertex counts | **Fixed** — shared `naca_four_digit_vertices` |
 | [SG-029](#sg-029) | A spar cap was silently dropped from the skin loop at a concave skin vertex | **Fixed** — shared feet spread by cap arc length |
 | [SG-030](#sg-030) | The skin mid-line folds back on itself at a blunt trailing edge (IEA 15 ~16 % span) | **Fixed** — wrap corners are the thickness-aligned run |
+| [SG-031](#sg-031) | A max-gauge rebuild with web_y frozen at the floor skin could not place a web foot | **Fixed** — fast check before the foot search; the raise stays and says how to re-resolve |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -1745,3 +1746,45 @@ the trailing ridge, still limited to that band (`_te_corner_indices` in
 `test_flatback_wrap_is_monotone_and_does_not_jump`,
 `test_iea15_flatback_wrap_is_monotone_near_16_percent` (skipped without the
 catalogue). Catalogue goldens unchanged.
+
+## SG-031
+
+**A max-gauge rebuild with web_y frozen at the floor skin could not place a web foot**
+
+**Status:** Fixed — 2026-11-21 (the raise is kept by design)
+**Area:** `section.walls.shear_web.ShearWebComponent._extend_to_skin_mid_surface`
+
+### Symptom
+A caller resolves a station's layout at its floor skin (`resolve_station_layout`),
+keeps `web_x` and `web_y`, and rebuilds the same section at its maximum skin to
+bound the stiffness. Every station raises `InfeasibleSectionGeometry` ("foot
+cannot reach the skin mid-surface"), and only after the full foot search (the
+offset-ring solve, then a 65-sample axis march with bisection). Over a 64-station
+sweep the failed searches were most of the wall clock.
+
+### Evidence
+NACA 4418, chord 0.3 m, `1B-CN-LC-0R`, web at x = 0.15 m: resolved at 4 mm skin,
+the suction anchor is on that skin's inner surface (cavity SDF 0) and 2 mm inside
+its mid-surface. Rebuilt at 12 mm skin, the same anchor is 2 mm outboard of the
+new mid-surface (mid-surface SDF +0.002 m). Passing `web_offsets` without
+`web_y_coords` at 12 mm builds.
+
+### Root cause
+`web_y` is an inner-surface intercept for the skin it was resolved at. A thicker
+skin moves its mid-surface inward past the anchor, and the foot walk only goes
+outward from the anchor, so no foot exists. Raising is correct:
+`test_stale_frozen_web_y_under_twist_raises_infeasible_not_blind_foot_gap`
+requires it, so a caller can keep its prior gauges. The defect was that the
+raise came only after the whole search, and the message did not say what to do.
+
+### Fix
+Before the search, `_extend_to_skin_mid_surface` evaluates the mid-surface SDF
+at the anchor. An anchor outboard of the mid-surface raises at once, with the
+distance and the remedy: re-resolve `web_y` at this skin by passing the web x
+positions without `web_y_coords`, or by running `resolve_station_layout` again.
+A cavity thinner than the skin still raises after the search, as before.
+
+### Verification
+`test_max_gauge_rebuild_with_frozen_web_y_fails_fast` (no foot search runs for
+the stale anchor; web x alone builds at max skin). The existing stale-anchor
+tests still pass.

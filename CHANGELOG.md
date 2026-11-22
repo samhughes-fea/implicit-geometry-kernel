@@ -2,6 +2,8 @@
 
 ## 0.9.6 (unreleased)
 
+- Docs: two docstrings, one test note and the bug log no longer describe the
+  size or kind of a private blade.
 - Releases: merging a release PR (``chore(release): prepare 0.9.N``) now makes
   the release. ``release.yml`` runs on pushes to ``main``, checks the version,
   dated changelog heading and that the tag is new, then creates the annotated
@@ -107,7 +109,7 @@
   ``docs/FORK.md``, ``docs/section/reports/*``, ``docs/blade/reports/*``) are
   removed; links point into ``docs/internal/``. Public docs outside
   ``docs/internal/FORK.md`` no longer name the fork source. The private-name
-  test also bans the private tidal rotor's name.
+  test also bans the private rotor's name.
 - Release note missing from 0.9.3: ``shell_mesh`` meshes rib and tip-closure
   cells as triangles (unstructured fill with boundary recovery), not as one
   polygon of five or more nodes per cell. A consumer that fanned polygons must

@@ -87,7 +87,7 @@ jobs:
             # Only a merged release PR is released. PRs are squash-merged on
             # their title, so the commit subject is the release PR's title.
             subject=$(git log -1 --format=%s "$sha")
-            if ! echo "$subject" | grep -Eq '^chore\(release\)!?: prepare v?[0-9]'; then
+            if ! grep -Eq '^chore\(release\)!?: prepare v?[0-9]' <<< "$subject"; then
               [ "$EVENT" = "workflow_dispatch" ] && fail "$sha is not a release PR merge (subject: ${subject})"
               skip "not a release PR merge; nothing to release"
             fi
@@ -102,7 +102,7 @@ jobs:
           if [ "${major}" -ge 1 ] 2>/dev/null; then
             fail "${tag}: releases stay on 0.9.x; this workflow never makes v1.0.0 or higher"
           fi
-          echo "$tag" | grep -Eq '^v0\.9\.[0-9]+(rc[0-9]+)?$' || fail "${tag} is not a release tag (v0.9.N or v0.9.NrcM)"
+          grep -Eq '^v0\.9\.[0-9]+(rc[0-9]+)?$' <<< "$tag" || fail "${tag} is not a release tag (v0.9.N or v0.9.NrcM)"
 
           # Idempotent: an existing tag is never moved or remade.
           if [ "$create_tag" = "true" ] && git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
@@ -112,10 +112,12 @@ jobs:
           # The changelog at that commit has the release heading; a release
           # (not a candidate) has its date set.
           v="${version%%rc*}"
-          changelog=$(git show "$sha:CHANGELOG.md")
-          echo "$changelog" | grep -Eq "^## ${v//./\\.}( |$)" || fail "CHANGELOG.md has no '## ${v}' heading"
+          # Read from a file: grep -q on a pipe can stop early and, with pipefail,
+          # fail the pipeline on the writer's broken pipe.
+          git show "$sha:CHANGELOG.md" > "$RUNNER_TEMP/CHANGELOG.md"
+          grep -Eq "^## ${v//./\\.}( |$)" "$RUNNER_TEMP/CHANGELOG.md" || fail "CHANGELOG.md has no '## ${v}' heading"
           if [ "$v" = "$version" ]; then
-            echo "$changelog" | grep -Eq "^## ${v//./\\.} \([0-9]{4}-[0-9]{2}-[0-9]{2}\)" || fail "CHANGELOG.md heading for ${v} has no date; the release PR sets '## ${v} (YYYY-MM-DD)'"
+            grep -Eq "^## ${v//./\\.} \([0-9]{4}-[0-9]{2}-[0-9]{2}\)" "$RUNNER_TEMP/CHANGELOG.md" || fail "CHANGELOG.md heading for ${v} has no date; the release PR sets '## ${v} (YYYY-MM-DD)'"
           fi
 
           {

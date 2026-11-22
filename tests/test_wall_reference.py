@@ -42,3 +42,34 @@ def test_oml_reference_moves_the_skin_out_by_half_the_thickness():
 def test_unknown_wall_reference_is_rejected():
     with pytest.raises(ValueError):
         _blade("inner")
+
+
+def _web_line_offset(web, end):
+    """Distance of a web end from the line through the web's two nearest points."""
+    pts = web.points[:, :2]
+    a, b = (pts[1], pts[2]) if end == 0 else (pts[-2], pts[-3])
+    d = (a - b) / np.linalg.norm(a - b)
+    rel = pts[end] - a
+    return abs(float(rel[0] * d[1] - rel[1] * d[0]))
+
+
+@pytest.mark.parametrize("reference", ["mid", "oml"])
+def test_skin_partitions_and_web_feet_share_one_point(reference):
+    """SG-035: OML offset per run used to split every junction (19 mm here)."""
+    g = _blade(reference).section_at(1.0).shell_graph()
+    assert g.closed_loop_chain(rel_tol=1e-12) is not None
+    ends = np.array([p for r in g.loop for p in (r.points[0, :2], r.points[-1, :2])])
+    for web in g.webs:
+        for end in (0, -1):
+            foot = web.points[end, :2]
+            assert float(np.min(np.linalg.norm(ends - foot, axis=1))) == 0.0
+
+
+def test_oml_web_feet_follow_the_web_line():
+    """The web reaches the outer skin along itself; it is not slid sideways."""
+    g = _blade("oml").section_at(1.0).shell_graph()
+    for web in g.webs:
+        if len(web.points) < 3:
+            continue
+        for end in (0, -1):
+            assert _web_line_offset(web, end) < 1e-9

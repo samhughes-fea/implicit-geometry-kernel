@@ -169,3 +169,28 @@ def test_locked_patches_split_when_web_drops():
     assert web_names
     spans = {p[0]: p[1].shape[0] for p in patches}
     assert any(n < len(graphs) for n in spans.values())
+
+
+def test_resampling_through_a_web_drop_never_moves_a_web_foot():
+    """SG-035: a foot inside a skin run used to snap to the nearest new vertex."""
+    stations = [
+        Station(0.0, 2.0, Airfoil.naca4("0024"), pitch_axis=0.3),
+        Station(10.0, 1.0, Airfoil.naca4("0018"), pitch_axis=0.3),
+    ]
+    geo = BladeGeometry(stations, "2D-F-LC-0R", 0.004, spar_cap_thickness=0.008,
+                        shear_web_thickness=0.004, web_offsets=(0.4, 1.2), pivot_fraction=0.3)
+    checked = 0
+    for z in np.linspace(0.0, 10.0, 11):
+        g = geo.section_at(float(z)).shell_graph()
+        plan = LockedLoftPlan.from_graph(g, n_chord=8)
+        samples = resample_locked(g, plan)
+        loop = np.vstack([samples[n] for n in plan.loop_names])
+        webs = {w.name: w for w in g.webs}
+        for name in plan.web_names:
+            for i in (0, -1):
+                np.testing.assert_array_equal(samples[name][i], webs[name].points[i])
+                assert float(np.min(np.linalg.norm(loop - samples[name][i], axis=1))) == 0.0
+                checked += 1
+        for name, n in zip(plan.names, plan.counts):
+            assert len(samples[name]) == n
+    assert checked

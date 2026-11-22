@@ -129,7 +129,7 @@ def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
                 with_mesh=bool(retain_mesh),
             )
         if retain_mesh:
-            properties_map, meta_raw, quadtree_mesh = props_out  # type: ignore
+            properties_map, meta_raw, quadtree_mesh = props_out
         else:
             properties_map, meta_raw = props_out
             quadtree_mesh = None
@@ -233,8 +233,8 @@ def _emit_section(spec: Any, options: Any) -> SectionGeometryResult:
         quadtree_mesh=quadtree_mesh,
         chord_m=chord_m,
         twist_rad=twist_out,
-        leading_edge_twisted_pitch_axis_blade_frame=leading_edge_twisted_pitch_axis_blade_frame,  # type: ignore[arg-type]
-        trailing_edge_twisted_pitch_axis_blade_frame=trailing_edge_twisted_pitch_axis_blade_frame,  # type: ignore[arg-type]
+        leading_edge_twisted_pitch_axis_blade_frame=leading_edge_twisted_pitch_axis_blade_frame,
+        trailing_edge_twisted_pitch_axis_blade_frame=trailing_edge_twisted_pitch_axis_blade_frame,
         stage_timings=dict(stage_s) if profiling_enabled() else None,
     )
 

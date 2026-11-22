@@ -167,7 +167,7 @@ sphinx==9.0.4 ; python_full_version < '3.12'
     #   sphinx-copybutton
     #   sphinx-design
     #   sphinxcontrib-mermaid
-sphinx==9.1.1 ; python_full_version == '3.12.*'
+sphinx==9.2.0 ; python_full_version == '3.12.*'
     # via
     #   implicit-geometry-kernel (pyproject.toml)
     #   furo

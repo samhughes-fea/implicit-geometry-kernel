@@ -2,6 +2,8 @@
 
 ## 0.9.6 (unreleased)
 
+- Docs: two docstrings, one test note and the bug log no longer describe the
+  size or kind of a private blade.
 - Releases: merging a release PR (``chore(release): prepare 0.9.N``) now makes
   the release. ``release.yml`` runs on pushes to ``main``, checks the version,
   dated changelog heading and that the tag is new, then creates the annotated
@@ -10,6 +12,36 @@
   can be run by hand on an untagged release-PR merge. Tags are no longer
   maintainer-only (decision 0013); ``RELEASING.md``, ``AGENTS.md`` and
   ``CONTRIBUTING.md`` describe the new flow (#87, #88).
+- A flapwise web within 1 degree of the chord (a section twisted 90 degrees)
+  raises ``InfeasibleSectionGeometry`` naming the web and pointing to a
+  chord-normal layout, instead of a web-foot or open-ring error deep in the
+  build (SG-033).
+- ``key_points()`` takes LE and TE by chord fraction in the section frame; under
+  twist they were the smallest and largest blade-frame x, 1.7 % of chord off at
+  30 degrees (SG-034).
+- Bug log: SG-018 now classifies all 51 nearest / ``argmin`` sites.
+- Web feet are no longer moved to the nearest skin vertex (SG-035). With
+  ``wall_reference="oml"`` the skin is offset as one loop, so partition ends
+  and web feet share one point, and each web reaches the outer skin along its
+  own line; before, every junction split by up to 19 mm. The locked loft keeps
+  a web foot inside a skin run as a vertex of the resample, and the mapped mesh
+  keeps each foot on the region end it started on (it moved up to 47 mm on one
+  reference mesh). Each old snap is now a check that raises ``ValueError``
+  (#94).
+- ``wall_reference="oml"``: the outer skin no longer zig-zags; the offset read
+  tangents from points it had already moved (SG-037, #94).
+- ``integration.section_properties_S`` (and ``section_properties_Sprime``) on a
+  ``MultiPolygon``: second moments are the sum of the parts' origin moments; they
+  dropped each part's offset from the combined centroid (SG-036). Section
+  properties were not affected: they sum parts separately.
+- ``sdf.kernels.csg.union_all`` / ``intersect_all`` accept a mix of scalar and
+  array fields.
+- Tests: closed-form tests for the shoelace properties and SDF CSG kernels, the
+  spar-cap run-out gate and placement collision checks (previously 0 to 46 %
+  covered).
+- Typing: ``integration`` is strict; ``sdf``, ``section`` and ``blade`` have
+  checked bodies and no stale ignores. ``compute_section_properties`` is typed
+  ``tuple[Any, ...]``: it returns two items, or three with ``with_mesh=True``.
 
 ## 0.9.5 (2026-11-21)
 
@@ -85,7 +117,7 @@
   ``docs/FORK.md``, ``docs/section/reports/*``, ``docs/blade/reports/*``) are
   removed; links point into ``docs/internal/``. Public docs outside
   ``docs/internal/FORK.md`` no longer name the fork source. The private-name
-  test also bans the private tidal rotor's name.
+  test also bans the private rotor's name.
 - Release note missing from 0.9.3: ``shell_mesh`` meshes rib and tip-closure
   cells as triangles (unstructured fill with boundary recovery), not as one
   polygon of five or more nodes per cell. A consumer that fanned polygons must

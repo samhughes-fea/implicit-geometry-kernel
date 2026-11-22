@@ -348,7 +348,7 @@ class BondlineBuilder(WallTypeMixin, MemberBuilder):
     exact_labels = ("bondline",)
     label_prefixes = ("bondline_",)
 
-    def build(self, ctx, prior):  # type: ignore[override]
+    def build(self, ctx, prior):
         out: list[Contribution] = []
         k = 0
         te = getattr(ctx, "trailing_edge_bond_x_m", None)

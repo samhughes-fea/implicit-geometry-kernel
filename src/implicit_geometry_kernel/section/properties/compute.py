@@ -147,14 +147,14 @@ def compute_section_properties(
     twist_rad: float = 0.0,
     airfoil_for_spec: Any | None = None,
     with_mesh: bool = False,
-) -> tuple[dict[str, dict[str, float]], dict[str, Any]]:
+) -> tuple[Any, ...]:
     """Compute section properties for all labels using grid, quadtree, or hybrid.
 
     When ``with_mesh=True`` the return is a 3-tuple ``(data, meta, mesh)`` where
     ``mesh`` is the shared quadtree (full-label for ``quadtree``, residual-only
     for ``hybrid``) and ``None`` for the grid backend.
     """
-    backend_use: PropsBackend = backend or props_backend_from_env()  # type: ignore[assignment]
+    backend_use: PropsBackend = backend or props_backend_from_env()
     meta: dict[str, Any] = {"backend": str(backend_use)}
     labels = _section_labels(section_geometry)
 
@@ -174,7 +174,7 @@ def compute_section_properties(
                 props["label"] = label
                 data[label] = props
         meta["grid"] = {"nx": int(grid.nx), "ny": int(grid.ny)}
-        return (data, meta, None) if with_mesh else (data, meta)  # type: ignore
+        return (data, meta, None) if with_mesh else (data, meta)
 
     af = airfoil_for_spec
     if af is None and grid is not None:
@@ -194,7 +194,7 @@ def compute_section_properties(
         stats = get_stats()
         if stats is not None:
             meta["profiling"] = stats.to_dict()
-        return (props_map, meta, mesh) if with_mesh else (props_map, meta)  # type: ignore
+        return (props_map, meta, mesh) if with_mesh else (props_map, meta)
 
     with timed_block("properties"):
         props_map, mesh, qt_stats = section_properties_via_quadtree(
@@ -206,4 +206,4 @@ def compute_section_properties(
     stats = get_stats()
     if stats is not None:
         meta["profiling"] = stats.to_dict()
-    return (props_map, meta, mesh) if with_mesh else (props_map, meta)  # type: ignore
+    return (props_map, meta, mesh) if with_mesh else (props_map, meta)

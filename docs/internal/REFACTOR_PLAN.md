@@ -36,6 +36,15 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | 0.9.5 | Release of #79 and #81 (docs site polish, GitHub releases, CodeQL, typing, slow-test split); flat mesh shims removed in 0.9.6 | Merged (#81, 8f11101); tag v0.9.5 made by running the `release` workflow on 8f11101, then consumers move to it |
 | 0.9.6 | SG-033 flapwise twist limit, SG-034 key-point LE/TE under twist, SG-018 re-check, SG-035 web feet built on the skin (no snaps), SG-037 OML offset, flat mesh shims removed | In progress |
 | Manual | Docs as U, R, V, D manuals (issue #90): PR 1 restructure, R0 notation and bibliography, R1 frames; then R2–R3, R4–R6, R7–R10, V, U, D. Plan: issue #90 | PR 1 merged (#91); next R2–R3. CF-004 (moment transform twist sign) fixed in #93 |
+| L1 | Decisions 0014 (smooth authored laws, PCHIP with a station-density check, t = f(s, z)), 0015 (partition mesher), 0016 (property-only sub-partitions), 0017 (analytic surface derivatives); issues #95, #96, #97, #98 | In review (#99) |
+| L2 | `PchipLaw` and `span_interp="pchip"` (opt-in), leave-one-out station-density check that refuses or flags under-sampled inputs (#95) | To do |
+| L3 | `ThicknessField(t, z)` per partition, per-node thickness on `ShellMesh` (#95) | To do |
+| L4 | Tagged `Skeleton` view of the shell graph, normalised t per partition (#96) | To do |
+| L5 | Generic `SubPartition` in `structure/`; caps re-expressed with goldens unchanged; then flanges, web foot, wedge (#97) | To do |
+| L4b | Smooth section curves (C2 spline through given points, or CST) with the station-density check; analytic patch derivatives x_t, x_z, x_tt, x_tz, x_zz, normal, principal curvatures, signed-distance gradient and Hessian (#98) | To do |
+| L6 | `shell_mesh(method="partition")` beside the ruled-strip mesher, compared in CI; terminations as transition bands; junction nodes by Newton on both stacked distance fields, with an on-both-surfaces invariant (#96, #98) | To do |
+| L6b | Nodal and element curvature (k1, k2, theta) and kind tags on `ShellMesh`; kind by construction with exact zeros, computed curvature checked against the tag (#98) | To do |
+| L7 | Flagged release: PCHIP default for authored blades, partition mesher default, goldens re-baselined (#95, #96) | To do |
 
 #### Consumer adapter gaps (to do)
 
@@ -426,7 +435,7 @@ reference. Golden numbers are regenerated in these PRs with the change stated.
 | Airfoil nose | surfaces looked up by x after a cubic resample, split at the smallest-x vertex (NACA 0015 upper surface 8e-5 c off at x = 0) | **Done.** split at the true LE (farthest from TE); NACA 4-digit thickness from the formula | error against analytic NACA thickness at x/c 0 to 0.01 below 1e-8 |
 | Mid-surface field | `(outer + cavity) / 2`, only a true mid-surface where thickness is uniform | **Done.** signed SDF of the `shell_graph` skin loop | `|phi|` at loop-run interiors vs graph midpoints on all 40 layouts below 5e-4 |
 | Quadtree remainder | LE/TE inserts still integrated on a depth-7 quadtree | **Done.** emit inserts as polygons; keep the quadtree as a test cross-check | insert area and moments match shoelace sums to 1e-12 |
-| Loft scalars | chord, twist, pitch axis, offset linear between stations | **Done.** linear only (`TableLaw` / `np.interp`); PCHIP removed — sparse knots invented curvature. Airfoils stay linear blends | golden `blade.json` stations match linear tables |
+| Loft scalars | chord, twist, pitch axis, offset linear between stations | **Done.** linear only (`TableLaw` / `np.interp`); PCHIP removed — sparse knots invented curvature. Airfoils stay linear blends. Superseded for authored laws by [0014](../decisions/0014-smooth-authored-span-laws.md) (L2, L7) | golden `blade.json` stations match linear tables |
 
 Polygon distance (`sdf_polygon`, winding-number sign) is already exact and stays.
 

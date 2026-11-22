@@ -19,3 +19,7 @@ new record that supersedes it; do not edit history.
 | [0011](0011-tags.md) | Tags name releases only and are permanent | 2026-11-21 |
 | [0012](0012-conventional-commits.md) | Commits follow Conventional Commits | 2026-11-21 |
 | [0013](0013-release-workflow-tags.md) | The release workflow makes tags; supersedes "maintainer only" in 0008 and 0011 | 2026-11-22 |
+| [0014](0014-smooth-authored-span-laws.md) | Authored span laws may be smooth (PCHIP) with a station-density check; tables stay linear; thickness is t = f(s, z) | 2026-11-22 |
+| [0015](0015-partition-mesher.md) | The shell mesh is built per partition on a (t, z) patch from a shared skeleton | 2026-11-22 |
+| [0016](0016-property-only-sub-partitions.md) | Sub-partitions step properties, never geometry | 2026-11-22 |
+| [0017](0017-analytic-surface-derivatives.md) | Surface derivatives and curvature are analytic, not finite differences | 2026-11-22 |

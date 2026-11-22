@@ -2,6 +2,14 @@
 
 ## 0.9.6 (unreleased)
 
+- Releases: merging a release PR (``chore(release): prepare 0.9.N``) now makes
+  the release. ``release.yml`` runs on pushes to ``main``, checks the version,
+  dated changelog heading and that the tag is new, then creates the annotated
+  ``v0.9.N`` tag and the GitHub release with ``GITHUB_TOKEN``. It refuses any
+  version outside ``0.9.x`` (no ``v1.0.0``), does nothing if the tag exists, and
+  can be run by hand on an untagged release-PR merge. Tags are no longer
+  maintainer-only (decision 0013); ``RELEASING.md``, ``AGENTS.md`` and
+  ``CONTRIBUTING.md`` describe the new flow (#87).
 - A flapwise web within 1 degree of the chord (a section twisted 90 degrees)
   raises ``InfeasibleSectionGeometry`` naming the web and pointing to a
   chord-normal layout, instead of a web-foot or open-ring error deep in the

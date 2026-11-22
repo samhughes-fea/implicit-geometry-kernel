@@ -18,3 +18,4 @@ new record that supersedes it; do not edit history.
 | [0010](0010-no-private-data.md) | No confidential blade data in this repository | 2026-11-05 |
 | [0011](0011-tags.md) | Tags name releases only and are permanent | 2026-11-21 |
 | [0012](0012-conventional-commits.md) | Commits follow Conventional Commits | 2026-11-21 |
+| [0013](0013-release-workflow-tags.md) | The release workflow makes tags; supersedes "maintainer only" in 0008 and 0011 | 2026-11-22 |

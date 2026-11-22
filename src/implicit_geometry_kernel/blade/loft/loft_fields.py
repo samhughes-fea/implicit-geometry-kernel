@@ -217,6 +217,9 @@ class LoftFieldsMixin:
         zs = [s.z for s in self.stations]
         if any(b <= a for a, b in zip(zs, zs[1:])):
             issues.append("stations must increase in z")
+        for report in getattr(self, "span_sampling_reports", ()):
+            if not report.ok:
+                issues.append(report.message())
         for i, st in enumerate(self.stations):
             if st.chord <= 0:
                 issues.append(f"station {i} at z={st.z:g}: non-positive chord")

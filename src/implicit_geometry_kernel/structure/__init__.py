@@ -27,18 +27,23 @@ from implicit_geometry_kernel.structure.contributions import (
 )
 from implicit_geometry_kernel.structure.laws import (
     ConstantLaw,
+    PchipLaw,
     ProductLaw,
+    SamplingReport,
     ScaledLaw,
     SpanLaw,
     SumLaw,
     TableLaw,
     ThicknessLaw,
+    UnderSampledSpanLaw,
     as_law,
+    check_pchip_sampling,
 )
 
 __all__ = [
     "BranchContribution", "BranchField", "BuildContext", "BuilderRegistry", "ConstantLaw",
-    "Contribution", "MemberBuilder", "ProductLaw", "RegionContribution", "ScaledLaw", "SpanLaw",
+    "Contribution", "MemberBuilder", "PchipLaw", "ProductLaw", "RegionContribution", "SamplingReport", "ScaledLaw", "SpanLaw",
     "Structure", "StructureAssembler", "StructureError", "SumLaw", "TableLaw", "ThicknessLaw",
-    "TransverseContribution", "WallContribution", "WallThickness", "as_law", "assemble",
+    "TransverseContribution", "UnderSampledSpanLaw", "WallContribution", "WallThickness", "as_law",
+    "assemble", "check_pchip_sampling",
 ]

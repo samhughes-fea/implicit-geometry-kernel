@@ -131,6 +131,21 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         toward the trailing edge. One number, one per web, or a callable of
         ``z``. Two-foot webs already carry their line and reject a tilt.         Zero
         leaves the web chord-normal.
+    span_interp:
+        ``"linear"`` (default) interpolates station scalars (chord, twist,
+        offset, pivot fraction) and ``(z, values)`` span tables linearly.
+        ``"pchip"`` uses a shape-preserving cubic (C1) for them instead, for
+        authored laws (decision 0014). Callables and the airfoil blend are
+        unchanged. PCHIP needs denser stations: each law is checked with a
+        leave-one-out test (:func:`~implicit_geometry_kernel.structure.check_pchip_sampling`).
+    span_sampling:
+        With ``span_interp="pchip"``: ``"raise"`` (default) refuses knots too
+        sparse for PCHIP with :class:`~implicit_geometry_kernel.structure.UnderSampledSpanLaw`
+        naming the quantity and station; ``"flag"`` builds the blade and
+        :meth:`validate` lists the failures.
+    span_rtol:
+        Leave-one-out tolerance as a fraction of each quantity's range over
+        the span (default 0.5 %).
     wall_reference:
         ``"mid"`` (default) puts shell nodes on the laminate mid-surface.
         ``"oml"`` moves skin runs out along the surface normal by half the
@@ -195,6 +210,9 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         cap_edge_reference: str = "midplane",
         web_tilt_deg: Optional[SpanTable] = None,
         wall_reference: str = "mid",
+        span_interp: str = "linear",
+        span_sampling: str = "raise",
+        span_rtol: float = 5e-3,
     ):
         from implicit_geometry_kernel.catalogue import resolve_system_type
 
@@ -236,7 +254,15 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         src = pitch_axis if pivot_fraction is None else pivot_fraction
         if src is None:
             raise TypeError("pivot_fraction is required (a chord fraction or span table)")
-        self._pitch = _as_pivot_fraction(src)
+        if span_interp not in ("linear", "pchip"):
+            raise ValueError("span_interp must be 'linear' or 'pchip'")
+        if span_sampling not in ("raise", "flag"):
+            raise ValueError("span_sampling must be 'raise' or 'flag'")
+        self.span_interp = str(span_interp)
+        self.span_sampling = str(span_sampling)
+        self.span_sampling_reports: list = []
+        interp = self._pchip_factory(float(span_rtol)) if self.span_interp == "pchip" else None
+        self._pitch = _as_pivot_fraction(src, interp=interp)
         if self.web_offsets is None and web_positions is None and web_x_from_pitch is None and n_webs > 0:
             from implicit_geometry_kernel.blade.concepts.web_anchoring import (
                 lc_web_fractions,
@@ -276,9 +302,19 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         self._skin = _as_function(skin_thickness, "skin_thickness")
         self._cap = _gauge_law(spar_cap_thickness, "spar_cap_thickness")
         self._web = _gauge_law(shear_web_thickness, "shear_web_thickness")
-        self._chord = _as_span_table(chord, "chord")
-        self._twist = _as_span_table(twist, "twist")
-        self._offset = _as_span_table(offset, "offset", cols=2)
+        self._chord = _as_span_table(chord, "chord", interp=interp)
+        self._twist = _as_span_table(twist, "twist", interp=interp)
+        self._offset = _as_span_table(offset, "offset", cols=2, interp=interp)
+        if interp is not None:
+            station_z = [s.z for s in self.stations]
+            if self._chord is None:
+                self._chord = _as_span_table((station_z, [s.chord for s in self.stations]), "chord", interp=interp)
+            if self._twist is None:
+                self._twist = _as_span_table((station_z, [s.twist for s in self.stations]), "twist", interp=interp)
+            if self._offset is None:
+                offsets = [tuple(s.offset) for s in self.stations]
+                if any(o != offsets[0] for o in offsets):
+                    self._offset = _as_span_table((station_z, offsets), "offset", cols=2, interp=interp)
         self.n_airfoil_points = int(n_airfoil_points)
         self.transverse, self.tip_closure = _split_tip_closure(
             tuple(transverse), tip_closure, float(self.stations[-1].z)
@@ -330,6 +366,17 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         # interpolate lerps these and does not call _morph_surfaces.
         self._section_samples: tuple[SectionSample, ...] | None = None
         # interpolate / section_at / query / write / validate live on mixins
+
+    def _pchip_factory(self, rtol: float):
+        """Build PCHIP laws for span tables, keeping each sampling report."""
+        from implicit_geometry_kernel.structure.laws import PchipLaw
+
+        def make(z, values, name):
+            law = PchipLaw(z, values, name=name, rtol=rtol, sampling=self.span_sampling)
+            self.span_sampling_reports.append(law.sampling)
+            return law
+
+        return make
 
     @classmethod
     def from_section(

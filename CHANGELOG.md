@@ -2,6 +2,7 @@
 
 ## 0.9.6 (unreleased)
 
+- PCHIP span laws, opt-in (decision 0014). `structure.PchipLaw` is a shape-preserving C1 cubic with analytic first and second derivatives. `BladeGeometry(span_interp="pchip")` uses it for station chord, twist, offset and `(z, values)` span tables; linear stays the default and golden numbers are unchanged. PCHIP needs denser stations, so every PCHIP law is checked by a leave-one-out test (`check_pchip_sampling`, default tolerance 0.5 % of the quantity's range): too-sparse knots raise `UnderSampledSpanLaw` naming the quantity and station, or with `span_sampling="flag"` are listed by `validate()` (#100).
 - Decisions: 0014 smooth authored span laws (PCHIP, with a station-density check; tables stay linear; thickness as t = f(s, z)), 0015 the shell mesh built per partition on a (t, z) patch from a shared skeleton, 0016 sub-partitions step properties, never geometry, and 0017 analytic surface derivatives and curvature. The plan doc gains rows L1 to L7 (#99).
 - **Breaking fix (CF-004):** ``transform_moments_S_to_B`` and
   ``transform_moments_B_to_S`` rotated bending moments by the opposite twist to

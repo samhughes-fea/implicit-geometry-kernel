@@ -36,7 +36,7 @@ def _as_function(value: Thickness, name: str) -> Callable[[float], float]:
     return lambda z: v
 
 
-def _as_pivot_fraction(value: Union[float, SpanTable]):
+def _as_pivot_fraction(value: Union[float, SpanTable], interp=None):
     """Required piercing-point fraction: a constant in (0, 1) or a span table."""
     if isinstance(value, bool):
         raise TypeError("pivot_fraction is required (a chord fraction or span table)")
@@ -45,14 +45,17 @@ def _as_pivot_fraction(value: Union[float, SpanTable]):
         if not 0.0 < f < 1.0:
             raise ValueError("pivot_fraction must be a chord fraction in (0, 1)")
         return lambda z, _f=f: _f
-    table = _as_span_table(value, "pivot_fraction")
+    table = _as_span_table(value, "pivot_fraction", interp=interp)
     if table is None:
         raise TypeError("pivot_fraction is required (a chord fraction or span table)")
     return table
 
 
-def _as_span_table(value: Optional[SpanTable], name: str, *, cols: int = 1):
-    """Linear lookup ``f(z)``. ``None`` means use the bounding stations."""
+def _as_span_table(value: Optional[SpanTable], name: str, *, cols: int = 1, interp=None):
+    """Lookup ``f(z)``: linear, or through ``interp(z, values, name)`` (PCHIP).
+
+    ``None`` means use the bounding stations. Callables pass through unchanged.
+    """
     if value is None:
         return None
     if callable(value):
@@ -65,6 +68,14 @@ def _as_span_table(value: Optional[SpanTable], name: str, *, cols: int = 1):
         raise ValueError(f"{name} needs strictly increasing z of length >= 2")
     if v.shape[0] != z.size:
         raise ValueError(f"{name} values must match z")
+    if interp is not None:
+        if cols == 1:
+            law = interp(z, np.asarray(v, float).reshape(z.size), name)
+            return lambda zz, _law=law: float(_law.at(float(zz)))
+        if v.ndim != 2 or v.shape[1] != cols:
+            raise ValueError(f"{name} values must have shape (n, {cols})")
+        laws = tuple(interp(z, v[:, i], f"{name}[{i}]") for i in range(cols))
+        return lambda zz, _laws=laws: tuple(float(law.at(float(zz))) for law in _laws)
     if cols == 1:
         v = np.asarray(v, float).reshape(z.size)
 

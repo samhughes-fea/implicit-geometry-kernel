@@ -33,7 +33,7 @@ contours = ["contourpy"]
 dev = ["scipy>=1.8", "matplotlib>=3.5", "pytest>=7", "pytest-cov>=7", "interrogate>=1.7", "build>=1.0", "ruff==0.17.4", "mypy==2.4.1", "contourpy", "pyyaml>=6"]
 reference = ["pyyaml>=6"]
 mesh = ["gmsh"]
-docs = ["sphinx>=7", "myst-parser>=3", "sphinxcontrib-mermaid>=0.9", "furo", "sphinx-copybutton", "sphinx-design", "matplotlib>=3.5"]
+docs = ["sphinx>=7", "myst-parser>=3", "sphinxcontrib-mermaid>=0.9", "furo", "sphinx-copybutton", "sphinx-design", "sphinxcontrib-bibtex>=2.6", "matplotlib>=3.5"]
 
 [project.urls]
 Homepage = "https://github.com/samhughes-fea/implicit-geometry-kernel"

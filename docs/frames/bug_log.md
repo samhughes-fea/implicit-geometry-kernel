@@ -17,6 +17,7 @@ Package debug log. Identifiers are `CF-nnn`. Cross-link
 | [CF-001](#cf-001) | No shared planar rotation harness for B-consuming packages | **Fixed** (2026-09-25) |
 | [CF-002](#cf-002) | `transform_stiffness_B_to_Sprime` invented 1e-6 / 1e-12 EI | **Fixed** (2026-09-26) |
 | [CF-003](#cf-003) | `transform_second_moments_S_to_B` wrong Ixy sign on `Ixx_B` | **Fixed** (2026-11-05) |
+| [CF-004](#cf-004) | `transform_moments_S_to_B` / `B_to_S` rotate by the opposite twist to points and forces | **Open** (2026-11-22) |
 
 ---
 
@@ -102,4 +103,44 @@ Commit `52aa320`.
 ### Verification
 `pytest tests/frames/unit/test_second_moments_rotate_with_points.py` green;
 `Ixx_B + Iyy_B ≈ Ixx_S + Iyy_S` at every twist in that suite.
+
+---
+
+<a id="cf-004"></a>
+## CF-004 — Moment vectors rotate by the opposite twist to points and forces
+
+**Status:** Open — found 2026-11-22 while deriving [R1](../r/R1_frames.md)
+**Area:** `frames.tensors.moments` (`transform_moments_B_to_S`,
+`transform_moments_S_to_B`)
+
+### Symptom
+For a non-zero twist, `transform_moments_S_to_B` returns a different moment from the
+one obtained by moving the loaded points to B with `rotate_S_to_B` and taking the
+moments there. Points (`rotate_S_to_B`), forces (`transform_forces_S_to_B`) and
+second moments (`transform_second_moments_S_to_B`) all agree with each other; the
+moment transform agrees with them only if the sign of the twist is reversed.
+
+### Evidence
+Fifty axial forces \(F_z\) at random points in S, twist 20°. The in-plane moments
+\(M_X=\sum Y F_z\), \(M_Y=-\sum X F_z\) computed in B after `rotate_S_to_B`:
+\((M_{X_B}, M_{Y_B}) = (-1.2027, -7.6630)\). `transform_moments_S_to_B` with
+`twist_deg=20`: \((4.0044, -6.6432)\). With `twist_deg=-20`: \((-1.2027, -7.6630)\),
+equal to 1e-15. The derivation in R1, (R1.15)–(R1.16), gives
+\(\mathbf{M}_B=\mathbf{Q}(\theta)\mathbf{M}_S\), the same rotation as points.
+
+### Root cause (diagnosis)
+The moment functions take their components in the order \((M_Y, M_X)\) but apply the
+matrix written for \((X, Y)\) order. Swapping the components reverses the rotation,
+\(\mathbf{P}\mathbf{Q}(\theta)\mathbf{P}=\mathbf{Q}(-\theta)\) (R1.10), the same trap
+documented on `rotate_S_to_B_swapped_order`. The unit test
+`tests/frames/unit/test_coordinate_force_transforms.py::test_matches_moment_transform`
+asserts the force and moment transforms agree after passing `M_YB=V_XB`, which pins
+the swapped behaviour rather than checking it against the point rotation.
+
+### Fix
+Not yet made. Proposed: apply \(\mathbf{Q}(\theta)\) in \((M_X, M_Y)\) order (equivalently
+reverse the sign of the sine terms), replace the agreement test with a check against
+moments taken from rotated points, and record the behaviour change in the changelog.
+No public sibling package calls these functions (checked 2026-11-22); the change
+still needs a deprecation note because the names are public.
 

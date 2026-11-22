@@ -35,6 +35,7 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | Release fixes | `release.yml`: per-tag job concurrency, every commit in a push checked, hand run finishes a release whose tag exists (#89) | In review |
 | 0.9.5 | Release of #79 and #81 (docs site polish, GitHub releases, CodeQL, typing, slow-test split); flat mesh shims removed in 0.9.6 | Merged (#81, 8f11101); tag v0.9.5 made by running the `release` workflow on 8f11101, then consumers move to it |
 | 0.9.6 | SG-033 flapwise twist limit, SG-034 key-point LE/TE under twist, SG-018 re-check, SG-035 web feet built on the skin (no snaps), SG-037 OML offset, flat mesh shims removed | In progress |
+| Manual | Docs as U, R, V, D manuals (issue #90): PR 1 restructure, R0 notation and bibliography, R1 frames; then R2–R3, R4–R6, R7–R10, V, U, D. Plan: issue #90 | PR 1 open; next R2–R3. CF-004 (moment transform twist sign) logged, fix approved by Sam 2026-11-22, separate PR |
 
 #### Consumer adapter gaps (to do)
 

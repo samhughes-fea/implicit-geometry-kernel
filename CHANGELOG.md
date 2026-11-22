@@ -2,6 +2,15 @@
 
 ## 0.9.6 (unreleased)
 
+- Docs: the site is now four manuals, U (use), R (reference theory), V
+  (validation) and D (development), with an index page each. New R0 (notation
+  and bibliography, ``sphinxcontrib-bibtex``) and R1 (coordinate frames and
+  twist, derived equation by equation, with Figure R1.1 from the new example
+  ``examples/frames/02_frame_triad``). Inline ``\(…\)`` maths, which reached the
+  site as plain text, now renders (``docs/_ext/inline_math.py``). The frames
+  page is a short signpost to R1 and its stale quick start is gone. Logged
+  CF-004: the moment transforms rotate by the opposite twist to points and
+  forces (open, not fixed here) (#90).
 - Docs: two docstrings, one test note and the bug log no longer describe the
   size or kind of a private blade.
 - Releases: merging a release PR (``chore(release): prepare 0.9.N``) now makes

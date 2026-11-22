@@ -9,7 +9,7 @@
   version outside ``0.9.x`` (no ``v1.0.0``), does nothing if the tag exists, and
   can be run by hand on an untagged release-PR merge. Tags are no longer
   maintainer-only (decision 0013); ``RELEASING.md``, ``AGENTS.md`` and
-  ``CONTRIBUTING.md`` describe the new flow (#87).
+  ``CONTRIBUTING.md`` describe the new flow (#87, #88).
 
 ## 0.9.5 (2026-11-21)
 

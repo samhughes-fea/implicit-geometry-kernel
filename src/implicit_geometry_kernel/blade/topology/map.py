@@ -44,8 +44,11 @@ def station_key_points(cut) -> dict[str, np.ndarray]:
     from implicit_geometry_kernel.section.assembly.members import wall_type_for_label
 
     oml = np.vstack([w.points for w in cut.walls_of("skin")])
-    le = oml[int(np.argmin(oml[:, 0]))]
-    te = oml[int(np.argmax(oml[:, 0]))]
+    # Chord fraction in the section's own frame: under twist the smallest
+    # blade-frame x is not the leading edge (SG-018 follow-up, SG-034).
+    frac = _chord_fracs(cut, oml[:, :2])
+    le = oml[int(np.argmin(frac))]
+    te = oml[int(np.argmax(frac))]
     out: dict[str, np.ndarray] = {"LE": le, "TE": te}
     graph = shell_graph(cut)
 

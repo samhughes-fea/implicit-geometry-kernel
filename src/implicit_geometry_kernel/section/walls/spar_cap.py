@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from implicit_geometry_kernel.sdf.nodes import CallableField, Intersect, Offset, Rotate, Slab
+from implicit_geometry_kernel.sdf.nodes import CallableField, Expr, Intersect, Offset, Rotate, Slab
 
 from implicit_geometry_kernel.section.assembly.clip_algebra import (
     ChordBand,
@@ -115,12 +115,12 @@ class SparCap(SectionComponent):
             )
         else:
             clip_expr = to_ir(ChordBand(x_start=float(x_start), x_end=float(x_end)))
-        expr_raw = Intersect(Intersect(cap_lam, side_expr), clip_expr)
+        expr_raw: Expr = Intersect(Intersect(cap_lam, side_expr), clip_expr)
         # Where on the wall the cap sits: its side of the camber line within its band.
-        footprint = Intersect(side_expr, clip_expr)
+        footprint: Expr = Intersect(side_expr, clip_expr)
         if abs(twist_angle) > 1e-10:
             cx = 0.5 * (self.x_start + self.x_end)
-            expr = Rotate(expr_raw, angle=float(twist_angle), cx=float(cx), cy=0.0)
+            expr: Expr = Rotate(expr_raw, angle=float(twist_angle), cx=float(cx), cy=0.0)
             footprint = Rotate(footprint, angle=float(twist_angle), cx=float(cx), cy=0.0)
         else:
             expr = expr_raw

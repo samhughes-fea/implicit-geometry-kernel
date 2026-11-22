@@ -79,15 +79,24 @@ module = [
 ]
 disable_error_code = ["misc", "attr-defined", "return-value", "has-type"]
 
-# The mesh package is checked more strictly: bodies of unannotated functions are
+# Level 2 (docs/conventions/TYPING.md): bodies of unannotated functions are
 # type-checked and stale ignores are errors.
 [[tool.mypy.overrides]]
-module = ["implicit_geometry_kernel.mesh", "implicit_geometry_kernel.mesh.*"]
+module = [
+    "implicit_geometry_kernel.mesh",
+    "implicit_geometry_kernel.mesh.*",
+    "implicit_geometry_kernel.sdf",
+    "implicit_geometry_kernel.sdf.*",
+    "implicit_geometry_kernel.section",
+    "implicit_geometry_kernel.section.*",
+    "implicit_geometry_kernel.blade",
+    "implicit_geometry_kernel.blade.*",
+]
 check_untyped_defs = true
 warn_unused_ignores = true
 
 # Typing roadmap (docs/conventions/TYPING.md): packages move here once every
-# function is annotated. Next: integration, frames internals, section, blade, mesh.
+# function is annotated. Next: sdf, then mesh.
 [[tool.mypy.overrides]]
 module = [
     "implicit_geometry_kernel.structure.*",
@@ -95,6 +104,7 @@ module = [
     "implicit_geometry_kernel.frames.*",
     "implicit_geometry_kernel.catalogue.*",
     "implicit_geometry_kernel.extract.*",
+    "implicit_geometry_kernel.integration.*",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true

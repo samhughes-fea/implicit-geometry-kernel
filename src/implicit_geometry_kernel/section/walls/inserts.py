@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from implicit_geometry_kernel.sdf.nodes import Circle, HalfPlane, Intersect, Offset, subtract_expr
+from implicit_geometry_kernel.sdf.nodes import Circle, Expr, HalfPlane, Intersect, Offset, subtract_expr
 
 from implicit_geometry_kernel.section.assembly.clip_algebra import (
     airfoil_expr,
@@ -40,7 +40,7 @@ class TEInsert(SectionComponent):
         if poly is None:
             raise ValueError("TEInsert requires an AirfoilSDF with vertices for IR evaluation.")
 
-        expr = Intersect(
+        expr: Expr = Intersect(
             Offset(poly, amount=-float(skin_thickness)),
             HalfPlane(nx=-1.0, ny=0.0, d=float(x_start)),
         )

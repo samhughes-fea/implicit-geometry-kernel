@@ -5,11 +5,14 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field, replace
 
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
 from implicit_geometry_kernel.integration.spec import QuadtreeSpec
+
+#: Maps ``(n, 2)`` points to ``n`` signed distances.
+PhiSampler = Callable[[np.ndarray], Any]
 
 
 SupportBox = tuple[float, float, float, float]
@@ -150,7 +153,7 @@ def _cells_bounds_array(cells: list[QuadCell]) -> np.ndarray:
     )
 
 
-def _sample_cell_phi(cell: QuadCell, phi_sampler) -> np.ndarray:
+def _sample_cell_phi(cell: QuadCell, phi_sampler: PhiSampler) -> np.ndarray:
     return np.asarray(phi_sampler(cell.corners()), dtype=float)
 
 
@@ -217,7 +220,7 @@ def _cell_interior_points(cell: QuadCell, spec: QuadtreeSpec) -> np.ndarray:
     )
 
 
-def _subdivide_cell(cell: QuadCell, phi_sampler) -> list[QuadCell]:
+def _subdivide_cell(cell: QuadCell, phi_sampler: PhiSampler) -> list[QuadCell]:
     xm = 0.5 * (cell.x_min + cell.x_max)
     ym = 0.5 * (cell.y_min + cell.y_max)
     children = [
@@ -234,7 +237,7 @@ def _subdivide_cell(cell: QuadCell, phi_sampler) -> list[QuadCell]:
     return children
 
 
-def build_root_quadtree(spec: QuadtreeSpec, phi_sampler) -> QuadTreeMesh:
+def build_root_quadtree(spec: QuadtreeSpec, phi_sampler: PhiSampler) -> QuadTreeMesh:
     """Create a single-cell root mesh and sample corner phi values."""
     root = QuadCell(spec.x_min, spec.x_max, spec.y_min, spec.y_max, level=0)
     root.phi_corners = _sample_cell_phi(root, phi_sampler)

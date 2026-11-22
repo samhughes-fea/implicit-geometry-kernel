@@ -10,6 +10,28 @@
   can be run by hand on an untagged release-PR merge. Tags are no longer
   maintainer-only (decision 0013); ``RELEASING.md``, ``AGENTS.md`` and
   ``CONTRIBUTING.md`` describe the new flow (#87, #88).
+- A flapwise web within 1 degree of the chord (a section twisted 90 degrees)
+  raises ``InfeasibleSectionGeometry`` naming the web and pointing to a
+  chord-normal layout, instead of a web-foot or open-ring error deep in the
+  build (SG-033).
+- ``key_points()`` takes LE and TE by chord fraction in the section frame; under
+  twist they were the smallest and largest blade-frame x, 1.7 % of chord off at
+  30 degrees (SG-034).
+- Bug log: SG-018 now classifies all 51 nearest / ``argmin`` sites. Three sites
+  move web ends onto the skin with no tolerance (up to 48 mm on one reference
+  mesh); they are logged as SG-035 with a proposed fix.
+- ``integration.section_properties_S`` (and ``section_properties_Sprime``) on a
+  ``MultiPolygon``: second moments are the sum of the parts' origin moments; they
+  dropped each part's offset from the combined centroid (SG-036). Section
+  properties were not affected: they sum parts separately.
+- ``sdf.kernels.csg.union_all`` / ``intersect_all`` accept a mix of scalar and
+  array fields.
+- Tests: closed-form tests for the shoelace properties and SDF CSG kernels, the
+  spar-cap run-out gate and placement collision checks (previously 0 to 46 %
+  covered).
+- Typing: ``integration`` is strict; ``sdf``, ``section`` and ``blade`` have
+  checked bodies and no stale ignores. ``compute_section_properties`` is typed
+  ``tuple[Any, ...]``: it returns two items, or three with ``with_mesh=True``.
 
 ## 0.9.5 (2026-11-21)
 

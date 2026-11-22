@@ -273,7 +273,7 @@ def effective_layout_for_web_count(
     **The floor is reachable, and how much warning you get depends on where you
     start.** On the reference rotor it never fires — the survivor count bottoms
     out at one — but that is a property of that rotor, not of the rule. On a
-    3.2 m blade sampled to ``r/R = 1.0`` it fires at ``r/R ~ 0.96``, where the
+    small blade sampled to ``r/R = 1.0`` it fires at ``r/R ~ 0.96``, where the
     chord is small enough that a minimum-gauge skin on both surfaces leaves no
     cavity to anchor into. Note this is absolute section size, not ``t/c``:
     feasibility thickening makes the section fatter and still does not save it.

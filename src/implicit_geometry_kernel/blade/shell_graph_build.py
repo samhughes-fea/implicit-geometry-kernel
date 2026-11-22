@@ -114,16 +114,19 @@ def _host_panel_suffix(layers: Tuple[str, ...]) -> str | None:
 def _offset_to_outer_surface(points: np.ndarray, distance: float) -> np.ndarray:
     """Move a skin run from its mid-surface onto the outer mould line.
 
-    The run is oriented so ``z × tangent`` points out of the section.
+    The run is oriented so ``z × tangent`` points out of the section. Tangents
+    are read from the unmoved mid-line, never from points already offset
+    (SG-037).
     """
-    pts = np.array(points, float, copy=True)
+    src = np.asarray(points, float)
+    pts = np.array(src, copy=True)
     for i in range(len(pts)):
         if i == 0:
-            direction = pts[1, :2] - pts[0, :2]
+            direction = src[1, :2] - src[0, :2]
         elif i == len(pts) - 1:
-            direction = pts[-1, :2] - pts[-2, :2]
+            direction = src[-1, :2] - src[-2, :2]
         else:
-            direction = pts[i + 1, :2] - pts[i - 1, :2]
+            direction = src[i + 1, :2] - src[i - 1, :2]
         length = float(np.linalg.norm(direction))
         if length <= 1e-15:
             continue
@@ -131,6 +134,113 @@ def _offset_to_outer_surface(points: np.ndarray, distance: float) -> np.ndarray:
         pts[i, 0] += outward[0] * distance
         pts[i, 1] += outward[1] * distance
     return pts
+
+
+def _cross2(a: np.ndarray, b: np.ndarray) -> float:
+    return float(a[0] * b[1] - a[1] * b[0])
+
+
+def _line_hits_polyline(origin: np.ndarray, direction: np.ndarray, poly: np.ndarray):
+    """``(point, segment index)`` where the line ``origin + s * direction`` crosses ``poly``."""
+    hits = []
+    for seg_index, (a, b) in enumerate(zip(poly[:-1], poly[1:])):
+        seg = b - a
+        denom = _cross2(direction, seg)
+        if abs(denom) <= 1e-15 * max(1.0, float(np.linalg.norm(seg))):
+            continue
+        rel = a - origin
+        t = _cross2(rel, direction) / denom
+        if -1e-12 <= t <= 1.0 + 1e-12:
+            hits.append((a + t * seg, seg_index))
+    return hits
+
+
+def outer_surface_loop(loop, webs, z: float):
+    """Move skin runs onto the outer mould line, keeping every junction shared.
+
+    Each run steps out by half its own thickness. Where runs meet, their offset
+    ends are replaced by one point: at a web foot, where the web's own line
+    crosses the offset skin, so the web is extended along itself rather than
+    slid to a nearby skin vertex; elsewhere, the mean of the offset ends.
+    Returns ``(loop, webs)`` with the same names and order (SG-035).
+    """
+    loop = tuple(loop)
+    webs = tuple(webs)
+    if not loop:
+        return loop, webs
+    scale = max(1.0, max(float(np.max(np.abs(r.points[:, :2]))) for r in loop))
+    tol = 1e-9 * scale
+    mid = [np.asarray(r.points, float) for r in loop]
+    off = [
+        _offset_to_outer_surface(p, 0.5 * float(r.thickness))
+        if float(r.thickness) > 0.0 and len(p) >= 2 else np.array(p, copy=True)
+        for r, p in zip(loop, mid)
+    ]
+    web_pts = [np.array(w.points, float, copy=True) for w in webs]
+
+    groups: list[list[tuple[int, int]]] = []
+    for i, p in enumerate(mid):
+        if len(p) < 2:
+            continue
+        for k in (0, -1):
+            for g in groups:
+                gi, gk = g[0]
+                if float(np.linalg.norm(mid[gi][gk, :2] - p[k, :2])) <= tol:
+                    g.append((i, k))
+                    break
+            else:
+                groups.append([(i, k)])
+
+    for g in groups:
+        if len(g) < 2:
+            continue
+        foot_mid = mid[g[0][0]][g[0][1], :2]
+        joint = np.mean([off[i][k, :2] for i, k in g], axis=0)
+        # The outer chain either side of the joint, ending at the joint.
+        sides = []
+        for i, k in g:
+            chain = np.array(off[i][:, :2], copy=True)
+            chain[k] = joint
+            sides.append(chain)
+        feet = [
+            (w, e) for w, pts in enumerate(web_pts) if len(pts) >= 2
+            for e in (0, -1)
+            if float(np.linalg.norm(pts[e, :2] - foot_mid)) <= tol
+        ]
+        point = joint
+        trim: tuple[int, int, int] | None = None
+        if feet:
+            w, e = feet[0]
+            pts = web_pts[w]
+            direction = pts[e, :2] - pts[1 if e == 0 else -2, :2]
+            if float(np.linalg.norm(direction)) > 0.0:
+                hits = []
+                for (i, k), chain in zip(g, sides):
+                    hits += [(h, i, k, seg) for h, seg in
+                             _line_hits_polyline(foot_mid, direction, chain)]
+                if hits:
+                    best = min(hits, key=lambda h: float(np.linalg.norm(h[0] - joint)))
+                    point = best[0]
+                    trim = best[1:]
+        for i, k in g:
+            off[i][k, :2] = point
+        if trim is not None:
+            # The run the web line crosses keeps only its vertices on its own
+            # side of the foot, so the outer chain does not fold back.
+            i, k, seg = trim
+            if k == -1:
+                off[i] = np.vstack([off[i][:seg + 1], off[i][-1:]])
+            else:
+                off[i] = np.vstack([off[i][:1], off[i][seg + 1:]])
+            nb = -2 if k == -1 else 1
+            if len(off[i]) > 2 and float(np.linalg.norm(off[i][nb, :2] - point)) <= tol:
+                off[i] = np.delete(off[i], nb if nb > 0 else len(off[i]) - 2, axis=0)
+        for w, e in feet:
+            web_pts[w][e, :2] = point
+
+    new_loop = tuple(replace(r, points=p) for r, p in zip(loop, off))
+    new_webs = tuple(replace(wb, points=p) for wb, p in zip(webs, web_pts))
+    return new_loop, new_webs
 
 
 def _endpoint_gap(a: np.ndarray, b: np.ndarray) -> float:
@@ -193,9 +303,8 @@ def _runs_of(ms: MidSurface, segs, cut: SectionCut, surface: str) -> Tuple[Shell
             mesh_t = float(sum(layer_t))
         ecc = 0.5 * t_cap if t_cap else 0.0
         points = np.vstack(pts)
-        if (surface == "skin" and getattr(cut, "_wall_reference", "mid") == "oml"
-                and mesh_t > 0.0 and len(points) >= 2):
-            points = _offset_to_outer_surface(points, 0.5 * float(mesh_t))
+        # ``wall_reference="oml"`` is applied to the whole loop afterwards
+        # (``outer_surface_loop``) so partition ends stay shared (SG-035).
         return ShellRun(
             name, surface, _colour_kind(surface, layers, by_label), layers,
             points, float(mesh_t),

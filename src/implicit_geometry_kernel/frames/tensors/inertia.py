@@ -67,8 +67,8 @@ def structural_product_moment(
     ``EI_edge`` in its own right exists to remove. Left in place, it drives the
     implied :math:`\\rho` upward without bound as ``EI_edge`` falls, so a merely
     *soft* edgewise stiffness is rejected as a section that cannot exist -- at a
-    ratio that reflects the closure, not the aerofoil. Measured on a real 3.2 m
-    blade, that put the softest "valid" edgewise stiffness at up to 2.6x the
+    ratio that reflects the closure, not the aerofoil. On one blade we measured,
+    that put the softest "valid" edgewise stiffness at up to 2.6x the
     flapwise one, against a geometric ``I_edge/I_flap`` of 4.4 at the same station.
 
     A stand-in, not the truth

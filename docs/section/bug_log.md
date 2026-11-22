@@ -46,7 +46,7 @@ Deviations are stated per entry.
 | [SG-015](#sg-015) | Closed-ring suction/pressure split and the side fallback read chord-first coordinates on B-frame strips | **Fixed** — transposed at the call; side from `X_B` |
 | [SG-016](#sg-016) | 50 package tests fail at HEAD (`SparCap._camber_surface`, g-row hardening) | **Fixed** — wrap copies `_camber_surface`; barrel / comment gates cleared |
 | [SG-017](#sg-017) | Caps are built from the skin but their bond to it is never emitted | **Fixed** — `bond_caps_to_skin` pairs every cap vertex with the skin; `ShellMidlineStrip.bonds` |
-| [SG-018](#sg-018) | Residual nearest / argmin sites vs standing invariant (Exactness item 6 follow-on) | **Classified** (0.9.6) — all 51 sites; one defect fixed (SG-034), three relocating snaps logged (SG-035) |
+| [SG-018](#sg-018) | Residual nearest / argmin sites vs standing invariant (Exactness item 6 follow-on) | **Classified** (0.9.6) — all 51 sites; one defect fixed (SG-034), three relocating snaps fixed (SG-035) |
 | [SG-019](#sg-019) | Family-C constructive cap union omitted pad 0 (canonical label) so hybrid area was half the SDF | **Fixed** — `v0.8.1` union then `v0.8.2` indexed-only after SG-027 |
 | [SG-020](#sg-020) | Closed architecture programme still read as open work in maintainer docs | **Fixed** — status table, Shapely/CAD/mesh wording, standing-work list |
 | [SG-021](#sg-021) | Gallery scripts still constructed `MultiCellSection` instead of `SectionGeometry` | **Fixed** — `_assemble.assemble_host`; insert demo kept as host extra |
@@ -63,8 +63,9 @@ Deviations are stated per entry.
 | [SG-032](#sg-032) | `classify_trailing_edge` called a twisted flatback sharp | **Fixed** — frame-free test on convex-hull corners |
 | [SG-033](#sg-033) | A section twisted exactly 90 degrees cannot place its web feet | **Fixed** (0.9.6) — flapwise webs within 1° of the chord raise `InfeasibleSectionGeometry` |
 | [SG-034](#sg-034) | Station key points took LE and TE as the smallest and largest blade-frame x | **Fixed** (0.9.6) — chord fraction in the section frame |
-| [SG-035](#sg-035) | Web ends snapped to the nearest skin vertex with no tolerance | **Logged** (2026-11-21) — measured, fix proposed |
+| [SG-035](#sg-035) | Web ends snapped to the nearest skin vertex with no tolerance | **Fixed** (0.9.6) — feet built on the skin; the snaps are coincidence checks that raise |
 | [SG-036](#sg-036) | `section_properties_S` on a MultiPolygon lost each part's offset from the combined centroid | **Fixed** (0.9.6) — parts' origin moments add |
+| [SG-037](#sg-037) | The OML offset read each tangent from points it had already moved | **Fixed** (0.9.6) — tangents from the unmoved mid-line |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -953,7 +954,7 @@ strip is authored.
 
 - `tests/test_family_d_cap_web_flush_under_twist.py` — solids and midlines flush
   at 0° and 15° (`gap ≤ 1e-6` m).
-- Section-selection e2e `2D-F` / a private tidal rotor / 8 stations with plots: cross-
+- Section-selection e2e `2D-F` / a private reference rotor / 8 stations with plots: cross-
   section PNGs show caps flush to both webs.
 
 ## SG-012
@@ -1073,7 +1074,7 @@ path never touches extent and was not at fault.
 **Cell wall loops pair the wrong web ends on B-frame sections and carry no wall membership; every consumer re-guesses it**
 
 **Status:** Fixed
-**Found:** 2026-09-25 (4D-F re-qualification on a private tidal rotor; repo BL-040)
+**Found:** 2026-09-25 (4D-F re-qualification on a private reference rotor; repo BL-040)
 **Fixed:** 2026-09-25
 **Area:** `cell_wall_loops/`, `section_contract/cell_wall_loop.py`; consumers in
 `section_properties.reference_axes.wall_network` and `section_loads.thinwall`
@@ -1101,7 +1102,7 @@ overlapping cells**, including 2D-F and 3D-F at moderate twist (area +18 % to
 +100 %). Every multi-web layout was affected somewhere; one web never was.
 
 Production audit (a hook on every closed-section solve of the 16-station
-private tidal rotor campaign at `ad560972`):
+private reference rotor campaign at `ad560972`):
 
 | Layout | Solves | On wrong cells | Raised | Σ cell area / ring |
 |---|---|---|---|---|
@@ -1334,9 +1335,9 @@ site over the fast test suite (about 1,790 tests):
 | Site | Verdict |
 |---|---|
 | `blade/topology/map.py` `station_key_points` LE/TE | **Defect, fixed:** min/max blade-frame x is not LE/TE under twist ([SG-034](#sg-034)) |
-| `blade/shell_graph.py` `ShellGraph.with_web_feet_on_loop` | **Relocates** web ends to the nearest loop vertex, no tolerance. 0 in 4,760 calls except the OML wall reference (up to 8.0 mm) ([SG-035](#sg-035)) |
-| `blade/topology/map.py` `_share_adjacent_skin_ends` web-foot snap | **Relocates** web feet onto the resampled skin wall, no tolerance. 0 in 10,750 calls except NREL 5MW (up to 48 mm) ([SG-035](#sg-035)) |
-| `blade/loft/locked_loft.py` `resample_locked` web-end snap | **Relocates** web ends to the nearest resampled loop vertex. Up to 6.7 mm at a web drop ([SG-035](#sg-035)) |
+| `blade/shell_graph.py` `ShellGraph.with_web_feet_on_loop` | OK since SG-035: coincidence check (1e-9 x scale) that raises; OML feet are built by `outer_surface_loop` |
+| `blade/topology/map.py` `_share_adjacent_skin_ends` web-foot snap | OK since SG-035: each foot is matched to a region end before the BG-049 pin (raises if none) and follows that end |
+| `blade/loft/locked_loft.py` `resample_locked` web-end snap | OK since SG-035: feet inside a run are pinned vertices of the resample; the end check raises above 1e-9 x scale |
 | `blade/shell_graph_build.py` stringer foot and tip | Approximates: nearest skin vertex by chord fraction, off by up to half a vertex spacing; stringers are placed members, not authored topology |
 | `blade/topology/map_loft.py` even-node key snap (`_on_chain`) | OK by design: moves a key to an even chain node so all-quad transitions keep even counts; mesh construction, documented in place |
 | `blade/topology/map_loft.py` l. 914, 934, 1013; `blade/loft/loft_tables.py` `_match`; `blade/shell_graph_build.py` `_join_polylines` | OK: coincidence checks with a tolerance (1e-8 to 1e-12 m) that raise or skip |
@@ -1351,7 +1352,7 @@ site over the fast test suite (about 1,790 tests):
 | `mesh/fill/*`, `extract/curves.py`, `sdf/nodes/tagged.py` | OK: fill seeding, ring-hit test with tolerance, TE corner pick, SDF region tag |
 | `section/walls/outer_skin.py`, `section/assembly/clips.py`, `sdf/shapes/airfoil.py` LE | OK: chord frame (built before twist); min x is the nose to within the cambered-nose offset already noted in the exactness gaps |
 
-The three relocating snaps are [SG-035](#sg-035).
+The three relocating snaps were [SG-035](#sg-035), now fixed.
 
 ## SG-019
 
@@ -1920,7 +1921,7 @@ at 30 degrees, LE and TE are the farthest pair of OML points.
 
 **Web ends snapped to the nearest skin vertex with no tolerance**
 
-**Status:** Logged (2026-11-21), fix proposed
+**Status:** Fixed (0.9.6). Logged 2026-11-21.
 **Area:** `blade/shell_graph.py` `with_web_feet_on_loop`, `blade/topology/map.py`
 `_share_adjacent_skin_ends`, `blade/loft/locked_loft.py` `resample_locked`
 
@@ -1937,17 +1938,29 @@ relocates. Measured over the fast suite:
 
 Everywhere else the move is exactly 0: the foot is already a skin vertex.
 
-### Proposed fix
-- Intersect the web line with the skin chain and insert that point into the chain
-  as a vertex, the way `cap_skin_bonds` inserts bond feet. Do not move the web
-  end.
-- Where the chain is resampled (`resample_locked`, `_share_adjacent_skin_ends`),
-  pin web feet as fixed vertices of the resample, as the map keys already are.
-- After that, keep each snap only as a coincidence check that raises above
-  `WEB_FOOT_COINCIDENCE_TOL_M`.
+### Fix
+- `wall_reference="oml"`: the skin used to be offset run by run, so every
+  junction split (19 mm between run ends on a 2 m ellipse) and the web end then
+  slid to whichever loop vertex was nearest. `outer_surface_loop` now offsets the
+  whole loop and gives each junction one point: at a web foot, where the web's
+  own line crosses the outer skin (the web is extended along itself and the
+  crossed run drops the vertices beyond it); elsewhere, the mean of the offset
+  ends. On the ellipse the feet land at (0.4, 0.9165), on the OML exactly.
+- `resample_locked`: a web foot inside a skin run is kept as a vertex of that
+  run's resample (`_resample_with_pins`). The run is resampled piecewise between
+  pins at the index the foot's arc position rounds to, so locked counts do not
+  change.
+- `_share_adjacent_skin_ends`: each web foot is matched to the skin-region end it
+  sits on before the BG-049 pin, and follows that end after it. All 14,490 feet
+  in the reference-mesh tests were region ends (distance exactly 0) before the
+  pin; 95 used to be moved 3 to 47 mm by the nearest-vertex search afterwards.
+- Each former snap now raises `ValueError` if a foot is more than 1e-9 x the
+  section scale from where it must be. No golden mesh count changed; the fast
+  and slow suites pass unchanged.
 
-This moves mesh nodes in the three cases above, so the reference-mesh tests and
-any golden mesh counts there need review in the same PR.
+Tests: `tests/test_wall_reference.py` (junctions shared, feet on the web line)
+and `tests/test_locked_loft.py::test_resampling_through_a_web_drop_never_moves_a_web_foot`.
+All three fail on 0.9.5.
 
 ## SG-036
 
@@ -1978,3 +1991,22 @@ Sum the parts' origin moments.
 
 ### Verification
 `tests/test_shoelace_and_csg_kernels.py::test_multipolygon_sums_its_parts`.
+
+## SG-037
+
+**The OML offset read each tangent from points it had already moved**
+
+**Status:** Fixed (0.9.6)
+**Area:** `blade/shell_graph_build.py` `_offset_to_outer_surface`
+
+### Symptom
+With `wall_reference="oml"`, the outer skin zig-zagged by up to 3 mm on a
+2 m ellipse and peaked at r = 0.998 m, not 1.000 m. Found while fixing SG-035.
+
+### Root cause
+The loop updated points in place, so the central difference at vertex `i` used
+vertex `i - 1` after it had been offset.
+
+### Fix
+Tangents come from an unmoved copy of the mid-line. The ellipse's outer skin is
+now r = 1.000 m to 5e-7.

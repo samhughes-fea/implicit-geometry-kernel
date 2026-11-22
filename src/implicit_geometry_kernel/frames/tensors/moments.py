@@ -28,16 +28,20 @@ def transform_moments_B_to_S(
     - Input: M_YB (flapwise moment about Y_B axis in B frame)
     - When blade is twisted, this B-frame moment projects onto two S-frame components:
       - M_YS = M_YB × cos(θ): Moment about Y_S (chord-parallel axis) → creates stress in X_S (chord-normal)
-      - M_XS = M_YB × sin(θ): Moment about X_S (chord-normal axis) → creates stress in Y_S (chord-parallel)
+      - M_XS = -M_YB × sin(θ): Moment about X_S (chord-normal axis) → creates stress in Y_S (chord-parallel)
     - For stress calculations, we use M_YS because fiber distances are measured in X_S direction
     
-    Transformation Formulas (rotation matrix for angle θ = twist_deg):
-    - M_YS = M_YB × cos(θ) - M_XB × sin(θ)
-    - M_XS = M_YB × sin(θ) + M_XB × cos(θ)
+    Transformation formulas (θ = twist_deg). Moments are vectors in the section
+    plane and rotate exactly like points and forces: with the point rotation
+    x_B = Q(θ) x_S of ``rotate_S_to_B``, (M_XS, M_YS) = Q(θ)ᵀ (M_XB, M_YB), that is
+    - M_XS = M_XB × cos(θ) - M_YB × sin(θ)
+    - M_YS = M_XB × sin(θ) + M_YB × cos(θ)
+    Derivation: docs/r/R1_frames.md, (R1.15)-(R1.16). Before 0.9.6 the sine terms
+    had the opposite sign (bug CF-004), which rotated moments by -θ.
     
     For flapwise-only loading (M_XB ≈ 0):
     - M_YS ≈ M_YB × cos(θ)  (primary component for stress calculation)
-    - M_XS ≈ M_YB × sin(θ)  (secondary component, usually small for small twist)
+    - M_XS ≈ -M_YB × sin(θ)  (secondary component, usually small for small twist)
     
     Parameters
     ----------
@@ -65,7 +69,7 @@ def transform_moments_B_to_S(
     >>> M_YB = 1000.0  # N·m
     >>> M_YS, M_XS = transform.transform_moments_B_to_S(M_YB, M_XB=0.0, twist_deg=10.0)
     >>> # M_YS ≈ 985 N·m (cos(10°) ≈ 0.985)
-    >>> # M_XS ≈ 174 N·m (sin(10°) ≈ 0.174)
+    >>> # M_XS ≈ -174 N·m (sin(10°) ≈ 0.174)
     
     Notes
     -----
@@ -135,10 +139,10 @@ def transform_moments_B_to_S(
     cos_theta = np.cos(twist_rad)
     sin_theta = np.sin(twist_rad)
     
-    # Apply rotation transformation: R(θ) @ [M_YB, M_XB]^T = [M_YS, M_XS]^T
-    # Standard 2D rotation matrix for coordinate transformation
-    M_YS = M_YB * cos_theta - M_XB * sin_theta
-    M_XS = M_YB * sin_theta + M_XB * cos_theta
+    # (M_XS, M_YS) = Q(θ)ᵀ (M_XB, M_YB): the same rotation as points and forces
+    # (R1.16). The components arrive as (M_Y, M_X), so write them out by name.
+    M_XS = M_XB * cos_theta - M_YB * sin_theta
+    M_YS = M_XB * sin_theta + M_YB * cos_theta
     
     # Return scalars if inputs were scalars
     if isinstance(M_YB, (int, float)) or M_YB.ndim == 0:
@@ -155,9 +159,9 @@ def transform_moments_S_to_B(
     
     This is the inverse of transform_moments_B_to_S. Uses inverse rotation (-θ).
     
-    Transformation Formulas (inverse rotation for angle θ = -twist_deg):
-    - M_YB = M_YS × cos(θ) + M_XS × sin(θ)
-    - M_XB = -M_YS × sin(θ) + M_XS × cos(θ)
+    Transformation formulas (θ = twist_deg), (M_XB, M_YB) = Q(θ) (M_XS, M_YS):
+    - M_XB = M_XS × cos(θ) + M_YS × sin(θ)
+    - M_YB = -M_XS × sin(θ) + M_YS × cos(θ)
     
     Parameters
     ----------
@@ -179,8 +183,7 @@ def transform_moments_S_to_B(
     This uses the inverse rotation matrix: R(-θ) = R(θ)^T
     For rotation matrices: R(-θ) = R(θ)^T (transpose = inverse)
     """
-    # Use negative twist for inverse transformation
-    # R(-θ) @ [M_YS, M_XS]^T = R(θ)^T @ [M_YS, M_XS]^T = [M_YB, M_XB]^T
+    # Inverse of the B -> S map: Q(θ) = Q(-θ)ᵀ, so rotate B -> S by -θ.
     M_YB, M_XB = transform_moments_B_to_S(M_YS, M_XS, -twist_deg)
     return M_YB, M_XB
 

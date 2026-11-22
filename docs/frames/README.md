@@ -23,6 +23,6 @@ the pitch-axis shift or the moment polarity outside this package.
 | `ShellMidlineStrip`, `CellWallLoop` | B (`*_twisted_pitch_axis_blade_frame`) |
 | `shell_graph` runs | B |
 
-Known defects: [bug log](bug_log.md) (CF-004 is open). Detail of the section-level
+Known and fixed defects: [bug log](bug_log.md). Detail of the section-level
 frame handling: [section_frames](section_frames/README.md); programme inventory:
 [FRAMES_INVENTORY](FRAMES_INVENTORY.md).

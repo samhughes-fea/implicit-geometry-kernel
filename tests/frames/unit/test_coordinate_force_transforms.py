@@ -2,7 +2,8 @@
 Unit tests for force/shear vector B-to-S and S-to-B coordinate transforms.
 
 Validates that transform_forces_B_to_S / transform_forces_S_to_B apply the
-same 2D rotation as transform_moments_B_to_S / transform_moments_S_to_B,
+same 2D rotation as transform_moments_B_to_S / transform_moments_S_to_B
+(both components in the same (X, Y) order),
 and that the inverse round-trips correctly.
 """
 
@@ -37,16 +38,17 @@ class TestTransformForcesBtoS:
         assert np.isclose(V_YS, 100.0, atol=1e-10)
 
     def test_matches_moment_transform(self, transform):
-        """Force transform must produce the same rotation as moment transform."""
+        """Forces and moments are both in-plane vectors: written in the same
+        (X, Y) order they rotate identically (R1.14, R1.16; CF-004)."""
         V_XB, V_YB, twist = 1234.5, -678.9, 17.3
         M_YS, M_XS = transform.transform_moments_B_to_S(
-            M_YB=V_XB, M_XB=V_YB, twist_deg=twist,
+            M_YB=V_YB, M_XB=V_XB, twist_deg=twist,
         )
         V_XS, V_YS = transform.transform_forces_B_to_S(
             V_XB=V_XB, V_YB=V_YB, twist_deg=twist,
         )
-        assert np.isclose(V_XS, M_YS)
-        assert np.isclose(V_YS, M_XS)
+        assert np.isclose(V_XS, M_XS)
+        assert np.isclose(V_YS, M_YS)
 
     def test_array_input(self, transform):
         V_XB = np.array([100.0, 200.0, 300.0])

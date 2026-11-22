@@ -953,7 +953,7 @@ strip is authored.
 
 - `tests/test_family_d_cap_web_flush_under_twist.py` — solids and midlines flush
   at 0° and 15° (`gap ≤ 1e-6` m).
-- Section-selection e2e `2D-F` / a private tidal rotor / 8 stations with plots: cross-
+- Section-selection e2e `2D-F` / a private reference rotor / 8 stations with plots: cross-
   section PNGs show caps flush to both webs.
 
 ## SG-012
@@ -1073,7 +1073,7 @@ path never touches extent and was not at fault.
 **Cell wall loops pair the wrong web ends on B-frame sections and carry no wall membership; every consumer re-guesses it**
 
 **Status:** Fixed
-**Found:** 2026-09-25 (4D-F re-qualification on a private tidal rotor; repo BL-040)
+**Found:** 2026-09-25 (4D-F re-qualification on a private reference rotor; repo BL-040)
 **Fixed:** 2026-09-25
 **Area:** `cell_wall_loops/`, `section_contract/cell_wall_loop.py`; consumers in
 `section_properties.reference_axes.wall_network` and `section_loads.thinwall`
@@ -1101,7 +1101,7 @@ overlapping cells**, including 2D-F and 3D-F at moderate twist (area +18 % to
 +100 %). Every multi-web layout was affected somewhere; one web never was.
 
 Production audit (a hook on every closed-section solve of the 16-station
-private tidal rotor campaign at `ad560972`):
+private reference rotor campaign at `ad560972`):
 
 | Layout | Solves | On wrong cells | Raised | Σ cell area / ring |
 |---|---|---|---|---|

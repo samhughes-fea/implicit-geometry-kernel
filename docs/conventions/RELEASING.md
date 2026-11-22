@@ -33,13 +33,18 @@ and permanent. `release.yml` enforces the checkable ones.
    `CITATION.cff` `version`, and records the release in the plan doc status
    table.
 2. CI is green and the PR is squash-merged into `main`.
-3. On that push to `main`, `release.yml` sees a commit whose subject is
-   `chore(release): prepare 0.9.N` and checks, against that commit:
+3. On that push to `main`, `release.yml` looks at every commit the push added
+   to `main` (not only the head) for one titled `chore(release): prepare 0.9.N`:
+   the squash subject, or the PR title on the first body line of a
+   `Merge pull request #N` commit. A push that carries two release PRs fails;
+   run the workflow by hand on each, oldest first. It then checks, against the
+   release commit:
    - the subject's version equals `__version__`;
    - the version is `0.9.N` or `0.9.NrcM`; anything else, including `1.0.0` or
      `0.10.0`, fails the run and makes no tag;
-   - the tag `v0.9.N` does not exist yet; if it does, the run stops and changes
-     nothing;
+   - the tag `v0.9.N` does not exist yet; if it already sits on that commit,
+     the run stops and changes nothing, and if it sits on another commit, the
+     run fails (tags never move; release the next patch);
    - `CHANGELOG.md` has a `## 0.9.N (YYYY-MM-DD)` heading (a release candidate
      needs only `## 0.9.N`).
 4. It builds the sdist and wheel, then creates the annotated tag
@@ -55,12 +60,27 @@ Any other push to `main` stops after the first check; nothing is tagged.
 A tag pushed with `GITHUB_TOKEN` does not start a new workflow run, so the same
 run does the build and release; it does not wait for a tag push.
 
+Runs do not share one workflow-wide concurrency group. GitHub keeps only one
+pending run per group, so with one group a later push to `main` could cancel a
+release run that was still waiting. The tag, GitHub release and PyPI jobs each
+have a group per tag instead, so only two runs for the same release wait on
+each other.
+
 ### A release PR merged without a tag
 
-If a release PR merged before this workflow existed, or its run failed, run the
-workflow by hand: **Actions > release > Run workflow**, with the merge commit
-SHA. The run refuses a commit that is not on `main` or whose subject is not a
-release PR, and does nothing if the tag already exists.
+If a release PR merged before this workflow existed, or its run failed before
+the tag was made, run the workflow by hand: **Actions > release > Run
+workflow**, with the merge commit SHA. The run refuses a commit that is not on
+`main` or that is not a release PR merge.
+
+### A release that failed after its tag was made
+
+If the GitHub release or the PyPI upload failed after the tag was pushed, either
+use **Re-run failed jobs** on that run, or run the workflow by hand with the
+merge commit SHA. A hand run that finds the tag already on that commit leaves
+the tag alone and builds, makes or updates the GitHub release, and uploads to
+PyPI (files already on PyPI are skipped). A tag on a different commit fails the
+run.
 
 ### Fallback: a tag by hand
 

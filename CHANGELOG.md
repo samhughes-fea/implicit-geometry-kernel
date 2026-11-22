@@ -28,6 +28,12 @@
   can be run by hand on an untagged release-PR merge. Tags are no longer
   maintainer-only (decision 0013); ``RELEASING.md``, ``AGENTS.md`` and
   ``CONTRIBUTING.md`` describe the new flow (#87, #88).
+- Release workflow fixes (#89): a later push to ``main`` can no longer cancel
+  a release run that is waiting (concurrency is per tag and job, not
+  workflow-wide); every commit in a push is checked for a release PR, not only
+  the head, and a ``Merge pull request`` commit is read by its PR title; a hand
+  run on a commit whose tag already exists finishes its GitHub release and PyPI
+  upload instead of stopping. ``RELEASING.md`` documents both recovery paths.
 - A flapwise web within 1 degree of the chord (a section twisted 90 degrees)
   raises ``InfeasibleSectionGeometry`` naming the web and pointing to a
   chord-normal layout, instead of a web-foot or open-ring error deep in the
@@ -35,9 +41,17 @@
 - ``key_points()`` takes LE and TE by chord fraction in the section frame; under
   twist they were the smallest and largest blade-frame x, 1.7 % of chord off at
   30 degrees (SG-034).
-- Bug log: SG-018 now classifies all 51 nearest / ``argmin`` sites. Three sites
-  move web ends onto the skin with no tolerance (up to 48 mm on one reference
-  mesh); they are logged as SG-035 with a proposed fix.
+- Bug log: SG-018 now classifies all 51 nearest / ``argmin`` sites.
+- Web feet are no longer moved to the nearest skin vertex (SG-035). With
+  ``wall_reference="oml"`` the skin is offset as one loop, so partition ends
+  and web feet share one point, and each web reaches the outer skin along its
+  own line; before, every junction split by up to 19 mm. The locked loft keeps
+  a web foot inside a skin run as a vertex of the resample, and the mapped mesh
+  keeps each foot on the region end it started on (it moved up to 47 mm on one
+  reference mesh). Each old snap is now a check that raises ``ValueError``
+  (#94).
+- ``wall_reference="oml"``: the outer skin no longer zig-zags; the offset read
+  tangents from points it had already moved (SG-037, #94).
 - ``integration.section_properties_S`` (and ``section_properties_Sprime``) on a
   ``MultiPolygon``: second moments are the sum of the parts' origin moments; they
   dropped each part's offset from the combined centroid (SG-036). Section

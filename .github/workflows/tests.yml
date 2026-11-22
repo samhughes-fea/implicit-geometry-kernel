@@ -13,8 +13,8 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install GEOS
@@ -53,8 +53,8 @@ jobs:
     # every module except plotting must import without Matplotlib or SciPy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install GEOS
@@ -82,8 +82,8 @@ jobs:
   examples:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install GEOS
@@ -114,14 +114,14 @@ jobs:
         consumer: ${{ fromJSON(vars.CONSUMER_REPOS || '[]') }}
     name: consumer (${{ matrix.consumer.name }})
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           repository: ${{ matrix.consumer.repo }}
           ref: ${{ matrix.consumer.ref || 'main' }}
           path: consumer
           token: ${{ secrets.CONSUMER_TOKEN || github.token }}
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install GEOS

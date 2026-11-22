@@ -209,11 +209,32 @@ def _share_adjacent_skin_ends(out: dict[str, np.ndarray], template: ShellTopolog
 
     Same-key joins (web foot / region join) share one coordinate. When a
     zero-length panel is omitted from ``out``, the next live region inherits
-    the previous end so the TE/LE seam does not open (BG-049). Web feet are
-    then snapped back onto the updated skin wall.
+    the previous end so the TE/LE seam does not open (BG-049). Each web foot
+    is a skin-region end before the pin and follows that same end after it;
+    a foot that is not a region end raises ``ValueError`` (SG-035).
     """
     loop = [branch for branch in template.loop if not branch.wrap]
     live = [(index, branch) for index, branch in enumerate(loop) if branch.name in out]
+    region_ends = [(branch.name, end) for _, branch in live for end in (0, -1)
+                   if len(out[branch.name])]
+    attached: dict[tuple[str, int], tuple[str, int]] = {}
+    if region_ends:
+        end_xyz = np.vstack([np.asarray(out[n], float)[e] for n, e in region_ends])
+        scale = max(1.0, float(np.max(np.abs(end_xyz))))
+        tol = 1e-9 * scale
+        for web in template.webs:
+            if web.name not in out or not len(out[web.name]):
+                continue
+            for end in (0, -1):
+                foot = np.asarray(out[web.name], float)[end]
+                dist = np.linalg.norm(end_xyz - foot, axis=1)
+                j = int(np.argmin(dist))
+                if float(dist[j]) > tol:
+                    raise ValueError(
+                        f"web {web.name!r} foot is {float(dist[j]):.3e} m from every "
+                        "skin-region end; web feet must be region ends (SG-035)"
+                    )
+                attached[(web.name, end)] = region_ends[j]
     for (i0, left), (i1, right) in zip(live, live[1:]):
         if left.side != right.side:
             continue
@@ -224,16 +245,14 @@ def _share_adjacent_skin_ends(out: dict[str, np.ndarray], template: ShellTopolog
         pts = np.asarray(out[right.name], float).copy()
         pts[0] = np.asarray(out[left.name][-1], float).copy()
         out[right.name] = pts
-    skin = [out[branch.name] for branch in loop if branch.name in out]
-    if not skin:
-        return
-    wall = np.vstack(skin)
     for web in template.webs:
         if web.name not in out:
             continue
         pts = np.asarray(out[web.name], float).copy()
         for end in (0, -1):
-            pts[end] = wall[int(np.argmin(np.linalg.norm(wall - pts[end], axis=1)))]
+            hit = attached.get((web.name, end))
+            if hit is not None:
+                pts[end] = np.asarray(out[hit[0]], float)[hit[1]]
         out[web.name] = pts
 
 

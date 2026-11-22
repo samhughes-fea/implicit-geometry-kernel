@@ -2,6 +2,7 @@
 
 ## 0.9.6 (unreleased)
 
+- Decisions: 0014 smooth authored span laws (PCHIP, with a station-density check; tables stay linear; thickness as t = f(s, z)), 0015 the shell mesh built per partition on a (t, z) patch from a shared skeleton, 0016 sub-partitions step properties, never geometry, and 0017 analytic surface derivatives and curvature. The plan doc gains rows L1 to L7 (#95, #96, #97, #98).
 - **Breaking fix (CF-004):** ``transform_moments_S_to_B`` and
   ``transform_moments_B_to_S`` rotated bending moments by the opposite twist to
   points, forces and second moments. They now rotate moments exactly like

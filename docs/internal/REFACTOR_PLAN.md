@@ -32,7 +32,7 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | K5 | Trimmed top-level API (deprecate first), internal docs to `docs/internal/`; still 0.9.x | **Done** — `docs/internal/`, flat mesh shims removed, rare topology helpers demoted from top-level `__all__` with root `__getattr__` warnings (0.9.x). Stay 0.9.x, no 1.0 |
 | 0.9.3 | Release prep: CI green on the split `mesh/` packages (lint, mypy, fan-budget test, example runner), doc links after the `docs/internal/` move, `__version__` 0.9.3. Consumers then pin `v0.9.3` instead of the `K9` tag | Done (#78, tagged v0.9.3) |
 | 0.9.4 | Hardening: CI, docs site, module split, repository rules | Merged (#79); the `v0.9.4` tag sits on the 0.9.3 commit, so its code is 0.9.3 |
-| 0.9.5 | Release of #79 and #81 (docs site polish, GitHub releases, CodeQL, typing, slow-test split); flat mesh shims removed in 0.9.6 | PR #81; tag v0.9.5 is the maintainer's, then consumers move to it |
+| 0.9.5 | Release of #79 and #81 (docs site polish, GitHub releases, CodeQL, typing, slow-test split); flat mesh shims removed in 0.9.6 | Merged (#81, 8f11101); tag v0.9.5 made by running the `release` workflow on 8f11101, then consumers move to it |
 
 #### Consumer adapter gaps (to do)
 
@@ -129,7 +129,8 @@ Decisions already made by the maintainer:
   removed in 0.6.0.
 - `sdf/` stays self-contained: nothing in it imports `section/` or `blade/`.
 - `section/` stays one package, with subpackages in pipeline order (decided 6 Nov).
-- Release tags are made by the maintainer only.
+- Release tags are made by the `release` workflow when a release PR merges
+  (decision 0013, 22 Nov; it replaced "maintainer only").
 - This package is the source of truth for **blade geometry parameterisation**
   (airfoils, planform, layout catalogue, gauges in metres, members, span topology,
   `shell_graph`). It compiles published windIO (and parametric) inputs into

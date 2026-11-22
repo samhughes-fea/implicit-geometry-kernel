@@ -133,7 +133,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.resolve.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      # The release commit is checked out only after this job confirms it is on
+      # main (protected), so no code from outside main is built or run here.
+      - name: Check out the release commit
+        env:
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "${SHA}" origin/main || { echo "::error::${SHA} is not on main"; exit 1; }
+          git checkout --detach "${SHA}"
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -156,7 +166,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.resolve.outputs.sha }}
           fetch-depth: 0
       - name: Create and push the tag
         env:
@@ -200,7 +209,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.resolve.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      # The release commit is checked out only after this job confirms it is on
+      # main (protected), so no code from outside main is built or run here.
+      - name: Check out the release commit
+        env:
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "${SHA}" origin/main || { echo "::error::${SHA} is not on main"; exit 1; }
+          git checkout --detach "${SHA}"
       - uses: actions/download-artifact@v5
         with:
           name: dist

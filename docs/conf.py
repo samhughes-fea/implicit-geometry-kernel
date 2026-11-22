@@ -1,9 +1,11 @@
 """Sphinx project for the existing Markdown tree plus a generated API reference.
 
 Build: ``pip install -e ".[docs]"`` then ``sphinx-build -W --keep-going -b html docs docs/_build/html``
-or ``make -C docs html``. The manual is the Markdown already in the repository;
-``docs/api/`` documents each package's ``__all__`` with autodoc, so the reference
-is the docstrings and nothing is copied. CI builds it with warnings as errors and
+or ``make -C docs html``. The manual is the Markdown in ``docs/``, organised as four
+manuals (U use, R reference theory, V validation, D development; see
+``docs/conventions/DOCUMENTATION_STANDARDS.md``); ``docs/api/`` documents each
+package's ``__all__`` with autodoc, so the reference is the docstrings and nothing
+is copied. Citations come from ``docs/references.bib`` (sphinxcontrib-bibtex). CI builds it with warnings as errors and
 ``docs.yml`` publishes it to GitHub Pages from ``main``.
 """
 
@@ -32,10 +34,18 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
     "sphinx_design",
+    "sphinxcontrib.bibtex",
     "repo_links",
+    "inline_math",
 ]
 
 source_suffix = {".md": "markdown"}
+
+# One bibliography for the U, R, V and D manuals; author-year citations,
+# written {cite:t}`key` (textual) or {cite:p}`key` (parenthetical).
+bibtex_bibfiles = ["references.bib"]
+bibtex_default_style = "plain"
+bibtex_reference_style = "author_year"
 
 # API reference: each package's ``__all__``, in source order, signatures without
 # repeated type hints (they are in the signature already).

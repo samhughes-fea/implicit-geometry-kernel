@@ -39,11 +39,15 @@ cycler==0.12.1
 docutils==0.22.4 ; python_full_version < '3.13'
     # via
     #   myst-parser
+    #   pybtex-docutils
     #   sphinx
+    #   sphinxcontrib-bibtex
 docutils==0.23 ; python_full_version >= '3.13'
     # via
     #   myst-parser
+    #   pybtex-docutils
     #   sphinx
+    #   sphinxcontrib-bibtex
 fonttools==4.68.0
     # via matplotlib
 furo==2025.12.19
@@ -63,6 +67,8 @@ jinja2==3.1.6
     #   sphinxcontrib-mermaid
 kiwisolver==1.5.1
     # via matplotlib
+latexcodec==3.0.1
+    # via pybtex
 librt==0.17.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 llvmlite==0.50.0
@@ -119,6 +125,12 @@ pluggy==1.7.0
     #   pytest-cov
 py==1.11.0
     # via interrogate
+pybtex==0.26.1
+    # via
+    #   pybtex-docutils
+    #   sphinxcontrib-bibtex
+pybtex-docutils==1.0.3
+    # via sphinxcontrib-bibtex
 pygments==2.21.0
     # via
     #   accessible-pygments
@@ -141,6 +153,7 @@ pyyaml==6.0.4
     # via
     #   implicit-geometry-kernel (pyproject.toml)
     #   myst-parser
+    #   pybtex
     #   sphinxcontrib-mermaid
 requests==2.34.2
     # via sphinx
@@ -166,6 +179,7 @@ sphinx==9.0.4 ; python_full_version < '3.12'
     #   sphinx-basic-ng
     #   sphinx-copybutton
     #   sphinx-design
+    #   sphinxcontrib-bibtex
     #   sphinxcontrib-mermaid
 sphinx==9.1.1 ; python_full_version == '3.12.*'
     # via
@@ -175,6 +189,7 @@ sphinx==9.1.1 ; python_full_version == '3.12.*'
     #   sphinx-basic-ng
     #   sphinx-copybutton
     #   sphinx-design
+    #   sphinxcontrib-bibtex
     #   sphinxcontrib-mermaid
 sphinx==9.2.0 ; python_full_version >= '3.13'
     # via
@@ -184,6 +199,7 @@ sphinx==9.2.0 ; python_full_version >= '3.13'
     #   sphinx-basic-ng
     #   sphinx-copybutton
     #   sphinx-design
+    #   sphinxcontrib-bibtex
     #   sphinxcontrib-mermaid
 sphinx-basic-ng==1.0.0b2
     # via furo
@@ -193,6 +209,8 @@ sphinx-design==0.8.0
     # via implicit-geometry-kernel (pyproject.toml)
 sphinxcontrib-applehelp==2.0.0
     # via sphinx
+sphinxcontrib-bibtex==2.7.0
+    # via implicit-geometry-kernel (pyproject.toml)
 sphinxcontrib-devhelp==2.0.0
     # via sphinx
 sphinxcontrib-htmlhelp==2.1.0

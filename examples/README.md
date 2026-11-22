@@ -112,6 +112,7 @@ Teaching: [section/teaching/](section/teaching/) (`01_first_station` … `06_con
 | # | Example | Main API |
 |---|---|---|
 | 01 | [Frames and twist](frames/01_frames_and_twist/) | `frames` |
+| 02 | [Frame triad](frames/02_frame_triad/) | `frames`, Figure R1.1 |
 
 ### catalogue
 

@@ -19,86 +19,55 @@ constructive solid geometry, with no materials, loads or solvers.</p>
 pip install "implicit-geometry-kernel @ git+https://github.com/samhughes-fea/implicit-geometry-kernel@v0.9.5"
 ```
 
+The documentation is four manuals, after the structure used by large open-source
+engineering codes: **U** says how to use the kernel, **R** derives what it computes,
+**V** shows the evidence that it computes it correctly, and **D** records how it is
+developed. Pages are cited by key, for example [R1], and equations by number, (R1.4).
+
 ::::{grid} 1 2 2 2
 :gutter: 3
 
-:::{grid-item-card} Getting started
-:link: tutorial
+:::{grid-item-card} U · Use
+:link: u/index
 :link-type: doc
 
-From two aerofoil stations to a shell mesh in five steps.
+Installation, tutorials, how-to guides, the API and the layout catalogue.
 :::
 
-:::{grid-item-card} Architecture
-:link: architecture
+:::{grid-item-card} R · Reference theory
+:link: r/index
 :link-type: doc
 
-The packages, how data flows from an aerofoil to a mesh, and the layering rules.
+Frames, aerofoils, signed distance fields, layouts, integration, loft and mesh,
+derived equation by equation.
 :::
 
-:::{grid-item-card} User guide
-:link: README
+:::{grid-item-card} V · Validation
+:link: v/index
 :link-type: doc
 
-Signed distance fields, sections, blades, frames, members and the catalogue.
+Analytic checks, convergence studies, golden numbers and reference blades.
 :::
 
-:::{grid-item-card} API reference
-:link: api/index
+:::{grid-item-card} D · Development
+:link: d/index
 :link-type: doc
 
-Every public name, generated from the docstrings.
+Architecture, workflow, testing, releases, decisions, roadmap and the bug log.
 :::
 ::::
 
-**Project:** [changelog](project/changelog.md) · [contributing](project/contributing.md) ·
-[scope](project/scope.md) · [decisions](decisions/README.md) ·
+**Start here:** [getting started](tutorial.md) · [notation](r/R0_notation.md) ·
+[changelog](project/changelog.md) ·
 [GitHub](https://github.com/samhughes-fea/implicit-geometry-kernel)
 
 ```{toctree}
-:caption: Getting started
+:caption: Manuals
 :hidden:
+:maxdepth: 2
 
-tutorial
-architecture
-glossary
-```
-
-```{toctree}
-:caption: User guide
-:hidden:
-
-README
-sdf/README
-section/README
-blade/README
-frames/README
-structure/README
-catalogue/README
-contract/README
-extract/README
-integration/README
-```
-
-```{toctree}
-:caption: Reference
-:hidden:
-
-api/index
-MIGRATING
-```
-
-```{toctree}
-:caption: Project
-:hidden:
-
-project/changelog
-project/contributing
-project/scope
-project/rules
-decisions/README
-conventions/README
-project/security
-project/conduct
-internal/REFACTOR_PLAN
+u/index
+r/index
+v/index
+d/index
 ```

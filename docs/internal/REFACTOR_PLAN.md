@@ -33,6 +33,7 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | 0.9.3 | Release prep: CI green on the split `mesh/` packages (lint, mypy, fan-budget test, example runner), doc links after the `docs/internal/` move, `__version__` 0.9.3. Consumers then pin `v0.9.3` instead of the `K9` tag | Done (#78, tagged v0.9.3) |
 | 0.9.4 | Hardening: CI, docs site, module split, repository rules | Merged (#79); the `v0.9.4` tag sits on the 0.9.3 commit, so its code is 0.9.3 |
 | 0.9.5 | Release of #79 and #81 (docs site polish, GitHub releases, CodeQL, typing, slow-test split); flat mesh shims removed in 0.9.6 | Merged (#81, 8f11101); tag v0.9.5 made by running the `release` workflow on 8f11101, then consumers move to it |
+| Manual | Docs as U, R, V, D manuals (issue #90): PR 1 restructure, R0 notation and bibliography, R1 frames; then R2–R3, R4–R6, R7–R10, V, U, D. Plan: issue #90 | PR 1 open; next R2–R3. CF-004 (moment transform twist sign) logged, fix awaiting decision |
 
 #### Consumer adapter gaps (to do)
 

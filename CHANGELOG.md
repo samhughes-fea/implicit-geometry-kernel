@@ -26,9 +26,10 @@
   own line; before, every junction split by up to 19 mm. The locked loft keeps
   a web foot inside a skin run as a vertex of the resample, and the mapped mesh
   keeps each foot on the region end it started on (it moved up to 47 mm on one
-  reference mesh). Each old snap is now a check that raises ``ValueError``.
+  reference mesh). Each old snap is now a check that raises ``ValueError``
+  (#94).
 - ``wall_reference="oml"``: the outer skin no longer zig-zags; the offset read
-  tangents from points it had already moved (SG-037).
+  tangents from points it had already moved (SG-037, #94).
 - ``integration.section_properties_S`` (and ``section_properties_Sprime``) on a
   ``MultiPolygon``: second moments are the sum of the parts' origin moments; they
   dropped each part's offset from the combined centroid (SG-036). Section

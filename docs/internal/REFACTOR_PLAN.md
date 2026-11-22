@@ -36,7 +36,7 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | 0.9.5 | Release of #79 and #81 (docs site polish, GitHub releases, CodeQL, typing, slow-test split); flat mesh shims removed in 0.9.6 | Merged (#81, 8f11101); tag v0.9.5 made by running the `release` workflow on 8f11101, then consumers move to it |
 | 0.9.6 | SG-033 flapwise twist limit, SG-034 key-point LE/TE under twist, SG-018 re-check, SG-035 web feet built on the skin (no snaps), SG-037 OML offset, flat mesh shims removed | In progress |
 | Manual | Docs as U, R, V, D manuals (issue #90): PR 1 restructure, R0 notation and bibliography, R1 frames; then R2–R3, R4–R6, R7–R10, V, U, D. Plan: issue #90 | PR 1 merged (#91); next R2–R3. CF-004 (moment transform twist sign) fixed in #93 |
-| L1 | Decisions 0014 (smooth authored laws, PCHIP with a station-density check, t = f(s, z)), 0015 (partition mesher), 0016 (property-only sub-partitions), 0017 (analytic surface derivatives); issues #95, #96, #97, #98 | In review (this PR) |
+| L1 | Decisions 0014 (smooth authored laws, PCHIP with a station-density check, t = f(s, z)), 0015 (partition mesher), 0016 (property-only sub-partitions), 0017 (analytic surface derivatives); issues #95, #96, #97, #98 | In review (#99) |
 | L2 | `PchipLaw` and `span_interp="pchip"` (opt-in), leave-one-out station-density check that refuses or flags under-sampled inputs (#95) | To do |
 | L3 | `ThicknessField(t, z)` per partition, per-node thickness on `ShellMesh` (#95) | To do |
 | L4 | Tagged `Skeleton` view of the shell graph, normalised t per partition (#96) | To do |

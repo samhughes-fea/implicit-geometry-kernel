@@ -106,4 +106,56 @@ def node_thickness(mesh, thickness: np.ndarray | None = None, *, partition: str 
         return np.where(weight > 0.0, total / weight, np.nan)
 
 
-__all__ = ["element_tz", "node_thickness", "sample_thickness"]
+def element_curvature(mesh, geo, *, n_t: int = 33, curvature_tol: float = 1e-6) -> dict[str, np.ndarray]:
+    """Principal curvatures, direction and kind at each element centroid (decision 0017).
+
+    Skin and web elements are evaluated on a :class:`~implicit_geometry_kernel.blade.patch.PartitionPatch`
+    of their partition, built over the mesh stations where the partition exists
+    and interpolated along the span like the blade (``span_interp``). Rib and
+    tip-closure elements lie in a plane of constant z, so they are ``FLAT`` with
+    exactly zero curvature by construction.
+
+    Returns
+    -------
+    dict
+        ``k1``, ``k2`` (1/m, ``k1 <= k2``), ``theta`` (radians, from the
+        partition's t direction to the first principal direction) and ``kind``
+        (``FLAT``, ``SINGLY``, ``DOUBLY``, ``UMBILIC``; ``UNSET`` only where a
+        patch could not be built).
+    """
+    from implicit_geometry_kernel.blade.patch import PartitionPatch
+
+    n = len(mesh.elements)
+    k1 = np.zeros(n)
+    k2 = np.zeros(n)
+    theta = np.zeros(n)
+    kind = np.array(["FLAT"] * n, dtype=object)
+    t, z = element_tz(mesh, geo)
+    stations = sorted(float(v) for v in mesh.stations)
+    patches: dict = {}
+    for i, part in enumerate(mesh.partition):
+        if mesh.surface[i] not in ("skin", "web"):
+            continue
+        patch = patches.get(part, False)
+        if patch is False:
+            present = []
+            for zs in stations:
+                graph = geo.section_at(zs).shell_graph()
+                if any(r.name == part for r in graph.loop + graph.webs):
+                    present.append(zs)
+            try:
+                patch = PartitionPatch(geo, part, present, n_t=n_t, sampling="flag",
+                                       curvature_tol=curvature_tol)
+            except ValueError:
+                patch = None
+            patches[part] = patch
+        if patch is None or not np.isfinite(t[i]):
+            k1[i] = k2[i] = theta[i] = np.nan
+            kind[i] = "UNSET"
+            continue
+        sp = patch.at(float(t[i]), float(z[i]))
+        k1[i], k2[i], theta[i], kind[i] = sp.k1, sp.k2, sp.theta, sp.kind
+    return {"k1": k1, "k2": k2, "theta": theta, "kind": kind}
+
+
+__all__ = ["element_curvature", "element_tz", "node_thickness", "sample_thickness"]

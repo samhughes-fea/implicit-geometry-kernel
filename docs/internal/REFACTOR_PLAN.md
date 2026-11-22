@@ -38,12 +38,12 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | Manual | Docs as U, R, V, D manuals (issue #90): PR 1 restructure, R0 notation and bibliography, R1 frames; then R2–R3, R4–R6, R7–R10, V, U, D. Plan: issue #90 | PR 1 merged (#91); next R2–R3. CF-004 (moment transform twist sign) fixed in #93 |
 | L1 | Decisions 0014 (smooth authored laws, PCHIP with a station-density check, t = f(s, z)), 0015 (partition mesher), 0016 (property-only sub-partitions), 0017 (analytic surface derivatives); issues #95, #96, #97, #98 | Done (#99) |
 | L2 | `PchipLaw` and `span_interp="pchip"` (opt-in), leave-one-out station-density check that refuses or flags under-sampled inputs (#95) | Done (#100) |
-| L3 | `ThicknessField(t, z)` per partition, per-node thickness on `ShellMesh` (#95) | In review (#101) |
-| L4 | Tagged `Skeleton` view of the shell graph, normalised t per partition (#96) | In review (#101) |
+| L3 | `ThicknessField(t, z)` per partition, per-node thickness on `ShellMesh` (#95) | Done (#101) |
+| L4 | Tagged `Skeleton` view of the shell graph, normalised t per partition (#96) | Done (#101) |
 | L5 | Generic `SubPartition` in `structure/`; caps re-expressed with goldens unchanged; then flanges, web foot, wedge (#97) | To do |
-| L4b | Smooth section curves (C2 spline through given points, or CST) with the station-density check; analytic patch derivatives x_t, x_z, x_tt, x_tz, x_zz, normal, principal curvatures, signed-distance gradient and Hessian (#98) | To do |
+| L4b | Smooth section curves (C2 spline through given points, or CST) with the station-density check; analytic patch derivatives x_t, x_z, x_tt, x_tz, x_zz, normal, principal curvatures, signed-distance gradient and Hessian (#98) | Part in review (#102): `PartitionPatch` x(t, z) with analytic x_t, x_z, x_tt, x_tz, x_zz, normal, principal curvatures, kind tags and Newton closest point. Still to do: smooth section curves (spline or CST) and the signed-distance Hessian |
 | L6 | `shell_mesh(method="partition")` beside the ruled-strip mesher, compared in CI; terminations as transition bands; junction nodes by Newton on both stacked distance fields, with an on-both-surfaces invariant (#96, #98) | To do |
-| L6b | Nodal and element curvature (k1, k2, theta) and kind tags on `ShellMesh`; kind by construction with exact zeros, computed curvature checked against the tag (#98) | To do |
+| L6b | Nodal and element curvature (k1, k2, theta) and kind tags on `ShellMesh`; kind by construction with exact zeros, computed curvature checked against the tag (#98) | Part in review (#102): element curvature and kind (`element_curvature`). Still to do: nodal values on `ShellMesh` |
 | L7 | Flagged release: PCHIP default for authored blades, partition mesher default, goldens re-baselined (#95, #96) | To do |
 
 #### Consumer adapter gaps (to do)

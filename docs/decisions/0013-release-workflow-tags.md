@@ -15,4 +15,8 @@ version from the merged commit cannot tag the wrong commit.
 **Follows.** The workflow refuses any version that is not `0.9.N` or `0.9.NrcM`, so
 it never makes `v1.0.0` or `v0.10.0`. It does nothing when the tag already exists.
 A release-PR merge that was not tagged is released by running the workflow by hand
-with the commit SHA. Rules and steps: [Tags and releases](../conventions/RELEASING.md).
+with the commit SHA; the same hand run finishes a release whose tag was made but
+whose GitHub release or upload failed. Each push to `main` is checked commit by
+commit, so a release PR is found whether it is the head of the push or not, and
+there is no workflow-wide concurrency group that could cancel a waiting release
+run (22 Nov review). Rules and steps: [Tags and releases](../conventions/RELEASING.md).

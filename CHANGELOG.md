@@ -10,6 +10,12 @@
   can be run by hand on an untagged release-PR merge. Tags are no longer
   maintainer-only (decision 0013); ``RELEASING.md``, ``AGENTS.md`` and
   ``CONTRIBUTING.md`` describe the new flow (#87, #88).
+- Release workflow fixes (#PR): a later push to ``main`` can no longer cancel
+  a release run that is waiting (concurrency is per tag and job, not
+  workflow-wide); every commit in a push is checked for a release PR, not only
+  the head, and a ``Merge pull request`` commit is read by its PR title; a hand
+  run on a commit whose tag already exists finishes its GitHub release and PyPI
+  upload instead of stopping. ``RELEASING.md`` documents both recovery paths.
 
 ## 0.9.5 (2026-11-21)
 

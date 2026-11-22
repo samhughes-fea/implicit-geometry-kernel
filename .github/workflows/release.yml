@@ -6,17 +6,24 @@ name: release
 # Rules: docs/conventions/RELEASING.md.
 #
 # Three ways in:
-# - push to main: when the head commit is a merged release PR
-#   ("chore(release): prepare 0.9.N"), this workflow creates the tag itself.
-#   Any other push to main stops after the first job.
+# - push to main: when a commit in the push is a merged release PR
+#   ("chore(release): prepare 0.9.N", as a squash subject or as the PR title in
+#   a merge commit), this workflow creates the tag itself. Any other push to
+#   main stops after the first job.
 # - workflow_dispatch with a commit SHA: releases a release-PR merge commit that
-#   was not tagged when it landed (for example one merged before this workflow).
+#   was not tagged when it landed (for example one merged before this workflow),
+#   or finishes a release whose tag exists on that commit but whose GitHub
+#   release or PyPI upload failed.
 # - push of a v* tag made by hand: checked and released as before.
 #
 # A tag created here with GITHUB_TOKEN does not start another workflow run, so
 # this run does the build and release itself instead of waiting for a tag push.
-# Every path is idempotent: if the tag already exists, the main and dispatch
-# paths stop without changing anything.
+# A tag is never moved or remade: a push to main whose tag already exists stops
+# without changing anything, and a tag on a different commit fails the run.
+#
+# Concurrency is per tag and per job, not for the whole workflow: GitHub keeps
+# only one pending run in a concurrency group, so a workflow-wide group let a
+# later push to main cancel a release run that was still waiting.
 
 on:
   push:
@@ -28,11 +35,6 @@ on:
         description: "Commit on main to release (the release PR's merge commit)"
         required: true
         type: string
-
-# One release at a time; never cancel a release half-way.
-concurrency:
-  group: release
-  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -58,6 +60,7 @@ jobs:
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
           INPUT_SHA: ${{ inputs.sha }}
+          BEFORE: ${{ github.event.before }}
         run: |
           set -euo pipefail
           fail() { echo "::error::$1"; exit 1; }
@@ -66,6 +69,21 @@ jobs:
           git fetch --tags --force origin
           git fetch origin main
 
+          release_re='^chore\(release\)!?: prepare v?[0-9]'
+          # The PR title of a commit: the subject of a squash merge, or the first
+          # non-blank body line of a "Merge pull request #N from ..." commit.
+          title_of() {
+            local subject body line
+            subject=$(git log -1 --format=%s "$1")
+            if [[ "$subject" =~ ^Merge\ pull\ request\ \#[0-9]+ ]]; then
+              body=$(git log -1 --format=%b "$1")
+              while IFS= read -r line; do
+                if [ -n "${line//[[:space:]]/}" ]; then printf '%s' "$line"; return; fi
+              done <<< "$body"
+            fi
+            printf '%s' "$subject"
+          }
+
           # The commit to release, and whether this run creates the tag.
           if [ "$EVENT" = "push" ] && [ "$REF_TYPE" = "tag" ]; then
             sha="$GITHUB_SHA"; create_tag=false
@@ -73,7 +91,20 @@ jobs:
             sha=$(git rev-parse --verify "${INPUT_SHA}^{commit}") || fail "${INPUT_SHA} is not a commit"
             create_tag=true
           else
-            sha="$GITHUB_SHA"; create_tag=true
+            # Every commit the push added to main's first-parent line, not only
+            # the head: a push can carry more than one merged PR.
+            if [ -n "${BEFORE//0/}" ] && git merge-base --is-ancestor "$BEFORE" "$GITHUB_SHA" 2>/dev/null; then
+              range=$(git rev-list --first-parent "${BEFORE}..${GITHUB_SHA}")
+            else
+              range="$GITHUB_SHA"
+            fi
+            found=()
+            for c in $range; do
+              if grep -Eq "$release_re" <<< "$(title_of "$c")"; then found+=("$c"); fi
+            done
+            [ "${#found[@]}" -eq 0 ] && skip "no release PR merge in this push; nothing to release"
+            [ "${#found[@]}" -gt 1 ] && fail "this push merges ${#found[@]} release PRs (${found[*]}); run the workflow by hand on each, oldest first"
+            sha="${found[0]}"; create_tag=true
           fi
 
           git merge-base --is-ancestor "$sha" origin/main || fail "$sha is not on main"
@@ -85,12 +116,10 @@ jobs:
 
           if [ "$create_tag" = "true" ]; then
             # Only a merged release PR is released. PRs are squash-merged on
-            # their title, so the commit subject is the release PR's title.
-            subject=$(git log -1 --format=%s "$sha")
-            if ! grep -Eq '^chore\(release\)!?: prepare v?[0-9]' <<< "$subject"; then
-              [ "$EVENT" = "workflow_dispatch" ] && fail "$sha is not a release PR merge (subject: ${subject})"
-              skip "not a release PR merge; nothing to release"
-            fi
+            # their title, so the commit subject is the release PR's title (a
+            # merge commit carries the title on its first body line).
+            subject=$(title_of "$sha")
+            grep -Eq "$release_re" <<< "$subject" || fail "$sha is not a release PR merge (title: ${subject})"
             named=$(echo "$subject" | sed -E 's/^chore\(release\)!?: prepare v?([0-9][0-9A-Za-z.]*).*/\1/')
             test "$named" = "$version" || fail "release PR names ${named} but __version__ is ${version}"
           else
@@ -104,9 +133,16 @@ jobs:
           fi
           grep -Eq '^v0\.9\.[0-9]+(rc[0-9]+)?$' <<< "$tag" || fail "${tag} is not a release tag (v0.9.N or v0.9.NrcM)"
 
-          # Idempotent: an existing tag is never moved or remade.
+          # An existing tag is never moved or remade.
           if [ "$create_tag" = "true" ] && git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
-            skip "${tag} already exists (at $(git rev-parse "${tag}^{commit}")); nothing to do"
+            at=$(git rev-parse "${tag}^{commit}")
+            [ "$at" = "$sha" ] || fail "${tag} already exists on ${at}, not on ${sha}; tags never move, so release the next patch version"
+            # On the release commit already. A push stops here; a dispatch
+            # finishes the release (build, GitHub release, PyPI) without
+            # touching the tag, for a run that failed after tagging.
+            [ "$EVENT" = "workflow_dispatch" ] || skip "${tag} already exists on ${sha}; nothing to do"
+            echo "::notice::${tag} already exists on ${sha}; finishing its release without touching the tag"
+            create_tag=false
           fi
 
           # The changelog at that commit has the release heading; a release
@@ -163,6 +199,10 @@ jobs:
     needs: [resolve, build]
     if: ${{ needs.resolve.outputs.create_tag == 'true' }}
     runs-on: ubuntu-latest
+    # Per tag, so only runs for the same release wait on each other.
+    concurrency:
+      group: release-tag-${{ needs.resolve.outputs.tag }}
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
@@ -191,6 +231,9 @@ jobs:
     if: ${{ !cancelled() && needs.build.result == 'success' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && vars.PYPI_PUBLISH == 'true' }}
     runs-on: ubuntu-latest
     environment: pypi
+    concurrency:
+      group: release-pypi-${{ needs.resolve.outputs.tag }}
+      cancel-in-progress: false
     permissions:
       id-token: write
     steps:
@@ -199,6 +242,9 @@ jobs:
           name: dist
           path: dist/
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          # A dispatch that finishes a failed release may find the files there.
+          skip-existing: true
 
   github-release:
     # The GitHub release for the tag: notes are the tag's CHANGELOG.md section,
@@ -206,6 +252,9 @@ jobs:
     needs: [resolve, build, tag]
     if: ${{ !cancelled() && needs.build.result == 'success' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: release-notes-${{ needs.resolve.outputs.tag }}
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:

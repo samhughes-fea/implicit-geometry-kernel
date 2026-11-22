@@ -70,7 +70,7 @@
    "write_mid_surfaces": "(self: 'LoftGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81, members=None, include_solids: 'bool' = False) -> 'str'",
    "write_oml": "(self: 'LoftGeometry', path, n_span: 'int' = 41, n_chord: 'int' = 81) -> 'str'"
   },
-  "signature": "(stations: 'Sequence[Station]', layout: 'str | SystemLayoutSpec | SectionLayout', skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness | Sequence[float]' = 0.0, shear_web_thickness: 'Thickness | Sequence[float]' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, pivot_fraction: 'Optional[Union[float, SpanTable]]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), ply_drops: 'Sequence[PlyDrop]' = (), merge_cap_and_skin: 'bool' = False, region_graph=None, tip_closure: 'Optional[TipClosure]' = None, airfoil_morph: 'str' = 'auto', web_x_from_pitch: 'Optional[SpanTable]' = None, cap_x_from_pitch: 'Optional[SpanTable]' = None, twist_sense: 'str' = 'nose_up', cap_edge_reference: 'str' = 'midplane', web_tilt_deg: 'Optional[SpanTable]' = None, wall_reference: 'str' = 'mid')"
+  "signature": "(stations: 'Sequence[Station]', layout: 'str | SystemLayoutSpec | SectionLayout', skin_thickness: 'Thickness', spar_cap_thickness: 'Thickness | Sequence[float]' = 0.0, shear_web_thickness: 'Thickness | Sequence[float]' = 0.0, web_positions: 'Optional[SpanTable]' = None, web_offsets: 'Optional[Sequence[float]]' = None, n_airfoil_points: 'int' = 161, chord: 'Optional[SpanTable]' = None, twist: 'Optional[SpanTable]' = None, pitch_axis: 'Optional[SpanTable]' = None, pivot_fraction: 'Optional[Union[float, SpanTable]]' = None, offset: 'Optional[SpanTable]' = None, cap_windows: 'Optional[SpanTable]' = None, transverse: 'Sequence[TransverseMember]' = (), stringers: 'Sequence[Stringer]' = (), ply_drops: 'Sequence[PlyDrop]' = (), merge_cap_and_skin: 'bool' = False, region_graph=None, tip_closure: 'Optional[TipClosure]' = None, airfoil_morph: 'str' = 'auto', web_x_from_pitch: 'Optional[SpanTable]' = None, cap_x_from_pitch: 'Optional[SpanTable]' = None, twist_sense: 'str' = 'nose_up', cap_edge_reference: 'str' = 'midplane', web_tilt_deg: 'Optional[SpanTable]' = None, wall_reference: 'str' = 'mid', span_interp: 'str' = 'linear', span_sampling: 'str' = 'raise', span_rtol: 'float' = 0.005)"
  },
  "implicit_geometry_kernel.FeatureTable": {
   "kind": "class",
@@ -359,6 +359,13 @@
   },
   "signature": "()"
  },
+ "implicit_geometry_kernel.structure.PchipLaw": {
+  "kind": "class",
+  "members": {
+   "derivative": "(self, z: 'ArrayLike', order: 'int' = 1) -> 'np.ndarray'"
+  },
+  "signature": "(z: 'Sequence[float]', values: 'Sequence[float]', *, name: 'str' = 'PchipLaw', rtol: 'float' = 0.005, atol: 'float' = 0.0, sampling: 'str' = 'raise') -> 'None'"
+ },
  "implicit_geometry_kernel.structure.ProductLaw": {
   "kind": "class",
   "members": {},
@@ -370,6 +377,15 @@
    "tag_field": ""
   },
   "signature": "(spec: 'FeatureSpec', region: 'SDFNode', tag_region: 'SDFNode | None' = None, source: 'Any' = None) -> None"
+ },
+ "implicit_geometry_kernel.structure.SamplingReport": {
+  "kind": "class",
+  "members": {
+   "message": "(self) -> 'str'",
+   "ok": "",
+   "worst": ""
+  },
+  "signature": "(name: 'str', z: 'np.ndarray', loo_error: 'np.ndarray', tolerance: 'float', bay_gap: 'np.ndarray') -> None"
  },
  "implicit_geometry_kernel.structure.ScaledLaw": {
   "kind": "class",
@@ -429,6 +445,11 @@
   "members": {},
   "signature": "(spec: 'FeatureSpec', z: 'float', region: 'SDFNode', thickness: 'float', source: 'Any' = None) -> None"
  },
+ "implicit_geometry_kernel.structure.UnderSampledSpanLaw": {
+  "kind": "class",
+  "members": {},
+  "signature": "(message: 'str', report: \"'SamplingReport'\") -> 'None'"
+ },
  "implicit_geometry_kernel.structure.WallContribution": {
   "kind": "class",
   "members": {
@@ -450,6 +471,10 @@
  "implicit_geometry_kernel.structure.assemble": {
   "kind": "function",
   "signature": "(ctx: 'BuildContext', contributions: 'list[Contribution]') -> 'Structure'"
+ },
+ "implicit_geometry_kernel.structure.check_pchip_sampling": {
+  "kind": "function",
+  "signature": "(z: 'Sequence[float]', values: 'Sequence[float]', *, name: 'str' = 'law', rtol: 'float' = 0.005, atol: 'float' = 0.0, samples_per_bay: 'int' = 16) -> 'SamplingReport'"
  },
  "implicit_geometry_kernel.tip_closure_polygons": {
   "kind": "function",

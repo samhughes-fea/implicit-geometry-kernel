@@ -49,8 +49,17 @@ def transform_forces_B_to_S(
         - V_YS: Force along Y_S (chord-parallel direction)
         Returns arrays if inputs are arrays, scalars if inputs are scalars.
     """
-    V_XS, V_YS = transform_moments_B_to_S(
-        M_YB=V_XB, M_XB=V_YB, twist_deg=twist_deg,
+    # A force rotates like a moment written in the same (X, Y) order, so pass the
+    # components to the moment transform as (Y, X), its argument order.
+    V_XB_arr = np.asarray(V_XB, dtype=np.float64)
+    V_YB_arr = np.asarray(V_YB, dtype=np.float64)
+    if V_YB_arr.shape != V_XB_arr.shape:
+        V_YB_arr = np.broadcast_to(V_YB_arr, np.broadcast_shapes(V_XB_arr.shape, V_YB_arr.shape)).copy()
+        V_XB_arr = np.broadcast_to(V_XB_arr, V_YB_arr.shape).copy()
+    V_YS, V_XS = transform_moments_B_to_S(
+        M_YB=V_YB_arr if V_YB_arr.ndim else float(V_YB_arr),
+        M_XB=V_XB_arr if V_XB_arr.ndim else float(V_XB_arr),
+        twist_deg=twist_deg,
     )
     return V_XS, V_YS
 

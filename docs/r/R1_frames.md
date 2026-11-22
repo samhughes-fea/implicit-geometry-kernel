@@ -157,8 +157,8 @@ which is (R1.4) with the sign of $\theta$ reversed:
 \end{equation*}
 
 Applying $\mathbf{Q}(\theta)$ to a swapped array therefore rotates it by the opposite
-twist. This is the most common sign error with these frames; it is the cause of
-CF-004 (Section 6).
+twist. This is the most common sign error with these frames; it was the cause of
+CF-004, fixed in 0.9.6 (Section 6).
 
 ### 3.5 The `BladeGeometry` cut frame and its twist
 
@@ -373,7 +373,7 @@ the argument is `*_deg`.
 | (R1.12) | `BladeGeometry.section_at` (the loft applies it; no separate function) |
 | (R1.13) | `rR_from_zL_scalars`; `CoordinateFrameTransforms(R=…, rR_grids=…)` for grids and named loci |
 | (R1.14) | `CoordinateFrameTransforms.transform_forces_S_to_B`, `transform_forces_B_to_S` |
-| (R1.16) | `CoordinateFrameTransforms.transform_moments_S_to_B`, `transform_moments_B_to_S` (see CF-004) |
+| (R1.16) | `CoordinateFrameTransforms.transform_moments_S_to_B`, `transform_moments_B_to_S` (argument order $(M_Y, M_X)$) |
 | (R1.19)–(R1.21) | `CoordinateFrameTransforms.transform_second_moments_S_to_B`, `transform_second_moments_B_to_S` |
 | (R1.23) | `transform_points_S_to_Sprime`, `transform_points_Sprime_to_S` |
 | (R1.25) | `CoordinateFrameTransforms.transform_thickness_B_to_Sprime`, `transform_thickness_Sprime_to_B` |
@@ -381,11 +381,10 @@ the argument is `*_deg`.
 
 ## 6. Limits
 
-1. **CF-004 (open).** The moment transforms apply $\mathbf{Q}(\theta)$ to components in
-   $(M_Y, M_X)$ order, which by (R1.10) rotates them by $-\theta$ instead of the
-   $+\theta$ of (R1.16). Until it is fixed, call them with the twist negated, or
-   rotate moments with `rotate_S_to_B` on $(M_X, M_Y)$ arrays. See the
-   [frames bug log](../frames/bug_log.md#cf-004).
+1. **Argument order of the moment transforms.** They take and return
+   $(M_Y, M_X)$, not $(M_X, M_Y)$. Before 0.9.6 they applied the $(X, Y)$ matrix to
+   that order, which by (R1.10) rotated moments by $-\theta$ (CF-004, fixed; see the
+   [frames bug log](../frames/bug_log.md#cf-004)).
 2. **Two twist signs.** `frames` and `BladeGeometry` use opposite signs, (R1.11).
    Pass $\theta = -\tau$ when moving a cut's properties with the `frames` functions.
 3. **Planar only.** Assumption A1 excludes precone, prebend and sweep.
@@ -403,7 +402,7 @@ the argument is `*_deg`.
 | (R1.10) | $\mathbf{P}\mathbf{Q}(\theta)\mathbf{P}=\mathbf{Q}(-\theta)$ exactly | [frames example 02](../../examples/frames/02_frame_triad/README.md), check 1 |
 | (R1.12) | Twisted cuts equal the rotated untwisted cut to 6.7e-16 m; positive $\tau$ is nose up | example 02, check 2; example 01, check 3 |
 | (R1.14) | Round trip and magnitude preservation | `tests/frames/unit/test_coordinate_force_transforms.py` |
-| (R1.16) | Fails for $\theta \ne 0$: CF-004 | [bug log](../frames/bug_log.md#cf-004) |
+| (R1.16) | Moments from rotated points equal the transform to 1e-12 at eight twists; force, moment and point rotate alike (CF-004) | `tests/frames/unit/test_moments_rotate_with_points.py` |
 | (R1.19)–(R1.22) | Transform equals integration of the rotated outline to 1.4e-15 of $I_{xx}+I_{yy}$; invariants to 1e-15 | example 01, check 2; example 02, check 4; `tests/frames/unit/test_second_moments_rotate_with_points.py` |
 | (R1.24) | Parallel-axis residual 2e-16 of $I_{xx}+I_{yy}$ | example 02, check 3 |
 

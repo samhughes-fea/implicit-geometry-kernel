@@ -2,6 +2,13 @@
 
 ## 0.9.6 (unreleased)
 
+- **Breaking fix (CF-004):** ``transform_moments_S_to_B`` and
+  ``transform_moments_B_to_S`` rotated bending moments by the opposite twist to
+  points, forces and second moments. They now rotate moments exactly like
+  ``rotate_S_to_B`` rotates points (R1, (R1.16)). Signatures and the ``(M_Y, M_X)``
+  argument order are unchanged; results change for any non-zero twist. Callers
+  that negated the twist to compensate must stop. ``transform_forces_*`` results
+  are unchanged (#93).
 - Docs: the site is now four manuals, U (use), R (reference theory), V
   (validation) and D (development), with an index page each. New R0 (notation
   and bibliography, ``sphinxcontrib-bibtex``) and R1 (coordinate frames and
@@ -10,7 +17,7 @@
   site as plain text, now renders (``docs/_ext/inline_math.py``). The frames
   page is a short signpost to R1 and its stale quick start is gone. Logged
   CF-004: the moment transforms rotate by the opposite twist to points and
-  forces (open, not fixed here) (#90).
+  forces, fixed in #93 (#91).
 - Docs: two docstrings, one test note and the bug log no longer describe the
   size or kind of a private blade.
 - Releases: merging a release PR (``chore(release): prepare 0.9.N``) now makes

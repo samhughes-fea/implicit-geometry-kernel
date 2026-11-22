@@ -17,7 +17,7 @@ Package debug log. Identifiers are `CF-nnn`. Cross-link
 | [CF-001](#cf-001) | No shared planar rotation harness for B-consuming packages | **Fixed** (2026-09-25) |
 | [CF-002](#cf-002) | `transform_stiffness_B_to_Sprime` invented 1e-6 / 1e-12 EI | **Fixed** (2026-09-26) |
 | [CF-003](#cf-003) | `transform_second_moments_S_to_B` wrong Ixy sign on `Ixx_B` | **Fixed** (2026-11-05) |
-| [CF-004](#cf-004) | `transform_moments_S_to_B` / `B_to_S` rotate by the opposite twist to points and forces | **Open** (2026-11-22) |
+| [CF-004](#cf-004) | `transform_moments_S_to_B` / `B_to_S` rotate by the opposite twist to points and forces | **Fixed** (2026-11-22) |
 
 ---
 
@@ -109,7 +109,7 @@ Commit `52aa320`.
 <a id="cf-004"></a>
 ## CF-004 — Moment vectors rotate by the opposite twist to points and forces
 
-**Status:** Open — found 2026-11-22 while deriving [R1](../r/R1_frames.md)
+**Status:** Fixed — 2026-11-22 (found the same day while deriving [R1](../r/R1_frames.md))
 **Area:** `frames.tensors.moments` (`transform_moments_B_to_S`,
 `transform_moments_S_to_B`)
 
@@ -138,9 +138,18 @@ asserts the force and moment transforms agree after passing `M_YB=V_XB`, which p
 the swapped behaviour rather than checking it against the point rotation.
 
 ### Fix
-Not yet made. Proposed: apply \(\mathbf{Q}(\theta)\) in \((M_X, M_Y)\) order (equivalently
-reverse the sign of the sine terms), replace the agreement test with a check against
-moments taken from rotated points, and record the behaviour change in the changelog.
-No public sibling package calls these functions (checked 2026-11-22); the change
-still needs a deprecation note because the names are public.
+`transform_moments_B_to_S` now forms \((M_{X_S}, M_{Y_S}) = \mathbf{Q}(\theta)^{\mathsf{T}}(M_{X_B}, M_{Y_B})\)
+with the components written out by name, so the sine terms change sign;
+`transform_moments_S_to_B` inverts it. `transform_forces_B_to_S` no longer relies on
+the old argument order: it passes \((V_Y, V_X)\) to the moment transform. Signatures
+and argument order are unchanged; results change for any non-zero twist (breaking,
+recorded in the changelog). No public sibling package calls these functions (checked
+2026-11-22). Decided by the maintainer on 2026-11-22.
+
+### Verification
+`tests/frames/unit/test_moments_rotate_with_points.py`: moments taken from points
+rotated by `rotate_S_to_B` equal `transform_moments_S_to_B` to 1e-12 at eight twists
+from −90° to 90°, and B → S inverts it; a unit flapwise moment, force and point
+rotate to the same vector. The force–moment agreement test now passes components in
+the same \((X, Y)\) order.
 

@@ -123,6 +123,50 @@ def _closest_end(pts: np.ndarray, point: np.ndarray) -> int:
     return 0 if d0 <= d1 else -1
 
 
+def _resample_with_pins(pts: np.ndarray, n: int, pins: Sequence[np.ndarray], tol: float) -> np.ndarray:
+    """``arc_resample_open`` that also keeps every interior vertex in ``pins``.
+
+    A pin is kept as an output vertex at the index its arc position rounds to, so
+    the count ``n`` is unchanged and the run is resampled piecewise between pins.
+    Pins that are not vertices of ``pts`` (or are its ends) are ignored.
+    """
+    pts = np.asarray(pts, float)
+    if not pins or len(pts) < 3:
+        return arc_resample_open(pts, n)
+    found = set()
+    for pin in pins:
+        d = np.linalg.norm(pts[:, :len(pin)] - pin, axis=1)
+        j = int(np.argmin(d))
+        if float(d[j]) <= tol and 0 < j < len(pts) - 1:
+            found.add(j)
+    if not found:
+        return arc_resample_open(pts, n)
+    src = sorted(found)
+    n = max(int(n), 2)
+    if n - 2 < len(src):
+        raise ValueError(
+            f"cannot keep {len(src)} web feet as vertices of a run resampled to {n} points"
+        )
+    s = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(pts, axis=0), axis=1))])
+    length = float(s[-1])
+    dst: list[int] = []
+    for m, j in enumerate(src):
+        k = int(round(float(s[j]) / length * (n - 1))) if length > 0.0 else m + 1
+        lo = (dst[-1] + 1) if dst else 1
+        hi = n - 2 - (len(src) - 1 - m)
+        dst.append(min(max(k, lo), hi))
+    a_src = [0] + src + [len(pts) - 1]
+    a_dst = [0] + dst + [n - 1]
+    pieces: list[np.ndarray] = []
+    for (sa, sb), (da, db) in zip(zip(a_src[:-1], a_src[1:]), zip(a_dst[:-1], a_dst[1:])):
+        piece = arc_resample_open(pts[sa:sb + 1], db - da + 1)
+        pieces.append(piece if not pieces else piece[1:])
+    out = np.vstack(pieces)
+    for j, k in zip(src, dst):
+        out[k, :pts.shape[1]] = pts[j]
+    return out
+
+
 def resample_locked(graph: ShellGraph, plan: LockedLoftPlan) -> Dict[str, np.ndarray]:
     """Resample ``plan`` names on ``graph`` with shared partition vertices.
 
@@ -130,11 +174,22 @@ def resample_locked(graph: ShellGraph, plan: LockedLoftPlan) -> Dict[str, np.nda
     if a planned run is missing — no label lerp.
     """
     by_name = {r.name: r for r in graph.runs()}
+    loop_set = set(plan.loop_names)
+    feet = [np.asarray(by_name[w].points[i], float)
+            for w in plan.web_names if w in by_name and len(by_name[w].points)
+            for i in (0, -1)]
+    all_pts = [np.asarray(r.points, float)[:, :2] for r in graph.runs() if len(r.points)]
+    scale = max([1.0] + [float(np.max(np.abs(p))) for p in all_pts])
+    tol = 1e-9 * scale
     out: Dict[str, np.ndarray] = {}
     for name, n in zip(plan.names, plan.counts):
         if name not in by_name:
             raise KeyError(name)
-        out[name] = arc_resample_open(by_name[name].points, n)
+        if name in loop_set:
+            # Web feet inside a skin run stay vertices of it (SG-035).
+            out[name] = _resample_with_pins(by_name[name].points, n, feet, tol)
+        else:
+            out[name] = arc_resample_open(by_name[name].points, n)
     for edge in graph.partition_edges():
         if edge.name_a not in out or edge.name_b not in out:
             continue
@@ -151,7 +206,13 @@ def resample_locked(graph: ShellGraph, plan: LockedLoftPlan) -> Dict[str, np.nda
                 continue
             pts = out[name]
             for i in (0, -1):
-                j = int(np.argmin(np.linalg.norm(loop_xy - pts[i], axis=1)))
+                dist = np.linalg.norm(loop_xy - pts[i], axis=1)
+                j = int(np.argmin(dist))
+                if float(dist[j]) > tol:
+                    raise ValueError(
+                        f"web {name!r} end is {float(dist[j]):.3e} m from the resampled "
+                        "skin loop; web feet must stay loop vertices (SG-035)"
+                    )
                 pts[i] = loop_xy[j]
     return out
 

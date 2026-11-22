@@ -1,40 +1,154 @@
 name: release
 
-# On a version tag: the tag must match __version__, then build the sdist and
-# wheel. Publishing to PyPI runs only when the repository variable
-# PYPI_PUBLISH is "true" and a PyPI trusted publisher is set up for this
-# repository and workflow (environment "pypi"); until then nothing is uploaded.
+# Makes a release: the v0.9.N tag, the GitHub release with the sdist and wheel,
+# and (only when the repository variable PYPI_PUBLISH is "true" and a PyPI
+# trusted publisher is set up for environment "pypi") the PyPI upload.
+# Rules: docs/conventions/RELEASING.md.
+#
+# Three ways in:
+# - push to main: when the head commit is a merged release PR
+#   ("chore(release): prepare 0.9.N"), this workflow creates the tag itself.
+#   Any other push to main stops after the first job.
+# - workflow_dispatch with a commit SHA: releases a release-PR merge commit that
+#   was not tagged when it landed (for example one merged before this workflow).
+# - push of a v* tag made by hand: checked and released as before.
+#
+# A tag created here with GITHUB_TOKEN does not start another workflow run, so
+# this run does the build and release itself instead of waiting for a tag push.
+# Every path is idempotent: if the tag already exists, the main and dispatch
+# paths stop without changing anything.
+
 on:
   push:
+    branches: [main]
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit on main to release (the release PR's merge commit)"
+        required: true
+        type: string
+
+# One release at a time; never cancel a release half-way.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
+  resolve:
+    # Decides whether this run makes a release, which tag and which commit, and
+    # checks the tag rules against that commit.
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.check.outputs.release }}
+      tag: ${{ steps.check.outputs.tag }}
+      sha: ${{ steps.check.outputs.sha }}
+      create_tag: ${{ steps.check.outputs.create_tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Check the release rules
+        id: check
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_SHA: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          skip() { echo "::notice::$1"; echo "release=false" >> "$GITHUB_OUTPUT"; exit 0; }
+
+          git fetch --tags --force origin
+          git fetch origin main
+
+          # The commit to release, and whether this run creates the tag.
+          if [ "$EVENT" = "push" ] && [ "$REF_TYPE" = "tag" ]; then
+            sha="$GITHUB_SHA"; create_tag=false
+          elif [ "$EVENT" = "workflow_dispatch" ]; then
+            sha=$(git rev-parse --verify "${INPUT_SHA}^{commit}") || fail "${INPUT_SHA} is not a commit"
+            create_tag=true
+          else
+            sha="$GITHUB_SHA"; create_tag=true
+          fi
+
+          git merge-base --is-ancestor "$sha" origin/main || fail "$sha is not on main"
+
+          # __version__ at that commit.
+          version=$(git show "$sha:src/implicit_geometry_kernel/__init__.py" | python3 -c "import ast, sys; tree = ast.parse(sys.stdin.read()); print(next(n.value.value for n in tree.body if isinstance(n, ast.Assign) and any(getattr(t, 'id', '') == '__version__' for t in n.targets)))")
+          tag="v${version}"
+          echo "commit ${sha}, __version__ ${version}"
+
+          if [ "$create_tag" = "true" ]; then
+            # Only a merged release PR is released. PRs are squash-merged on
+            # their title, so the commit subject is the release PR's title.
+            subject=$(git log -1 --format=%s "$sha")
+            if ! grep -Eq '^chore\(release\)!?: prepare v?[0-9]' <<< "$subject"; then
+              [ "$EVENT" = "workflow_dispatch" ] && fail "$sha is not a release PR merge (subject: ${subject})"
+              skip "not a release PR merge; nothing to release"
+            fi
+            named=$(echo "$subject" | sed -E 's/^chore\(release\)!?: prepare v?([0-9][0-9A-Za-z.]*).*/\1/')
+            test "$named" = "$version" || fail "release PR names ${named} but __version__ is ${version}"
+          else
+            test "$REF_NAME" = "$tag" || fail "tag ${REF_NAME} does not match __version__ ${version}"
+          fi
+
+          # Versions stay on 0.9.x: never v1 or higher, never 0.10.
+          major="${version%%.*}"
+          if [ "${major}" -ge 1 ] 2>/dev/null; then
+            fail "${tag}: releases stay on 0.9.x; this workflow never makes v1.0.0 or higher"
+          fi
+          grep -Eq '^v0\.9\.[0-9]+(rc[0-9]+)?$' <<< "$tag" || fail "${tag} is not a release tag (v0.9.N or v0.9.NrcM)"
+
+          # Idempotent: an existing tag is never moved or remade.
+          if [ "$create_tag" = "true" ] && git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            skip "${tag} already exists (at $(git rev-parse "${tag}^{commit}")); nothing to do"
+          fi
+
+          # The changelog at that commit has the release heading; a release
+          # (not a candidate) has its date set.
+          v="${version%%rc*}"
+          # Read from a file: grep -q on a pipe can stop early and, with pipefail,
+          # fail the pipeline on the writer's broken pipe.
+          git show "$sha:CHANGELOG.md" > "$RUNNER_TEMP/CHANGELOG.md"
+          grep -Eq "^## ${v//./\\.}( |$)" "$RUNNER_TEMP/CHANGELOG.md" || fail "CHANGELOG.md has no '## ${v}' heading"
+          if [ "$v" = "$version" ]; then
+            grep -Eq "^## ${v//./\\.} \([0-9]{4}-[0-9]{2}-[0-9]{2}\)" "$RUNNER_TEMP/CHANGELOG.md" || fail "CHANGELOG.md heading for ${v} has no date; the release PR sets '## ${v} (YYYY-MM-DD)'"
+          fi
+
+          {
+            echo "release=true"
+            echo "tag=${tag}"
+            echo "sha=${sha}"
+            echo "create_tag=${create_tag}"
+          } >> "$GITHUB_OUTPUT"
+          echo "::notice::releasing ${tag} from ${sha} (create tag: ${create_tag})"
+
   build:
+    needs: resolve
+    if: ${{ needs.resolve.outputs.release == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
+      # The release commit is checked out only after this job confirms it is on
+      # main (protected), so no code from outside main is built or run here.
+      - name: Check out the release commit
+        env:
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "${SHA}" origin/main || { echo "::error::${SHA} is not on main"; exit 1; }
+          git checkout --detach "${SHA}"
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      # Tag rules: docs/conventions/RELEASING.md
-      - name: Tag is a release name
-        run: |
-          echo "${GITHUB_REF_NAME}" | grep -Eq '^v0\.9\.[0-9]+(rc[0-9]+)?$' || { echo "::error::${GITHUB_REF_NAME} is not a release tag (v0.9.N or v0.9.NrcM)"; exit 1; }
-      - name: Tagged commit is on main
-        run: |
-          git fetch origin main
-          git merge-base --is-ancestor "${GITHUB_SHA}" origin/main || { echo "::error::${GITHUB_REF_NAME} points at a commit that is not on main"; exit 1; }
-      - name: Changelog has the release
-        run: |
-          v="${GITHUB_REF_NAME#v}"; v="${v%%rc*}"  # a release candidate uses its release's heading
-          grep -Eq "^## ${v//./\\.}( |$)" CHANGELOG.md || { echo "::error::CHANGELOG.md has no '## ${v}' heading"; exit 1; }
-      - name: Tag matches __version__
-        run: |
-          version=$(python -c "import ast, pathlib; tree = ast.parse(pathlib.Path('src/implicit_geometry_kernel/__init__.py').read_text()); print(next(n.value.value for n in tree.body if isinstance(n, ast.Assign) and any(getattr(t, 'id', '') == '__version__' for t in n.targets)))")
-          echo "tag ${GITHUB_REF_NAME}, __version__ ${version}"
-          test "${GITHUB_REF_NAME}" = "v${version}" || { echo "::error::tag ${GITHUB_REF_NAME} does not match __version__ ${version}"; exit 1; }
       - name: Build sdist and wheel
         run: |
           python -m pip install build
@@ -44,9 +158,37 @@ jobs:
           name: dist
           path: dist/
 
+  tag:
+    # Creates the annotated tag on the release commit, after the build passed.
+    needs: [resolve, build]
+    if: ${{ needs.resolve.outputs.create_tag == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Create and push the tag
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force origin
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "::error::${TAG} appeared while this run was building; not touching it"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${TAG}" -m "implicit-geometry-kernel ${TAG#v}" "${SHA}"
+          git push origin "refs/tags/${TAG}"
+
   publish:
-    needs: build
-    if: ${{ vars.PYPI_PUBLISH == 'true' }}
+    needs: [resolve, build, tag]
+    # Runs after the tag job, or when the tag was pushed by hand (tag skipped).
+    if: ${{ !cancelled() && needs.build.result == 'success' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && vars.PYPI_PUBLISH == 'true' }}
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -61,19 +203,34 @@ jobs:
   github-release:
     # The GitHub release for the tag: notes are the tag's CHANGELOG.md section,
     # with the sdist and wheel attached. A release candidate is a pre-release.
-    needs: build
+    needs: [resolve, build, tag]
+    if: ${{ !cancelled() && needs.build.result == 'success' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # The release commit is checked out only after this job confirms it is on
+      # main (protected), so no code from outside main is built or run here.
+      - name: Check out the release commit
+        env:
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "${SHA}" origin/main || { echo "::error::${SHA} is not on main"; exit 1; }
+          git checkout --detach "${SHA}"
       - uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist/
       - name: Notes from the changelog
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
         run: |
-          v="${GITHUB_REF_NAME#v}"; v="${v%%rc*}"
+          v="${TAG#v}"; v="${v%%rc*}"
           awk -v v="$v" '
             $0 ~ "^## " v "( |$)" {on=1; next}
             on && /^## / {exit}
@@ -82,7 +239,8 @@ jobs:
           test -s notes.md || echo "See CHANGELOG.md." > notes.md
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
+          tag_name: ${{ needs.resolve.outputs.tag }}
           body_path: notes.md
           files: dist/*
-          prerelease: ${{ contains(github.ref_name, 'rc') }}
-          make_latest: ${{ !contains(github.ref_name, 'rc') }}
+          prerelease: ${{ contains(needs.resolve.outputs.tag, 'rc') }}
+          make_latest: ${{ !contains(needs.resolve.outputs.tag, 'rc') }}

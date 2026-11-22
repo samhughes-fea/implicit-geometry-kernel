@@ -69,7 +69,7 @@ def emit_outer_skin_polygon(
     camber_xy = getattr(comp, "_camber_xy", None)
     CamberSide, _ChordBand, _FlapwiseStrip, apply_clip = _clip_algebra()
     return apply_clip(
-        CamberSide(surface=surface),  # type: ignore[arg-type]
+        CamberSide(surface=surface),
         annulus,
         camber_xy=camber_xy,
     )
@@ -155,7 +155,7 @@ def emit_spar_cap_polygon(
     CamberSide, ChordBand, FlapwiseStrip, apply_clip = _clip_algebra()
     camber_xy = getattr(comp, "_camber_xy", None)
     slab = apply_clip(
-        CamberSide(surface=surface),  # type: ignore[arg-type]
+        CamberSide(surface=surface),
         slab,
         camber_xy=camber_xy,
     )
@@ -193,7 +193,7 @@ def emit_spar_cap_polygon(
                 ny=float(fw_ny),
                 c_lo=fw_lo,
                 c_hi=fw_hi,
-                clip_mode=mode,  # type: ignore[arg-type]
+                clip_mode=mode,
             ),
             slab,
         )
@@ -256,7 +256,7 @@ def emit_sandwich_core_polygon(
                 ny=float(comp.flapwise_ny),
                 c_lo=comp.flapwise_c_lo,
                 c_hi=comp.flapwise_c_hi,
-                clip_mode=str(comp.flapwise_clip_mode or "strip"),  # type: ignore[arg-type]
+                clip_mode=str(comp.flapwise_clip_mode or "strip"),
             ),
             target,
         )

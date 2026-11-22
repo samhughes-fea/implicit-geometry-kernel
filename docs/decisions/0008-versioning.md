@@ -1,5 +1,8 @@
 # 0008. Releases stay on 0.9.x; tags are the maintainer's
 
+> Amended by [0013](0013-release-workflow-tags.md): tags are now made by the
+> release workflow when a release PR merges. The 0.9.x rule stands.
+
 **Decision.** Every release is `0.9.N`. There is no 0.10.0, and 1.0.0 is cut only
 when the maintainer decides the public API is settled. Only the maintainer creates
 tags and GitHub releases.

@@ -189,7 +189,7 @@ supersedes those done-when criteria.
 
 Consumers **pin a release tag** (`pip install` from git tag, or a tracked
 submodule used as the install path). Do not gitignore a kernel checkout the way
-unpublished blade IP is stored. Release tags are made by the maintainer only.
+unpublished blade IP is stored. Release tags are made by the `release` workflow when a release PR merges.
 There is no consumer checkout in this tree; the kernel does not grow G-TE / G-NET
 extract APIs. Gate a pinned consumer against this checkout with
 [`scripts/check_consumer.py`](../../../../scripts/check_consumer.py)

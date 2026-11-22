@@ -9,8 +9,8 @@ single scale parameter.
 Once ``EI_edge`` is selected in its own right that assumption is false, and it fails
 in a way that does not look like a modelling error: the implied correlation
 ``rho = Ixy / sqrt(Ixx * Iyy)`` grows without bound as ``EI_edge`` falls, so the
-B->S transform rejects the section as physically impossible. Measured on a real
-3.2 m blade, that put the softest "valid" edgewise stiffness at up to 2.6x the
+B->S transform rejects the section as physically impossible. On one blade we
+measured, that put the softest "valid" edgewise stiffness at up to 2.6x the
 flapwise one -- at a station whose *geometric* ``I_edge/I_flap`` is 4.4. The
 rejection reflected the closure, not the aerofoil, and it took the whole ULS floor
 solve down with a message about section geometry.

@@ -151,20 +151,32 @@ class ShellGraph:
         return ring
 
     def with_web_feet_on_loop(self) -> "ShellGraph":
-        """Shared nodes: web-midline ends lie on the skin-mid loop (not T-joint feet).
+        """Check the shared-node contract: every web end is a vertex of the loop.
 
-        2D-F already shares those vertices (gap 0). This is the flush contract
-        on the graph, not a solids recipe change.
+        Web ends are built on the skin loop (mid-surface, or the outer mould line
+        with ``wall_reference="oml"``), so this only confirms coincidence. A web
+        end farther than ``1e-9`` x the section scale from every loop vertex
+        raises ``ValueError``: topology indexes, it never relocates (SG-035).
+        The coincident web ends take the loop vertex's exact coordinates.
         """
 
         if not self.loop or not self.webs:
             return self
         loop_xy = np.vstack([np.asarray(r.points, float) for r in self.loop])
+        scale = max(1.0, float(np.max(np.abs(loop_xy[:, :2]))))
+        tol = 1e-9 * scale
         webs = []
         for web in self.webs:
             pts = np.array(web.points, float, copy=True)
             for i in (0, -1):
-                j = int(np.argmin(np.linalg.norm(loop_xy[:, :2] - pts[i, :2], axis=1)))
+                dist = np.linalg.norm(loop_xy[:, :2] - pts[i, :2], axis=1)
+                j = int(np.argmin(dist))
+                if float(dist[j]) > tol:
+                    raise ValueError(
+                        f"web {web.name!r} end at {tuple(np.round(pts[i, :2], 9))} is "
+                        f"{float(dist[j]):.3e} m from the nearest skin-loop vertex; web "
+                        "feet must be loop vertices (SG-035)"
+                    )
                 pts[i] = loop_xy[j]
             webs.append(replace(web, points=pts))
         return replace(self, webs=tuple(webs))
@@ -325,6 +337,7 @@ from implicit_geometry_kernel.blade.shell_graph_build import (  # noqa: E402
     _runs_of,
     _solid_runs,
     _stringer_branches,
+    outer_surface_loop,
 )
 
 
@@ -348,8 +361,11 @@ def shell_graph(cut: SectionCut, include_solids: bool = True) -> ShellGraph:
     ms = _mid_surface(cut)
     skins = tuple(s for s in ms.segments if s.kind == "skin")
     webs = tuple(s for s in ms.segments if s.kind == "web")
-    graph = ShellGraph(float(cut.z), _runs_of(ms, skins, cut, "skin"),
-                       _runs_of(ms, webs, cut, "web")).with_web_feet_on_loop()
+    loop = _runs_of(ms, skins, cut, "skin")
+    web_runs = _runs_of(ms, webs, cut, "web")
+    if getattr(cut, "_wall_reference", "mid") == "oml":
+        loop, web_runs = outer_surface_loop(loop, web_runs, float(cut.z))
+    graph = ShellGraph(float(cut.z), loop, web_runs).with_web_feet_on_loop()
     solids = _solid_runs(cut) if include_solids else ()
     return replace(graph, faces=_rib_faces(cut, graph), branches=_stringer_branches(cut), solids=solids)
 

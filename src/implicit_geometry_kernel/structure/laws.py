@@ -374,6 +374,93 @@ class PchipLaw(SpanLaw):
         return f"PchipLaw(z={self.z.tolist()}, values={self.values.tolist()}, name={self.name!r})"
 
 
+class ThicknessField(ABC):
+    """Thickness in metres over one partition's (t, z) patch (decision 0014).
+
+    ``t`` in [0, 1] is the normalised arc length across the partition (see
+    ``blade.skeleton.run_t``) and ``z`` the span position. Properties only: a
+    field changes the thickness carried by mesh elements and nodes, never the
+    node positions (decision 0016).
+    """
+
+    @abstractmethod
+    def __call__(self, t: ArrayLike, z: ArrayLike) -> np.ndarray:
+        """Broadcast ``t`` and ``z``; return thickness in metres."""
+
+    @classmethod
+    def from_span(cls, law: SpanLaw) -> ThicknessField:
+        """A field constant across the partition, following ``law(z)`` along the span."""
+        return _SpanField(law)
+
+
+class _SpanField(ThicknessField):
+    def __init__(self, law: SpanLaw) -> None:
+        self.law = law
+
+    def __call__(self, t: ArrayLike, z: ArrayLike) -> np.ndarray:
+        tt, zz = np.broadcast_arrays(np.asarray(t, dtype=np.float64), np.asarray(z, dtype=np.float64))
+        return np.reshape(self.law(zz.ravel()), zz.shape)
+
+
+class GridThickness(ThicknessField):
+    """Thickness on a (t, z) grid: linear across t, linear or PCHIP along z.
+
+    Parameters
+    ----------
+    t:
+        Increasing knots in [0, 1] across the partition.
+    z:
+        Increasing span knots.
+    values:
+        Thickness in metres, shape ``(len(t), len(z))``.
+    z_interp:
+        ``"linear"`` (default) or ``"pchip"``. PCHIP rows are checked with
+        :func:`check_pchip_sampling` like any PCHIP law.
+    """
+
+    def __init__(
+        self,
+        t: Sequence[float],
+        z: Sequence[float],
+        values: ArrayLike,
+        *,
+        z_interp: str = "linear",
+        sampling: str = "raise",
+    ) -> None:
+        tk = np.asarray(t, dtype=np.float64)
+        zk = np.asarray(z, dtype=np.float64)
+        vk = np.asarray(values, dtype=np.float64)
+        if tk.ndim != 1 or zk.ndim != 1 or vk.shape != (tk.size, zk.size):
+            raise ValueError("GridThickness needs values of shape (len(t), len(z))")
+        if np.any(np.diff(tk) <= 0.0) or np.any(np.diff(zk) <= 0.0):
+            raise ValueError("GridThickness knots must increase")
+        if np.any(vk < 0.0) or not np.all(np.isfinite(vk)):
+            raise ValueError("GridThickness values must be finite and >= 0")
+        if z_interp not in ("linear", "pchip"):
+            raise ValueError("z_interp must be 'linear' or 'pchip'")
+        self.t, self.z, self.values = tk, zk, vk
+        self.z_interp = z_interp
+        if z_interp == "pchip":
+            self._rows: tuple[SpanLaw, ...] = tuple(
+                PchipLaw(zk.tolist(), vk[i].tolist(), name=f"thickness at t={tk[i]:g}", sampling=sampling)
+                for i in range(tk.size)
+            )
+        else:
+            self._rows = tuple(TableLaw(zk.tolist(), vk[i].tolist()) for i in range(tk.size))
+
+    def __call__(self, t: ArrayLike, z: ArrayLike) -> np.ndarray:
+        tt, zz = np.broadcast_arrays(np.asarray(t, dtype=np.float64), np.asarray(z, dtype=np.float64))
+        rows = np.vstack([law(zz.ravel()) for law in self._rows])  # (n_t, n)
+        tc = np.clip(tt.ravel(), self.t[0], self.t[-1])
+        if self.t.size == 1:
+            return np.reshape(rows[0], tt.shape)
+        k = np.clip(np.searchsorted(self.t, tc, side="right") - 1, 0, self.t.size - 2)
+        w = (tc - self.t[k]) / (self.t[k + 1] - self.t[k])
+        cols = np.arange(tc.size)
+        out = (1.0 - w) * rows[k, cols] + w * rows[k + 1, cols]
+        return np.reshape(out, tt.shape)
+
+
 class ScaledLaw(SpanLaw):
     """``factor * law(z) + shift``."""
 
@@ -410,7 +497,7 @@ def as_law(value: float | SpanLaw) -> SpanLaw:
 
 
 __all__ = [
-    "ConstantLaw", "PchipLaw", "ProductLaw", "SamplingReport", "ScaledLaw", "SpanLaw", "SumLaw",
-    "TableLaw", "ThicknessLaw", "UnderSampledSpanLaw", "as_law", "check_pchip_sampling",
+    "ConstantLaw", "GridThickness", "PchipLaw", "ProductLaw", "SamplingReport", "ScaledLaw", "SpanLaw", "SumLaw",
+    "TableLaw", "ThicknessField", "ThicknessLaw", "UnderSampledSpanLaw", "as_law", "check_pchip_sampling",
     "pchip_slopes",
 ]

@@ -37,9 +37,9 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | 0.9.6 | SG-033 flapwise twist limit, SG-034 key-point LE/TE under twist, SG-018 re-check, SG-035 web feet built on the skin (no snaps), SG-037 OML offset, flat mesh shims removed | In progress |
 | Manual | Docs as U, R, V, D manuals (issue #90): PR 1 restructure, R0 notation and bibliography, R1 frames; then R2–R3, R4–R6, R7–R10, V, U, D. Plan: issue #90 | PR 1 merged (#91); next R2–R3. CF-004 (moment transform twist sign) fixed in #93 |
 | L1 | Decisions 0014 (smooth authored laws, PCHIP with a station-density check, t = f(s, z)), 0015 (partition mesher), 0016 (property-only sub-partitions), 0017 (analytic surface derivatives); issues #95, #96, #97, #98 | Done (#99) |
-| L2 | `PchipLaw` and `span_interp="pchip"` (opt-in), leave-one-out station-density check that refuses or flags under-sampled inputs (#95) | In review (#100) |
-| L3 | `ThicknessField(t, z)` per partition, per-node thickness on `ShellMesh` (#95) | To do |
-| L4 | Tagged `Skeleton` view of the shell graph, normalised t per partition (#96) | To do |
+| L2 | `PchipLaw` and `span_interp="pchip"` (opt-in), leave-one-out station-density check that refuses or flags under-sampled inputs (#95) | Done (#100) |
+| L3 | `ThicknessField(t, z)` per partition, per-node thickness on `ShellMesh` (#95) | In review (#101) |
+| L4 | Tagged `Skeleton` view of the shell graph, normalised t per partition (#96) | In review (#101) |
 | L5 | Generic `SubPartition` in `structure/`; caps re-expressed with goldens unchanged; then flanges, web foot, wedge (#97) | To do |
 | L4b | Smooth section curves (C2 spline through given points, or CST) with the station-density check; analytic patch derivatives x_t, x_z, x_tt, x_tz, x_zz, normal, principal curvatures, signed-distance gradient and Hessian (#98) | To do |
 | L6 | `shell_mesh(method="partition")` beside the ruled-strip mesher, compared in CI; terminations as transition bands; junction nodes by Newton on both stacked distance fields, with an on-both-surfaces invariant (#96, #98) | To do |

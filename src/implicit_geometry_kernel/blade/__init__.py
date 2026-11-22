@@ -34,6 +34,14 @@ from implicit_geometry_kernel.blade.shell_graph import (
     shell_strips_from_graph,
     topology_diff,
 )
+from implicit_geometry_kernel.blade.skeleton import (
+    SectionSkeleton,
+    SkeletonCurve,
+    SkeletonNode,
+    blade_skeleton,
+    run_t,
+    section_skeleton,
+)
 from implicit_geometry_kernel.blade.topology import (
     Anchor,
     Region,
@@ -88,6 +96,12 @@ __all__ = [
     "PartitionEdge",
     "Region",
     "SectionCut",
+    "SectionSkeleton",
+    "SkeletonCurve",
+    "SkeletonNode",
+    "blade_skeleton",
+    "run_t",
+    "section_skeleton",
     "SectionWall",
     "ShellGraph",
     "ShellRun",

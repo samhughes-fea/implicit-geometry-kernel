@@ -176,6 +176,7 @@
    "offset_regions": "(self) -> 'Tuple'",
    "partition_edges": "(self) -> 'Tuple[PartitionEdge, ...]'",
    "runs": "(self) -> 'Tuple[ShellRun, ...]'",
+   "skeleton": "(self)",
    "with_web_feet_on_loop": "(self) -> \"'ShellGraph'\""
   },
   "signature": "(z: 'float', loop: 'Tuple[ShellRun, ...]', webs: 'Tuple[ShellRun, ...]', faces: 'Tuple[ShellRun, ...]' = (), branches: 'Tuple[ShellRun, ...]' = (), solids: 'Tuple[ShellRun, ...]' = ()) -> None"
@@ -352,6 +353,11 @@
   "kind": "UnionType",
   "signature": ""
  },
+ "implicit_geometry_kernel.structure.GridThickness": {
+  "kind": "class",
+  "members": {},
+  "signature": "(t: 'Sequence[float]', z: 'Sequence[float]', values: 'ArrayLike', *, z_interp: 'str' = 'linear', sampling: 'str' = 'raise') -> 'None'"
+ },
  "implicit_geometry_kernel.structure.MemberBuilder": {
   "kind": "class",
   "members": {
@@ -432,6 +438,13 @@
   "kind": "class",
   "members": {},
   "signature": "(z: 'Sequence[float]', values: 'Sequence[float]') -> 'None'"
+ },
+ "implicit_geometry_kernel.structure.ThicknessField": {
+  "kind": "class",
+  "members": {
+   "from_span": ""
+  },
+  "signature": "()"
  },
  "implicit_geometry_kernel.structure.ThicknessLaw": {
   "kind": "class",

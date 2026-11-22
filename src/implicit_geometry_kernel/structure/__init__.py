@@ -27,6 +27,7 @@ from implicit_geometry_kernel.structure.contributions import (
 )
 from implicit_geometry_kernel.structure.laws import (
     ConstantLaw,
+    GridThickness,
     PchipLaw,
     ProductLaw,
     SamplingReport,
@@ -34,6 +35,7 @@ from implicit_geometry_kernel.structure.laws import (
     SpanLaw,
     SumLaw,
     TableLaw,
+    ThicknessField,
     ThicknessLaw,
     UnderSampledSpanLaw,
     as_law,
@@ -41,9 +43,9 @@ from implicit_geometry_kernel.structure.laws import (
 )
 
 __all__ = [
-    "BranchContribution", "BranchField", "BuildContext", "BuilderRegistry", "ConstantLaw",
+    "BranchContribution", "BranchField", "BuildContext", "BuilderRegistry", "ConstantLaw", "GridThickness",
     "Contribution", "MemberBuilder", "PchipLaw", "ProductLaw", "RegionContribution", "SamplingReport", "ScaledLaw", "SpanLaw",
-    "Structure", "StructureAssembler", "StructureError", "SumLaw", "TableLaw", "ThicknessLaw",
-    "TransverseContribution", "UnderSampledSpanLaw", "WallContribution", "WallThickness", "as_law",
+    "Structure", "StructureAssembler", "StructureError", "SumLaw", "TableLaw", "ThicknessField",
+    "ThicknessLaw", "TransverseContribution", "UnderSampledSpanLaw", "WallContribution", "WallThickness", "as_law",
     "assemble", "check_pchip_sampling",
 ]

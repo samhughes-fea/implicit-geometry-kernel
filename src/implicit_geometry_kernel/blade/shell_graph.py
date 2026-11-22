@@ -95,6 +95,15 @@ class ShellGraph:
     def runs(self) -> Tuple[ShellRun, ...]:
         return self.loop + self.webs + self.solids
 
+    def skeleton(self):
+        """Tagged skeleton nodes of this station (junctions, partition boundaries, free edges).
+
+        See :mod:`implicit_geometry_kernel.blade.skeleton` (decision 0015).
+        """
+        from implicit_geometry_kernel.blade.skeleton import section_skeleton
+
+        return section_skeleton(self)
+
     def partition_edges(self) -> Tuple[PartitionEdge, ...]:
         """``(z, name_a, name_b) → xy`` where two loop runs share an endpoint."""
         loop = self.loop

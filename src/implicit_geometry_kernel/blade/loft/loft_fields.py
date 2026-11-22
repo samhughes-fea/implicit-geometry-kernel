@@ -248,6 +248,12 @@ class LoftFieldsMixin:
             for wall in cut.walls:
                 if wall.thickness < 1e-6:
                     issues.append(f"station z={z:g} member {wall.label}: too thin")
+            try:
+                from implicit_geometry_kernel.blade.skeleton import phi_issues
+
+                issues.extend(phi_issues(cut.shell_graph().skeleton()))
+            except ValueError as exc:
+                issues.append(f"station z={z:g}: skeleton: {exc}")
         return issues
 
     def snap_oml(self: LoftGeometry, points, solver=None):

@@ -337,7 +337,6 @@ from implicit_geometry_kernel.blade.shell_graph_build import (  # noqa: E402
     _runs_of,
     _solid_runs,
     _stringer_branches,
-    outer_surface_loop,
 )
 
 
@@ -364,6 +363,9 @@ def shell_graph(cut: SectionCut, include_solids: bool = True) -> ShellGraph:
     loop = _runs_of(ms, skins, cut, "skin")
     web_runs = _runs_of(ms, webs, cut, "web")
     if getattr(cut, "_wall_reference", "mid") == "oml":
+        # Imported here: shell_graph_build imports this module (cycle).
+        from implicit_geometry_kernel.blade.shell_graph_build import outer_surface_loop
+
         loop, web_runs = outer_surface_loop(loop, web_runs, float(cut.z))
     graph = ShellGraph(float(cut.z), loop, web_runs).with_web_feet_on_loop()
     solids = _solid_runs(cut) if include_solids else ()

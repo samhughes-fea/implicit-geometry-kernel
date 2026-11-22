@@ -9,7 +9,7 @@
   version outside ``0.9.x`` (no ``v1.0.0``), does nothing if the tag exists, and
   can be run by hand on an untagged release-PR merge. Tags are no longer
   maintainer-only (decision 0013); ``RELEASING.md``, ``AGENTS.md`` and
-  ``CONTRIBUTING.md`` describe the new flow (#87).
+  ``CONTRIBUTING.md`` describe the new flow (#87, #88).
 - A flapwise web within 1 degree of the chord (a section twisted 90 degrees)
   raises ``InfeasibleSectionGeometry`` naming the web and pointing to a
   chord-normal layout, instead of a web-foot or open-ring error deep in the

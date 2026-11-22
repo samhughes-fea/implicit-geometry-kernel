@@ -19,30 +19,58 @@ and permanent. `release.yml` enforces the checkable ones.
 - **Permanent.** A pushed tag is never moved, re-pointed or deleted. A mistake is
   fixed by the next patch release (`0.9.N+1`), and the bad release is marked in
   the changelog.
-- **Maintainer only.** Only the maintainer creates tags and GitHub releases.
-  Contributors and agents prepare the release PR and stop there.
+- **Made by the workflow.** Merging the release PR is the release:
+  `release.yml` creates the tag and the GitHub release. Nobody pushes a tag by
+  hand unless the workflow cannot (see [Fallback](#fallback-a-tag-by-hand)).
+  Contributors and agents prepare the release PR; whoever merges it releases.
 
 ## Release steps
 
-1. A release PR (`chore(release): prepare 0.9.N`) bumps `__version__` to `0.9.N`, renames the changelog section
-   to `## 0.9.N (date)`, updates [MIGRATING](../MIGRATING.md) when anything is
-   deprecated or removed, updates `CITATION.cff` `version`, and records the release
-   in the plan doc status table.
-2. CI is green and the PR is merged into `main`.
-3. The maintainer tags the merge commit:
-   `git tag -a v0.9.N -m "implicit-geometry-kernel 0.9.N" && git push origin v0.9.N`,
-   or creates the release on GitHub's release page with a new `v0.9.N` tag and
-   **Target** `main`, only after the release PR is merged. Check that the target
-   commit is the release PR's merge (its `__version__` is `0.9.N`): the v0.9.4
-   tag was made on the commit before the release PR merged and so carries 0.9.3
-   code.
-4. `release.yml` checks the tag name, that the commit is on `main`, the
-   changelog heading and `__version__`, then builds the sdist and wheel
-   (and uploads to PyPI only when `PYPI_PUBLISH` is `true`).
-5. `release.yml` makes the GitHub release, with the changelog section as its
-   notes and the sdist and wheel attached. If the release page made the release
-   first, the job adds the files to it.
+1. A release PR, titled `chore(release): prepare 0.9.N` (the title is the
+   squash commit, and the workflow looks for it), bumps `__version__` to
+   `0.9.N`, renames the changelog section to `## 0.9.N (YYYY-MM-DD)`, updates
+   [MIGRATING](../MIGRATING.md) when anything is deprecated or removed, updates
+   `CITATION.cff` `version`, and records the release in the plan doc status
+   table.
+2. CI is green and the PR is squash-merged into `main`.
+3. On that push to `main`, `release.yml` sees a commit whose subject is
+   `chore(release): prepare 0.9.N` and checks, against that commit:
+   - the subject's version equals `__version__`;
+   - the version is `0.9.N` or `0.9.NrcM`; anything else, including `1.0.0` or
+     `0.10.0`, fails the run and makes no tag;
+   - the tag `v0.9.N` does not exist yet; if it does, the run stops and changes
+     nothing;
+   - `CHANGELOG.md` has a `## 0.9.N (YYYY-MM-DD)` heading (a release candidate
+     needs only `## 0.9.N`).
+4. It builds the sdist and wheel, then creates the annotated tag
+   (`implicit-geometry-kernel 0.9.N`) on the merge commit and pushes it with
+   `GITHUB_TOKEN`.
+5. It makes the GitHub release, with the changelog section as its notes and the
+   sdist and wheel attached (a release candidate is a pre-release), and uploads
+   to PyPI only when `PYPI_PUBLISH` is `true`.
 6. Consumers move their pins from the old tag to the new one in their own PRs.
+
+Any other push to `main` stops after the first check; nothing is tagged.
+
+A tag pushed with `GITHUB_TOKEN` does not start a new workflow run, so the same
+run does the build and release; it does not wait for a tag push.
+
+### A release PR merged without a tag
+
+If a release PR merged before this workflow existed, or its run failed, run the
+workflow by hand: **Actions > release > Run workflow**, with the merge commit
+SHA. The run refuses a commit that is not on `main` or whose subject is not a
+release PR, and does nothing if the tag already exists.
+
+### Fallback: a tag by hand
+
+Only when the workflow cannot run (for example, Actions is down). Tag the
+release PR's merge commit, never a later commit:
+`git tag -a v0.9.N -m "implicit-geometry-kernel 0.9.N" <merge-sha> && git push origin v0.9.N`.
+The tag push runs `release.yml`, which checks the same rules and makes the
+release. Check that the target commit's `__version__` is `0.9.N`: the v0.9.4
+tag was made by hand on the commit before the release PR merged and so carries
+0.9.3 code.
 
 The rule for `main` between releases is: `__version__` is the next release
 number, and the changelog's top section collects the changes for it.
@@ -56,7 +84,11 @@ number, and the changelog's top section collects the changes for it.
 
 ## Repository settings (maintainer)
 
-A tag ruleset on `v*` (Settings > Rules > Rulesets > New tag ruleset) with
-**Restrict creations**, **Restrict updates** and **Restrict deletions**, and the
-maintainer as the only bypass, makes the "maintainer only" and "permanent" rules
-hold on GitHub as well as on paper.
+- **Workflow permissions.** `release.yml` asks for `contents: write` only in the
+  jobs that push the tag and make the release; the repository's default token
+  can stay read-only.
+- **Tag ruleset.** A tag ruleset on `v*` (Settings > Rules > Rulesets > New tag
+  ruleset) with **Restrict updates** and **Restrict deletions** makes the
+  "permanent" rule hold on GitHub as well as on paper. If it also has
+  **Restrict creations**, add **GitHub Actions** to its bypass list, or the
+  workflow cannot create the tag.

@@ -101,7 +101,7 @@ from implicit_geometry_kernel.catalogue import (
     resolve_system_type,
 )
 
-__version__ = "0.9.5"
+__version__ = "0.9.6"
 
 # Topology helpers demoted from the barrel in 0.9.x (K5). Still importable from
 # ``blade`` / ``blade.topology``; root import warns once per name this process.

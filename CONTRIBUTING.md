@@ -46,7 +46,8 @@ sphinx-build -W -b html docs docs/_build/html   # with the [docs] extra
   `DeprecationWarning` first.
 - **Versions and tags.** Releases stay on `0.9.x`. Follow
   [Tags and releases](docs/conventions/RELEASING.md): the release PR bumps
-  `__version__` and the changelog heading; the maintainer makes the tag.
+  `__version__` and the changelog heading; merging it makes the tag and the
+  GitHub release (`release.yml`).
 - **Plan doc.** Update the status in `docs/internal/REFACTOR_PLAN.md` in the same
   PR as the work.
 - **Generic code.** `src/` and `tests/` do not name downstream projects or special

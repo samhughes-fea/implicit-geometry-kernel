@@ -228,6 +228,28 @@ def _anchor_webs(airfoil_sdf, skin_thickness, xs_requested, *, explicit_endpoint
     return [a[0] for a in resolved], [(a[1], a[2]) for a in resolved]
 
 
+#: A flapwise web stays plumb in the blade frame, so a twist of 90 degrees lays it
+#: along the chord. Within this angle of that, the web no longer crosses the
+#: section from one skin to the other (SG-033).
+FLAPWISE_WEB_MIN_ANGLE_TO_CHORD_DEG = 1.0
+
+
+def _check_flapwise_webs_cross_chord(aligns, twist_rad: float, xs, web_indices) -> None:
+    """Raise when a flapwise web would run (nearly) along the chord."""
+    if abs(np.cos(twist_rad)) >= np.sin(np.radians(FLAPWISE_WEB_MIN_ANGLE_TO_CHORD_DEG)):
+        return
+    for i, align in enumerate(aligns):
+        if align == "flapwise":
+            raise InfeasibleSectionGeometry(
+                f"flapwise web {i} lies {np.degrees(np.arcsin(abs(np.cos(twist_rad)))):.2f} deg "
+                f"from the chord at this twist (under {FLAPWISE_WEB_MIN_ANGLE_TO_CHORD_DEG:g} deg), "
+                "so it cannot cross from one skin to the other; use a chord-normal "
+                "layout (CN) at this twist (SG-033)",
+                web_index=int(web_indices[i]) if i < len(web_indices) else i,
+                web_x=float(xs[i]),
+            )
+
+
 def plan_section(
     airfoil_sdf, web_x_positions, web_thickness, web_alignment, cap_height, skin_thickness,
     twist_angle, web_y_coords, trailing_edge_insert_x_m, leading_edge_insert_x_m, le_radius,
@@ -294,6 +316,7 @@ def plan_section(
         )
     web_t = [clamp_web_thickness_m(t) for t in _per_web(web_thickness, n, "web_thickness", float)]
     aligns = _per_web(web_alignment, n, "web_alignment", str)
+    _check_flapwise_webs_cross_chord(aligns, float(twist_angle), xs, idx_requested)
     if isinstance(cap_height, (int, float)):
         cap_u = cap_l = float(cap_height)
     else:

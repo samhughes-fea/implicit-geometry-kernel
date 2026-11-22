@@ -64,7 +64,7 @@ def windio_stack_layup(structure):
     shear web. Every other layer sums into the skin runs.
     """
     skin = []
-    caps = {"suction": [], "pressure": []}
+    caps: dict[str, list] = {"suction": [], "pressure": []}
     webs: dict[str, list] = {}
     web_any: list = []
     for layer in structure.get("layers") or ():

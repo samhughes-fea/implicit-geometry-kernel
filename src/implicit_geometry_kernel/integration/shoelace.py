@@ -7,7 +7,7 @@ using the shoelace formula (Green's theorem). S frame (pivot-referenced)
 and S' frame (centroid-referenced). Supports Polygon with holes and MultiPolygon.
 """
 
-from typing import Tuple
+from typing import Any, Tuple
 import logging
 import numpy as np
 
@@ -64,7 +64,7 @@ def ring_sums_S(coords_S: np.ndarray) -> Tuple[float, ...]:
     return result
 
 
-def _orient_ccw(poly):
+def _orient_ccw(poly: Any) -> Any:
     from implicit_geometry_kernel.geos.geom import Polygon as KernelPolygon
 
     ext = np.asarray(poly.exterior.coords, float)
@@ -78,7 +78,7 @@ def _orient_ccw(poly):
     return KernelPolygon(ext[::-1], holes)
 
 
-def validate_and_orient_polygon(poly, allow_empty: bool = False):
+def validate_and_orient_polygon(poly: Any, allow_empty: bool = False) -> Any:
     """Validate and CCW-orient. Repair via GEOS buffer(0) when needed."""
     from implicit_geometry_kernel.geos import lib as geos_lib
     from implicit_geometry_kernel.geos.wkb import dumps, loads
@@ -101,7 +101,7 @@ def validate_and_orient_polygon(poly, allow_empty: bool = False):
 
 
 def section_properties_S(
-    poly_S,
+    poly_S: Any,
 ) -> Tuple[float, Tuple[float, float], float, float, float]:
     """
     Compute section properties in S frame (pivot-referenced).
@@ -138,9 +138,12 @@ def section_properties_S(
         Cx_total = sum(p['A'] * p['Cx'] for p in polygon_props) / A_total
         Cy_total = sum(p['A'] * p['Cy'] for p in polygon_props) / A_total
 
-        Ixx_total = sum(p['Ixx'] for p in polygon_props) - sum(p['A'] * (p['Cy'])**2 for p in polygon_props) + A_total * (Cy_total)**2
-        Iyy_total = sum(p['Iyy'] for p in polygon_props) - sum(p['A'] * (p['Cx'])**2 for p in polygon_props) + A_total * (Cx_total)**2
-        Ixy_total = sum(p['Ixy'] for p in polygon_props) - sum(p['A'] * p['Cx'] * p['Cy'] for p in polygon_props) + A_total * Cx_total * Cy_total
+        # Each part's moments are about the S-frame origin already, so they add
+        # (SG-036: shifting them through the combined centroid dropped each
+        # part's offset from it).
+        Ixx_total = sum(p['Ixx'] for p in polygon_props)
+        Iyy_total = sum(p['Iyy'] for p in polygon_props)
+        Ixy_total = sum(p['Ixy'] for p in polygon_props)
 
         return (float(A_total), (float(Cx_total), float(Cy_total)), float(Ixx_total), float(Iyy_total), float(Ixy_total))
 
@@ -206,7 +209,7 @@ def section_properties_S(
 
 
 def section_properties_Sprime(
-    poly_S,
+    poly_S: Any,
 ) -> Tuple[float, Tuple[float, float], float, float, float]:
     """Section properties in S' (centroid frame) via the parallel-axis theorem."""
     A_S, (Cx_S, Cy_S), Ixx_S, Iyy_S, Ixy_S = section_properties_S(poly_S)

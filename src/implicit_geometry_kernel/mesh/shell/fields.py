@@ -212,9 +212,14 @@ def assign_sub_partitions(mesh, geo, subs: Sequence[Any], thickness: np.ndarray 
         :func:`~implicit_geometry_kernel.structure.check_sub_partitions`) or a
         band thickness is negative.
     """
-    from implicit_geometry_kernel.structure.subpartition import check_sub_partitions
-
-    problems = check_sub_partitions(list(subs))
+    subs = list(subs)
+    problems = []
+    seen: set = set()
+    for i, a in enumerate(subs):
+        if a.name in seen:
+            problems.append(f"duplicate sub-partition name {a.name!r}")
+        seen.add(a.name)
+        problems += [f"sub-partitions {a.name!r} and {b.name!r} overlap on {a.host!r}" for b in subs[i + 1:] if a.overlaps(b)]
     if problems:
         raise ValueError("; ".join(problems))
     n = len(mesh.elements)

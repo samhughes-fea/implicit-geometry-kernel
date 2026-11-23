@@ -100,6 +100,16 @@ class SubPartition:
             inside &= (zz >= self.z_range[0]) & (zz <= self.z_range[1])
         return inside
 
+    def overlaps(self, other: "SubPartition") -> bool:
+        """True when both bands lie on one host and share more than an edge in t and in z."""
+        if self.host != other.host:
+            return False
+        if min(self.t_range[1], other.t_range[1]) - max(self.t_range[0], other.t_range[0]) <= 0.0:
+            return False
+        za = self.z_range or (-np.inf, np.inf)
+        zb = other.z_range or (-np.inf, np.inf)
+        return min(za[1], zb[1]) - max(za[0], zb[0]) > 0.0
+
     def thickness_at(self, t: ArrayLike, z: ArrayLike) -> np.ndarray:
         """Band thickness in metres at ``(t, z)`` (broadcast)."""
         tt, zz = np.broadcast_arrays(np.asarray(t, float), np.asarray(z, float))
@@ -128,16 +138,8 @@ def check_sub_partitions(subs: Sequence[SubPartition]) -> list[str]:
         seen.add(s.name)
     for i, a in enumerate(subs):
         for b in subs[i + 1:]:
-            if a.host != b.host:
-                continue
-            t_overlap = min(a.t_range[1], b.t_range[1]) - max(a.t_range[0], b.t_range[0])
-            if t_overlap <= 0.0:
-                continue
-            za = a.z_range or (-np.inf, np.inf)
-            zb = b.z_range or (-np.inf, np.inf)
-            if min(za[1], zb[1]) - max(za[0], zb[0]) <= 0.0:
-                continue
-            out.append(f"sub-partitions {a.name!r} and {b.name!r} overlap on {a.host!r}")
+            if a.overlaps(b):
+                out.append(f"sub-partitions {a.name!r} and {b.name!r} overlap on {a.host!r}")
     return out
 
 

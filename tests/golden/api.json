@@ -438,6 +438,7 @@
   "kind": "class",
   "members": {
    "contains": "(self, t: 'ArrayLike', z: 'ArrayLike') -> 'np.ndarray'",
+   "overlaps": "(self, other: \"'SubPartition'\") -> 'bool'",
    "thickness_at": "(self, t: 'ArrayLike', z: 'ArrayLike') -> 'np.ndarray'"
   },
   "signature": "(name: 'str', host: 'str', t_range: 'Tuple[float, float]', thickness: 'float | SpanLaw | ThicknessField', z_range: 'Tuple[float, float] | None' = None, eccentricity: 'Tuple[float, float]' = (0.0, 0.0), kind: 'str' = 'sub_partition', layers: 'Tuple[str, ...]' = <factory>) -> None"

@@ -31,7 +31,7 @@ import numpy as np
 
 from implicit_geometry_kernel.blade.skeleton import run_point_at
 from implicit_geometry_kernel.mesh.shell.orient import _oriented
-from implicit_geometry_kernel.mesh.shell.shell_mesh import ShellMesh
+from implicit_geometry_kernel.mesh.shell.types import ShellMesh
 from implicit_geometry_kernel.mesh.shell.stations import mesh_stations
 
 _T_TOL = 1e-9

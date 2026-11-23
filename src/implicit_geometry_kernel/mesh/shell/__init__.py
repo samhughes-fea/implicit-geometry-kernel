@@ -10,7 +10,11 @@ from implicit_geometry_kernel.mesh.shell.shell_mesh import (
     shell_mesh,
 )
 
+from implicit_geometry_kernel.mesh.shell.partition_mesh import PartitionMeshError, partition_mesh
+
 __all__ = [
+    "PartitionMeshError",
+    "partition_mesh",
     "TIP_H_OVER_C",
     "MeshRecipe",
     "ShellMesh",

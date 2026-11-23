@@ -16,7 +16,7 @@ A call with no size uses :data:`TIP_H_OVER_C` of the local chord. An explicit
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field, replace
+from dataclasses import replace
 from typing import Any, Mapping, Sequence
 
 import numpy as np
@@ -28,10 +28,10 @@ from implicit_geometry_kernel.blade.topology import (
 from implicit_geometry_kernel.blade.topology.region_counts import region_counts
 from implicit_geometry_kernel.mesh.fill import triangulate_ring
 from implicit_geometry_kernel.mesh.quality import (
-    QUALITY_DTYPE, MeshRunQuality, _measure, quality_rollup, volume_ratio_from_edges,
+    MeshRunQuality, _measure, quality_rollup, volume_ratio_from_edges,
 )
 from implicit_geometry_kernel.mesh.tables import (
-    CORNER_DTYPE, EDGE_DTYPE, StationDecision, StripDecision, assemble,
+    StationDecision, StripDecision, assemble,
 )
 from implicit_geometry_kernel.profiling import report_stage, stage
 from implicit_geometry_kernel.mesh.shell.stations import (
@@ -42,6 +42,7 @@ from implicit_geometry_kernel.mesh.shell.stations import (
     _unique_z,
     mesh_stations,
 )
+from implicit_geometry_kernel.mesh.shell.types import MeshRecipe, ShellMesh
 from implicit_geometry_kernel.mesh.shell.orient import (
     _nearest_runs,
     _oriented,
@@ -137,118 +138,12 @@ from implicit_geometry_kernel.mesh.shell.section_blend import (  # noqa: F401 (r
 SURFACES = ("skin", "web", "rib", "tip_closure")
 
 
-@dataclass(frozen=True)
-class MeshRecipe:
-    """The controls that built a shell mesh, and the edge they resolved.
-
-    ``tip_h_over_c`` is the fraction in force (the default or a caller's
-    ``h_over_c``). It is ``None`` when the mesh was sized by ``h`` alone or by
-    a station count. ``edge`` is that target length at each station, and empty
-    in count mode. ``h_over_c`` records only a fraction the caller passed.
-    """
-
-    tip_h_over_c: float | None
-    h: float | None
-    h_over_c: float | None
-    n_span: int | None
-    region_h: tuple[tuple[str, float], ...]
-    refine: tuple[tuple[float, float, float], ...]
-    edge: tuple[float, ...]
-
-
-@dataclass(frozen=True)
-class ShellMesh:
-    """Nodes and elements of the blade shell, with per-element shell data.
-
-    ``elements[i]`` lists node indices (3 for a rib or tip triangle, 4 for a quad)
-    in loop order. The per-element tuples share that index. Normals (right-hand
-    rule on that order) point out of the section on the skin, towards the
-    trailing edge on webs, and along +z on ribs and the tip closure; a cap
-    stack's mid-plane lies ``eccentricity`` inside the skin, along -normal.
-    """
-
-    nodes: np.ndarray
-    elements: tuple[tuple[int, ...], ...]
-    name: tuple[str, ...]
-    """Mesh region: a skin region (``cap_su``, ``bay_pr_0``, …), a web, a rib cell or the tip closure."""
-    surface: tuple[str, ...]
-    """``skin``, ``web``, ``rib`` or ``tip_closure``."""
-    partition: tuple[str, ...]
-    """The cut's partition the element lies on (``spar_cap_suction_surface``, a rib name, …)."""
-    thickness: np.ndarray
-    eccentricity: np.ndarray
-    """Cap eccentricity of the partition (``ShellRun.eccentricity_m``, m): half the cap stack; 0 off the caps."""
-    layers: tuple[tuple[str, ...], ...]
-    layer_thicknesses: tuple[tuple[float, ...], ...]
-    stations: tuple[float, ...] = field(default=())
-    quality: tuple[MeshRunQuality, ...] = field(default=())
-    """Per-partition rollup of :attr:`element_quality`."""
-    recipe: MeshRecipe | None = None
-    """The size controls and the resolved edge at each station."""
-    element_quality: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=QUALITY_DTYPE))
-    """One quality row per element: aspect, skew, angles, Jacobian, area, shell volume, volume ratio, warp."""
-    n_source: int = 0
-    """Skin and web nodes occupy ``nodes[:n_source]``. Interior rib and tip nodes follow."""
-    bay: tuple[int, ...] = ()
-    """Span bay index of each element. Ribs and the tip use the station index."""
-    z0: tuple[float, ...] = ()
-    z1: tuple[float, ...] = ()
-    constructor: tuple[str, ...] = ()
-    """How the element was built: ``ruled``, ``midspan_split``, ``step_patch``, ``transition``, ``fan``, ``interior``."""
-    n0: tuple[int, ...] = ()
-    """Node count of the region on the root side of the bay. Zero on a rib or the tip."""
-    n1: tuple[int, ...] = ()
-    flipped: tuple[int, ...] = ()
-    """1 when orientation reversed the element's loop."""
-    node_origin: tuple[str, ...] = ()
-    """Per node: ``station``, ``span_mid``, ``centroid``, ``station_as_midpoint``, or ``interior``."""
-    section_distance: np.ndarray = field(default_factory=lambda: np.empty(0))
-    """Distance of each node from the section at its span. Station samples are zero."""
-    valence: tuple[int, ...] = ()
-    edges: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=EDGE_DTYPE))
-    """One :data:`~implicit_geometry_kernel.mesh.tables.EDGE_DTYPE` row per undirected pair."""
-    loops: tuple = ()
-    counts: tuple = ()
-    station_log: tuple = ()
-    strips: tuple = ()
-    near_miss: tuple = ()
-    junctions: tuple = ()
-    valence_defects: tuple[int, ...] = ()
-    edge_sagitta: dict = field(default_factory=dict)
-    corners: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=CORNER_DTYPE))
-    """One :data:`~implicit_geometry_kernel.mesh.tables.CORNER_DTYPE` row per element corner. Not recomputed on export."""
-    diagonal_min: tuple[float, ...] = ()
-    """Shortest distance between non-adjacent nodes of each element, metres. A collapsed fan is a tiny diagonal."""
-
-    @property
-    def quads(self) -> tuple[int, ...]:
-        return tuple(i for i, e in enumerate(self.elements) if len(e) == 4)
-
-    @property
-    def triangles(self) -> tuple[int, ...]:
-        return tuple(i for i, e in enumerate(self.elements) if len(e) == 3)
-
-    @property
-    def polygons(self) -> tuple[int, ...]:
-        return tuple(i for i, e in enumerate(self.elements) if len(e) > 4)
-
-    def edge_use(self) -> dict[tuple[int, int], int]:
-        """How many elements use each edge (2 on a smooth sheet, more at a junction)."""
-        out: dict[tuple[int, int], int] = {}
-        for e in self.elements:
-            for a, b in zip(e, e[1:] + e[:1]):
-                if a == b:
-                    continue
-                key = (a, b) if a < b else (b, a)
-                out[key] = out.get(key, 0) + 1
-        return out
-
-
 def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None,
                h_over_c: float | None = None, n_chord: int = 8,
                zs: Sequence[float] | None = None, polygon_size: float | None = None,
                region_h: Mapping[str, float] | None = None,
-               refine: Sequence[tuple[float, float, float]] = ()) -> ShellMesh:
+               refine: Sequence[tuple[float, float, float]] = (), method: str = "ruled",
+               sub_partitions: Sequence[Any] = ()) -> ShellMesh:
     """The blade's conforming shell mesh.
 
     Stations are ``zs`` or :func:`mesh_stations`. With no size and no station
@@ -267,7 +162,23 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None,
 
     The skin and web quads are built first. Every interior rib and the tip
     closure indexes those nodes. The triangle fill adds interior nodes only.
+
+    ``method="partition"`` uses the (t, z) partition mesher instead
+    (:func:`~implicit_geometry_kernel.mesh.shell.partition_mesh.partition_mesh`,
+    decision 0015): it needs ``h``, takes ``zs`` and ``sub_partitions``, and in
+    this first step builds skin and webs only, for blades whose shell topology
+    is the same at every station. ``"ruled"`` (the default) is this mesher.
     """
+    if method == "partition":
+        if h is None:
+            raise ValueError('method="partition" needs h')
+        from implicit_geometry_kernel.mesh.shell.partition_mesh import partition_mesh
+
+        return partition_mesh(geo, h=float(h), zs=zs, sub_partitions=sub_partitions)
+    if method != "ruled":
+        raise ValueError(f'method must be "ruled" or "partition", got {method!r}')
+    if sub_partitions:
+        raise ValueError('sub_partitions need method="partition"; for the ruled mesh use assign_sub_partitions')
     with stage("implicit_geometry_kernel", "shell_mesh") as rec:
         mesh = _shell_mesh_body(
             geo, n_span, h=h, h_over_c=h_over_c, n_chord=n_chord, zs=zs,

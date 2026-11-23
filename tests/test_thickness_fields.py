@@ -93,3 +93,16 @@ def test_node_thickness_does_not_average_across_partitions(blade_and_mesh):
     assert on_cap.sum() > 0
     assert np.allclose(cap_side[on_cap], cap_value)
     assert np.all(np.isnan(cap_side[~on_cap]))
+
+
+def test_element_curvature_tags_every_element(blade_and_mesh):
+    from implicit_geometry_kernel.mesh.shell.fields import element_curvature
+
+    geo, mesh = blade_and_mesh
+    curv = element_curvature(mesh, geo)
+    assert "UNSET" not in set(curv["kind"])
+    flat_planes = [i for i, s in enumerate(mesh.surface) if s in ("rib", "tip_closure")]
+    assert all(curv["kind"][i] == "FLAT" and curv["k1"][i] == 0.0 for i in flat_planes)
+    skin = [i for i, s in enumerate(mesh.surface) if s == "skin"]
+    assert np.all(curv["k1"][skin] <= curv["k2"][skin])
+    assert any(curv["kind"][i] != "FLAT" for i in skin)

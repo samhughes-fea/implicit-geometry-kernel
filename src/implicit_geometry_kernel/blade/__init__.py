@@ -73,6 +73,7 @@ from implicit_geometry_kernel.blade.windio import (
     web_positions_from_windio_structure,
     web_span_windows_from_windio_structure,
 )
+from implicit_geometry_kernel.blade.patch import KINDS, PartitionPatch, SurfacePoint
 from implicit_geometry_kernel.blade.stations import (
     PlyDrop,
     ShearWeb,
@@ -94,6 +95,9 @@ __all__ = [
     "MidSegment",
     "MidSurface",
     "PartitionEdge",
+    "PartitionPatch",
+    "SurfacePoint",
+    "KINDS",
     "Region",
     "SectionCut",
     "SectionSkeleton",

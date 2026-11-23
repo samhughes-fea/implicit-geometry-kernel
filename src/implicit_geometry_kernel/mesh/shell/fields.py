@@ -10,7 +10,8 @@ give each node a thickness. Properties only: node positions never change
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from dataclasses import dataclass
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 
@@ -158,4 +159,108 @@ def element_curvature(mesh, geo, *, n_t: int = 33, curvature_tol: float = 1e-6) 
     return {"k1": k1, "k2": k2, "theta": theta, "kind": kind}
 
 
-__all__ = ["element_curvature", "element_tz", "node_thickness", "sample_thickness"]
+@dataclass(frozen=True)
+class SubPartitionAssignment:
+    """Per-element properties after applying sub-partitions (decision 0016).
+
+    Attributes
+    ----------
+    band:
+        Sub-partition name of each element, ``""`` where none applies.
+    thickness:
+        Element thickness, metres: the band's where one applies, else the input.
+    eccentricity:
+        ``(n_elements, 2)`` offset ``(normal, tangential)`` in metres: the band's
+        where one applies, else ``(ShellMesh.eccentricity, 0)``.
+    straddles:
+        True where an element's nodes lie on both sides of a band edge, so the
+        step falls inside the element rather than on a mesh line. The ruled-strip
+        mesher does not place lines at band edges; the partition mesher (plan
+        row L6) will.
+    """
+
+    band: np.ndarray
+    thickness: np.ndarray
+    eccentricity: np.ndarray
+    straddles: np.ndarray
+
+
+def _node_t_on(geo, cache: dict, part: str, xyz: np.ndarray) -> float:
+    key = round(float(xyz[2]), 9)
+    graph = cache.get(key)
+    if graph is None:
+        graph = geo.section_at(float(xyz[2])).shell_graph()
+        cache[key] = graph
+    for r in graph.loop + graph.webs:
+        if r.name == part:
+            return _project_t(np.asarray(r.points, float), xyz[:2])
+    return float("nan")
+
+
+def assign_sub_partitions(mesh, geo, subs: Sequence[Any], thickness: np.ndarray | None = None) -> SubPartitionAssignment:
+    """Apply :class:`~implicit_geometry_kernel.structure.SubPartition` bands to a shell mesh.
+
+    An element belongs to a band when its centroid's (t, z) on the host
+    partition lies in the band. ``thickness`` defaults to
+    :attr:`ShellMesh.thickness` (for example the output of
+    :func:`sample_thickness`). Node positions never change.
+
+    Raises
+    ------
+    ValueError
+        If the bands are inconsistent (see
+        :func:`~implicit_geometry_kernel.structure.check_sub_partitions`) or a
+        band thickness is negative.
+    """
+    from implicit_geometry_kernel.structure.subpartition import check_sub_partitions
+
+    problems = check_sub_partitions(list(subs))
+    if problems:
+        raise ValueError("; ".join(problems))
+    n = len(mesh.elements)
+    th = np.array(mesh.thickness if thickness is None else thickness, float, copy=True)
+    ecc = np.zeros((n, 2))
+    ecc[:, 0] = np.asarray(mesh.eccentricity, float)
+    band = np.array([""] * n, dtype=object)
+    straddles = np.zeros(n, bool)
+    if not subs:
+        return SubPartitionAssignment(band, th, ecc, straddles)
+    by_host: dict = {}
+    for s in subs:
+        by_host.setdefault(s.host, []).append(s)
+    t, z = element_tz(mesh, geo)
+    nodes = np.asarray(mesh.nodes, float)
+    cache: dict = {}
+    for i, part in enumerate(mesh.partition):
+        bands = by_host.get(part)
+        if not bands or not np.isfinite(t[i]):
+            continue
+        for s in bands:
+            if bool(s.contains(t[i], z[i])):
+                band[i] = s.name
+                th[i] = float(s.thickness_at(t[i], z[i]))
+                ecc[i] = s.eccentricity
+                break
+        conn = list(mesh.elements[i])
+        nt = np.array([_node_t_on(geo, cache, part, nodes[j]) for j in conn])
+        nz = nodes[conn, 2]
+        ok = np.isfinite(nt)
+        if ok.sum() >= 2:
+            for s in bands:
+                inside = s.contains(nt[ok], nz[ok])
+                if inside.any() and not inside.all():
+                    straddles[i] = True
+                    break
+    if np.any(th < 0.0):
+        raise ValueError("a sub-partition returned a negative thickness")
+    return SubPartitionAssignment(band, th, ecc, straddles)
+
+
+__all__ = [
+    "SubPartitionAssignment",
+    "assign_sub_partitions",
+    "element_curvature",
+    "element_tz",
+    "node_thickness",
+    "sample_thickness",
+]

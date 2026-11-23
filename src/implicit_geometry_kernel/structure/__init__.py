@@ -41,11 +41,12 @@ from implicit_geometry_kernel.structure.laws import (
     as_law,
     check_pchip_sampling,
 )
+from implicit_geometry_kernel.structure.subpartition import SUB_PARTITION_KINDS, SubPartition, check_sub_partitions
 
 __all__ = [
     "BranchContribution", "BranchField", "BuildContext", "BuilderRegistry", "ConstantLaw", "GridThickness",
     "Contribution", "MemberBuilder", "PchipLaw", "ProductLaw", "RegionContribution", "SamplingReport", "ScaledLaw", "SpanLaw",
     "Structure", "StructureAssembler", "StructureError", "SumLaw", "TableLaw", "ThicknessField",
     "ThicknessLaw", "TransverseContribution", "UnderSampledSpanLaw", "WallContribution", "WallThickness", "as_law",
-    "assemble", "check_pchip_sampling",
+    "assemble", "check_pchip_sampling", "SUB_PARTITION_KINDS", "SubPartition", "check_sub_partitions",
 ]

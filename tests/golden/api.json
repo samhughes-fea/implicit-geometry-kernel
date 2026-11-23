@@ -170,6 +170,7 @@
  "implicit_geometry_kernel.ShellGraph": {
   "kind": "class",
   "members": {
+   "cap_sub_partitions": "(self)",
    "closed_loop_chain": "(self, *, rel_tol: 'float' = 1e-06)",
    "edge": "(self, name_a: 'str', name_b: 'str') -> 'PartitionEdge | None'",
    "loop_polygon": "(self) -> 'np.ndarray'",
@@ -384,6 +385,10 @@
   },
   "signature": "(spec: 'FeatureSpec', region: 'SDFNode', tag_region: 'SDFNode | None' = None, source: 'Any' = None) -> None"
  },
+ "implicit_geometry_kernel.structure.SUB_PARTITION_KINDS": {
+  "kind": "tuple",
+  "signature": ""
+ },
  "implicit_geometry_kernel.structure.SamplingReport": {
   "kind": "class",
   "members": {
@@ -428,6 +433,15 @@
   "kind": "class",
   "members": {},
   "signature": ""
+ },
+ "implicit_geometry_kernel.structure.SubPartition": {
+  "kind": "class",
+  "members": {
+   "contains": "(self, t: 'ArrayLike', z: 'ArrayLike') -> 'np.ndarray'",
+   "overlaps": "(self, other: \"'SubPartition'\") -> 'bool'",
+   "thickness_at": "(self, t: 'ArrayLike', z: 'ArrayLike') -> 'np.ndarray'"
+  },
+  "signature": "(name: 'str', host: 'str', t_range: 'Tuple[float, float]', thickness: 'float | SpanLaw | ThicknessField', z_range: 'Tuple[float, float] | None' = None, eccentricity: 'Tuple[float, float]' = (0.0, 0.0), kind: 'str' = 'sub_partition', layers: 'Tuple[str, ...]' = <factory>) -> None"
  },
  "implicit_geometry_kernel.structure.SumLaw": {
   "kind": "class",
@@ -488,6 +502,10 @@
  "implicit_geometry_kernel.structure.check_pchip_sampling": {
   "kind": "function",
   "signature": "(z: 'Sequence[float]', values: 'Sequence[float]', *, name: 'str' = 'law', rtol: 'float' = 0.005, atol: 'float' = 0.0, samples_per_bay: 'int' = 16) -> 'SamplingReport'"
+ },
+ "implicit_geometry_kernel.structure.check_sub_partitions": {
+  "kind": "function",
+  "signature": "(subs: 'Sequence[SubPartition]') -> 'list[str]'"
  },
  "implicit_geometry_kernel.tip_closure_polygons": {
   "kind": "function",

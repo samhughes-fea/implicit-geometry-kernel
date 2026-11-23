@@ -104,6 +104,26 @@ class ShellGraph:
 
         return section_skeleton(self)
 
+    def cap_sub_partitions(self):
+        """The stacked cap runs of this station as :class:`~implicit_geometry_kernel.structure.SubPartition` bands.
+
+        Each cap is a whole-run band (``t_range=(0, 1)``) on its own partition,
+        kind ``spar_cap``, with the run's thickness, layers and eccentricity
+        ``(eccentricity_m, 0)`` (decision 0016). A view only: the geometry and
+        the cap runs are unchanged.
+        """
+        from implicit_geometry_kernel.structure.subpartition import SubPartition
+
+        return tuple(
+            SubPartition(
+                name=run.name, host=run.name, t_range=(0.0, 1.0), thickness=float(run.thickness),
+                z_range=None, eccentricity=(float(run.eccentricity_m), 0.0), kind="spar_cap",
+                layers=tuple(run.layers),
+            )
+            for run in self.loop
+            if run.kind == "cap"
+        )
+
     def partition_edges(self) -> Tuple[PartitionEdge, ...]:
         """``(z, name_a, name_b) → xy`` where two loop runs share an endpoint."""
         loop = self.loop

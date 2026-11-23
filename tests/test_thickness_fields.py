@@ -106,3 +106,28 @@ def test_element_curvature_tags_every_element(blade_and_mesh):
     skin = [i for i, s in enumerate(mesh.surface) if s == "skin"]
     assert np.all(curv["k1"][skin] <= curv["k2"][skin])
     assert any(curv["kind"][i] != "FLAT" for i in skin)
+
+
+def test_node_curvature_is_per_partition_and_matches_elements(blade_and_mesh):
+    from implicit_geometry_kernel.mesh.shell.fields import element_curvature, node_curvature
+
+    geo, mesh = blade_and_mesh
+    part = "skin_suction_surface:leading_edge"
+    nodes = node_curvature(mesh, geo, partition=part)
+    elems = element_curvature(mesh, geo)
+    members = [i for i, p in enumerate(mesh.partition) if p == part]
+    on = sorted({k for i in members for k in mesh.elements[i]})
+    off = sorted(set(range(len(mesh.nodes))) - set(on))
+    assert np.all(np.isfinite(nodes["k2"][on]))
+    assert np.all(np.isnan(nodes["k2"][off]))
+    assert "UNSET" not in set(nodes["kind"][on])
+    # The mean of an element's node curvatures is close to its centroid value.
+    mean = np.array([np.mean(nodes["k2"][list(mesh.elements[i])]) for i in members])
+    rel = np.abs(mean - elems["k2"][members]) / np.maximum(np.abs(elems["k2"][members]), 1e-9)
+    assert float(np.median(rel)) < 0.1
+    tip = [i for i, s in enumerate(mesh.surface) if s == "tip_closure"]
+    flat = node_curvature(mesh, geo, partition=mesh.partition[tip[0]]) if tip else None
+    if flat is not None and all(mesh.surface[i] == "tip_closure" for i, p in enumerate(mesh.partition) if p == mesh.partition[tip[0]]):
+        assert set(flat["kind"][[k for k in mesh.elements[tip[0]]]]) == {"FLAT"}
+    with pytest.raises(ValueError):
+        node_curvature(mesh, geo, partition="nope")

@@ -12,14 +12,14 @@ from implicit_geometry_kernel.structure import SubPartition
 H = 0.08
 
 
-def _blade(**kw):
+def _blade(layout="2D-F-LC-0R", **kw):
     foil = Airfoil.naca4("0018")
     stations = [
         Station(0.0, 1.0, foil, twist=5.0, pitch_axis=0.3),
         Station(4.0, 0.7, foil, twist=0.0, pitch_axis=0.3),
     ]
     return BladeGeometry(
-        stations, "2D-F-LC-0R", 0.004,
+        stations, layout, 0.004,
         spar_cap_thickness=0.008, shear_web_thickness=0.004, pivot_fraction=0.3, **kw,
     )
 
@@ -47,11 +47,17 @@ def _area(mesh, surface):
     return total
 
 
-def test_all_quads_on_skin_and_webs(meshes):
+def test_quads_on_skin_and_webs_triangles_on_the_tip(meshes):
     _geo, mesh, _ruled, _band = meshes
-    assert all(len(e) == 4 for e in mesh.elements)
-    assert set(mesh.surface) == {"skin", "web"}
-    assert set(mesh.constructor) == {"partition"}
+    assert set(mesh.surface) == {"skin", "web", "tip_closure"}
+    for e, s, c in zip(mesh.elements, mesh.surface, mesh.constructor):
+        if s in ("skin", "web"):
+            assert len(e) == 4 and c == "partition"
+        else:
+            assert len(e) == 3 and c in ("inherited", "interior")
+    tip = [i for i, s in enumerate(mesh.surface) if s == "tip_closure"]
+    assert {mesh.partition[i] for i in tip} == {"skin"}
+    assert all(mesh.z0[i] == max(mesh.stations) for i in tip)
 
 
 def test_nodes_are_shared_by_identity_not_coordinate(meshes):
@@ -66,14 +72,13 @@ def test_edges_are_conforming_with_junctions_at_web_feet(meshes):
     _geo, mesh, _ruled, _band = meshes
     use = mesh.edge_use()
     assert set(use.values()) <= {1, 2, 3}
-    z0, z1 = min(mesh.stations), max(mesh.stations)
+    z0 = min(mesh.stations)
     for (a, b), n in use.items():
         za, zb = mesh.nodes[a, 2], mesh.nodes[b, 2]
-        if n == 1:  # open edges only at the root and the tip
-            assert za == zb and za in (z0, z1)
-        if n == 3:  # a web foot line: one edge along the span at the foot
-            assert za != zb
-    assert sum(1 for n in use.values() if n == 3) == 4 * (len(mesh.stations) - 1)
+        if n == 1:  # the tip is closed: open edges only at the root
+            assert za == zb == z0
+    spanwise_three = [(a, b) for (a, b), n in use.items() if n == 3 and mesh.nodes[a, 2] != mesh.nodes[b, 2]]
+    assert len(spanwise_three) == 4 * (len(mesh.stations) - 1)  # one line per web foot, every bay
 
 
 def test_skin_sheet_is_consistently_oriented(meshes):
@@ -89,13 +94,33 @@ def test_skin_sheet_is_consistently_oriented(meshes):
 
 def test_area_matches_the_ruled_strip_mesher(meshes):
     _geo, mesh, ruled, _band = meshes
-    assert _area(mesh, "skin") == pytest.approx(_area(ruled, "skin"), rel=1e-2)
-    assert _area(mesh, "web") == pytest.approx(_area(ruled, "web"), rel=1e-2)
+    for surface in ("skin", "web", "tip_closure"):
+        assert _area(mesh, surface) == pytest.approx(_area(ruled, surface), rel=1e-2)
+
+
+def test_ribs_are_cells_on_the_station_nodes():
+    geo = _blade(layout="2D-F-LC-2R")
+    mesh = partition_mesh(geo, h=0.1)
+    ruled = shell_mesh(geo, h=0.1)
+    ribs = [i for i, s in enumerate(mesh.surface) if s == "rib"]
+    assert {mesh.partition[i] for i in ribs} == {m.name for m in geo.transverse}
+    for m in geo.transverse:
+        assert any(abs(z - m.z) < 1e-9 for z in mesh.stations)
+    # Coarse h: both meshers inscribe the rib outline in chords, the ruled one with more nodes.
+    assert _area(mesh, "rib") == pytest.approx(_area(ruled, "rib"), rel=2e-2)
+    # Each rib's boundary nodes are skin or web nodes of that station.
+    for i in ribs:
+        for k in mesh.elements[i]:
+            if k < mesh.n_source:
+                assert abs(mesh.nodes[k, 2] - mesh.z0[i]) < 1e-12
+    assert len({tuple(np.round(p, 9)) for p in mesh.nodes}) == len(mesh.nodes)
 
 
 def test_edges_across_partitions_are_at_most_h(meshes):
     _geo, mesh, _ruled, _band = meshes
-    for e in mesh.elements:
+    for e, s in zip(mesh.elements, mesh.surface):
+        if s not in ("skin", "web"):
+            continue
         p = mesh.nodes[list(e)]
         assert float(np.linalg.norm(p[1] - p[0])) <= H * 1.001 or float(np.linalg.norm(p[3] - p[0])) <= H * 1.001
 
@@ -130,7 +155,7 @@ def test_bad_size_is_rejected():
 def test_shell_mesh_method_switch():
     geo = _blade()
     mesh = shell_mesh(geo, h=0.2, zs=[0.0, 2.0, 4.0], method="partition")
-    assert set(mesh.constructor) == {"partition"}
+    assert {c for c, s in zip(mesh.constructor, mesh.surface) if s in ("skin", "web")} == {"partition"}
     with pytest.raises(ValueError, match="needs h"):
         shell_mesh(geo, method="partition", zs=[0.0, 4.0])
     with pytest.raises(ValueError, match="method"):

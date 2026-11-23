@@ -14,12 +14,12 @@ edge (decision 0016), so a thickness or eccentricity step lies on an element
 edge.
 
 Nodes lie on the section mid-line at each station (the cut's run polylines).
-This first step meshes blades whose shell topology is the same at every
-station, with a closed skin loop, and builds skin and webs only. Topology
-changes (caps or webs that start or stop inside the span, as transition
-bands), the rib and tip-closure fill, and Newton junction nodes between
-stations are later steps of plan row L6. It sits beside :func:`shell_mesh`,
-which stays the default.
+This step meshes blades whose shell topology is the same at every station,
+with a closed skin loop and no branches (stringers). Ribs and the tip closure
+are triangle fills on the station's skin and web nodes. Topology changes
+(caps or webs that start or stop inside the span, as transition bands) and
+Newton junction nodes between stations are later steps of plan row L6. It
+sits beside :func:`shell_mesh`, which stays the default.
 """
 
 from __future__ import annotations
@@ -30,6 +30,7 @@ from typing import Any, Sequence
 import numpy as np
 
 from implicit_geometry_kernel.blade.skeleton import run_point_at
+from implicit_geometry_kernel.mesh.fill import triangulate_ring
 from implicit_geometry_kernel.mesh.shell.orient import _oriented
 from implicit_geometry_kernel.mesh.shell.types import ShellMesh
 from implicit_geometry_kernel.mesh.shell.stations import mesh_stations
@@ -88,6 +89,29 @@ def _segment_breaks(t_by_key: dict) -> list:
     return merged
 
 
+def _cells(ids: dict, j: int, loop_names: Sequence[str], web_names: Sequence[str]) -> list[list[int]]:
+    """Node-id rings of the cells the webs cut the skin loop into at station ``j``."""
+    ring: list[int] = []
+    for name in loop_names:
+        ring.extend(ids[(j, name)][:-1])
+    cells = [ring]
+    for w in web_names:
+        row = ids[(j, w)]
+        a, b = row[0], row[-1]
+        inner = row[1:-1]
+        for c, cell in enumerate(cells):
+            if a in cell and b in cell:
+                ia, ib = cell.index(a), cell.index(b)
+                n = len(cell)
+                path_ab = [cell[(ia + k) % n] for k in range((ib - ia) % n + 1)]
+                path_ba = [cell[(ib + k) % n] for k in range((ia - ib) % n + 1)]
+                cells[c:c + 1] = [path_ab + inner[::-1], path_ba + inner]
+                break
+        else:
+            raise PartitionMeshError(f"web {w!r} does not join two nodes of one cell at station {j}")
+    return cells
+
+
 def _te_point(ring: np.ndarray) -> np.ndarray:
     """The loop point farthest from the loop's mean point (the trailing edge of an aerofoil)."""
     pts = ring[:-1] if np.allclose(ring[0], ring[-1]) else ring
@@ -96,8 +120,8 @@ def _te_point(ring: np.ndarray) -> np.ndarray:
 
 
 def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
-                   sub_partitions: Sequence[Any] = ()) -> ShellMesh:
-    """A structured (t, z) quad mesh of the blade's skin and webs.
+                   sub_partitions: Sequence[Any] = (), polygon_size: float | None = None) -> ShellMesh:
+    """A structured (t, z) quad mesh of the blade's skin and webs, with rib and tip triangles.
 
     Parameters
     ----------
@@ -112,6 +136,13 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     sub_partitions:
         :class:`~implicit_geometry_kernel.structure.SubPartition` bands whose
         ``t`` edges get mesh lines. Their span windows are not mesh lines.
+    polygon_size:
+        Triangle spacing on ribs and the tip closure (default ``h``).
+
+    Rib stations are added to ``zs``. Each rib face and the tip closure is
+    split into cells by the webs; each cell is a triangle fill whose boundary
+    nodes are the skin and web nodes of that station, so only interior nodes
+    are new.
 
     Raises
     ------
@@ -121,6 +152,10 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     if not float(h) > 0.0:
         raise ValueError("element size h must be positive")
     z_list = [float(z) for z in (zs if zs is not None else mesh_stations(geo, h=float(h)))]
+    for m in getattr(geo, "transverse", ()) or ():
+        if min(z_list) - 1e-9 <= float(m.z) <= max(z_list) + 1e-9:
+            z_list.append(float(m.z))
+    z_list = sorted({round(z, 9): z for z in z_list}.values())
     if len(z_list) < 2:
         raise ValueError("the partition mesher needs at least two stations")
     graphs = [geo.section_at(z).shell_graph() for z in z_list]
@@ -252,7 +287,45 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
             for i in range(len(a) - 1):
                 elements.append((a[i], a[i + 1], b[i + 1], b[i]))
                 rows.append((name, surface, th, ecc, tuple(r0.layers), tuple(r0.layer_thicknesses_m), j,
-                             z_list[j], z_list[j + 1]))
+                             z_list[j], z_list[j + 1], name, "partition"))
+
+    n_source = len(nodes)
+    origins = ["station"] * n_source
+    if polygon_size is None:
+        polygon_size = float(h)
+    tip = getattr(geo, "tip_closure", None)
+    tip_z = float(getattr(geo, "tip_closure_z", z_list[-1]))
+    for j, z in enumerate(z_list):
+        members = [m for m in getattr(geo, "transverse", ()) or () if abs(float(m.z) - z) <= 1e-8]
+        caps: list = []
+        for m in members:
+            caps.append(("rib", str(m.name), str(m.name), float(m.thickness), (str(m.name),)))
+        if tip is not None and abs(z - tip_z) <= 1e-8 and j == len(z_list) - 1:
+            t_tip = float(geo.tip_closure_thickness())
+            caps.append(("tip_closure", str(tip.name), str(tip.partition), t_tip, (str(tip.partition),)))
+        if not caps:
+            continue
+        cells = _cells(ids, j, loop_names, web_names)
+        for surface, label, part, th, layers in caps:
+            for k, cell in enumerate(cells):
+                ring = np.asarray([nodes[i] for i in cell], float)
+                faces = triangulate_ring(ring, size=polygon_size, pattern="unstructured", split_boundary=False)
+                key_of = {tuple(np.round(nodes[i], 12)): i for i in cell}
+                for tri in np.asarray(faces, float):
+                    tri_ids = []
+                    for p in tri:
+                        key = tuple(np.round(p, 12))
+                        hit = key_of.get(key)
+                        if hit is None:
+                            hit = new_node(np.array([p[0], p[1], z]))
+                            origins.append("interior")
+                            key_of[key] = hit
+                        tri_ids.append(hit)
+                    if len(set(tri_ids)) < 3:
+                        continue
+                    elements.append(tuple(tri_ids))
+                    rows.append((f"{label}:cell_{k}", surface, th, 0.0, layers, (th,), j, z, z, part, "interior"
+                                 if any(i >= n_source for i in tri_ids) else "inherited"))
 
     pts = np.asarray(nodes, float)
     te_at = {z: np.append(_te_point(np.asarray(g.loop_polygon(), float)), z) for z, g in zip(z_list, graphs)}
@@ -262,19 +335,19 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
         elements=tuple(tuple(int(i) for i in e) for e in elements),
         name=tuple(r[0] for r in rows),
         surface=tuple(r[1] for r in rows),
-        partition=tuple(r[0] for r in rows),
+        partition=tuple(r[9] for r in rows),
         thickness=np.array([r[2] for r in rows], float),
         eccentricity=np.array([r[3] for r in rows], float),
         layers=tuple(r[4] for r in rows),
         layer_thicknesses=tuple(r[5] for r in rows),
         stations=tuple(z_list),
-        n_source=len(pts),
+        n_source=n_source,
         bay=tuple(r[6] for r in rows),
         z0=tuple(r[7] for r in rows),
         z1=tuple(r[8] for r in rows),
-        constructor=tuple("partition" for _ in rows),
+        constructor=tuple(r[10] for r in rows),
         flipped=tuple(int(f) for f in flipped),
-        node_origin=tuple("station" for _ in range(len(pts))),
+        node_origin=tuple(origins),
         section_distance=np.zeros(len(pts)),
     )
 

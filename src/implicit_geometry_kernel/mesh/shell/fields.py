@@ -173,7 +173,7 @@ class SubPartitionAssignment:
         ``(n_elements, 2)`` offset ``(normal, tangential)`` in metres: the band's
         where one applies, else ``(ShellMesh.eccentricity, 0)``.
     straddles:
-        True where an element's nodes lie on both sides of a band edge, so the
+        True where an element has nodes strictly inside and strictly outside a band, so the
         step falls inside the element rather than on a mesh line. The ruled-strip
         mesher does not place lines at band edges; the partition mesher (plan
         row L6) will.
@@ -195,6 +195,16 @@ def _node_t_on(geo, cache: dict, part: str, xyz: np.ndarray) -> float:
         if r.name == part:
             return _project_t(np.asarray(r.points, float), xyz[:2])
     return float("nan")
+
+
+def _strictly_both_sides(band, t: np.ndarray, z: np.ndarray, tol: float = 1e-6) -> bool:
+    """True when some nodes are inside the band and others outside, beyond ``tol`` of its edges."""
+    t0, t1 = band.t_range
+    za, zb = band.z_range if band.z_range is not None else (-np.inf, np.inf)
+    ztol = tol * max(1.0, float(np.max(np.abs(z))))
+    inside = (t > t0 + tol) & (t < t1 - tol) & (z > za + ztol) & (z < zb - ztol)
+    outside = (t < t0 - tol) | (t > t1 + tol) | (z < za - ztol) | (z > zb + ztol)
+    return bool(inside.any() and outside.any())
 
 
 def assign_sub_partitions(mesh, geo, subs: Sequence[Any], thickness: np.ndarray | None = None) -> SubPartitionAssignment:
@@ -252,8 +262,7 @@ def assign_sub_partitions(mesh, geo, subs: Sequence[Any], thickness: np.ndarray 
         ok = np.isfinite(nt)
         if ok.sum() >= 2:
             for s in bands:
-                inside = s.contains(nt[ok], nz[ok])
-                if inside.any() and not inside.all():
+                if _strictly_both_sides(s, nt[ok], nz[ok]):
                     straddles[i] = True
                     break
     if np.any(th < 0.0):

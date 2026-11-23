@@ -248,7 +248,8 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None,
                h_over_c: float | None = None, n_chord: int = 8,
                zs: Sequence[float] | None = None, polygon_size: float | None = None,
                region_h: Mapping[str, float] | None = None,
-               refine: Sequence[tuple[float, float, float]] = ()) -> ShellMesh:
+               refine: Sequence[tuple[float, float, float]] = (), method: str = "ruled",
+               sub_partitions: Sequence[Any] = ()) -> ShellMesh:
     """The blade's conforming shell mesh.
 
     Stations are ``zs`` or :func:`mesh_stations`. With no size and no station
@@ -267,7 +268,23 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None,
 
     The skin and web quads are built first. Every interior rib and the tip
     closure indexes those nodes. The triangle fill adds interior nodes only.
+
+    ``method="partition"`` uses the (t, z) partition mesher instead
+    (:func:`~implicit_geometry_kernel.mesh.shell.partition_mesh.partition_mesh`,
+    decision 0015): it needs ``h``, takes ``zs`` and ``sub_partitions``, and in
+    this first step builds skin and webs only, for blades whose shell topology
+    is the same at every station. ``"ruled"`` (the default) is this mesher.
     """
+    if method == "partition":
+        if h is None:
+            raise ValueError('method="partition" needs h')
+        from implicit_geometry_kernel.mesh.shell.partition_mesh import partition_mesh
+
+        return partition_mesh(geo, h=float(h), zs=zs, sub_partitions=sub_partitions)
+    if method != "ruled":
+        raise ValueError(f'method must be "ruled" or "partition", got {method!r}')
+    if sub_partitions:
+        raise ValueError('sub_partitions need method="partition"; for the ruled mesh use assign_sub_partitions')
     with stage("implicit_geometry_kernel", "shell_mesh") as rec:
         mesh = _shell_mesh_body(
             geo, n_span, h=h, h_over_c=h_over_c, n_chord=n_chord, zs=zs,

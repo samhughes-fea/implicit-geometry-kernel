@@ -192,3 +192,35 @@ def test_auto_falls_back_to_the_ruled_mesh_where_the_partition_mesher_refuses():
     assert "partition" not in set(mesh.constructor)
     with pytest.raises(PartitionMeshError):
         shell_mesh(geo, h=0.2, zs=[0.0, 2.0, 4.0], method="partition")
+
+
+def test_skin_edges_follow_curvature_at_the_nose():
+    """The sagitta rule (as the ruled mesher's region counts), graded along each run."""
+    from implicit_geometry_kernel.mesh.shell.partition_mesh import _edge_measure, _window_kappa
+
+    geo = _blade()
+    h = 0.2
+    mesh = partition_mesh(geo, h=h)
+    nodes = np.asarray(mesh.nodes)
+    root = [i for i, (e, s) in enumerate(zip(mesh.elements, mesh.surface))
+            if s == "skin" and np.max(nodes[list(e), 2]) < mesh.stations[1] + 1e-9]
+    lengths = {}
+    for i in root:
+        p = nodes[list(mesh.elements[i])]
+        for a, b in zip(p, np.roll(p, -1, axis=0)):
+            if abs(a[2] - b[2]) < 1e-9:  # chordwise edge on the root station
+                lengths.setdefault(mesh.partition[i], []).append(float(np.linalg.norm(a - b)))
+    le = min(min(v) for k, v in lengths.items() if "leading_edge" in k)
+    te = max(max(v) for k, v in lengths.items() if "trailing_edge" in k)
+    assert le < 0.5 * h  # the nose is refined
+    assert te > 0.6 * h  # the flat aft skin keeps about h
+    sheet = [i for i, s in enumerate(mesh.surface) if s in ("skin", "web")]
+    assert float(np.max(mesh.element_quality["skew"][sheet])) < 0.2  # nodes slide smoothly along the span
+    # A kinked vertex does not read as curvature; a circle reads 1 / r.
+    kink = np.array([[0.0, 0.0], [1.0, 0.0], [1.0 + 1e-4, 1e-2], [2.0, 1e-2]])
+    assert float(np.max(_window_kappa(kink, 0.02))) < 1.0 / 0.02
+    a = np.linspace(0.0, np.pi, 400)
+    circle = 0.05 * np.column_stack([np.cos(a), np.sin(a)])
+    assert float(np.median(_window_kappa(circle, 0.02))) == pytest.approx(20.0, rel=0.02)
+    tt, w = _edge_measure(np.column_stack([np.linspace(0, 1, 11), np.zeros(11)]), 0.25, chord=1.0)
+    assert w[-1] == pytest.approx(4.0)  # flat: uniform at h

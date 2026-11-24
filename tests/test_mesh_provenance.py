@@ -34,7 +34,7 @@ def test_digest_is_stable_and_content_sensitive(mesh):
 def test_provenance_is_json_ready(mesh):
     prov = mesh.provenance()
     assert prov["kernel_version"] == __version__
-    assert prov["mesher"] == "ruled"
+    assert prov["mesher"] == "partition"  # the default since 0.9.6
     assert prov["h"] == pytest.approx(0.25)
     assert prov["n_elements"] == len(mesh.elements)
     assert prov["digest"] == mesh.digest()

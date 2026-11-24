@@ -142,7 +142,7 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None,
                h_over_c: float | None = None, n_chord: int = 8,
                zs: Sequence[float] | None = None, polygon_size: float | None = None,
                region_h: Mapping[str, float] | None = None,
-               refine: Sequence[tuple[float, float, float]] = (), method: str = "ruled",
+               refine: Sequence[tuple[float, float, float]] = (), method: str = "auto",
                sub_partitions: Sequence[Any] = (), strict: bool = False) -> ShellMesh:
     """The blade's conforming shell mesh.
 
@@ -167,10 +167,13 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None,
     (:func:`~implicit_geometry_kernel.mesh.shell.partition_mesh.partition_mesh`,
     decision 0015): it needs ``h``, takes ``zs`` and ``sub_partitions``, and, for
     now, meshes blades whose shell topology
-    is the same at every station. ``"auto"`` uses the partition mesher where
-    it applies and this mesher otherwise (``constructor`` tells which built
-    the mesh: ``"partition"`` on its skin and web quads). ``"ruled"`` (the
-    default) is this mesher.
+    is the same at every station. ``"auto"`` (the default since 0.9.6) uses
+    the partition mesher where it applies and this mesher otherwise
+    (``constructor`` tells which built the mesh: ``"partition"`` on its skin
+    and web quads). It applies when the mesh is sized by ``h`` alone (no
+    ``n_span``, ``h_over_c``, ``region_h`` or ``refine``, which only this
+    mesher takes) and the partition mesher accepts the blade. ``"ruled"`` is
+    this mesher, kept for one release after the switch (decision 0015).
 
     ``strict=True`` checks the finished mesh against the hard invariants of
     :func:`~implicit_geometry_kernel.mesh.shell.invariants.check_shell_mesh`
@@ -183,13 +186,17 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None,
         return assert_shell_mesh(shell_mesh(
             geo, n_span, h=h, h_over_c=h_over_c, n_chord=n_chord, zs=zs, polygon_size=polygon_size,
             region_h=region_h, refine=refine, method=method, sub_partitions=sub_partitions))
+    if method == "auto" and (h is None or n_span is not None or h_over_c is not None or region_h or refine):
+        method = "ruled"  # sized in a way only the ruled-strip mesher takes
+        if sub_partitions:
+            raise ValueError("sub_partitions need the partition mesher, which is sized by h alone")
     if method in ("partition", "auto"):
         if h is None:
             raise ValueError(f'method="{method}" needs h')
         from implicit_geometry_kernel.mesh.shell.partition_mesh import PartitionMeshError, partition_mesh
 
         try:
-            return partition_mesh(geo, h=float(h), zs=zs, sub_partitions=sub_partitions)
+            return partition_mesh(geo, h=float(h), zs=zs, sub_partitions=sub_partitions, polygon_size=polygon_size)
         except PartitionMeshError:
             if method == "partition":
                 raise

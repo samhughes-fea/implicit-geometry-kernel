@@ -29,7 +29,9 @@ def _blade():
 @pytest.fixture(scope="module")
 def blade_and_mesh():
     geo = _blade()
-    return geo, shell_mesh(geo, h=0.08)
+    # Ruled: its leading-edge counts follow curvature, so h=0.08 resolves the nose.
+    # The partition mesher spaces t evenly and needs about h=0.04 for the same check.
+    return geo, shell_mesh(geo, h=0.08, method="ruled")
 
 
 def test_grid_thickness_is_linear_across_and_along():

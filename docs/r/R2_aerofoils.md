@@ -194,12 +194,15 @@ the tabulated value for $C_{l,i} = 0.3$ scaled by $C_{l,i}/0.3$; for NACA 23012,
 $r = 0.2025$ and $k_1 = 15.957$, which gives a maximum camber of 0.0184 at
 $x = 0.15$. The surfaces follow from (R2.9).
 
-**Kernel status.** `naca_five_digit_vertices` does not evaluate (R2.10)–(R2.12) as
-stated: it takes the two digits $PQ$ together as $r = PQ/200$ and reads $k_1$ and
-a scale from a table that is not Abbott and von Doenhoff's. For NACA 23012 its mean
-line peaks at 0.0017 at $x = 0.11$ instead of 0.0184 at 0.15. This is logged as
-[BG-050](../blade/bug_log.md#bg-050) (open). The thickness, and hence $t$, is
-correct.
+`naca_five_digit_vertices` reads $P$ and $Q$ from the code, takes $r$ and $k_1$ for
+$p = P/20$ from the published table (whose joins (R2.12) reproduces), scales $k_1$ by
+$C_{l,i}/0.3$, and builds the surfaces by (R2.9), so the mean line of the vertices is
+(R2.11) to rounding. Before 0.9.6 it read the two digits $PQ$ together as $r$ and used
+a table that was not the published one, which made NACA 23012 about ten times too
+flat ([BG-055](../blade/bug_log.md#bg-055), fixed). $Q = 1$ selects the reflexed
+mean line, a cubic ahead of $r$ and a second cubic behind it whose extra factor
+$k_2/k_1$ is also tabulated by Abbott and von Doenhoff; it returns to the chord at
+the TE.
 
 ### 3.4 NACA 6-series sections
 
@@ -207,21 +210,22 @@ A 6-series section is defined by a conformal-mapping thickness form and a
 uniform-load mean line {cite:p}`abbott1959`, which the kernel does not construct.
 Instead `naca6(family, t_percent)` holds one tabulated reference section per family
 (NACA 63-415 and NACA 64₁-212, unit chord, from the UIUC database
-{cite:p}`selig2026`) and scales its ordinates:
+{cite:p}`selig2026`). It splits the reference into its vertical mid-line
+$\bar y_{\mathrm{ref}}$ and thickness $\delta_{\mathrm{ref}}$ by (R2.19), on a common
+cosine grid, and scales only the thickness:
 
 \begin{equation*}
-(x, y) = \left(x_{\mathrm{ref}},\ \frac{t}{t_{\mathrm{ref}}}\,y_{\mathrm{ref}}\right),
-\qquad t_{\mathrm{ref}} = \max y_{\mathrm{ref}} - \min y_{\mathrm{ref}} .
+y_{u,l} = \bar y_{\mathrm{ref}} \pm \tfrac12\,\frac{t}{t_{\mathrm{ref}}}\,\delta_{\mathrm{ref}},
+\qquad t_{\mathrm{ref}} = \max_x \delta_{\mathrm{ref}} .
 \tag{R2.13}
 \end{equation*}
 
-Two consequences follow from (R2.13). Because the whole ordinate is scaled, the
-camber of the reference section scales with $t$ too: `naca6(64, 18)` has a
-maximum camber of 0.0166, 1.5 times that of the 64₁-212 it came from. And because
-$t_{\mathrm{ref}}$ takes the upper maximum and lower minimum at different $x$, it
-overestimates the thickness ratio slightly, so the result is about $3.5\times10^{-4}$
-thinner than asked. The design-lift digit is ignored. The first is logged as
-[BG-051](../blade/bug_log.md#bg-051) (open).
+The camber, and with it the design lift (0.4 for the 63 reference, 0.2 for the 64),
+stays the reference's, and the name says so: `naca6(64, 18)` is "NACA 64-218". The
+spanwise path (`airfoil_vertices_from_spanwise`) also takes a design lift in tenths
+and scales $\bar y_{\mathrm{ref}}$ by it, since a uniform-load mean line is linear in
+the design lift. Before 0.9.6 the whole ordinate was scaled, so the camber grew with
+the thickness ([BG-056](../blade/bug_log.md#bg-056), fixed).
 
 ### 3.5 Class-shape transformation (CST)
 
@@ -349,8 +353,8 @@ Lednicer files are reordered into Selig order first.
 |---|---|
 | (R2.1), (R2.2), Section 4 | `Airfoil.__init__`, `Airfoil._monotone`, `Airfoil.surface` |
 | (R2.3)–(R2.9) | `Airfoil.naca4`; `sdf.shapes.naca.naca_four_digit_vertices`, `naca_four_digit_thickness` |
-| (R2.10)–(R2.12) | `Airfoil.naca5`; `sdf.shapes.naca.naca_five_digit_vertices` (BG-050) |
-| (R2.13) | `Airfoil.naca6`; `sdf.shapes.naca.naca_six_series_vertices` (BG-051) |
+| (R2.10)–(R2.12) | `Airfoil.naca5`; `sdf.shapes.naca.naca_five_digit_vertices` |
+| (R2.13) | `Airfoil.naca6`; `sdf.shapes.naca.naca_six_series_vertices`, `six_series_camber_thickness` |
 | (R2.14)–(R2.16) | `Airfoil.cst` |
 | (R2.18) | `Airfoil.ellipse` |
 | (R2.19) | `Airfoil.thickness`, `Airfoil.max_thickness` |
@@ -368,12 +372,12 @@ Lednicer files are reordered into Selig order first.
    side, against 2001 points). Beyond $x = 0.01$ the same comparison agrees to
    $3\times10^{-6}$. Section geometry built from the contour itself, rather than
    from `surface` queries at the nose, is not affected.
-2. **5-digit mean lines** are wrong (BG-050), and reflexed sections ($Q = 1$) cannot
-   be requested from a code: the reflex branch of `naca_five_digit_vertices` is
-   reached only by its `reflex` argument.
-3. **6-series sections** are scaled tabulated sections, not the 6-series
-   construction, and their camber follows the thickness (BG-051). Only families 63
-   and 64 are available.
+2. **5-digit sections** exist only for $P = 1$ to 5, the published table; reflexed
+   lines only for $P = 2$ to 5 (smaller $P$ takes the $P = 2$ values).
+3. **6-series sections** are tabulated sections with their thickness scaled, not the
+   6-series construction, and only families 63 and 64 are available. The thickness
+   split is vertical (R2.19), so a thickness far from the reference's carries a
+   small second-order error from it.
 4. **Vertical, not normal, thickness** in the shape operators (R2.19)–(R2.22). The
    difference is second order in the camber slope (Section 3.6).
 5. **CST** has the fixed class exponents $(\tfrac12, 1)$ of (R2.14); sharp-nosed or
@@ -388,6 +392,7 @@ Lednicer files are reordered into Selig order first.
 | (R2.9) | Surfaces are the mean line offset by $h$ along its normal, to $1.1\times10^{-16}$ | example 17, check 3 |
 | (R2.16) | `Airfoil.cst` against (R2.16) to $1.5\times10^{-5}$ of chord; TE gap exact; equal weights symmetric | example 17, check 4 |
 | (R2.12) | Join $r$ against the tabulated values to $3\times10^{-4}$ | example 17, check 5 |
+| (R2.11), (R2.13) | 5-digit mean lines equal Abbott and von Doenhoff's to $10^{-15}$ for $P = 1$ to 5 and three design lifts; NACA 23012 peaks at 0.0184, $x = 0.15$; $Q = 1$ is the reflexed line; 6-series camber independent of $t$ | `tests/test_naca_mean_lines.py` |
 | (R2.20), (R2.21) | Scaled $t/c$ to $10^{-3}$ relative; flatback gap; symmetric CST | `tests/test_airfoil_families.py` |
 | Readers, Section 4 | Selig and Lednicer files read back to the section they were written from | `tests/test_airfoil_families.py` |
 
@@ -398,7 +403,7 @@ Lednicer files are reordered into Selig order first.
 **Figure R2.1.** Top: NACA 4418 from (R2.5), (R2.7) and (R2.9); the grey segments
 are the half-thickness laid off along the mean-line normal. Bottom: one section of
 each family, chord-normalised, and the NACA 23012 mean line from (R2.11) (dashed)
-against the kernel's (dotted, BG-050). Drawn by
+against the kernel's section mid-line (dotted). Drawn by
 `examples/blade/17_aerofoil_construction/aerofoil_construction.py`.
 ```
 

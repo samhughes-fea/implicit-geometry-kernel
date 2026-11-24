@@ -10,8 +10,8 @@ derived there:
 4. the law is C1 at the knots and its second derivative may jump, (R3.6);
 5. the leave-one-out error at a smooth maximum is kappa h^2 / 2, so the check
    passes only for h <= sqrt(2 tol / kappa), (R3.12)-(R3.13);
-6. the thickness morph: the blend weight equals the span weight, the rescale factor
-   is at least 1, and the trailing-edge gap is linear in the span weight,
+6. the thickness morph: the blend weight equals the span weight and the rescale
+   factor is at least 1; the trailing-edge gap follows each rule's own weight,
    (R3.15)-(R3.18).
 
     python examples/blade/18_pchip_span_laws/pchip_span_laws.py
@@ -167,8 +167,9 @@ def check_morph():
     for rule in ("linear", "smoothstep", "thickness"):
         for w in (0.25, 0.5, 0.75):
             u, lo = _morph_surfaces(fb, flat, w, x, rule)
-            gaps.append(abs((u[-1] - lo[-1]) - w * 0.04))
-    print(f"   trailing-edge gap against w * 0.04 for all three rules: {max(gaps):.1e}")
+            weight = _smoothstep(w) if rule == "smoothstep" else w
+            gaps.append(abs((u[-1] - lo[-1]) - weight * 0.04))
+    print(f"   trailing-edge gap against s * 0.04, s the rule's own weight, all three rules: {max(gaps):.1e}")
     assert max(gaps) < 1e-12
     assert _smoothstep(0.0) == 0.0 and _smoothstep(1.0) == 1.0 and _smoothstep(0.5) == 0.5
     return worst_scale

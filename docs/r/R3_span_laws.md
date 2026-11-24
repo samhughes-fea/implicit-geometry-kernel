@@ -303,13 +303,20 @@ if its thickness ratio is at least 0.6 or its name contains "ellipse". Smoothste
 used when exactly one parent is near-circular, linear when both are, and thickness
 when neither is. The other settings force one rule on every bay.
 
-**Trailing edge.** After any rule, the TE gap is reset to the linear blend of the
-parents' gaps about the blended mid-point:
+**Trailing edge.** After any rule, the TE gap is reset about the blended mid-point
+to the parents' gaps blended with the weight $s$ the rule used ($s = w$ for the
+linear and thickness rules, $s = S(w)$ for smoothstep):
 
 \begin{equation*}
-\delta(1) = (1 - w)\,\delta_a(1) + w\,\delta_b(1) .
+\delta(1) = (1 - s)\,\delta_a(1) + s\,\delta_b(1) .
 \tag{R3.18}
 \end{equation*}
+
+For the linear and smoothstep rules this is what (R2.22) already gives at $x = 1$;
+for the thickness rule it undoes the rescale (R3.16) at the TE, so a flatback gap is
+blended, not scaled. Before 0.9.6 the gap followed $w$ under smoothstep too, which
+put the last point $(w - S(w))\Delta$ off its neighbours
+([BG-057](../blade/bug_log.md#bg-057), fixed).
 
 ### 3.10 Composite laws and thickness fields
 
@@ -373,14 +380,9 @@ bay.
 2. **The aerofoil is not smooth across stations.** The morph is linear (or
    smoothstep) in $w$ within each bay, so surfaces are only $C^0$ in $z$ at a
    station, even when the planform scalars are PCHIP.
-3. **Trailing-edge point under smoothstep.** (R3.18) resets the last point with $w$,
-   while the rest of the section uses $S(w)$. Between a closed circle and a flatback
-   of gap $\Delta$, the last point therefore sits $(w - S(w))\Delta$ away from where
-   the blend puts its neighbours: $0.09\Delta$ at $w = 0.25$. Logged as
-   [BG-052](../blade/bug_log.md#bg-052) (open).
-4. **The near-circle test** reads the aerofoil's name. A thick section named
+3. **The near-circle test** reads the aerofoil's name. A thick section named
    otherwise is classified by its thickness ratio alone.
-5. **Member laws hold their end values** outside their knots (item 3, Section 2);
+4. **Member laws hold their end values** outside their knots (item 3, Section 2);
    a law given over part of the span is constant beyond it, not zero.
 
 ## 7. Verification
@@ -392,9 +394,9 @@ bay.
 | (R3.8), (R3.11) | 300 monotone knot sets with plateaus: largest slope ratio 2.86, no decrease beyond $1.8\times10^{-15}$, no bay overshoot beyond $8.9\times10^{-16}$ | example 18, check 3 |
 | (R3.6) | Slope continuous at every knot to $10^{-9}$; curvature jumps up to $0.86\ \mathrm{m^{-1}}$ | example 18, check 4 |
 | (R3.12), (R3.13) | Leave-one-out error at a smooth maximum equals $\tfrac12\kappa h^2$ to 1.5 % for 21–81 stations; 41 stations refused, 61 accepted | example 18, check 5 |
-| (R3.15)–(R3.18) | $s = w$ exactly; $\lambda \ge 1$; peak $t/c$ equals $t^\ast$ to $3\times10^{-17}$; TE gap linear in $w$ for all three rules | example 18, check 6 |
+| (R3.15)–(R3.18) | $s = w$ exactly; $\lambda \ge 1$; peak $t/c$ equals $t^\ast$ to $3\times10^{-17}$; TE gap follows each rule's own weight | example 18, check 6 |
 | Section 3.8 | `auto`, `pchip` and `linear` choices; refusals; golden numbers | `tests/test_pchip_span_laws.py`, `tests/golden/` |
-| (R3.18) | A blunt TE gap survives the loft | `tests/test_loft.py::test_interpolate_preserves_blunt_te_gap` |
+| (R3.18) | A blunt TE gap survives the loft; under smoothstep the gap is $S(w)\Delta$, and the vectorised morph matches the scalar one | `tests/test_loft.py::test_interpolate_preserves_blunt_te_gap`, `tests/test_naca_mean_lines.py` |
 
 ```{figure} ../../examples/blade/18_pchip_span_laws/figures/pchip_span_laws.png
 :alt: A chord law through ten stations, linear, PCHIP and natural spline; its slope; and a circle morphed into a flatback aerofoil

@@ -73,14 +73,14 @@ entries are from a retired repo-root log.
 | [BG-047](#bg-047) | Ruled strip index path emitted illegal 3-node TE skin faces | **Fixed** |
 | [BG-048](#bg-048) | `ShellMesh.stations` as a list broke the chord-default-off test | **Fixed** |
 | [BG-049](#bg-049) | NREL default-h mesh has open spanwise edges off the root on `te_su` / `le_pr` | **Fixed** |
-| [BG-050](#bg-050) | NACA 5-digit mean line is about ten times too flat and peaks in the wrong place | **Open** |
-| [BG-051](#bg-051) | `Airfoil.naca6` scales the reference camber with the thickness | **Open** |
-| [BG-052](#bg-052) | Smoothstep morph moves the trailing-edge point with the wrong weight | **Open** |
 | [BG-050](#bg-050) | Per-station edge counts remeshed the same curve twice (`step_patch` / fan) | **Fixed** |
 | [BG-051](#bg-051) | Block-max count on collapsing skin made fans under 20° | **Fixed** |
 | [BG-052](#bg-052) | Key-snapped seam folded a three-node collapse fan flat | **Fixed** |
 | [BG-053](#bg-053) | Tip weld missed by 1 ulp; collinear TE left a T-junction | **Fixed** |
 | [BG-054](#bg-054) | `_window_key` crashed on windIO side-window dicts | **Fixed** |
+| [BG-055](#bg-055) | NACA 5-digit mean line is about ten times too flat and peaks in the wrong place | **Fixed** |
+| [BG-056](#bg-056) | `Airfoil.naca6` scales the reference camber with the thickness | **Fixed** |
+| [BG-057](#bg-057) | Smoothstep morph moves the trailing-edge point with the wrong weight | **Fixed** |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -1279,7 +1279,7 @@ non-root loops, empty junctions, node/quad counts ~84k. Example 15 NREL span
 figure regenerated. `test_nrel_te_cap_seam_shares_endpoints_on_probe_stations`.
 **Fixed.**
 
-## BG-050
+## BG-055
 
 **Symptom.** `Airfoil.naca5("23012")` has a maximum camber of 0.0017 at
 $x = 0.11$. Abbott and von Doenhoff's NACA 23012 has 0.0184 at $x = 0.15$.
@@ -1297,14 +1297,19 @@ published $(p, r, k_1)$ table (only the first $k_1$, 361.4, agrees). The existin
 test checks only that the upper surface exceeds 0.02, which the thickness alone
 satisfies.
 
-**Fix.** Not yet. Read $p = P/20$ and $Q$ from the code, take $r$ and $k_1$ from the
-published table (or $r$ from (R2.12)), scale $k_1$ by $C_{l,i}/0.3$, route $Q = 1$
-to the reflex branch, and test the mean line against Abbott and von Doenhoff for
-21012 to 25012. Any blade or golden number built from a 5-digit code moves.
+**Fix.** `naca_five_digit_vertices` reads $P$ and $Q$ from the middle digits,
+takes $(r, k_1)$ for $p = P/20$ from the published table (`_NACA5_NORMAL`; between
+rows $r$ from (R2.12) and $k_1$ interpolated in log space), scales $k_1$ by
+$C_{l,i}/0.3$ with no other multiplier, sends $Q = 1$ to the reflex branch, and
+refuses $P$ outside 1 to 5 or $Q$ other than 0 or 1.
 
-**Verification.** To come with the fix.
+**Verification.** `tests/test_naca_mean_lines.py`: the vertex mid-points equal
+(R2.11) to $10^{-15}$ for $P = 1$ to 5 and $L = 1, 2, 4$; NACA 23012 peaks at 0.0184
+at $x = 0.15$; 23112 equals the reflex branch and returns to the chord at the TE.
+Example 17 check 5 now asserts the 23012 camber. Golden numbers unchanged (no golden
+blade uses a 5-digit code). **Fixed.**
 
-## BG-051
+## BG-056
 
 **Symptom.** `Airfoil.naca6(64, 18)` has a maximum camber of 0.0166, 1.5 times
 that of the NACA 64₁-212 it is scaled from; `naca6(63, 21)` has 0.031.
@@ -1317,13 +1322,18 @@ and $t_{\mathrm{ref}}$ is $\max y - \min y$ rather than the largest thickness, w
 leaves the result about $3.5\times10^{-4}$ thinner than asked. The name
 `NACA 64-18` does not say which camber it carries.
 
-**Fix.** Not yet. Split the reference into mean line and thickness, scale only the
-thickness, and either keep the reference camber (naming the section after it) or
-take the design lift from the code.
+**Fix.** `naca_six_series_vertices` splits the reference into its vertical mid-line
+and thickness on a cosine grid (`six_series_camber_thickness`), scales only the
+thickness to $t$ with $t_{\mathrm{ref}} = \max\delta_{\mathrm{ref}}$, and keeps the
+reference camber; the spanwise path's design-lift digit now scales the mid-line.
+`Airfoil.naca6` names the section after the camber it carries (`naca6(64, 18)` is
+`NACA 64-218`).
 
-**Verification.** To come with the fix.
+**Verification.** `tests/test_naca_mean_lines.py`: for both families and $t$ = 12,
+18 and 24 % the mid-line equals the reference's to $2\times10^{-4}$ and the thickness
+is $t$ to $10^{-3}$ relative. **Fixed.**
 
-## BG-052
+## BG-057
 
 **Symptom.** In a smoothstep morph between a closed section and a flatback of gap
 $\Delta$, the last point of the blended section has gap $w\Delta$ while the blend
@@ -1338,7 +1348,10 @@ last three samples, against $S(0.25)\Delta = 0.0047$ for the blend at $x = 1$.
 the span weight $w$ (R3.18) after every rule, including the smoothstep rule, which
 blends the rest of the section with $S(w)$.
 
-**Fix.** Not yet. Reset the gap with the weight the rule used ($S(w)$ for
-smoothstep, $w$ otherwise). Station sections are unchanged ($S = w$ at 0 and 1).
+**Fix.** `_morph_surfaces` and `_morph_surfaces_many` reset the gap with the weight
+the rule used, $S(w)$ for smoothstep and $w$ otherwise (R3.18). Station sections are
+unchanged ($S = w$ at 0 and 1).
 
-**Verification.** To come with the fix.
+**Verification.** `tests/test_naca_mean_lines.py`: circle to a flatback of gap 0.03
+gives a TE gap of $S(w)\,0.03$ at $w$ = 0.25, 0.5 and 0.75, and the vectorised morph
+equals the scalar one to $10^{-14}$. Golden numbers unchanged. **Fixed.**

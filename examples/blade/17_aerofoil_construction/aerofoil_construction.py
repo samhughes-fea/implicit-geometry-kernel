@@ -9,8 +9,7 @@ derived there:
 4. the kernel's CST surfaces against (R2.16), the TE gap, and symmetry for equal
    weights;
 5. the 5-digit join r solves 3p^2 - 6rp + r^2(3 - r) = 0, (R2.12), and the
-   kernel's NACA 23012 mean line against Abbott and von Doenhoff's (BG-050, open:
-   reported, not asserted).
+   kernel's NACA 23012 against Abbott and von Doenhoff's mean line, (R2.11).
 
     python examples/blade/17_aerofoil_construction/aerofoil_construction.py
 """
@@ -115,7 +114,8 @@ def check_five_digit():
     foil = Airfoil.naca5("23012", n=401)
     kc = 0.5 * (foil.surface("upper", X) + foil.surface("lower", X))
     print(f"   NACA 23012 max camber: Abbott {yc.max():.4f} at x = {X[yc.argmax()]:.3f}; "
-          f"kernel {kc.max():.4f} at x = {X[kc.argmax()]:.3f}  (BG-050, open)")
+          f"kernel section mid-line {kc.max():.4f} at x = {X[kc.argmax()]:.3f}")
+    assert abs(kc.max() - yc.max()) < 2e-4
     return X, yc, kc
 
 
@@ -146,7 +146,7 @@ def figure(five):
     ax.legend(loc="lower center", ncol=2, frameon=False, bbox_to_anchor=(0.5, -0.62))
 
     ax = axes[1]
-    fams = [(Airfoil.naca4("2412"), "NACA 2412 (R2.3)"), (Airfoil.naca6(63, 15), "NACA 63-15 (R2.13)"),
+    fams = [(Airfoil.naca4("2412"), "NACA 2412 (R2.3)"), (Airfoil.naca6(63, 15), "NACA 63-415 (R2.13)"),
             (Airfoil.cst([0.2, 0.25, 0.2], [0.12, 0.05, 0.1], te_thickness=0.01), "CST, 3 weights a side (R2.16)"),
             (Airfoil.naca4("2418").with_te_thickness(0.05), "NACA 2418 flatback, TE 0.05 (R2.21)"),
             (Airfoil.ellipse(0.4), "ellipse t/c = 0.4 (R2.18)")]
@@ -155,14 +155,14 @@ def figure(five):
         ax.plot(pts[:, 0], pts[:, 1], color=SERIES[i % len(SERIES)], lw=1.2, label=label)
     xs, yc5, kc5 = five
     ax.plot(xs, yc5, color=REFERENCE, lw=0.9, ls="--", label="23012 mean line, Abbott (R2.11)")
-    ax.plot(xs, kc5, color=REFERENCE, lw=0.9, ls=":", label="23012 mean line, kernel (BG-050)")
+    ax.plot(xs, kc5, color=REFERENCE, lw=0.9, ls=":", label="23012 mid-line, kernel")
     ax.set_aspect("equal")
     ax.set_xlabel("$x/c$")
     ax.set_ylabel("$y/c$")
     ax.set_title("Families the kernel builds, chord-normalised")
     ax.legend(loc="upper left", ncol=2, frameon=False, bbox_to_anchor=(0.0, -0.22))
     note(fig, "Checks: a4 closes the TE; NACA 2412 camber and thickness; normal offset to 1e-12; "
-              "CST surfaces and symmetry; 5-digit join r. BG-050 is open.")
+              "CST surfaces and symmetry; 5-digit join r and NACA 23012 camber.")
     fig.subplots_adjust(left=0.08, right=0.98, top=0.96, bottom=0.2)
     save(fig, __file__, "aerofoil_construction")
 

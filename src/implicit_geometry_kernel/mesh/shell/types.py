@@ -119,5 +119,57 @@ class ShellMesh:
                 out[key] = out.get(key, 0) + 1
         return out
 
+    def digest(self) -> str:
+        """SHA-256 of the mesh content: nodes, connectivity, surfaces, partitions, thickness, eccentricity.
+
+        Coordinates and properties are rounded to 12 decimals (metres) before
+        hashing, so noise in the last bits changes the digest only when a value
+        sits on a rounding boundary. Two meshes with the same digest are the
+        same mesh for a solver.
+        """
+        import hashlib
+
+        h = hashlib.sha256()
+
+        def floats(a) -> None:
+            arr = np.round(np.asarray(a, dtype=np.float64), 12) + 0.0  # +0.0 folds -0.0
+            h.update(np.ascontiguousarray(arr, dtype="<f8").tobytes())
+
+        def strings(values) -> None:
+            h.update("\x1f".join(str(v) for v in values).encode("utf-8"))
+            h.update(b"\x1e")
+
+        floats(self.nodes)
+        h.update(np.asarray([len(e) for e in self.elements], dtype="<i8").tobytes())
+        h.update(np.asarray([i for e in self.elements for i in e], dtype="<i8").tobytes())
+        strings(self.surface)
+        strings(self.partition)
+        floats(self.thickness)
+        floats(self.eccentricity)
+        return h.hexdigest()
+
+    def provenance(self) -> dict:
+        """What built this mesh: kernel version, mesher, size controls, stations and :meth:`digest`.
+
+        A plain dict of strings, numbers and lists, ready for JSON or a VTK
+        field. ``mesher`` is ``"partition"`` when the (t, z) partition mesher
+        built the skin and web quads, else ``"ruled"``.
+        """
+        from implicit_geometry_kernel import __version__
+
+        sheet = {c for c, s in zip(self.constructor, self.surface) if s in ("skin", "web")}
+        recipe = self.recipe
+        return {
+            "kernel_version": __version__,
+            "mesher": "partition" if sheet == {"partition"} else "ruled",
+            "h": None if recipe is None else recipe.h,
+            "h_over_c": None if recipe is None else recipe.h_over_c,
+            "n_span": None if recipe is None else recipe.n_span,
+            "stations": [float(z) for z in self.stations],
+            "n_nodes": int(len(self.nodes)),
+            "n_elements": int(len(self.elements)),
+            "digest": self.digest(),
+        }
+
 
 __all__ = ["MeshRecipe", "ShellMesh"]

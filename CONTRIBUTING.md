@@ -35,9 +35,9 @@ sphinx-build -W -b html docs docs/_build/html   # with the [docs] extra
 ## Rules
 
 - **Workflow.** Issue, PR with `Closes #N`, squash commit, release: see
-  [Workflow](docs/conventions/WORKFLOW.md).
+  [Workflow](docs/conventions/standard/workflow.md).
 - **Commits.** Conventional Commits, checked on the PR title, which becomes the
-  squash commit: see [Commit messages](docs/conventions/COMMITS.md).
+  squash commit: see [Commit messages](docs/conventions/standard/commits.md).
 - **Golden numbers.** A refactor leaves `tests/golden/*.json` unchanged. A change
   that moves geometry on purpose runs `python scripts/snapshots.py --update` and
   says why in `CHANGELOG.md`.
@@ -45,7 +45,7 @@ sphinx-build -W -b html docs docs/_build/html   # with the [docs] extra
   public name is fine; removing or changing one needs a release of
   `DeprecationWarning` first.
 - **Versions and tags.** Releases stay on `0.9.x`. Follow
-  [Tags and releases](docs/conventions/RELEASING.md): the release PR bumps
+  [releasing standard](docs/conventions/standard/releasing.md) and the [kernel release notes](docs/conventions/RELEASING.md): the release PR bumps
   `__version__` and the changelog heading; merging it makes the tag and the
   GitHub release (`release.yml`).
 - **Plan doc.** Update the status in `docs/internal/REFACTOR_PLAN.md` in the same

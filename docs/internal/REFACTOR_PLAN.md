@@ -13,6 +13,11 @@ The architecture programme is **closed**. Steps 1–8 are done; step 9 was decli
 Standing work is product/API/docs cleanup, demo ports onto the public entry points,
 and parked consumer items — not a new numbered step.
 
+The repository follows the shared development standard (synced into
+`docs/conventions/standard/`, values in `.github/repo.yml`) from 0.9.6; the
+kernel was its pilot. Changelog headings now use `## [Unreleased]` /
+`## [0.9.N] - YYYY-MM-DD`.
+
 ### 0.9.x plan (after 0.9.0)
 
 The next programme: consumers pin the kernel and the kernel ships the analysis
@@ -44,7 +49,7 @@ cut 1.0.0 while the public API is still being worked out. Kernel PRs:
 | L4b | Smooth section curves (C2 spline through given points, or CST) with the station-density check; analytic patch derivatives x_t, x_z, x_tt, x_tz, x_zz, normal, principal curvatures, signed-distance gradient and Hessian (#98) | Part done (#102): `PartitionPatch` x(t, z) with analytic x_t, x_z, x_tt, x_tz, x_zz, normal, principal curvatures, kind tags and Newton closest point. Still to do: smooth section curves (spline or CST) and the signed-distance Hessian |
 | L6 | `shell_mesh(method="partition")` beside the ruled-strip mesher, compared in CI; terminations as transition bands; junction nodes by Newton on both stacked distance fields, with an on-both-surfaces invariant (#96, #98) | Part done (#104, #105): `partition_mesh` / `shell_mesh(method="partition")` for constant topology and a closed loop, skin and webs, nodes shared by skeleton identity, mesh lines at web feet and band edges, compared with the ruled-strip mesh in tests; rib and tip-closure triangle fills on the station nodes (#105); `method="auto"` falls back to the ruled-strip mesher where the partition mesher refuses (#106). Still to do (later, maintainer's choice 2026-11-24): transition bands at terminations, branches, Newton junction nodes between stations |
 | L6b | Nodal and element curvature (k1, k2, theta) and kind tags on `ShellMesh`; kind by construction with exact zeros, computed curvature checked against the tag (#98) | Done (#102, #105): element curvature and kind (`element_curvature`); nodal values per partition (`node_curvature`), evaluated at each node's own (t, z) |
-| L7 | Flagged release: PCHIP default for authored blades, partition mesher default, goldens re-baselined (#95, #96) | Done (#112, maintainer's approval 2026-11-24): `span_interp="auto"` (PCHIP per law where the leave-one-out check passes, linear otherwise; `from_section` linear) and `shell_mesh(method="auto")` (partition mesher when sized by `h` alone, ruled-strip fallback) are the defaults; golden numbers unchanged, so no re-baseline was needed. Ruled-strip mesher kept for one more release |
+| L7 | Flagged release: PCHIP default for authored blades, partition mesher default, goldens re-baselined (#95, #96) | Done (#113, maintainer's approval 2026-11-24): `span_interp="auto"` (PCHIP per law where the leave-one-out check passes, linear otherwise; `from_section` linear) and `shell_mesh(method="auto")` (partition mesher when sized by `h` alone, ruled-strip fallback) are the defaults; golden numbers unchanged, so no re-baseline was needed. Ruled-strip mesher kept for one more release |
 | L8 | Alongside items from the 2026-11-22 review: mesh provenance (`ShellMesh.digest`, `provenance`), shell-mesh benchmark and binary VTU, junction mode B (one foot plus angle), strict invariant gate and property fuzzer | Done (#107, #109, #110, #111): provenance; binary VTU and `scripts/bench_shell_mesh.py`; junction mode B (`web_tilt_anchor`); strict gate (`check_shell_mesh`, `shell_mesh(strict=True)`) and Hypothesis fuzzer |
 
 #### Consumer adapter gaps (to do)
@@ -245,7 +250,7 @@ in-kernel mesh is `integration/quadtree`. Consumers own shell mesher jobs;
 | CI installs | Dev and docs extras resolve from `requirements/ci.txt`; the core-install job stays unpinned | `tests.yml`, `docs.yml` |
 | Releases page | A tag makes a GitHub release with its changelog section and the wheel | `release.yml` `github-release` |
 | Security scan | CodeQL on Python and workflows, weekly and on PRs | `codeql.yml` |
-| Traceability | Issue first, PR says `Closes #N`, changelog lines end with the PR number | `docs/conventions/WORKFLOW.md`, PR template |
+| Traceability | Issue first, PR says `Closes #N`, changelog lines end with the PR number | `docs/conventions/standard/workflow.md`, PR template |
 | Data | No private reference-blade inputs in the repo; examples that need them skip without a local clone | Example 09 pattern |
 | Submodule use | `pip install -e path/to/kernel`, no build step or generated files | Wheel-build job |
 

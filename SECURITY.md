@@ -1,9 +1,6 @@
 # Security
 
-This is a geometry library: it reads coordinate tables and CSV files you give
-it, takes windIO data as already-parsed mappings, and writes figures and mesh
-files. It runs no network services.
-
+<!-- guidelines:start (shared development standard 0.1.0; edit it there, not here) -->
 ## Reporting a problem
 
 Report a vulnerability privately through GitHub: **Security > Report a
@@ -12,7 +9,12 @@ You should hear back within a week.
 
 ## Supported versions
 
-Only the latest `0.9.x` release gets fixes.
+Only the latest release gets fixes.
+<!-- guidelines:end -->
+
+This is a geometry library: it reads coordinate tables and CSV files you give
+it, takes windIO data as already-parsed mappings, and writes figures and mesh
+files. It runs no network services.
 
 ## Things to know
 

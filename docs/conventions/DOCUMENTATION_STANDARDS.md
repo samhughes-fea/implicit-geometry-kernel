@@ -5,6 +5,10 @@ Layered `README.md` files are the on-ramp. Guides, reference, and reports sit un
 
 ↑ [conventions](README.md)
 
+The shared [documentation standard](standard/documentation.md) holds the
+general rules (manuals, derivations, equations, citations, figures, bug-log
+lifecycle); this page adds the kernel's layers, page types and logs.
+
 **Audience: internal** (this file is the house style for writers). The pages it
 governs fall into two audiences below.
 

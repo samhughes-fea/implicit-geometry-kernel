@@ -9,7 +9,7 @@ and fix log, the feature development log and the tracker.
 | Key | Title | Status |
 |---|---|---|
 | D1 | Architecture and internals walkthrough | [Architecture](../architecture.md); traced call from `Station` to shell mesh planned |
-| D2 | Contributing, workflow, commits and labels | [Contributing](../project/contributing.md), [conventions](../conventions/README.md), [rules](../project/rules.md) |
+| D2 | Contributing, workflow, commits and labels | [Contributing](../project/contributing.md), [shared standard](../conventions/standard/README.md), [conventions](../conventions/README.md), [rules](../project/rules.md) |
 | D3 | Testing, CI jobs and scripts | Planned (see [tests/README](../../tests/README.md) and [.github/workflows](../../.github/workflows/)) |
 | D4 | Releases and governance | [Releasing](../conventions/RELEASING.md), [security](../project/security.md), [code of conduct](../project/conduct.md) |
 | D5 | Design decisions | [Architecture decision records](../decisions/README.md) |
@@ -34,6 +34,7 @@ and D9 entries they summarise.
 /architecture
 /project/contributing
 /conventions/README
+/conventions/standard/README
 /project/rules
 /project/security
 /project/conduct

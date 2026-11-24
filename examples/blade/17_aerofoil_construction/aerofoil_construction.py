@@ -9,7 +9,7 @@ derived there:
 4. the kernel's CST surfaces against (R2.16), the TE gap, and symmetry for equal
    weights;
 5. the 5-digit join r solves 3p^2 - 6rp + r^2(3 - r) = 0, (R2.12), and the
-   kernel's NACA 23012 mean line against Abbott and von Doenhoff's (BG-050, open:
+   kernel's NACA 23012 mean line against Abbott and von Doenhoff's (BG-055, open:
    reported, not asserted).
 
     python examples/blade/17_aerofoil_construction/aerofoil_construction.py
@@ -115,7 +115,7 @@ def check_five_digit():
     foil = Airfoil.naca5("23012", n=401)
     kc = 0.5 * (foil.surface("upper", X) + foil.surface("lower", X))
     print(f"   NACA 23012 max camber: Abbott {yc.max():.4f} at x = {X[yc.argmax()]:.3f}; "
-          f"kernel {kc.max():.4f} at x = {X[kc.argmax()]:.3f}  (BG-050, open)")
+          f"kernel {kc.max():.4f} at x = {X[kc.argmax()]:.3f}  (BG-055, open)")
     return X, yc, kc
 
 
@@ -155,14 +155,14 @@ def figure(five):
         ax.plot(pts[:, 0], pts[:, 1], color=SERIES[i % len(SERIES)], lw=1.2, label=label)
     xs, yc5, kc5 = five
     ax.plot(xs, yc5, color=REFERENCE, lw=0.9, ls="--", label="23012 mean line, Abbott (R2.11)")
-    ax.plot(xs, kc5, color=REFERENCE, lw=0.9, ls=":", label="23012 mean line, kernel (BG-050)")
+    ax.plot(xs, kc5, color=REFERENCE, lw=0.9, ls=":", label="23012 mean line, kernel (BG-055)")
     ax.set_aspect("equal")
     ax.set_xlabel("$x/c$")
     ax.set_ylabel("$y/c$")
     ax.set_title("Families the kernel builds, chord-normalised")
     ax.legend(loc="upper left", ncol=2, frameon=False, bbox_to_anchor=(0.0, -0.22))
     note(fig, "Checks: a4 closes the TE; NACA 2412 camber and thickness; normal offset to 1e-12; "
-              "CST surfaces and symmetry; 5-digit join r. BG-050 is open.")
+              "CST surfaces and symmetry; 5-digit join r. BG-055 is open.")
     fig.subplots_adjust(left=0.08, right=0.98, top=0.96, bottom=0.2)
     save(fig, __file__, "aerofoil_construction")
 

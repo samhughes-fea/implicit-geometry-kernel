@@ -21,5 +21,5 @@ python examples/blade/17_aerofoil_construction/aerofoil_construction.py
 | 5 | The 5-digit join $r$ from $3p^2 - 6pr + r^2(3-r) = 0$ against the published table | (R2.12) | $3\times10^{-4}$ |
 
 Check 5 also prints the NACA 23012 mean line of Abbott and von Doenhoff against the
-kernel's. They differ by a factor of ten ([BG-050](../../../docs/blade/bug_log.md#bg-050),
+kernel's. They differ by a factor of ten ([BG-055](../../../docs/blade/bug_log.md#bg-055),
 open), so that comparison is reported, not asserted.

@@ -198,7 +198,7 @@ $x = 0.15$. The surfaces follow from (R2.9).
 stated: it takes the two digits $PQ$ together as $r = PQ/200$ and reads $k_1$ and
 a scale from a table that is not Abbott and von Doenhoff's. For NACA 23012 its mean
 line peaks at 0.0017 at $x = 0.11$ instead of 0.0184 at 0.15. This is logged as
-[BG-050](../blade/bug_log.md#bg-050) (open). The thickness, and hence $t$, is
+[BG-055](../blade/bug_log.md#bg-055) (open). The thickness, and hence $t$, is
 correct.
 
 ### 3.4 NACA 6-series sections
@@ -221,7 +221,7 @@ maximum camber of 0.0166, 1.5 times that of the 64₁-212 it came from. And beca
 $t_{\mathrm{ref}}$ takes the upper maximum and lower minimum at different $x$, it
 overestimates the thickness ratio slightly, so the result is about $3.5\times10^{-4}$
 thinner than asked. The design-lift digit is ignored. The first is logged as
-[BG-051](../blade/bug_log.md#bg-051) (open).
+[BG-056](../blade/bug_log.md#bg-056) (open).
 
 ### 3.5 Class-shape transformation (CST)
 
@@ -349,8 +349,8 @@ Lednicer files are reordered into Selig order first.
 |---|---|
 | (R2.1), (R2.2), Section 4 | `Airfoil.__init__`, `Airfoil._monotone`, `Airfoil.surface` |
 | (R2.3)–(R2.9) | `Airfoil.naca4`; `sdf.shapes.naca.naca_four_digit_vertices`, `naca_four_digit_thickness` |
-| (R2.10)–(R2.12) | `Airfoil.naca5`; `sdf.shapes.naca.naca_five_digit_vertices` (BG-050) |
-| (R2.13) | `Airfoil.naca6`; `sdf.shapes.naca.naca_six_series_vertices` (BG-051) |
+| (R2.10)–(R2.12) | `Airfoil.naca5`; `sdf.shapes.naca.naca_five_digit_vertices` (BG-055) |
+| (R2.13) | `Airfoil.naca6`; `sdf.shapes.naca.naca_six_series_vertices` (BG-056) |
 | (R2.14)–(R2.16) | `Airfoil.cst` |
 | (R2.18) | `Airfoil.ellipse` |
 | (R2.19) | `Airfoil.thickness`, `Airfoil.max_thickness` |
@@ -368,11 +368,11 @@ Lednicer files are reordered into Selig order first.
    side, against 2001 points). Beyond $x = 0.01$ the same comparison agrees to
    $3\times10^{-6}$. Section geometry built from the contour itself, rather than
    from `surface` queries at the nose, is not affected.
-2. **5-digit mean lines** are wrong (BG-050), and reflexed sections ($Q = 1$) cannot
+2. **5-digit mean lines** are wrong (BG-055), and reflexed sections ($Q = 1$) cannot
    be requested from a code: the reflex branch of `naca_five_digit_vertices` is
    reached only by its `reflex` argument.
 3. **6-series sections** are scaled tabulated sections, not the 6-series
-   construction, and their camber follows the thickness (BG-051). Only families 63
+   construction, and their camber follows the thickness (BG-056). Only families 63
    and 64 are available.
 4. **Vertical, not normal, thickness** in the shape operators (R2.19)–(R2.22). The
    difference is second order in the camber slope (Section 3.6).
@@ -398,7 +398,7 @@ Lednicer files are reordered into Selig order first.
 **Figure R2.1.** Top: NACA 4418 from (R2.5), (R2.7) and (R2.9); the grey segments
 are the half-thickness laid off along the mean-line normal. Bottom: one section of
 each family, chord-normalised, and the NACA 23012 mean line from (R2.11) (dashed)
-against the kernel's (dotted, BG-050). Drawn by
+against the kernel's (dotted, BG-055). Drawn by
 `examples/blade/17_aerofoil_construction/aerofoil_construction.py`.
 ```
 

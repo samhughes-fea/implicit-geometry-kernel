@@ -73,14 +73,14 @@ entries are from a retired repo-root log.
 | [BG-047](#bg-047) | Ruled strip index path emitted illegal 3-node TE skin faces | **Fixed** |
 | [BG-048](#bg-048) | `ShellMesh.stations` as a list broke the chord-default-off test | **Fixed** |
 | [BG-049](#bg-049) | NREL default-h mesh has open spanwise edges off the root on `te_su` / `le_pr` | **Fixed** |
-| [BG-050](#bg-050) | NACA 5-digit mean line is about ten times too flat and peaks in the wrong place | **Open** |
-| [BG-051](#bg-051) | `Airfoil.naca6` scales the reference camber with the thickness | **Open** |
-| [BG-052](#bg-052) | Smoothstep morph moves the trailing-edge point with the wrong weight | **Open** |
 | [BG-050](#bg-050) | Per-station edge counts remeshed the same curve twice (`step_patch` / fan) | **Fixed** |
 | [BG-051](#bg-051) | Block-max count on collapsing skin made fans under 20° | **Fixed** |
 | [BG-052](#bg-052) | Key-snapped seam folded a three-node collapse fan flat | **Fixed** |
 | [BG-053](#bg-053) | Tip weld missed by 1 ulp; collinear TE left a T-junction | **Fixed** |
 | [BG-054](#bg-054) | `_window_key` crashed on windIO side-window dicts | **Fixed** |
+| [BG-055](#bg-055) | NACA 5-digit mean line is about ten times too flat and peaks in the wrong place | **Open** |
+| [BG-056](#bg-056) | `Airfoil.naca6` scales the reference camber with the thickness | **Open** |
+| [BG-057](#bg-057) | Smoothstep morph moves the trailing-edge point with the wrong weight | **Open** |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -1279,7 +1279,7 @@ non-root loops, empty junctions, node/quad counts ~84k. Example 15 NREL span
 figure regenerated. `test_nrel_te_cap_seam_shares_endpoints_on_probe_stations`.
 **Fixed.**
 
-## BG-050
+## BG-055
 
 **Symptom.** `Airfoil.naca5("23012")` has a maximum camber of 0.0017 at
 $x = 0.11$. Abbott and von Doenhoff's NACA 23012 has 0.0184 at $x = 0.15$.
@@ -1304,7 +1304,7 @@ to the reflex branch, and test the mean line against Abbott and von Doenhoff for
 
 **Verification.** To come with the fix.
 
-## BG-051
+## BG-056
 
 **Symptom.** `Airfoil.naca6(64, 18)` has a maximum camber of 0.0166, 1.5 times
 that of the NACA 64₁-212 it is scaled from; `naca6(63, 21)` has 0.031.
@@ -1323,7 +1323,7 @@ take the design lift from the code.
 
 **Verification.** To come with the fix.
 
-## BG-052
+## BG-057
 
 **Symptom.** In a smoothstep morph between a closed section and a flatback of gap
 $\Delta$, the last point of the blended section has gap $w\Delta$ while the blend

@@ -377,7 +377,7 @@ bay.
    while the rest of the section uses $S(w)$. Between a closed circle and a flatback
    of gap $\Delta$, the last point therefore sits $(w - S(w))\Delta$ away from where
    the blend puts its neighbours: $0.09\Delta$ at $w = 0.25$. Logged as
-   [BG-052](../blade/bug_log.md#bg-052) (open).
+   [BG-057](../blade/bug_log.md#bg-057) (open).
 4. **The near-circle test** reads the aerofoil's name. A thick section named
    otherwise is classified by its thickness ratio alone.
 5. **Member laws hold their end values** outside their knots (item 3, Section 2);

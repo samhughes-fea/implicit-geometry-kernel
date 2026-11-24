@@ -143,7 +143,7 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None,
                zs: Sequence[float] | None = None, polygon_size: float | None = None,
                region_h: Mapping[str, float] | None = None,
                refine: Sequence[tuple[float, float, float]] = (), method: str = "ruled",
-               sub_partitions: Sequence[Any] = ()) -> ShellMesh:
+               sub_partitions: Sequence[Any] = (), strict: bool = False) -> ShellMesh:
     """The blade's conforming shell mesh.
 
     Stations are ``zs`` or :func:`mesh_stations`. With no size and no station
@@ -171,7 +171,18 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None,
     it applies and this mesher otherwise (``constructor`` tells which built
     the mesh: ``"partition"`` on its skin and web quads). ``"ruled"`` (the
     default) is this mesher.
+
+    ``strict=True`` checks the finished mesh against the hard invariants of
+    :func:`~implicit_geometry_kernel.mesh.shell.invariants.check_shell_mesh`
+    and raises :class:`~implicit_geometry_kernel.mesh.shell.invariants.ShellMeshInvariantError`
+    on any violation.
     """
+    if strict:
+        from implicit_geometry_kernel.mesh.shell.invariants import assert_shell_mesh
+
+        return assert_shell_mesh(shell_mesh(
+            geo, n_span, h=h, h_over_c=h_over_c, n_chord=n_chord, zs=zs, polygon_size=polygon_size,
+            region_h=region_h, refine=refine, method=method, sub_partitions=sub_partitions))
     if method in ("partition", "auto"):
         if h is None:
             raise ValueError(f'method="{method}" needs h')

@@ -304,7 +304,13 @@ class LoftCutMixin:
         from implicit_geometry_kernel.sdf.shapes.airfoil import AirfoilSDF
         from implicit_geometry_kernel.section.spec import SectionGeometry, SectionOptions, SectionSpec
 
-        z = round(float(z), 9)
+        z_in = float(z)
+        z = round(z_in, 9)
+        # Rounding can push a z on the root or tip just outside the blade
+        # (a tip at 2.2370309585 rounds to ...959): keep it on the station.
+        z_root, z_tip = float(self.stations[0].z), float(self.stations[-1].z)
+        if z_root <= z_in <= z_tip:
+            z = min(max(z, z_root), z_tip)
         hit = self._section_cache.get(z)
         if hit is not None:
             self._section_cache.move_to_end(z)

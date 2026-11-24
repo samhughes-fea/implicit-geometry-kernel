@@ -224,3 +224,23 @@ def test_skin_edges_follow_curvature_at_the_nose():
     assert float(np.median(_window_kappa(circle, 0.02))) == pytest.approx(20.0, rel=0.02)
     tt, w = _edge_measure(np.column_stack([np.linspace(0, 1, 11), np.zeros(11)]), 0.25, chord=1.0)
     assert w[-1] == pytest.approx(4.0)  # flat: uniform at h
+
+
+@pytest.mark.parametrize("layout", ["3D-F-PA-10R", "2D-F-PA-10R"])
+def test_reversed_loop_partitions_mesh_and_web_normals_face_the_te(layout):
+    """Three-web layouts store a skin partition against the loop direction; the mesher walks it reversed."""
+    from implicit_geometry_kernel.mesh.shell import check_shell_mesh
+    from implicit_geometry_kernel.mesh.shell.spanwise import _le_te_points
+
+    geo = _blade(layout)
+    mesh = partition_mesh(geo, h=0.25)
+    assert check_shell_mesh(mesh) == []
+    nodes = np.asarray(mesh.nodes)
+    _le, te, _c = _le_te_points(geo, mesh.stations)
+    for i, (e, s) in enumerate(zip(mesh.elements, mesh.surface)):
+        if s != "web":
+            continue
+        p = nodes[list(e)]
+        normal = np.cross(p[1] - p[0], p[2] - p[1])
+        j = int(np.argmin(np.abs(np.asarray(mesh.stations) - p[:, 2].mean())))
+        assert float(normal[:2] @ (te[j][:2] - p.mean(axis=0)[:2])) > 0.0

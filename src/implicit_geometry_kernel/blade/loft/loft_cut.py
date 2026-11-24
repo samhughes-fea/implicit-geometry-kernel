@@ -86,9 +86,10 @@ def _with_web_axes(layout, feet, x: np.ndarray, upper: np.ndarray, lower: np.nda
     return dataclasses.replace(layout, web_axes_m=tuple(axes))
 
 
-def _surface_crossing(frac: float, theta: float, x: np.ndarray, y: np.ndarray, upper: bool) -> float:
-    """Chord fraction where the line through ``(frac, 0)`` at ``theta`` from +y meets the surface."""
-    residual = (x - frac) * np.cos(theta) - y * np.sin(theta)
+def _surface_crossing(frac: float, theta: float, x: np.ndarray, y: np.ndarray, upper: bool,
+                      y0: float = 0.0) -> float:
+    """Chord fraction where the line through ``(frac, y0)`` at ``theta`` from +y meets the surface."""
+    residual = (x - frac) * np.cos(theta) - (y - y0) * np.sin(theta)
     best = None
     for i in range(len(x) - 1):
         a, b = float(residual[i]), float(residual[i + 1])
@@ -105,14 +106,28 @@ def _surface_crossing(frac: float, theta: float, x: np.ndarray, y: np.ndarray, u
     return float(best[0])
 
 
-def _tilted_feet(fracs, tilt_deg, x, upper, lower):
-    """``(suction, pressure)`` chord fractions for webs tilted ``tilt_deg`` from the thickness direction."""
+def _tilted_feet(fracs, tilt_deg, x, upper, lower, anchor: str = "chord"):
+    """``(suction, pressure)`` chord fractions for webs tilted ``tilt_deg`` from the thickness direction.
+
+    ``anchor="chord"`` pivots each web about its chord fraction on the chord
+    line. ``"suction"`` or ``"pressure"`` keeps that foot at the chord fraction
+    on that surface (junction mode B: one foot and an angle) and finds the other
+    foot where the tilted line meets the opposite surface.
+    """
     feet = []
     for frac, deg in zip(fracs, tilt_deg):
         # Positive tilt walks the suction foot toward the trailing edge.
         theta = -float(np.radians(deg))
         if abs(theta) < 1e-12:
             feet.append((float(frac), float(frac)))
+            continue
+        if anchor == "suction":
+            y0 = float(np.interp(float(frac), x, upper))
+            feet.append((float(frac), _surface_crossing(float(frac), theta, x, lower, False, y0)))
+            continue
+        if anchor == "pressure":
+            y0 = float(np.interp(float(frac), x, lower))
+            feet.append((_surface_crossing(float(frac), theta, x, upper, True, y0), float(frac)))
             continue
         su = _surface_crossing(float(frac), theta, x, upper, True)
         pr = _surface_crossing(float(frac), theta, x, lower, False)
@@ -335,7 +350,7 @@ class LoftCutMixin:
                 tilt = tuple([tilt[0]] * len(fracs))
             if len(tilt) != len(fracs):
                 raise ValueError(f"layout has {len(fracs)} webs; got {len(tilt)} tilt angles")
-            feet = _tilted_feet(fracs, tilt, x, upper, lower)
+            feet = _tilted_feet(fracs, tilt, x, upper, lower, getattr(self, "web_tilt_anchor", "chord"))
         if feet is not None:
             from implicit_geometry_kernel.catalogue import SystemLayoutSpec
             from implicit_geometry_kernel.section.layout.section_layout import SectionLayout

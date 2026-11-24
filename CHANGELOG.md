@@ -2,6 +2,7 @@
 
 ## 0.9.6 (unreleased)
 
+- Junction mode B: `BladeGeometry(web_tilt_anchor=...)`. With `"suction"` or `"pressure"` a tilted web keeps that foot at its chord fraction on that surface and finds the other foot along the tilted line, so a web is given by one foot and an angle. The default `"chord"` keeps today's pivot on the chord line (#110).
 - Binary VTU export and a mesher benchmark. `mesh.write_vtu` writes the shell mesh as a binary XML VTK `UnstructuredGrid` (base64, UInt64 headers) with thickness, eccentricity and surface, partition and constructor codes, plus the legends and `ShellMesh.provenance()` as JSON in a leading comment; `mesh.export.read_vtu_arrays` reads it back. `scripts/bench_shell_mesh.py` times both meshers and both writers on a public NACA blade and prints JSON. `CONSTRUCTORS` gains `partition` (appended, existing codes unchanged) (#109).
 - Mesh provenance. `ShellMesh.digest()` is a SHA-256 of the mesh content (nodes, connectivity, surfaces, partitions, thickness, eccentricity; values rounded to 12 decimals), and `ShellMesh.provenance()` a JSON-ready record of the kernel version, mesher (`ruled` or `partition`), size controls, stations, counts and digest, so a consumer can tell which mesh a result came from (#107).
 - `shell_mesh(method="auto", h=...)` uses the partition mesher where it applies (constant shell topology, closed loop, no branches) and the ruled-strip mesher otherwise; skin and web `constructor` is `"partition"` when the partition mesher built the mesh. The default stays `"ruled"` (#106).

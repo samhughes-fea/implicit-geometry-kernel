@@ -73,6 +73,9 @@ entries are from a retired repo-root log.
 | [BG-047](#bg-047) | Ruled strip index path emitted illegal 3-node TE skin faces | **Fixed** |
 | [BG-048](#bg-048) | `ShellMesh.stations` as a list broke the chord-default-off test | **Fixed** |
 | [BG-049](#bg-049) | NREL default-h mesh has open spanwise edges off the root on `te_su` / `le_pr` | **Fixed** |
+| [BG-050](#bg-050) | NACA 5-digit mean line is about ten times too flat and peaks in the wrong place | **Open** |
+| [BG-051](#bg-051) | `Airfoil.naca6` scales the reference camber with the thickness | **Open** |
+| [BG-052](#bg-052) | Smoothstep morph moves the trailing-edge point with the wrong weight | **Open** |
 | [BG-050](#bg-050) | Per-station edge counts remeshed the same curve twice (`step_patch` / fan) | **Fixed** |
 | [BG-051](#bg-051) | Block-max count on collapsing skin made fans under 20° | **Fixed** |
 | [BG-052](#bg-052) | Key-snapped seam folded a three-node collapse fan flat | **Fixed** |
@@ -1275,3 +1278,67 @@ the free ends. Full NREL default-h and RM1: `off_root_open_edges == ()`, no
 non-root loops, empty junctions, node/quad counts ~84k. Example 15 NREL span
 figure regenerated. `test_nrel_te_cap_seam_shares_endpoints_on_probe_stations`.
 **Fixed.**
+
+## BG-050
+
+**Symptom.** `Airfoil.naca5("23012")` has a maximum camber of 0.0017 at
+$x = 0.11$. Abbott and von Doenhoff's NACA 23012 has 0.0184 at $x = 0.15$.
+
+**Evidence.** Found while deriving [R2](../r/R2_aerofoils.md), Section 3.3.
+`examples/blade/17_aerofoil_construction` check 5 prints both mean lines and
+Figure R2.1 overlays them. Codes 21012 to 25012 peak at 0.0002 to 0.0053, at
+$x = 0.02$ to 0.17. The thickness is correct (`max_thickness` 0.12).
+
+**Root cause.** `naca_five_digit_vertices` takes the middle digits $PQ$ together as
+the join, $r = PQ/200$ (0.15 for 23012), where the standard reads $p = P/20$ as the
+position of maximum camber and finds the join $r$ from (R2.12) (0.2025). It then
+reads $k_1$ and an extra multiplier from `_NACA5_RMK1`, whose rows do not match the
+published $(p, r, k_1)$ table (only the first $k_1$, 361.4, agrees). The existing
+test checks only that the upper surface exceeds 0.02, which the thickness alone
+satisfies.
+
+**Fix.** Not yet. Read $p = P/20$ and $Q$ from the code, take $r$ and $k_1$ from the
+published table (or $r$ from (R2.12)), scale $k_1$ by $C_{l,i}/0.3$, route $Q = 1$
+to the reflex branch, and test the mean line against Abbott and von Doenhoff for
+21012 to 25012. Any blade or golden number built from a 5-digit code moves.
+
+**Verification.** To come with the fix.
+
+## BG-051
+
+**Symptom.** `Airfoil.naca6(64, 18)` has a maximum camber of 0.0166, 1.5 times
+that of the NACA 64₁-212 it is scaled from; `naca6(63, 21)` has 0.031.
+
+**Evidence.** [R2](../r/R2_aerofoils.md), Section 3.4 and (R2.13).
+
+**Root cause.** `naca_six_series_vertices` multiplies every ordinate of the
+reference section by $t/t_{\mathrm{ref}}$, so the camber scales with the thickness,
+and $t_{\mathrm{ref}}$ is $\max y - \min y$ rather than the largest thickness, which
+leaves the result about $3.5\times10^{-4}$ thinner than asked. The name
+`NACA 64-18` does not say which camber it carries.
+
+**Fix.** Not yet. Split the reference into mean line and thickness, scale only the
+thickness, and either keep the reference camber (naming the section after it) or
+take the design lift from the code.
+
+**Verification.** To come with the fix.
+
+## BG-052
+
+**Symptom.** In a smoothstep morph between a closed section and a flatback of gap
+$\Delta$, the last point of the blended section has gap $w\Delta$ while the blend
+puts its neighbours at about $S(w)\Delta$, $S(w) = w^2(3-2w)$: a step of
+$(w - S(w))\Delta$, $0.09\Delta$ at $w = 0.25$.
+
+**Evidence.** [R3](../r/R3_span_laws.md), Section 3.9 and Limit 3. Circle to NACA
+2418 with $\Delta = 0.03$ at $w = 0.25$: gaps 0.0378, 0.0213 and 0.0075 at the
+last three samples, against $S(0.25)\Delta = 0.0047$ for the blend at $x = 1$.
+
+**Root cause.** `_morph_surfaces` and `_morph_surfaces_many` reset the TE gap with
+the span weight $w$ (R3.18) after every rule, including the smoothstep rule, which
+blends the rest of the section with $S(w)$.
+
+**Fix.** Not yet. Reset the gap with the weight the rule used ($S(w)$ for
+smoothstep, $w$ otherwise). Station sections are unchanged ($S = w$ at 0 and 1).
+
+**Verification.** To come with the fix.

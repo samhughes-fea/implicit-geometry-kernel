@@ -80,6 +80,8 @@ flowchart TB
 | 12 | [Locked loft zones](blade/12_locked_loft_zones/) | `LockedLoftPlan`, `resample_locked` |
 | 13 | [Planform CSV](blade/13_planform_csv_roundtrip/) | `read_planform_csv`, `write_windio` |
 | 14 | [Geometric centroid](blade/14_geometric_centroid/) | shoelace / thin-wall strip / quadtree |
+| 17 | [Aerofoil construction](blade/17_aerofoil_construction/) | NACA, CST and ellipse families (Figure R2.1) |
+| 18 | [PCHIP span laws](blade/18_pchip_span_laws/) | `PchipLaw`, leave-one-out check, airfoil morph (Figure R3.1) |
 
 ### section
 

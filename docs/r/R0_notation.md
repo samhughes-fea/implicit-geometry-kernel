@@ -48,6 +48,16 @@ table in the same change.
 | $\mathbf{V}$ | In-plane force (shear) vector | N | R1 |
 | $\mathbf{M}$ | In-plane bending moment vector | N·m | R1 |
 | $s$, $n$ | Arc length along a mid-line; distance along the shell normal | m | R1 |
+| $x, y$ | Chord-normalised aerofoil coordinates $x_c/c$, $y_t/c$ | – | [R2](R2_aerofoils.md) |
+| $y_u, y_l$ | Upper (suction) and lower (pressure) surfaces | – | R2 |
+| $y_c$, $h$ | NACA mean line; half-thickness laid off normal to it | – | (R2.5), (R2.7) |
+| $m, p, t$ | Maximum camber, its chordwise position, thickness ratio | – | (R2.3) |
+| $\bar y$, $\delta$ | Vertical mid-line and vertical thickness of an aerofoil | – | (R2.19) |
+| $s$ | Blend weight between two aerofoils (in R2 and R3; elsewhere arc length) | – | (R2.22) |
+| $z_k, v_k$ | Span knots (stations) and the values of a law there | m, – | [R3](R3_span_laws.md) |
+| $h_k, \delta_k$ | Bay length $z_{k+1}-z_k$ and secant slope of a span law | m, – | R3 |
+| $w$ | Position within a bay, $0 \le w \le 1$ | – | (R3.1) |
+| $d_k$ | Slope of a PCHIP law at knot $k$ | – | (R3.7) |
 
 ## Bibliography
 

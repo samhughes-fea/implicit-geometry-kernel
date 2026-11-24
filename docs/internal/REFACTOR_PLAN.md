@@ -13,6 +13,11 @@ The architecture programme is **closed**. Steps 1–8 are done; step 9 was decli
 Standing work is product/API/docs cleanup, demo ports onto the public entry points,
 and parked consumer items — not a new numbered step.
 
+The repository follows the shared development standard (synced into
+`docs/conventions/standard/`, values in `.github/repo.yml`) from 0.9.6; the
+kernel was its pilot. Changelog headings now use `## [Unreleased]` /
+`## [0.9.N] - YYYY-MM-DD`.
+
 ### 0.9.x plan (after 0.9.0)
 
 The next programme: consumers pin the kernel and the kernel ships the analysis
@@ -245,7 +250,7 @@ in-kernel mesh is `integration/quadtree`. Consumers own shell mesher jobs;
 | CI installs | Dev and docs extras resolve from `requirements/ci.txt`; the core-install job stays unpinned | `tests.yml`, `docs.yml` |
 | Releases page | A tag makes a GitHub release with its changelog section and the wheel | `release.yml` `github-release` |
 | Security scan | CodeQL on Python and workflows, weekly and on PRs | `codeql.yml` |
-| Traceability | Issue first, PR says `Closes #N`, changelog lines end with the PR number | `docs/conventions/WORKFLOW.md`, PR template |
+| Traceability | Issue first, PR says `Closes #N`, changelog lines end with the PR number | `docs/conventions/standard/workflow.md`, PR template |
 | Data | No private reference-blade inputs in the repo; examples that need them skip without a local clone | Example 09 pattern |
 | Submodule use | `pip install -e path/to/kernel`, no build step or generated files | Wheel-build job |
 

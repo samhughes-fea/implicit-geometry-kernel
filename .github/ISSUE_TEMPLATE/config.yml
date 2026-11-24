@@ -1,4 +1,5 @@
-blank_issues_enabled: true
+# Synced from the shared development standard 0.1.0. Edit it there, not here.
+blank_issues_enabled: false
 contact_links:
   - name: Documentation
     url: https://samhughes-fea.github.io/implicit-geometry-kernel/

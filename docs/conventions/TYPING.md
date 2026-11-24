@@ -23,9 +23,4 @@ in the same PR that adds the annotations.
 
 ## Rules
 
-- New modules are written at the level of their package or higher.
-- Use `numpy.typing.ArrayLike` for inputs that `np.asarray` accepts and
-  `np.ndarray` for returns. `Any` is fine for duck-typed geometry arguments
-  (`geo`, `cut`) until protocols exist.
-- No blanket `# type: ignore`; give the code (`# type: ignore[attr-defined]`) and
-  a reason.
+The shared [typing standard](standard/typing.md).

@@ -92,3 +92,33 @@ def test_a_partial_span_stringer_starts_and_ends_at_terminations():
         assert curve.z.tolist() == [2.0, 3.0, 4.0]
     classes = {cls for c in stringer for cls in c.classes}
     assert {"junction", "free_edge"} <= classes
+
+
+def test_junction_mode_b_keeps_one_foot_and_tilts_the_web():
+    def feet(**kw):
+        sk = _blade(**kw).section_at(2.0).shell_graph().skeleton()
+        return {n.key[1:]: (np.asarray(n.point[:2]), n.phi_deg) for n in sk.nodes if n.key[0] == "junction"}
+
+    base = feet()
+    moved = {anchor: feet(web_tilt_deg=15.0, web_tilt_anchor=anchor) for anchor in ("chord", "suction", "pressure")}
+    for key, (p0, phi0) in base.items():
+        shift = {a: float(np.linalg.norm(moved[a][key][0] - p0)) for a in moved}
+        assert shift["chord"] > 1e-3  # both feet move about the chord line
+    for web in {k[0] for k in base}:
+        ends = [(web, 0), (web, 1)]
+        fixed_su = [float(np.linalg.norm(moved["suction"][e][0] - base[e][0])) for e in ends]
+        fixed_pr = [float(np.linalg.norm(moved["pressure"][e][0] - base[e][0])) for e in ends]
+        # One foot stays put (to the skin-thickness offset of the web axis), the other moves.
+        assert min(fixed_su) < 0.2 * max(fixed_su)
+        assert min(fixed_pr) < 0.2 * max(fixed_pr)
+        assert int(np.argmin(fixed_su)) != int(np.argmin(fixed_pr))
+        # At the kept foot the web-to-skin angle turns by roughly the tilt. Not exactly:
+        # the skeleton foot sits on the web axis, which is offset from the anchored
+        # skin point by half the web thickness, so the foot itself slides a little.
+        kept = ends[int(np.argmin(fixed_su))]
+        assert 8.0 < abs(base[kept][1] - moved["suction"][kept][1]) < 16.0
+
+
+def test_web_tilt_anchor_is_checked():
+    with pytest.raises(ValueError, match="web_tilt_anchor"):
+        _blade(web_tilt_anchor="middle")

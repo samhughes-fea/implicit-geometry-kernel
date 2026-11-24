@@ -131,6 +131,11 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         toward the trailing edge. One number, one per web, or a callable of
         ``z``. Two-foot webs already carry their line and reject a tilt.         Zero
         leaves the web chord-normal.
+    web_tilt_anchor:
+        Where a tilted web pivots. ``"chord"`` (default) turns it about its
+        chord fraction on the chord line. ``"suction"`` or ``"pressure"`` keeps
+        that foot at the chord fraction on that surface and finds the other foot
+        along the tilted line (junction mode B: one foot and an angle).
     span_interp:
         ``"linear"`` (default) interpolates station scalars (chord, twist,
         offset, pivot fraction) and ``(z, values)`` span tables linearly.
@@ -209,6 +214,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         twist_sense: str = "nose_up",
         cap_edge_reference: str = "midplane",
         web_tilt_deg: Optional[SpanTable] = None,
+        web_tilt_anchor: str = "chord",
         wall_reference: str = "mid",
         span_interp: str = "linear",
         span_sampling: str = "raise",
@@ -348,6 +354,9 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         else:
             _tilts = tuple(float(v) for v in web_tilt_deg)
             self._web_tilt_fn = lambda z, _w=_tilts: _w
+        if web_tilt_anchor not in ("chord", "suction", "pressure"):
+            raise ValueError("web_tilt_anchor must be 'chord', 'suction' or 'pressure'")
+        self.web_tilt_anchor = str(web_tilt_anchor)
         if wall_reference not in ("mid", "oml"):
             raise ValueError("wall_reference must be 'mid' or 'oml'")
         self.wall_reference = str(wall_reference)

@@ -11,9 +11,17 @@ from implicit_geometry_kernel.mesh.shell.shell_mesh import (
 )
 
 from implicit_geometry_kernel.mesh.shell.partition_mesh import PartitionMeshError, partition_mesh
+from implicit_geometry_kernel.mesh.shell.invariants import (
+    ShellMeshInvariantError,
+    assert_shell_mesh,
+    check_shell_mesh,
+)
 
 __all__ = [
     "PartitionMeshError",
+    "ShellMeshInvariantError",
+    "assert_shell_mesh",
+    "check_shell_mesh",
     "partition_mesh",
     "TIP_H_OVER_C",
     "MeshRecipe",

@@ -341,22 +341,47 @@ def _weld_triangles(faces: np.ndarray, index: dict[tuple[float, float, float], i
     void = flat.view(np.dtype((np.void, flat.dtype.itemsize * flat.shape[1]))).ravel()
     _unique, first, inverse = np.unique(void, return_index=True, return_inverse=True)
 
-    def _coarse(p) -> tuple[float, float, float]:
-        return (round(float(p[0]), 8), round(float(p[1]), 8), round(float(p[2]), 8))
+    # Near-coincident points weld by distance, not by rounding: two points a
+    # hair apart can round to different keys when they straddle a rounding
+    # boundary, which left fill nodes lying on boundary nodes (an unshared seam).
+    weld = 1e-8
 
-    near = {_coarse(p): i for i, p in enumerate(nodes)}
+    def _cell(p) -> tuple[int, int, int]:
+        return (int(np.floor(p[0] / weld)), int(np.floor(p[1] / weld)), int(np.floor(p[2] / weld)))
+
+    grid: dict[tuple[int, int, int], list[int]] = {}
+
+    def _add(k: int) -> None:
+        grid.setdefault(_cell(nodes[k]), []).append(k)
+
+    def _near(p) -> int | None:
+        cx, cy, cz = _cell(p)
+        best, best_d = None, weld
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for dz in (-1, 0, 1):
+                    for k in grid.get((cx + dx, cy + dy, cz + dz), ()):
+                        d = float(np.linalg.norm(np.asarray(nodes[k], float) - p))
+                        if d < best_d:
+                            best, best_d = k, d
+        return best
+
+    for k in range(len(nodes)):
+        _add(k)
     ids = np.empty(len(first), np.int64)
     for i, p in enumerate(flat[first]):
         key = _point_key(p)
-        k = index.get(key)
-        if k is None:
-            k = near.get(_coarse(p))
-        if k is None:
+        found = index.get(key)
+        if found is None:
+            found = _near(p)
+        if found is not None:
+            k = found
+        else:
             k = len(nodes)
             index[key] = k
             nodes.append(np.asarray(key, float))
             origins.append("interior")
-            near[_coarse(p)] = k
+            _add(k)
         ids[i] = k
     corners = ids[inverse].reshape(-1, 3)
     collapsed = (

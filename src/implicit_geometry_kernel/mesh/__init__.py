@@ -17,7 +17,7 @@ above (``mesh.shell``, ``mesh.export``, ``mesh.fill``). Flat module paths
 ``mesh.delaunay``) still import in 0.9.5 with a ``DeprecationWarning`` and go in 0.9.6.
 """
 
-from implicit_geometry_kernel.mesh.export import write_vtk
+from implicit_geometry_kernel.mesh.export import write_vtk, write_vtu
 from implicit_geometry_kernel.mesh.fill import polygon_mesh_ring
 from implicit_geometry_kernel.mesh.health import (
     HEALTH_CLASSES, HEALTH_CODES, HealthClass, HealthHit, HealthThresholds,
@@ -39,5 +39,5 @@ __all__ = [
     "MeshCheck", "MeshRecipe", "MeshRunQuality", "ShellMesh",
     "diff_study_folders", "mesh_check", "mesh_failures", "mesh_quality", "mesh_stations",
     "off_root_open_edges", "polygon_mesh_ring", "run_mesh_health", "shell_mesh",
-    "trailing_face_failures", "transition_band_failures", "write_mesh_tables", "write_vtk",
+    "trailing_face_failures", "transition_band_failures", "write_mesh_tables", "write_vtk", "write_vtu",
 ]

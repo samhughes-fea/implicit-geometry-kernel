@@ -11,6 +11,7 @@ SLOW = {
     "tests/section/test_plot_section_with_quadtree.py::test_plot_section_with_quadtree_two_axes_and_rectangles",
     "tests/test_mapped_strip_quads.py::test_parametric_blade_quads_match_python_loops",
     "tests/test_mesh_health.py::test_write_mesh_tables_emits_failures_and_health_counts",
+    "tests/test_mesh_invariants.py::test_fuzz_generic_blades_pass_the_gate",
     "tests/test_reference_transition.py::test_iea10_cap_loft_key_stable_along_span",
     "tests/test_reference_transition.py::test_iea10_loft_keepset_matches_intercept",
     "tests/test_reference_transition.py::test_iea22_te_corners_do_not_chatter",

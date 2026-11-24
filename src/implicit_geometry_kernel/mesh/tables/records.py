@@ -13,7 +13,7 @@ import numpy as np
 ORIGINS = ("station", "span_mid", "centroid", "station_as_midpoint", "interior")
 
 CONSTRUCTORS = ("ruled", "midspan_split", "step_patch", "transition", "fan", "bowtie",
-                "omitted", "inherited", "interior")
+                "omitted", "inherited", "interior", "partition")
 
 KINDS = ("station", "spanwise", "interior")
 

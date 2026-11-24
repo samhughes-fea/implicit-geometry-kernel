@@ -1,12 +1,13 @@
+# Synced from the shared development standard 0.1.0. Edit it there, not here.
 name: Bug report
-description: Wrong geometry, a crash, or a mesh that fails a check
+description: Wrong results, a crash, or a failed check
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        Please do not attach confidential blade data (aerofoil coordinates, layups).
-        A NACA or public reference blade that shows the same problem is ideal.
+        Please do not attach confidential data. A public or made-up input that
+        shows the same problem is ideal.
   - type: textarea
     id: what
     attributes:
@@ -24,12 +25,12 @@ body:
   - type: input
     id: version
     attributes:
-      label: Kernel version
-      description: "python -c \"import implicit_geometry_kernel as k; print(k.__version__)\""
+      label: Version
+      description: The package's __version__, or the commit you installed.
     validations:
       required: true
   - type: input
     id: env
     attributes:
-      label: Python, OS and GEOS source
-      placeholder: "3.12, Ubuntu 24.04, GEOS from the Shapely wheel"
+      label: Python and OS
+      placeholder: "3.12, Ubuntu 24.04"

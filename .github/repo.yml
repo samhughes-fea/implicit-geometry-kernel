@@ -1,0 +1,10 @@
+# This repository's values for the shared development standard
+# (docs/conventions/standard/repo-profile.md). Owned by this repository.
+profile: python-package
+package: implicit_geometry_kernel
+version-line: '0.9'
+python: ['3.11', '3.12', '3.13']
+pypi: false
+docs-site: true
+plan-doc: docs/internal/REFACTOR_PLAN.md
+scopes: [sdf, section, blade, structure, mesh]

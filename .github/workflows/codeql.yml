@@ -1,3 +1,4 @@
+# Synced from the shared development standard 0.1.0. Edit it there, not here.
 name: codeql
 
 # Static security analysis of the Python source and the workflows.
@@ -13,9 +14,14 @@ permissions:
   contents: read
   actions: read
 
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:

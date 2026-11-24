@@ -30,7 +30,8 @@ from typing import Any, Sequence
 
 import numpy as np
 
-from implicit_geometry_kernel.blade.skeleton import run_point_at
+from implicit_geometry_kernel.blade.skeleton import run_point_at, run_t
+from implicit_geometry_kernel.blade.topology.sizing import EPS_OVER_C, KAPPA_FLOOR
 from implicit_geometry_kernel.mesh.fill import triangulate_ring
 from implicit_geometry_kernel.mesh.shell.orient import _oriented
 from implicit_geometry_kernel.mesh.quality import _measure, quality_rollup, volume_ratio_from_edges
@@ -122,6 +123,124 @@ def _te_point(ring: np.ndarray) -> np.ndarray:
     return pts[int(np.argmax(np.linalg.norm(pts - c, axis=1)))]
 
 
+#: How fast the local edge may grow along a run, per metre of arc (graded sizing).
+_GRADING = 0.25
+
+
+#: Arc length, as a fraction of chord, over which the sizing curvature is measured.
+_KAPPA_WINDOW = 0.02
+
+
+def _window_kappa(pts: np.ndarray, window: float) -> np.ndarray:
+    """Curvature at each point as the tangent turn over ``window`` metres of arc, divided by it.
+
+    A nose of radius well above ``window`` gives its true curvature. A single
+    kinked vertex (a midline offset step, a polyline glitch) gives only its
+    angle over ``window``, not over one tiny segment, so it does not shrink the
+    mesh there.
+    """
+    xy = np.asarray(pts, float)[:, :2]
+    d = np.diff(xy, axis=0)
+    seg = np.linalg.norm(d, axis=1)
+    keep = seg > 1e-15
+    if keep.sum() < 2:
+        return np.zeros(len(xy))
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    mid = 0.5 * (s[:-1] + s[1:])[keep]
+    theta = np.unwrap(np.arctan2(d[keep, 1], d[keep, 0]))
+    half = 0.5 * float(window)
+    lo = np.clip(s - half, mid[0], mid[-1])
+    hi = np.clip(s + half, mid[0], mid[-1])
+    span = np.maximum(hi - lo, 1e-15)
+    turn = np.abs(np.interp(hi, mid, theta) - np.interp(lo, mid, theta))
+    return np.where(hi - lo > 1e-12, turn / span, 0.0)
+
+
+def _edge_measure(pts: np.ndarray, h: float, chord: float | None) -> tuple[np.ndarray, np.ndarray]:
+    """``(t, W)`` at the run's points: ``W(t)`` is how many edges fit from the start to ``t``.
+
+    The local edge is ``h``, or on the skin (``chord`` given) the sagitta edge
+    ``sqrt(8 EPS_OVER_C c / kappa)`` where that is shorter, the same rule as the
+    ruled-strip mesher's region counts. It is graded so it grows by at most
+    :data:`_GRADING` per metre of arc, which spreads the leading-edge refinement
+    smoothly into the flatter skin. Equal steps in ``W`` give the node spacing.
+    """
+    pts = np.asarray(pts, float)
+    tt = run_t(pts)
+    seg = np.linalg.norm(np.diff(pts[:, :2], axis=0), axis=1)
+    length = float(seg.sum())
+    if length <= 0.0 or len(pts) < 2:
+        return np.array([0.0, 1.0]), np.array([0.0, 0.0])
+    edge = np.full(len(pts), float(h))
+    if chord is not None and chord > 0.0 and len(pts) >= 3:
+        kap = _window_kappa(pts, _KAPPA_WINDOW * float(chord))
+        with np.errstate(divide="ignore"):
+            sag = np.where(kap > KAPPA_FLOOR, np.sqrt(8.0 * EPS_OVER_C * float(chord) / np.maximum(kap, KAPPA_FLOOR)), np.inf)
+        edge = np.minimum(edge, sag)
+        for i in range(1, len(edge)):  # grade forwards, then backwards
+            edge[i] = min(edge[i], edge[i - 1] + _GRADING * seg[i - 1])
+        for i in range(len(edge) - 2, -1, -1):
+            edge[i] = min(edge[i], edge[i + 1] + _GRADING * seg[i])
+    density = 1.0 / edge  # edges per metre
+    w = np.concatenate([[0.0], np.cumsum(0.5 * (density[1:] + density[:-1]) * seg)])
+    return tt, w
+
+
+def _ts_between(tt: np.ndarray, w: np.ndarray, t0: float, t1: float, n: int) -> np.ndarray:
+    """``n + 1`` run parameters from ``t0`` to ``t1`` at equal steps of the edge measure."""
+    w0, w1 = float(np.interp(t0, tt, w)), float(np.interp(t1, tt, w))
+    if not w1 > w0:
+        return np.linspace(t0, t1, n + 1)
+    ts = np.interp(np.linspace(w0, w1, n + 1), w, tt)
+    ts[0], ts[-1] = t0, t1
+    return ts
+
+
+#: A span bay may be this many times the station's mean skin edge (as the ruled mesher).
+_SPAN_OVER_EDGE = 1.25
+
+
+def _mean_loop_edge(graph, h: float, chord: float) -> float:
+    """Mean graded edge round the skin loop at one station: loop length over its edge measure."""
+    length = 0.0
+    edges = 0.0
+    for run in graph.loop:
+        pts = np.asarray(run.points, float)
+        if len(pts) < 2:
+            continue
+        _, w = _edge_measure(pts, h, chord)
+        length += float(np.sum(np.linalg.norm(np.diff(pts[:, :2], axis=0), axis=1)))
+        edges += float(w[-1])
+    return length / edges if edges > 0.0 else float(h)
+
+
+def _grade_span(geo, z_list: list[float], graphs: list, h: float) -> tuple[list[float], list]:
+    """Split span bays longer than :data:`_SPAN_OVER_EDGE` times the skin edge at either end.
+
+    Curvature sizing shortens the skin edges near the nose; without this the
+    quads there would be long in span and short across it. One pass, evenly,
+    and never into steps under ``h / 2``.
+    """
+    mean = [_mean_loop_edge(g, h, float(geo.interpolate(z)[0])) for z, g in zip(z_list, graphs)]
+    out_z, out_g = [z_list[0]], [graphs[0]]
+    for i in range(len(z_list) - 1):
+        za, zb = z_list[i], z_list[i + 1]
+        limit = _SPAN_OVER_EDGE * min(mean[i], mean[i + 1])
+        n = int(math.ceil((zb - za) / limit - 1e-9)) if limit > 0.0 else 1
+        # As the ruled mesher: a step stays at least h / 2. A skin edge already
+        # shorter than that is the geometry (a tight nose), and the span step
+        # does not chase it.
+        while n > 1 and (zb - za) / n < 0.5 * h * (1.0 - 1e-9):
+            n -= 1
+        for k in range(1, max(n, 1)):
+            z = za + (zb - za) * k / n
+            out_z.append(z)
+            out_g.append(geo.section_at(z).shell_graph())
+        out_z.append(zb)
+        out_g.append(graphs[i + 1])
+    return out_z, out_g
+
+
 #: Fewest edges round the skin loop, whatever ``h`` is, so the rib and tip faces
 #: have a ring to fill.
 _MIN_LOOP_EDGES = 8
@@ -167,6 +286,8 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     if len(z_list) < 2:
         raise ValueError("the partition mesher needs at least two stations")
     graphs = [geo.section_at(z).shell_graph() for z in z_list]
+    if zs is None:
+        z_list, graphs = _grade_span(geo, z_list, graphs, float(h))
     signature = _graph_signature(graphs[0])
     for g in graphs[1:]:
         if _graph_signature(g) != signature:
@@ -190,6 +311,8 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     # Mesh lines on each run: the same keys, in the same order, at every station.
     breaks: dict = {}
     counts: dict = {}
+    measure: dict = {}  # (station, run) -> (t, W), the graded edge measure
+    chords = [float(geo.interpolate(z)[0]) for z in z_list]
     for name in order:
         per_station = [_segment_breaks(_breakpoints(sk, rs[name], sub_partitions)) for sk, rs in zip(skeletons, by_station)]
         keys0 = [k for k, _ in per_station[0]]
@@ -200,11 +323,12 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
                 )
         n_seg = len(keys0) - 1
         need = [1] * n_seg
-        for rs, b in zip(by_station, per_station):
-            pts = np.asarray(rs[name].points, float)
-            length = float(np.sum(np.linalg.norm(np.diff(pts[:, :2], axis=0), axis=1)))
+        for j, (rs, b) in enumerate(zip(by_station, per_station)):
+            tt, w = measure[(j, name)] = _edge_measure(
+                np.asarray(rs[name].points, float), float(h), chords[j] if name in loop_names else None)
             for k in range(n_seg):
-                need[k] = max(need[k], int(math.ceil((b[k + 1][1] - b[k][1]) * length / float(h) - 1e-9)))
+                span = float(np.interp(b[k + 1][1], tt, w) - np.interp(b[k][1], tt, w))
+                need[k] = max(need[k], int(math.ceil(span - 1e-9)))
         breaks[name] = per_station
         counts[name] = need
     # A coarse h must still leave a closed loop that a rib or the tip closure
@@ -244,7 +368,8 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
             row: list[int] = []
             closing = name == loop_names[-1] and first_start is not None
             for k in range(len(b) - 1):
-                ts = np.linspace(b[k][1], b[k + 1][1], counts[name][k] + 1)
+                tt_w = measure[(j, name)]
+                ts = _ts_between(tt_w[0], tt_w[1], b[k][1], b[k + 1][1], counts[name][k])
                 for m, t in enumerate(ts[:-1] if k < len(b) - 2 else ts):
                     if k == 0 and m == 0 and prev_end is not None:
                         row.append(prev_end)
@@ -287,7 +412,8 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
                     if end in ends:
                         break
             for k in range(len(b) - 1):
-                ts = np.linspace(b[k][1], b[k + 1][1], counts[name][k] + 1)
+                tt_w = measure[(j, name)]
+                ts = _ts_between(tt_w[0], tt_w[1], b[k][1], b[k + 1][1], counts[name][k])
                 for m, t in enumerate(ts[:-1] if k < len(b) - 2 else ts):
                     first = k == 0 and m == 0
                     last_pt = k == len(b) - 2 and m == len(ts) - 1

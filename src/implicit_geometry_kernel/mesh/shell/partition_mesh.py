@@ -25,6 +25,7 @@ sits beside :func:`shell_mesh`, which stays the default.
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from typing import Any, Sequence
 
 import numpy as np
@@ -32,7 +33,9 @@ import numpy as np
 from implicit_geometry_kernel.blade.skeleton import run_point_at
 from implicit_geometry_kernel.mesh.fill import triangulate_ring
 from implicit_geometry_kernel.mesh.shell.orient import _oriented
-from implicit_geometry_kernel.mesh.shell.types import ShellMesh
+from implicit_geometry_kernel.mesh.quality import _measure, quality_rollup, volume_ratio_from_edges
+from implicit_geometry_kernel.mesh.tables import assemble
+from implicit_geometry_kernel.mesh.shell.types import MeshRecipe, ShellMesh
 from implicit_geometry_kernel.mesh.shell.stations import mesh_stations
 
 _T_TOL = 1e-9
@@ -119,6 +122,11 @@ def _te_point(ring: np.ndarray) -> np.ndarray:
     return pts[int(np.argmax(np.linalg.norm(pts - c, axis=1)))]
 
 
+#: Fewest edges round the skin loop, whatever ``h`` is, so the rib and tip faces
+#: have a ring to fill.
+_MIN_LOOP_EDGES = 8
+
+
 def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
                    sub_partitions: Sequence[Any] = (), polygon_size: float | None = None) -> ShellMesh:
     """A structured (t, z) quad mesh of the blade's skin and webs, with rib and tip triangles.
@@ -199,6 +207,23 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
                 need[k] = max(need[k], int(math.ceil((b[k + 1][1] - b[k][1]) * length / float(h) - 1e-9)))
         breaks[name] = per_station
         counts[name] = need
+    # A coarse h must still leave a closed loop that a rib or the tip closure
+    # can fill (decision 0007): at least _MIN_LOOP_EDGES edges round the loop,
+    # added one at a time to the longest-per-edge segment.
+    loop_total = sum(sum(counts[name]) for name in loop_names)
+    while loop_total < _MIN_LOOP_EDGES:
+        best, best_len = None, -1.0
+        for name in loop_names:
+            pts = np.asarray(by_station[0][name].points, float)
+            length = float(np.sum(np.linalg.norm(np.diff(pts[:, :2], axis=0), axis=1)))
+            b = breaks[name][0]
+            for k, n in enumerate(counts[name]):
+                per_edge = (b[k + 1][1] - b[k][1]) * length / n
+                if per_edge > best_len:
+                    best, best_len = (name, k), per_edge
+        assert best is not None
+        counts[best[0]][best[1]] += 1
+        loop_total += 1
 
     nodes: list[np.ndarray] = []
 
@@ -330,7 +355,7 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     pts = np.asarray(nodes, float)
     te_at = {z: np.append(_te_point(np.asarray(g.loop_polygon(), float)), z) for z, g in zip(z_list, graphs)}
     elements, flipped = _oriented(pts, elements, [r[1] for r in rows], z_list, te_at)
-    return ShellMesh(
+    mesh = ShellMesh(
         nodes=pts,
         elements=tuple(tuple(int(i) for i in e) for e in elements),
         name=tuple(r[0] for r in rows),
@@ -349,7 +374,15 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
         flipped=tuple(int(f) for f in flipped),
         node_origin=tuple(origins),
         section_distance=np.zeros(len(pts)),
+        recipe=MeshRecipe(tip_h_over_c=None, h=float(h), h_over_c=None, n_span=None, region_h=(),
+                          refine=(), edge=tuple(float(h) for _ in z_list)),
     )
+    # The same quality table, rollup and assembled tables as the ruled-strip mesh.
+    thickness = np.asarray(mesh.thickness, float)
+    table, jmax = _measure(np.asarray(pts, float), mesh.elements, thickness, with_ratio=False)
+    facts = assemble(mesh, float(z_list[0]))
+    table["volume_ratio"] = volume_ratio_from_edges(facts["edges"], table["shell_volume"])
+    return replace(mesh, element_quality=table, quality=quality_rollup(mesh.partition, table, jmax), **facts)
 
 
 __all__ = ["PartitionMeshError", "partition_mesh"]

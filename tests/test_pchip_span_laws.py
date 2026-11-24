@@ -112,15 +112,37 @@ def _blade(n, **kw):
     )
 
 
-def test_linear_stays_the_default():
+def test_auto_is_the_default_and_keeps_sparse_laws_linear():
+    """Decision 0014 at 0.9.6: authored laws are smooth where the stations support it."""
     geo = _blade(4)
+    lin = _blade(4, span_interp="linear")
+    assert geo.span_interp_requested == "auto"
+    assert geo.span_law_interp["chord"] == "linear"  # 4 stations on a curving chord: too sparse
+    assert geo.span_law_interp["twist"] == "pchip"  # a linear twist passes, and PCHIP keeps it linear
+    assert geo.validate() == []  # a linear fallback is a choice, not a failure
+    for z in np.linspace(0.0, 9.0, 37):
+        assert geo.interpolate(float(z))[0] == pytest.approx(lin.interpolate(float(z))[0], abs=1e-12)
+        assert geo.interpolate(float(z))[1] == pytest.approx(lin.interpolate(float(z))[1], abs=1e-9)
+
+
+def test_auto_uses_pchip_on_dense_stations():
+    geo, smooth = _blade(31), _blade(31, span_interp="pchip")
+    assert geo.span_interp == "pchip"
+    assert set(geo.span_law_interp.values()) == {"pchip"}
+    for z in np.linspace(0.0, 9.0, 37):
+        assert geo.interpolate(float(z))[0] == pytest.approx(smooth.interpolate(float(z))[0], abs=1e-12)
+
+
+def test_linear_is_still_available():
+    geo = _blade(4, span_interp="linear")
     assert geo.span_interp == "linear"
     assert geo.span_sampling_reports == []
+    assert geo.span_law_interp == {}
     assert geo.validate() == []
 
 
 def test_pchip_blade_matches_stations_and_curves_between_them():
-    lin = _blade(31)
+    lin = _blade(31, span_interp="linear")
     smooth = _blade(31, span_interp="pchip")
     for st in smooth.stations:
         chord, twist, *_ = smooth.interpolate(st.z)

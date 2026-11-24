@@ -396,7 +396,7 @@ def test_a_short_cap_keeps_short_edges():
     geo = BladeGeometry(stations, "1B-F-LC-0R", 0.004, pivot_fraction=0.3,
                         spar_cap_thickness=0.008, shear_web_thickness=0.004,
                         cap_windows=((0.46, 0.50),))
-    m = shell_mesh(geo, h=0.5)
+    m = shell_mesh(geo, h=0.5, method="ruled")  # region names (cap_*) are the ruled mesher's
     edges = []
     for i in m.quads:
         if not str(m.name[i]).startswith("cap"):
@@ -441,8 +441,8 @@ def test_ply_drop_and_stringer_add_stations_and_no_new_skin_regions():
     zs = mesh_stations(full, h=1.0)
     for z in (2.15, 3.15, 3.40, 5.4):
         assert any(abs(s - z) < 1e-6 for s in zs)
-    m = shell_mesh(full, h=1.0)
-    base = shell_mesh(bare, h=1.0)
+    m = shell_mesh(full, h=1.0, method="ruled")
+    base = shell_mesh(bare, h=1.0, method="ruled")
     assert "stringer" not in m.surface
     assert all("stiff" not in n and "pad" not in n for n in m.name)
     skin = {n for n, s in zip(m.name, m.surface) if s == "skin"}

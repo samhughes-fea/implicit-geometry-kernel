@@ -137,14 +137,20 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         that foot at the chord fraction on that surface and finds the other foot
         along the tilted line (junction mode B: one foot and an angle).
     span_interp:
-        ``"linear"`` (default) interpolates station scalars (chord, twist,
-        offset, pivot fraction) and ``(z, values)`` span tables linearly.
-        ``"pchip"`` uses a shape-preserving cubic (C1) for them instead, for
-        authored laws (decision 0014). Callables and the airfoil blend are
-        unchanged. PCHIP needs denser stations: each law is checked with a
-        leave-one-out test (:func:`~implicit_geometry_kernel.structure.check_pchip_sampling`).
+        How station scalars (chord, twist, offset, pivot fraction) and
+        ``(z, values)`` span tables are interpolated along the span.
+        ``"auto"`` (default since 0.9.6, decision 0014) uses a shape-preserving
+        cubic (PCHIP, C1) for each law whose knots pass the leave-one-out test
+        (:func:`~implicit_geometry_kernel.structure.check_pchip_sampling`) and
+        linear for the others, so sparse knots never invent curvature;
+        :attr:`span_law_interp` records the choice per law. ``"pchip"`` uses
+        PCHIP for every law and applies ``span_sampling`` to the ones that fail.
+        ``"linear"`` is the loft before 0.9.6; pass it for tabulated inputs
+        (windIO, CSV, station lists read from a file), which stay linear.
+        :meth:`from_section` defaults to it. Callables and the airfoil blend are
+        unchanged.
     span_sampling:
-        With ``span_interp="pchip"``: ``"raise"`` (default) refuses knots too
+        With ``span_interp="pchip"`` only: ``"raise"`` (default) refuses knots too
         sparse for PCHIP with :class:`~implicit_geometry_kernel.structure.UnderSampledSpanLaw`
         naming the quantity and station; ``"flag"`` builds the blade and
         :meth:`validate` lists the failures.
@@ -216,7 +222,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         web_tilt_deg: Optional[SpanTable] = None,
         web_tilt_anchor: str = "chord",
         wall_reference: str = "mid",
-        span_interp: str = "linear",
+        span_interp: str = "auto",
         span_sampling: str = "raise",
         span_rtol: float = 5e-3,
     ):
@@ -260,14 +266,16 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         src = pitch_axis if pivot_fraction is None else pivot_fraction
         if src is None:
             raise TypeError("pivot_fraction is required (a chord fraction or span table)")
-        if span_interp not in ("linear", "pchip"):
-            raise ValueError("span_interp must be 'linear' or 'pchip'")
+        if span_interp not in ("auto", "linear", "pchip"):
+            raise ValueError("span_interp must be 'auto', 'linear' or 'pchip'")
         if span_sampling not in ("raise", "flag"):
             raise ValueError("span_sampling must be 'raise' or 'flag'")
+        self.span_interp_requested = str(span_interp)
         self.span_interp = str(span_interp)
         self.span_sampling = str(span_sampling)
         self.span_sampling_reports: list = []
-        interp = self._pchip_factory(float(span_rtol)) if self.span_interp == "pchip" else None
+        self.span_law_interp: dict[str, str] = {}
+        interp = self._pchip_factory(float(span_rtol)) if span_interp != "linear" else None
         self._pitch = _as_pivot_fraction(src, interp=interp)
         if self.web_offsets is None and web_positions is None and web_x_from_pitch is None and n_webs > 0:
             from implicit_geometry_kernel.blade.concepts.web_anchoring import (
@@ -321,6 +329,9 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
                 offsets = [tuple(s.offset) for s in self.stations]
                 if any(o != offsets[0] for o in offsets):
                     self._offset = _as_span_table((station_z, offsets), "offset", cols=2, interp=interp)
+        if span_interp == "auto":
+            # The patch and mesh follow the blade: smooth where any law is smooth.
+            self.span_interp = "pchip" if "pchip" in self.span_law_interp.values() else "linear"
         self.n_airfoil_points = int(n_airfoil_points)
         self.transverse, self.tip_closure = _split_tip_closure(
             tuple(transverse), tip_closure, float(self.stations[-1].z)
@@ -377,11 +388,22 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         # interpolate / section_at / query / write / validate live on mixins
 
     def _pchip_factory(self, rtol: float):
-        """Build PCHIP laws for span tables, keeping each sampling report."""
-        from implicit_geometry_kernel.structure.laws import PchipLaw
+        """Build PCHIP laws for span tables, keeping each sampling report.
+
+        With ``span_interp="auto"`` a law whose knots fail the leave-one-out
+        check is built linear instead (a :class:`TableLaw`), and the choice is
+        kept in :attr:`span_law_interp`; nothing is raised or flagged.
+        """
+        from implicit_geometry_kernel.structure.laws import PchipLaw, TableLaw
+
+        auto = self.span_interp_requested == "auto"
 
         def make(z, values, name):
-            law = PchipLaw(z, values, name=name, rtol=rtol, sampling=self.span_sampling)
+            law = PchipLaw(z, values, name=name, rtol=rtol, sampling="flag" if auto else self.span_sampling)
+            if auto and not law.sampling.ok:
+                self.span_law_interp[name] = "linear"
+                return TableLaw(z, values)
+            self.span_law_interp[name] = "pchip"
             self.span_sampling_reports.append(law.sampling)
             return law
 
@@ -437,6 +459,7 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         if "pivot_fraction" not in kwargs and "pitch_axis" not in kwargs:
             kwargs["pivot_fraction"] = float(samples[0].pivot_fraction)
         kwargs["n_airfoil_points"] = n_airfoil_points
+        kwargs.setdefault("span_interp", "linear")  # tabulated samples: linear between them (0014)
         geo = cls(stations, layout, skin_thickness, **kwargs)
         by_z = {s.z: s for s in samples}
         geo._section_samples = tuple(by_z[st.z] for st in geo.stations)

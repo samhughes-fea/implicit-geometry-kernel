@@ -163,7 +163,24 @@ def test_shell_mesh_method_switch():
     auto = shell_mesh(geo, h=0.2, zs=[0.0, 2.0, 4.0], method="auto")
     assert {c for c, s in zip(auto.constructor, auto.surface) if s in ("skin", "web")} == {"partition"}
     with pytest.raises(ValueError, match="sub_partitions"):
-        shell_mesh(geo, h=0.2, sub_partitions=[SubPartition("x", BAND_HOST, (0.1, 0.2), 0.01)])
+        shell_mesh(geo, h=0.2, method="ruled", sub_partitions=[SubPartition("x", BAND_HOST, (0.1, 0.2), 0.01)])
+    with pytest.raises(ValueError, match="sub_partitions"):
+        shell_mesh(geo, h=0.2, h_over_c=0.1, sub_partitions=[SubPartition("x", BAND_HOST, (0.1, 0.2), 0.01)])
+
+
+def test_auto_is_the_default_and_needs_sizing_by_h_alone():
+    """Decision 0015 at 0.9.6: the partition mesher by default, the ruled mesher for its own controls."""
+    geo = _blade()
+
+    def sheet(mesh):
+        return {c for c, s in zip(mesh.constructor, mesh.surface) if s in ("skin", "web")}
+
+    default = shell_mesh(geo, h=0.2, zs=[0.0, 2.0, 4.0])
+    assert sheet(default) == {"partition"}
+    assert default.digest() == shell_mesh(geo, h=0.2, zs=[0.0, 2.0, 4.0], method="partition").digest()
+    assert "partition" not in sheet(shell_mesh(geo, n_span=3))
+    assert "partition" not in sheet(shell_mesh(geo, h=0.2, h_over_c=0.1))
+    assert "partition" not in sheet(shell_mesh(geo, h=0.2, refine=[(1.0, 2.0, 0.1)]))
 
 
 def test_auto_falls_back_to_the_ruled_mesh_where_the_partition_mesher_refuses():

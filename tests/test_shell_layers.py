@@ -105,7 +105,7 @@ def test_self_similar_skin_stays_ruled_when_the_nose_fits():
 
 @pytest.fixture(scope="module")
 def taper():
-    return shell_mesh(_taper(), h=0.12)
+    return shell_mesh(_taper(), h=0.12, method="ruled")
 
 
 def test_a_halving_arc_keeps_one_count(taper):
@@ -315,7 +315,7 @@ def _scaled(z1: float, chord: float, h: float):
         stations, "2D-F-LC-4R", 0.004, pivot_fraction=0.3,
         spar_cap_thickness=0.008, shear_web_thickness=0.004,
     )
-    return shell_mesh(geo, h=h, zs=(0.0, z1))
+    return shell_mesh(geo, h=h, zs=(0.0, z1), method="ruled")
 
 
 def test_a_steep_shell_bay_stays_ruled():
@@ -353,7 +353,7 @@ def test_a_thin_trailing_face_is_the_ridge():
     assert opening < te_blunt_eps(root)
     assert te_face_open(root, root_pts)
     assert not te_wrap_for_mesh(root, root_pts, 0.5)
-    mesh = shell_mesh(geo, h=0.5, zs=(0.0, 0.4))
+    mesh = shell_mesh(geo, h=0.5, zs=(0.0, 0.4), method="ruled")
     assert [s for s in mesh.strips if s.region == "te"] == []
 
 
@@ -396,7 +396,7 @@ def test_a_closing_flatback_leaves_a_legal_trailing_face():
         stations, "2D-F-LC-4R", 0.004, pivot_fraction=0.3,
         spar_cap_thickness=0.008, shear_web_thickness=0.004,
     )
-    mesh = shell_mesh(geo, h=h, zs=tuple(s.z for s in stations))
+    mesh = shell_mesh(geo, h=h, zs=tuple(s.z for s in stations), method="ruled")
     te = [s for s in mesh.strips if s.region == "te"]
     assert any(s.constructor == "fan" for s in te)
     assert trailing_face_failures(mesh) == []
@@ -426,7 +426,7 @@ def test_a_long_step_shares_the_taper():
         stations, "2D-F-LC-4R", 0.004, pivot_fraction=0.3,
         spar_cap_thickness=0.008, shear_web_thickness=0.004,
     )
-    mesh = shell_mesh(geo, h=0.20, zs=(0.0, 0.05))
+    mesh = shell_mesh(geo, h=0.20, zs=(0.0, 0.05), method="ruled")
     webs = [c for c in mesh.counts if c.region == "web_1"]
     assert len(webs) == 2 and webs[0].count == webs[1].count
     strips = [s for s in mesh.strips if s.region == "web_1"]

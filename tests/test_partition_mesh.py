@@ -160,5 +160,18 @@ def test_shell_mesh_method_switch():
         shell_mesh(geo, method="partition", zs=[0.0, 4.0])
     with pytest.raises(ValueError, match="method"):
         shell_mesh(geo, h=0.2, method="coons")
+    auto = shell_mesh(geo, h=0.2, zs=[0.0, 2.0, 4.0], method="auto")
+    assert {c for c, s in zip(auto.constructor, auto.surface) if s in ("skin", "web")} == {"partition"}
     with pytest.raises(ValueError, match="sub_partitions"):
         shell_mesh(geo, h=0.2, sub_partitions=[SubPartition("x", BAND_HOST, (0.1, 0.2), 0.01)])
+
+
+def test_auto_falls_back_to_the_ruled_mesh_where_the_partition_mesher_refuses():
+    from implicit_geometry_kernel import Stringer
+
+    geo = _blade(stringers=[Stringer("stiff", 0.6, 0.004, 0.02)])
+    band = SubPartition("x", BAND_HOST, (0.1, 0.2), 0.01)
+    mesh = shell_mesh(geo, h=0.2, zs=[0.0, 2.0, 4.0], method="auto", sub_partitions=[band])
+    assert "partition" not in set(mesh.constructor)
+    with pytest.raises(PartitionMeshError):
+        shell_mesh(geo, h=0.2, zs=[0.0, 2.0, 4.0], method="partition")

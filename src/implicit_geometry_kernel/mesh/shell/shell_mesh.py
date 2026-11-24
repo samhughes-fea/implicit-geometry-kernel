@@ -165,18 +165,26 @@ def shell_mesh(geo, n_span: int | None = None, *, h: float | None = None,
 
     ``method="partition"`` uses the (t, z) partition mesher instead
     (:func:`~implicit_geometry_kernel.mesh.shell.partition_mesh.partition_mesh`,
-    decision 0015): it needs ``h``, takes ``zs`` and ``sub_partitions``, and in
-    this first step builds skin and webs only, for blades whose shell topology
-    is the same at every station. ``"ruled"`` (the default) is this mesher.
+    decision 0015): it needs ``h``, takes ``zs`` and ``sub_partitions``, and, for
+    now, meshes blades whose shell topology
+    is the same at every station. ``"auto"`` uses the partition mesher where
+    it applies and this mesher otherwise (``constructor`` tells which built
+    the mesh: ``"partition"`` on its skin and web quads). ``"ruled"`` (the
+    default) is this mesher.
     """
-    if method == "partition":
+    if method in ("partition", "auto"):
         if h is None:
-            raise ValueError('method="partition" needs h')
-        from implicit_geometry_kernel.mesh.shell.partition_mesh import partition_mesh
+            raise ValueError(f'method="{method}" needs h')
+        from implicit_geometry_kernel.mesh.shell.partition_mesh import PartitionMeshError, partition_mesh
 
-        return partition_mesh(geo, h=float(h), zs=zs, sub_partitions=sub_partitions)
-    if method != "ruled":
-        raise ValueError(f'method must be "ruled" or "partition", got {method!r}')
+        try:
+            return partition_mesh(geo, h=float(h), zs=zs, sub_partitions=sub_partitions)
+        except PartitionMeshError:
+            if method == "partition":
+                raise
+        sub_partitions = ()  # the ruled mesh has no band lines; apply bands with assign_sub_partitions
+    elif method != "ruled":
+        raise ValueError(f'method must be "ruled", "partition" or "auto", got {method!r}')
     if sub_partitions:
         raise ValueError('sub_partitions need method="partition"; for the ruled mesh use assign_sub_partitions')
     with stage("implicit_geometry_kernel", "shell_mesh") as rec:

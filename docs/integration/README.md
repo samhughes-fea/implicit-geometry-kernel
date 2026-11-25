@@ -10,6 +10,10 @@ quadrature on signed-distance solids.
 
 **Import:** `implicit_geometry_kernel.integration`
 
+The derivations of every integral below, with their limits and checks, are in
+[R7 · Section properties by quadtree and shoelace integration](../r/R7_section_properties.md).
+Known defects are in the [integration bug log](bug_log.md).
+
 Numbered example: [quadtree vs shoelace](../../examples/integration/01_quadtree_vs_shoelace/).
 [Section properties](../../examples/section/02_section_properties/) and
 [signed-distance CSG](../../examples/sdf/01_signed_distance_csg/) also exercise the

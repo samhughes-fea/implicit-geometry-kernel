@@ -81,6 +81,10 @@ entries are from a retired repo-root log.
 | [BG-055](#bg-055) | NACA 5-digit mean line is about ten times too flat and peaks in the wrong place | **Fixed** |
 | [BG-056](#bg-056) | `Airfoil.naca6` scales the reference camber with the thickness | **Fixed** |
 | [BG-057](#bg-057) | Smoothstep morph moves the trailing-edge point with the wrong weight | **Fixed** |
+| [BG-058](#bg-058) | A thin-walled cut scales the chord and thicknesses but not metre-valued layout fields | Fixed (#124) |
+| [BG-059](#bg-059) | Cap edges given on the outer surface move outward where the pressure side is above the chord line | Fixed (#124) |
+| [BG-060](#bg-060) | `offset_rings` moves vertices outward on thin cambered sections | Fixed (#124) |
+| [BG-061](#bg-061) | `_tilted_feet` comment states the opposite tilt sense | Fixed (#124) |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -1355,3 +1359,81 @@ unchanged ($S = w$ at 0 and 1).
 **Verification.** `tests/test_naca_mean_lines.py`: circle to a flatback of gap 0.03
 gives a TE gap of $S(w)\,0.03$ at $w$ = 0.25, 0.5 and 0.75, and the vectorised morph
 equals the scalar one to $10^{-14}$. Golden numbers unchanged. **Fixed.**
+
+## BG-058
+
+**Symptom.** A `SectionLayout` with `web_stations_m=(0.3, 0.6)` on a 1 m chord puts
+the webs at 0.3 and 0.6 m with a 4 mm skin, and at 0.12 and 0.24 m with a 1 mm skin.
+A `fixed_band` cap of half-width 0.1 m is 0.2 m wide with a 4 mm skin and 0.08 m
+wide with a 1 mm skin.
+
+**Evidence.** Found while deriving [R8](../r/R8_loft_members.md), (R8.3).
+`examples/blade/19_loft_checks` check 2 prints the web case.
+
+**Root cause.** `BladeGeometry.section_at` builds a section whose skin, web or cap
+is thinner than the manufacturing minimum (2.5, 4 and 5 mm) $k$ times larger and
+divides the result by $k$ (R8.3). It multiplies the chord, the thicknesses, the web
+offsets and the two-foot web axes by $k$, but passes the layout's own metre-valued
+fields (`web_stations_m`, `CapPlacementRule.half_width`) unscaled, so after the
+division they are $1/k$ of their value. Catalogue layouts and chord-fraction fields
+are not affected.
+
+**Fix (#124).** `section_at` passes the layout through `_scale_layout_metres`, which
+multiplies `web_stations_m`, `web_axes_m` and a cap half-width by $k$. Example 19
+check 2 now finds the webs at 0.300 and 0.600 m at $k = 2.5$;
+`tests/blade/test_r8_fixes.py` covers the stations and every scaled field.
+## BG-059
+
+**Symptom.** With `cap_edge_reference="outer"`, a cap edge given at chord fraction
+$f$ on the pressure surface of a NACA 4406 ($c$ = 2 m, inset 30 mm) lands at 0.20106
+for $f = 0.2$; moving the outer point 30 mm along the inward normal gives 0.19894.
+The suction side agrees to $3\times10^{-5}$.
+
+**Evidence.** Found while deriving [R8](../r/R8_loft_members.md), (R8.7).
+`examples/blade/19_loft_checks` check 5.
+
+**Root cause.** `_outer_fraction_to_midplane` orients the normal so that it points
+towards the mid-chord point $(c/2, 0)$. Where the pressure surface lies above the
+chord line, as on thin cambered sections, that point is outside the section and
+the normal points outward.
+
+**Fix (#124).** The normal is the left normal of the surface traversed from the leading
+edge, negated on the suction side. Both sides now agree with the inward normal to
+$3\times10^{-5}$ (example 19 check 5; `tests/blade/test_r8_fixes.py`).
+## BG-060
+
+**Symptom.** `offset_rings(rings, 0.002)` on a unit NACA 4406 moves 58 of 298
+vertices outward, on the pressure side between $x = 0.1$ and 0.25 and aft of 0.83;
+NACA 6409 moves 57. NACA 0012 and 4412 move none.
+
+**Evidence.** Found while deriving [R8](../r/R8_loft_members.md), (R8.17).
+`examples/blade/19_loft_checks` check 9 and Figure R8.1.
+
+**Root cause.** The function orients each vertex normal by the sign of its dot
+product with the vector from the vertex to the mean of the vertices. On a thin
+cambered section the mean lies above parts of the pressure surface, where that
+vector points out of the section.
+
+**Scope.** `offset_rings` is called only by `mesh.shell._stacked_shell`, which the
+shell mesher does not yet use in place of the section midline (see
+`tests/test_span_arrays.py`). No current output is affected.
+
+**Fix (#124).** One sign per ring from its signed area. No vertex moves outward on
+NACA 0012, 4412, 4406 or 6409 in either winding (example 19 check 9;
+`tests/blade/test_r8_fixes.py`).
+## BG-061
+
+**Symptom.** The comment in `_tilted_feet` says a positive tilt walks the suction
+foot toward the trailing edge. For a web at $f = 0.3$ tilted $+10^\circ$ on NACA
+0018 the feet are 0.2841 (suction) and 0.3159 (pressure): the suction foot moves
+toward the leading edge and the pressure foot toward the trailing edge.
+
+**Evidence.** Found while deriving [R8](../r/R8_loft_members.md), (R8.4).
+`examples/blade/19_loft_checks` check 3; `tests/test_web_tilt.py` measures the
+angle from the suction end down, which agrees with the code.
+
+**Root cause.** Documentation only: the code and its test agree; the comment, and
+the `web_tilt_deg` docstring's "toward the trailing edge", do not say which end.
+
+**Fix (#124).** The comment and the `web_tilt_deg` docstring now say a positive tilt walks the suction foot toward the
+leading edge and the pressure foot toward the trailing edge.

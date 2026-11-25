@@ -206,10 +206,9 @@ def resolve_web_anchors(
             xmin = float(v[:, 0].min())
             xmax = float(v[:, 0].max())
             if y_search is None:
-                ymin = float(v[:, 1].min())
-                ymax = float(v[:, 1].max())
-                pad = max(0.05 * max(xmax - xmin, 1e-9), 0.01)
-                y_search = (ymin - pad, ymax + pad)
+                # Pad by the thickness, as the probe's own default does: a chord pad
+                # coarsens the 240-sample grid and drops real shallow cavities (SG-038).
+                y_search = _default_y_search(airfoil_sdf, None)
 
     chord = float(getattr(airfoil_sdf, "chord", 0.0) or 0.0)
     if chord <= 0.0 and xmin is not None and xmax is not None:

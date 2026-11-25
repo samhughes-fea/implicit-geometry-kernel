@@ -18,7 +18,7 @@ def _rectangle_moments(x0: float, x1: float, y0: float, y1: float) -> tuple[floa
     sy = 0.5 * area * (y0 + y1)
     sxx = area * (x0 * x0 + x0 * x1 + x1 * x1) / 3.0
     syy = area * (y0 * y0 + y0 * y1 + y1 * y1) / 3.0
-    sxy = area * (x0 * y0 + 0.5 * (x0 * y1 + x1 * y0) + x1 * y1) / 4.0
+    sxy = area * (x0 + x1) * (y0 + y1) / 4.0  # (R7.9): the xy integral factors
     return area, sx, sy, sxx, syy, sxy
 
 
@@ -36,7 +36,7 @@ def _rectangle_moments_batch(
     sy = 0.5 * area * (y0 + y1)
     sxx = area * (x0 * x0 + x0 * x1 + x1 * x1) / 3.0
     syy = area * (y0 * y0 + y0 * y1 + y1 * y1) / 3.0
-    sxy = area * (x0 * y0 + 0.5 * (x0 * y1 + x1 * y0) + x1 * y1) / 4.0
+    sxy = area * (x0 + x1) * (y0 + y1) / 4.0  # (R7.9): the xy integral factors
     return np.column_stack([area, sx, sy, sxx, syy, sxy])
 
 

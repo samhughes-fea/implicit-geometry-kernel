@@ -85,9 +85,11 @@ def offset_rings(rings: np.ndarray, distance) -> np.ndarray:
     normal = _left(xy - prev) + _left(nxt - xy)
     length = np.linalg.norm(normal, axis=-1, keepdims=True)
     normal = normal / np.maximum(length, 1e-30)
-    inward = xy.mean(axis=1, keepdims=True) - xy
-    sign = np.sign(np.sum(normal * inward, axis=-1, keepdims=True))
-    sign = np.where(sign == 0.0, 1.0, sign)
+    # The left normal points into a counter-clockwise ring, so one sign per ring from its
+    # signed area orients every vertex. A test against the vertex mean fails where the
+    # mean lies outside the section's local thickness, as on thin cambered aerofoils (BG-060).
+    area2 = np.sum(xy[..., 0] * nxt[..., 1] - nxt[..., 0] * xy[..., 1], axis=1)
+    sign = np.where(area2 < 0.0, -1.0, 1.0)[:, None, None]
     moved = np.array(work, dtype=float, copy=True)
     moved[..., :2] = xy + dist[:, None, None] * normal * sign
     if closed:

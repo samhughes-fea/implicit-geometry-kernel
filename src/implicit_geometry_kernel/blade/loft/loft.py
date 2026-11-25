@@ -127,10 +127,11 @@ class BladeGeometry(LoftCutMixin, LoftFieldsMixin, LoftLayoutMixin):
         cap mid-plane. ``"outer"`` reads it on the outer mould line and places
         the mid-plane edge on the inward normal, ``skin + half the cap`` in.
     web_tilt_deg:
-        Tilt of a chord-fraction web from the thickness direction, in degrees,
-        toward the trailing edge. One number, one per web, or a callable of
-        ``z``. Two-foot webs already carry their line and reject a tilt.         Zero
-        leaves the web chord-normal.
+        Tilt of a chord-fraction web from the thickness direction, in degrees.
+        A positive tilt puts the pressure foot aft of the suction foot (the
+        suction foot moves toward the leading edge). One number, one per web, or
+        a callable of ``z``. Two-foot webs already carry their line and reject a
+        tilt. Zero leaves the web chord-normal.
     web_tilt_anchor:
         Where a tilted web pivots. ``"chord"`` (default) turns it about its
         chord fraction on the chord line. ``"suction"`` or ``"pressure"`` keeps

@@ -135,3 +135,31 @@ def test_boundary_moments_batch_matches_per_cell():
 
     got = _boundary_moments_batch(bounds, phi)
     np.testing.assert_allclose(got, ref, rtol=1e-12, atol=1e-12)
+
+
+def test_rectangle_product_moment_is_the_factored_integral():
+    """IN-001: the xy integral over a leaf factors, (x0 + x1)(y0 + y1) A / 4."""
+    from implicit_geometry_kernel.integration.quadtree.moments import (
+        _rectangle_moments,
+        _rectangle_moments_batch,
+    )
+
+    x0, x1, y0, y1 = 1.0, 2.0, 1.0, 2.0
+    exact = (x1**2 - x0**2) * (y1**2 - y0**2) / 4.0
+    assert _rectangle_moments(x0, x1, y0, y1)[5] == exact
+    rows = _rectangle_moments_batch(np.array([x0, -0.5]), np.array([x1, 0.25]), np.array([y0, 0.3]), np.array([y1, 0.9]))
+    assert rows[0, 5] == exact
+    np.testing.assert_allclose(rows[1, 5], (0.25**2 - 0.5**2) * (0.9**2 - 0.3**2) / 4.0, rtol=1e-14)
+
+
+def test_off_axis_circle_has_zero_product_moment():
+    """IN-001: a circle centred off the axes has Ixy = 0 about its centroid."""
+    spec = QuadtreeSpec(-0.1, 0.5, -0.2, 0.4, max_depth=12, min_cell_size=0.01, refine_band=0.02)
+
+    def sampler(pts: np.ndarray) -> np.ndarray:
+        arr = np.asarray(pts, dtype=float).reshape(-1, 2)
+        return np.hypot(arr[:, 0] - 0.2, arr[:, 1] - 0.1) - 0.2
+
+    mesh = build_shared_quadtree(spec, {"c": sampler})
+    props = section_properties_from_quadtree(mesh, mesh.phi_by_label, "c")
+    assert abs(props["Ixy"]) < 1e-6 * props["Ixx"]

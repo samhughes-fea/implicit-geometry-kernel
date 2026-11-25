@@ -14,12 +14,17 @@ edge (decision 0016), so a thickness or eccentricity step lies on an element
 edge.
 
 Nodes lie on the section mid-line at each station (the cut's run polylines).
-This step meshes blades whose shell topology is the same at every station,
-with a closed skin loop and no branches (stringers). Ribs and the tip closure
-are triangle fills on the station's skin and web nodes. Topology changes
-(caps or webs that start or stop inside the span, as transition bands) and
-Newton junction nodes between stations are later steps of plan row L6. It
-sits beside :func:`shell_mesh`, which stays the default.
+The skin loop is meshed as one closed ring from the partition boundary nearest
+the trailing edge, so its partitions must be the same at every station, with a
+closed loop and no branches (stringers). Webs may start or stop inside the
+span: every web foot is a mesh line round the loop at every station (held
+between its neighbouring lines where the web is absent), so the loop's lines
+never change in number and a web that ends is a plain all-quad strip that
+stops on its end station. A cap edge that moves from one web foot to another
+where a web ends moves between two existing lines; each skin quad takes the
+partition its middle lies in at the lower station of its bay. Ribs and the tip
+closure are triangle fills on the station's skin and web nodes. Branches and
+Newton junction nodes between stations are later steps of plan row L6.
 """
 
 from __future__ import annotations
@@ -71,14 +76,49 @@ def _along(t: float, flip: bool) -> float:
     return 1.0 - float(t) if flip else float(t)
 
 
+def _closest_t(points: np.ndarray, xy: np.ndarray) -> tuple[float, float]:
+    """``(t, distance)`` of the point on a run polyline closest to ``xy``."""
+    pts = np.asarray(points, float)[:, :2]
+    tt = run_t(pts)
+    a, b = pts[:-1], pts[1:]
+    d = b - a
+    dd = np.einsum("ij,ij->i", d, d)
+    u = np.where(dd > 0.0, np.einsum("ij,ij->i", np.asarray(xy, float)[:2] - a, d) / np.where(dd > 0.0, dd, 1.0), 0.0)
+    u = np.clip(u, 0.0, 1.0)
+    q = a + u[:, None] * d
+    dist = np.linalg.norm(q - np.asarray(xy, float)[:2], axis=1)
+    k = int(np.argmin(dist))
+    return float(tt[k] + u[k] * (tt[k + 1] - tt[k])), float(dist[k])
+
+
+def _web_feet(skeleton, web: str, loop_names: Sequence[str], flip: frozenset) -> dict:
+    """``{end: (host, t)}`` of a web's feet on the loop, ``t`` along the loop direction."""
+    out: dict = {}
+    by_key = skeleton.by_key()
+    for end in (0, 1):
+        node = by_key.get(("junction", web, end))
+        if node is None:
+            continue
+        for host in loop_names:
+            t = node.runs.get(host)
+            if t is not None:
+                out[end] = (host, _along(t, host in flip))
+                break
+    return out
+
+
 def _breakpoints(skeleton, run, bands: Sequence[Any], flip: bool = False) -> dict:
     """``{key: t}`` of interior points on ``run`` that a mesh line must pass through.
 
     ``t`` runs along the loop direction: a run stored against it (``flip``) has
     its own ``t`` reversed, so the mesh walks every loop partition the same way.
+    Web junctions are left out: :func:`partition_mesh` places those itself, so
+    a web that starts or stops inside the span keeps its mesh line.
     """
     out: dict = {}
     for node in skeleton.nodes:
+        if node.key[0] == "junction":
+            continue
         t = node.runs.get(run.name)
         if t is not None and _T_TOL < t < 1.0 - _T_TOL:
             out[node.key] = _along(t, flip)
@@ -105,12 +145,9 @@ def _segment_breaks(t_by_key: dict) -> list:
     return merged
 
 
-def _cells(ids: dict, j: int, loop_names: Sequence[str], web_names: Sequence[str]) -> list[list[int]]:
+def _cells(ids: dict, j: int, web_names: Sequence[str]) -> list[list[int]]:
     """Node-id rings of the cells the webs cut the skin loop into at station ``j``."""
-    ring: list[int] = []
-    for name in loop_names:
-        ring.extend(ids[(j, name)][:-1])
-    cells = [ring]
+    cells = [list(ids[(j, "loop")][:-1])]
     for w in web_names:
         row = ids[(j, w)]
         a, b = row[0], row[-1]
@@ -126,6 +163,119 @@ def _cells(ids: dict, j: int, loop_names: Sequence[str], web_names: Sequence[str
         else:
             raise PartitionMeshError(f"web {w!r} does not join two nodes of one cell at station {j}")
     return cells
+
+
+#: Two mesh lines round the loop closer than this (in normalised loop arc
+#: length) are one point: they share a node.
+_U_TOL = 1e-6
+
+
+class _StationLoop:
+    """The skin loop at one station as one closed ring along the loop direction.
+
+    ``points`` run from the start of the first partition round to it again;
+    ``u`` is their normalised arc length and ``w`` the graded edge measure,
+    each partition's own measure laid end to end. ``boundaries`` holds the
+    ``u`` of each partition boundary but the ring start.
+    """
+
+    def __init__(self, graph, flip: frozenset, loop_names: Sequence[str], h: float, chord: float):
+        by_name = {r.name: r for r in graph.loop}
+        self.runs = [by_name[n] for n in loop_names]
+        pts_all: list[np.ndarray] = []
+        u_all: list[np.ndarray] = []
+        w_all: list[np.ndarray] = []
+        lengths = []
+        oriented = []
+        for r in self.runs:
+            p = np.asarray(r.points, float)
+            p = p[::-1].copy() if r.name in flip else p
+            oriented.append(p)
+            lengths.append(float(np.sum(np.linalg.norm(np.diff(p[:, :2], axis=0), axis=1))) if len(p) > 1 else 0.0)
+        self.length = float(sum(lengths)) or 1.0
+        self.s0 = np.concatenate([[0.0], np.cumsum(lengths)[:-1]]) / self.length
+        self.s1 = np.cumsum(lengths) / self.length
+        w_off = 0.0
+        for i, (p, n) in enumerate(zip(oriented, lengths)):
+            tt, w = _edge_measure(p, h, chord)
+            if len(tt) != len(p):  # a run of zero length
+                continue
+            keep = slice(1, None) if pts_all else slice(None)
+            pts_all.append(p[keep])
+            u_all.append(self.s0[i] + tt[keep] * n / self.length)
+            w_all.append(w[keep] + w_off)
+            w_off += float(w[-1])
+        self.points = np.vstack(pts_all)
+        self.u = np.concatenate(u_all)
+        self.w = np.concatenate(w_all)
+        self.index = {r.name: i for i, r in enumerate(self.runs)}
+        names = list(loop_names)
+        self.boundaries = {("partition_boundary",) + tuple(sorted((names[i - 1], names[i]))): float(self.s0[i])
+                           for i in range(1, len(names))}
+
+    def u_of(self, host: str, t: float) -> float:
+        """Ring ``u`` of the point at ``t`` (along the loop direction) on partition ``host``."""
+        i = self.index[host]
+        return float(self.s0[i] + float(t) * (self.s1[i] - self.s0[i]))
+
+    def run_at(self, u: float):
+        """The loop partition holding ring parameter ``u``."""
+        i = int(np.searchsorted(self.s1, float(u), side="right"))
+        return self.runs[min(i, len(self.runs) - 1)]
+
+
+def _station_loop(graph, flip: frozenset, loop_names: Sequence[str], h: float, chord: float) -> _StationLoop:
+    return _StationLoop(graph, flip, loop_names, h, chord)
+
+
+def _start_at_te(graph, flip: frozenset, loop_names: Sequence[str], te: np.ndarray) -> tuple:
+    """``loop_names`` turned to start at the partition whose start is nearest ``te``."""
+    by_name = {r.name: r for r in graph.loop}
+    starts = []
+    for n in loop_names:
+        p = np.asarray(by_name[n].points, float)
+        starts.append(p[-1] if n in flip else p[0])
+    i0 = int(np.argmin([np.linalg.norm(q[:2] - te[:2]) for q in starts]))
+    names = list(loop_names)
+    return tuple(names[i0:] + names[:i0])
+
+
+def _wrap(u: float) -> float:
+    """``u`` in ``[0, 1)``, with the ring end taken as the ring start."""
+    u = float(u) % 1.0
+    return 0.0 if u >= 1.0 - _U_TOL else u
+
+
+def _held_u(ref: dict, here: dict, key) -> float:
+    """``u`` here of a line known only at ``ref``: same fraction between its neighbours there."""
+    u = ref[key]
+    shared = {k: v for k, v in ref.items() if k != key and k in here}
+    below = [(v, k) for k, v in shared.items() if v <= u]
+    above = [(v, k) for k, v in shared.items() if v > u]
+    lo_u, lo_k = max(below) if below else (0.0, None)
+    hi_u, hi_k = min(above) if above else (1.0, None)
+    frac = (u - lo_u) / (hi_u - lo_u) if hi_u > lo_u else 0.0
+    lo_here = here[lo_k] if lo_k is not None else 0.0
+    hi_here = here[hi_k] if hi_k is not None else 1.0
+    if hi_here < lo_here:  # the upper neighbour is the ring start, reached going round
+        hi_here += 1.0
+    return _wrap(lo_here + frac * (hi_here - lo_here))
+
+
+def _ring_breaks(at: dict) -> list:
+    """``[(key, u)]`` round the ring from ``("end", 0)`` to ``("end", 1)``.
+
+    A line within :data:`_U_TOL` of the ring start sits on it; ties sort by key
+    so the order is the same at every station.
+    """
+    items = []
+    for key, u in at.items():
+        u = float(u)
+        if u <= _U_TOL or u >= 1.0 - _U_TOL:
+            u = 0.0
+        items.append((key, u))
+    items.sort(key=lambda kv: (kv[1], repr(kv[0])))
+    return [(("end", 0), 0.0)] + items + [(("end", 1), 1.0)]
 
 
 #: How fast the local edge may grow along a run, per metre of arc (graded sizing).
@@ -279,7 +429,8 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     Raises
     ------
     PartitionMeshError
-        If the shell topology changes along the span or the skin loop is open.
+        If the skin loop's partitions change along the span, the loop is open,
+        a web stops and starts again, or mesh lines round the loop change order.
     """
     if not float(h) > 0.0:
         raise ValueError("element size h must be positive")
@@ -293,72 +444,170 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     graphs = [geo.section_at(z).shell_graph() for z in z_list]
     if zs is None:
         z_list, graphs = _grade_span(geo, z_list, graphs, float(h))
-    signature = _graph_signature(graphs[0])
+    loop_names = _graph_signature(graphs[0])[0]
     for g in graphs[1:]:
-        if _graph_signature(g) != signature:
+        if _graph_signature(g)[0] != loop_names:
             raise PartitionMeshError(
-                f"shell topology changes between z={z_list[0]:g} and z={float(g.z):g}; "
-                "the partition mesher handles constant topology for now (use shell_mesh)"
+                f"the skin loop changes between z={z_list[0]:g} and z={float(g.z):g}; "
+                "the partition mesher needs the same loop partitions at every station (use shell_mesh)"
             )
-    loop_names, web_names = signature
+    n_st = len(z_list)
+    flips = [_flipped(g) for g in graphs]
+    skeletons = [g.skeleton() for g in graphs]
+    chords = [float(geo.interpolate(z)[0]) for z in z_list]
+
+    # The skin loop at each station as one closed ring, walked along the loop
+    # direction from the start of the first partition. ``u`` is the ring's
+    # normalised arc length; each partition holds a ``u`` interval. The edge
+    # measure is each partition's own graded measure, laid end to end.
+    # The ring starts at the partition boundary nearest the trailing edge, so
+    # its start does not move with a cap edge.
+    _le, te_pts, _chord = _le_te_points(geo, z_list)
+    loop_names = _start_at_te(graphs[0], flips[0], loop_names, np.asarray(te_pts[0], float))
+    loops = [_station_loop(g, flips[j], loop_names, float(h), chords[j]) for j, g in enumerate(graphs)]
+
+    # Webs may start or stop inside the span. Each web's stations must be one
+    # unbroken run. A web that ends on a station (a birth or death anchor) is
+    # taken from the section a hair inside its span there, so its strip reaches
+    # that station.
+    web_names = sorted({w.name for g in graphs for w in g.webs})
+    web_src: dict = {}  # (station, web) -> (run, skeleton, or None for a run from just inside the span)
+    for j, g in enumerate(graphs):
+        for w in g.webs:
+            web_src[(j, w.name)] = (w, skeletons[j])
+    for name in web_names:
+        js = [j for j in range(n_st) if (j, name) in web_src]
+        if js != list(range(js[0], js[-1] + 1)):
+            raise PartitionMeshError(
+                f"web {name!r} stops and starts again inside the span; the partition mesher needs one unbroken run"
+            )
+        for j, side in ((js[0] - 1, 1.0), (js[-1] + 1, -1.0)):
+            if not 0 <= j < n_st:
+                continue
+            # A found web end is good to about 1e-5 of the span, so look a
+            # little further in, up to a thousandth of the bay.
+            bay = abs(z_list[j + int(side)] - z_list[j])
+            for k in range(7, 2, -1):
+                gd = geo.section_at(z_list[j] + side * bay * 10.0 ** -k).shell_graph()
+                run = next((w for w in gd.webs if w.name == name), None)
+                if run is not None:
+                    web_src[(j, name)] = (run, None)
+                    break
+    webs_at = [[w for w in web_names if (j, w) in web_src] for j in range(n_st)]
     hosts = {s.host for s in sub_partitions}
     unknown = hosts - set(loop_names) - set(web_names)
     if unknown:
         raise ValueError(f"sub-partition hosts not in the shell graph: {sorted(unknown)}")
 
-    flips = [_flipped(g) for g in graphs]
+    # Mesh lines round the loop, as ``{key: u}`` per station. Every web foot is
+    # a line at every station: where the web is, at its foot (an end station's
+    # foot is the web end projected on the ring); where it is not, held at the
+    # ``u`` of the nearest station that has it. So the loop's lines never change
+    # in number, and a web that starts or stops is an all-quad patch on them.
+    # A partition boundary is a line of its own unless a web foot is on it: a
+    # cap edge that moves from one web foot to another at a web end moves
+    # between two lines, never adds one.
+    feet: dict = {}  # (station, web, end) -> u
+    for (j, name), (run, sk) in web_src.items():
+        lp = loops[j]
+        for end in (0, 1):
+            if sk is not None:
+                ft = _web_feet(sk, name, loop_names, flips[j]).get(end)
+                if ft is not None:
+                    feet[(j, name, end)] = lp.u_of(ft[0], ft[1])
+            else:
+                xy = np.asarray(run.points, float)[0 if end == 0 else -1]
+                feet[(j, name, end)] = _closest_t(lp.points, xy)[0]
+    # Lines that are really there at each station: web feet, and partition
+    # boundaries no foot sits on.
+    real: list[dict] = []
+    for j, lp in enumerate(loops):
+        at: dict = {("junction", w, end): _wrap(u) for (jj, w, end), u in feet.items() if jj == j}
+        foot_u = list(at.values())
+        for key, u in lp.boundaries.items():
+            if not any(min(abs(u - f), 1.0 - abs(u - f)) <= _U_TOL for f in foot_u):
+                at[key] = u
+        real.append(at)
+    # A foot where its web is absent is held between the same two neighbouring
+    # lines, at the same fraction of the gap, as at the nearest station with
+    # the web; so it moves with the loop and other webs and never crosses them.
+    lines: list[dict] = [dict(at) for at in real]
+    for name in web_names:
+        for end in (0, 1):
+            foot = ("junction", name, end)
+            have = [j for j in range(n_st) if foot in real[j]]
+            for j in range(n_st):
+                if not have or foot in real[j]:
+                    continue
+                r = min(have, key=lambda i: abs(i - j))
+                lines[j][foot] = _held_u(real[r], real[j], foot)
+    for j, lp in enumerate(loops):
+        for s in sub_partitions:
+            if s.host in loop_names:
+                for k, t in enumerate(s.t_range):
+                    if _T_TOL < t < 1.0 - _T_TOL:
+                        lines[j][("band", s.name, k)] = lp.u_of(s.host, _along(t, s.host in flips[j]))
+    ring_breaks = [_ring_breaks(at) for at in lines]
+    keys0 = [k for k, _ in ring_breaks[0]]
+    for j in range(1, n_st):
+        if [k for k, _ in ring_breaks[j]] != keys0:
+            raise PartitionMeshError(
+                f"the skin loop's mesh lines change order or number at z={z_list[j]:g}"
+            )
+    # Lines that meet (two feet on one point, or a foot on the ring start) share
+    # a node; they must meet at every station or at none.
+    n_ring = len(keys0) - 1
+    shut = [[ring_breaks[j][k + 1][1] - ring_breaks[j][k][1] <= _U_TOL for k in range(n_ring)] for j in range(n_st)]
+    for j in range(1, n_st):
+        if shut[j] != shut[0]:
+            raise PartitionMeshError(
+                f"two of the skin loop's mesh lines meet at some stations but not at z={z_list[j]:g}"
+            )
+    ring_counts = [0 if shut[0][k] else 1 for k in range(n_ring)]
+    for j, lp in enumerate(loops):
+        b = ring_breaks[j]
+        for k in range(n_ring):
+            if not shut[0][k]:
+                span = float(np.interp(b[k + 1][1], lp.u, lp.w) - np.interp(b[k][1], lp.u, lp.w))
+                ring_counts[k] = max(ring_counts[k], int(math.ceil(span - 1e-9)))
+    # A coarse h must still leave a closed loop that a rib or the tip closure
+    # can fill (decision 0007): at least _MIN_LOOP_EDGES edges round the loop,
+    # added one at a time to the longest-per-edge segment.
+    while sum(ring_counts) < _MIN_LOOP_EDGES:
+        b, length = ring_breaks[0], loops[0].length
+        k_best = max((k for k in range(n_ring) if ring_counts[k] > 0),
+                     key=lambda k: (b[k + 1][1] - b[k][1]) * length / ring_counts[k])
+        ring_counts[k_best] += 1
 
-    def runs_of(g, flip: frozenset) -> dict:
-        # A loop run stored against the loop direction is walked reversed, so
-        # node rows always follow the loop; orientation fixes normals later.
-        return {r.name: (replace(r, points=np.asarray(r.points)[::-1].copy()) if r.name in flip else r)
-                for r in g.loop + g.webs}
-
-    by_station = [runs_of(g, f) for g, f in zip(graphs, flips)]
-    skeletons = [g.skeleton() for g in graphs]
-    order = list(loop_names) + list(web_names)
-
-    # Mesh lines on each run: the same keys, in the same order, at every station.
+    # Mesh lines on each web: the same keys, in the same order, at every
+    # station that has the web.
     breaks: dict = {}
     counts: dict = {}
-    measure: dict = {}  # (station, run) -> (t, W), the graded edge measure
-    chords = [float(geo.interpolate(z)[0]) for z in z_list]
-    for name in order:
-        per_station = [_segment_breaks(_breakpoints(sk, rs[name], sub_partitions, name in fl))
-                       for sk, rs, fl in zip(skeletons, by_station, flips)]
-        keys0 = [k for k, _ in per_station[0]]
-        for g, b in zip(graphs[1:], per_station[1:]):
-            if [k for k, _ in b] != keys0:
-                raise PartitionMeshError(
-                    f"partition {name!r}: its mesh lines change order or number at z={float(g.z):g}"
-                )
-        n_seg = len(keys0) - 1
-        need = [1] * n_seg
-        for j, (rs, b) in enumerate(zip(by_station, per_station)):
-            tt, w = measure[(j, name)] = _edge_measure(
-                np.asarray(rs[name].points, float), float(h), chords[j] if name in loop_names else None)
-            for k in range(n_seg):
+    measure: dict = {}  # (station, web) -> (t, W), the graded edge measure
+    for name in web_names:
+        stations = [j for j in range(n_st) if (j, name) in web_src]
+        per_station: dict = {}
+        for j in stations:
+            run, sk = web_src[(j, name)]
+            if sk is not None:
+                bp = _breakpoints(sk, run, sub_partitions)
+            else:
+                bp = {("band", s.name, k): t for s in sub_partitions if s.host == name
+                      for k, t in enumerate(s.t_range) if _T_TOL < t < 1.0 - _T_TOL}
+            per_station[j] = _segment_breaks(bp)
+        wkeys = [k for k, _ in per_station[stations[0]]]
+        for j in stations[1:]:
+            if [k for k, _ in per_station[j]] != wkeys:
+                raise PartitionMeshError(f"web {name!r}: its mesh lines change order or number at z={z_list[j]:g}")
+        need = [1] * (len(wkeys) - 1)
+        for j in stations:
+            b = per_station[j]
+            tt, w = measure[(j, name)] = _edge_measure(np.asarray(web_src[(j, name)][0].points, float), float(h), None)
+            for k in range(len(need)):
                 span = float(np.interp(b[k + 1][1], tt, w) - np.interp(b[k][1], tt, w))
                 need[k] = max(need[k], int(math.ceil(span - 1e-9)))
         breaks[name] = per_station
         counts[name] = need
-    # A coarse h must still leave a closed loop that a rib or the tip closure
-    # can fill (decision 0007): at least _MIN_LOOP_EDGES edges round the loop,
-    # added one at a time to the longest-per-edge segment.
-    loop_total = sum(sum(counts[name]) for name in loop_names)
-    while loop_total < _MIN_LOOP_EDGES:
-        best, best_len = None, -1.0
-        for name in loop_names:
-            pts = np.asarray(by_station[0][name].points, float)
-            length = float(np.sum(np.linalg.norm(np.diff(pts[:, :2], axis=0), axis=1)))
-            b = breaks[name][0]
-            for k, n in enumerate(counts[name]):
-                per_edge = (b[k + 1][1] - b[k][1]) * length / n
-                if per_edge > best_len:
-                    best, best_len = (name, k), per_edge
-        assert best is not None
-        counts[best[0]][best[1]] += 1
-        loop_total += 1
 
     nodes: list[np.ndarray] = []
 
@@ -366,90 +615,85 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
         nodes.append(np.asarray(p, float))
         return len(nodes) - 1
 
-    ids: dict = {}  # (station, run) -> node ids across the run
-    for j, (g, rs) in enumerate(zip(graphs, by_station)):
+    ids: dict = {}  # (station, "loop" or web) -> node ids; the loop ring is closed (last id is the first)
+    ring_u: dict = {}  # station -> u of each ring node
+    for j, lp in enumerate(loops):
         z = z_list[j]
-        line_ids: dict = {}  # skeleton key -> node id at this station
-        prev_end: int | None = None
-        first_start: int | None = None
-        for name in loop_names:
-            run = rs[name]
+        b = ring_breaks[j]
+        line_ids: dict = {}
+        row: list[int] = []
+        us: list[float] = []
+        for k in range(n_ring):
+            n = ring_counts[k]
+            if n == 0:
+                line_ids[b[k][0]] = None  # filled below by the next line's node
+                continue
+            ts = _ts_between(lp.u, lp.w, b[k][1], b[k + 1][1], n)
+            for m, u in enumerate(ts[:-1]):
+                p = run_point_at(lp.points, float(u))
+                nid = new_node(np.array([p[0], p[1], z]))
+                row.append(nid)
+                us.append(float(u))
+                if m == 0:
+                    line_ids[b[k][0]] = nid
+        # A line on a shut segment shares the next line's node.
+        for k in range(n_ring - 1, -1, -1):
+            if line_ids.get(b[k][0], 0) is None:
+                nxt = b[k + 1][0]
+                line_ids[b[k][0]] = line_ids[nxt] if nxt in line_ids else row[0]
+        row.append(row[0])
+        us.append(1.0)
+        ids[(j, "loop")] = row
+        ring_u[j] = np.asarray(us)
+        for name in webs_at[j]:
+            run = web_src[(j, name)][0]
             pts = np.asarray(run.points, float)
-            b = breaks[name][j]
-            row: list[int] = []
-            closing = name == loop_names[-1] and first_start is not None
-            for k in range(len(b) - 1):
+            wb = breaks[name][j]
+            ends = {end: line_ids[("junction", name, end)] for end in (0, 1)
+                    if line_ids.get(("junction", name, end)) is not None}
+            wrow: list[int] = []
+            for k in range(len(wb) - 1):
                 tt_w = measure[(j, name)]
-                ts = _ts_between(tt_w[0], tt_w[1], b[k][1], b[k + 1][1], counts[name][k])
-                for m, t in enumerate(ts[:-1] if k < len(b) - 2 else ts):
-                    if k == 0 and m == 0 and prev_end is not None:
-                        row.append(prev_end)
-                        continue
-                    if closing and first_start is not None and k == len(b) - 2 and m == len(ts) - 1:
-                        row.append(first_start)  # the ring closes on the first run's start
-                        continue
-                    key = b[k][0] if m == 0 else None
-                    p = run_point_at(pts, float(t))
-                    nid = new_node(np.array([p[0], p[1], z]))
-                    row.append(nid)
-                    if key is not None:
-                        line_ids[key] = nid
-            if first_start is None:
-                first_start = row[0]
-            prev_end = row[-1]
-            ids[(j, name)] = row
-        for name in web_names:
-            run = rs[name]
-            pts = np.asarray(run.points, float)
-            b = breaks[name][j]
-            row = []
-            ends = {}
-            sk = skeletons[j].by_key()
-            for end in (0, 1):
-                node = sk.get(("junction", name, end))
-                if node is None:
-                    continue
-                for host in loop_names:
-                    t = node.runs.get(host)
-                    if t is None:
-                        continue
-                    t = _along(t, host in flips[j])
-                    hrow = ids[(j, host)]
-                    if t <= _T_TOL:
-                        ends[end] = hrow[0]
-                    elif t >= 1.0 - _T_TOL:
-                        ends[end] = hrow[-1]
-                    elif node.key in line_ids:
-                        ends[end] = line_ids[node.key]
-                    if end in ends:
-                        break
-            for k in range(len(b) - 1):
-                tt_w = measure[(j, name)]
-                ts = _ts_between(tt_w[0], tt_w[1], b[k][1], b[k + 1][1], counts[name][k])
-                for m, t in enumerate(ts[:-1] if k < len(b) - 2 else ts):
+                ts = _ts_between(tt_w[0], tt_w[1], wb[k][1], wb[k + 1][1], counts[name][k])
+                for m, t in enumerate(ts[:-1] if k < len(wb) - 2 else ts):
                     first = k == 0 and m == 0
-                    last_pt = k == len(b) - 2 and m == len(ts) - 1
+                    last_pt = k == len(wb) - 2 and m == len(ts) - 1
                     if first and 0 in ends:
-                        row.append(ends[0])
+                        wrow.append(ends[0])
                     elif last_pt and 1 in ends:
-                        row.append(ends[1])
+                        wrow.append(ends[1])
                     else:
                         p = run_point_at(pts, float(t))
-                        row.append(new_node(np.array([p[0], p[1], z])))
-            ids[(j, name)] = row
+                        wrow.append(new_node(np.array([p[0], p[1], z])))
+            ids[(j, name)] = wrow
 
     elements: list[tuple[int, ...]] = []
     rows: list[tuple] = []
-    for j in range(len(z_list) - 1):
-        for name in order:
+    for j in range(n_st - 1):
+        # Skin: each quad takes the partition its middle lies in at the lower
+        # station of the bay, so a cap that ends at a station ends on that row.
+        a, b = ids[(j, "loop")], ids[(j + 1, "loop")]
+        ua = ring_u[j]
+        for i in range(len(a) - 1):
+            um = 0.5 * (ua[i] + ua[i + 1])
+            r0 = loops[j].run_at(um)
+            r1 = loops[j + 1].run_at(um)
+            pair = r1.name == r0.name
+            th = 0.5 * (float(r0.thickness) + float(r1.thickness)) if pair else float(r0.thickness)
+            ecc = 0.5 * (float(r0.eccentricity_m) + float(r1.eccentricity_m)) if pair else float(r0.eccentricity_m)
+            elements.append((a[i], a[i + 1], b[i + 1], b[i]))
+            rows.append((r0.name, "skin", th, ecc, tuple(r0.layers), tuple(r0.layer_thicknesses_m), j,
+                         z_list[j], z_list[j + 1], r0.name, "partition"))
+        for name in web_names:
+            if (j, name) not in ids or (j + 1, name) not in ids:
+                continue  # the web is absent at one end of the bay
             a, b = ids[(j, name)], ids[(j + 1, name)]
-            r0, r1 = by_station[j][name], by_station[j + 1][name]
+            r0, r1 = web_src[(j, name)][0], web_src[(j + 1, name)][0]
             th = 0.5 * (float(r0.thickness) + float(r1.thickness))
             ecc = 0.5 * (float(r0.eccentricity_m) + float(r1.eccentricity_m))
-            surface = "web" if name in web_names else "skin"
             for i in range(len(a) - 1):
                 elements.append((a[i], a[i + 1], b[i + 1], b[i]))
-                rows.append((name, surface, th, ecc, tuple(r0.layers), tuple(r0.layer_thicknesses_m), j,
+                rows.append((name, "web", th, ecc, tuple(r0.layers), tuple(r0.layer_thicknesses_m), j,
                              z_list[j], z_list[j + 1], name, "partition"))
 
     n_source = len(nodes)
@@ -468,7 +712,7 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
             caps.append(("tip_closure", str(tip.name), str(tip.partition), t_tip, (str(tip.partition),)))
         if not caps:
             continue
-        cells = _cells(ids, j, loop_names, web_names)
+        cells = _cells(ids, j, webs_at[j])
         for surface, label, part, th, layers in caps:
             for k, cell in enumerate(cells):
                 ring = np.asarray([nodes[i] for i in cell], float)
@@ -486,6 +730,9 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
                         tri_ids.append(hit)
                     if len(set(tri_ids)) < 3:
                         continue
+                    a3, b3, c3 = (nodes[i] for i in tri_ids)
+                    if np.linalg.norm(np.cross(b3 - a3, c3 - a3)) <= 1e-12 * max(1.0, chords[j]) ** 2:
+                        continue  # a sliver on three collinear ring nodes (a straight web's row)
                     elements.append(tuple(tri_ids))
                     rows.append((f"{label}:cell_{k}", surface, th, 0.0, layers, (th,), j, z, z, part, "interior"
                                  if any(i >= n_source for i in tri_ids) else "inherited"))
@@ -494,7 +741,6 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     # The placed trailing edge from the loft (as the ruled mesher), not the loop
     # point farthest from the loop's mean: on a thick section dense near the
     # nose that point can be the leading edge, which flipped web normals.
-    _le, te_pts, _chord = _le_te_points(geo, z_list)
     te_at = {z: np.asarray(te, float) for z, te in zip(z_list, te_pts)}
     elements, flipped = _oriented(pts, elements, [r[1] for r in rows], z_list, te_at)
     mesh = ShellMesh(

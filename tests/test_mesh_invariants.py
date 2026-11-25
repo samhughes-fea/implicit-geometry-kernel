@@ -126,7 +126,7 @@ from hypothesis import HealthCheck, given, settings  # noqa: E402
 from hypothesis import strategies as st  # noqa: E402
 
 _blades = st.fixed_dictionaries({
-    "code": st.sampled_from(["2D-F-LC-0R", "2D-F-LC-2R", "2D-CN-LC-0R", "3D-F-PA-10R"]),
+    "code": st.sampled_from(["2D-F-LC-0R", "2D-F-LC-2R", "2D-CN-LC-0R", "3D-F-PA-10R", "5D-F-LE-0R", "3D-F-LE-10R"]),
     "digits": st.sampled_from(["0012", "0018", "0024", "2418", "4421"]),
     "root": st.floats(0.6, 1.5),
     "taper": st.floats(0.5, 1.0),

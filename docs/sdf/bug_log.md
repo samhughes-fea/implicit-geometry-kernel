@@ -16,10 +16,10 @@ Package debug log for `implicit_geometry_kernel.sdf` and the zero-set extractors
 
 | ID | Title | Status |
 |---|---|---|
-| [SD-001](#sd-001) | `sdf_ellipse` is not the distance to the ellipse | Fixed (#PR) |
-| [SD-002](#sd-002) | `expr_bbox` of an offset of a disjoint intersection misses the region | Fixed (#PR) |
-| [SD-003](#sd-003) | `extract_zero_loops` drops two of four crossings in a cell | Fixed (#PR) |
-| [SD-004](#sd-004) | `LoftedPolygonSDF(accelerate=True)` builds an edge grid it never reads | Fixed (#PR) |
+| [SD-001](#sd-001) | `sdf_ellipse` is not the distance to the ellipse | Fixed (#122) |
+| [SD-002](#sd-002) | `expr_bbox` of an offset of a disjoint intersection misses the region | Fixed (#122) |
+| [SD-003](#sd-003) | `extract_zero_loops` drops two of four crossings in a cell | Fixed (#122) |
+| [SD-004](#sd-004) | `LoftedPolygonSDF(accelerate=True)` builds an edge grid it never reads | Fixed (#122) |
 
 ## SD-001
 
@@ -37,7 +37,7 @@ iteration on a unit direction $(t_x, t_y)$ whose update does not converge to the
 nearest point, and four steps are run regardless. The nearest point is the root of
 (R4.10).
 
-**Fix.** (#PR) `sdf_ellipse` solves (R4.10) for $s$ by bisection on its bracket
+**Fix.** (#122) `sdf_ellipse` solves (R4.10) for $s$ by bisection on its bracket
 (monotone $F$), to machine precision, with the axis cases in closed form, as Eberly
 (2013). It now agrees with the sampled distance to $10^{-8}$ (the sampling) for
 $r_x \gtrless r_y$ and the circle. No kernel path called `sdf_ellipse`;
@@ -58,7 +58,7 @@ outside (R4.12), so $\{\max(\phi_A, \phi_B) \le \delta\} = A_\delta\cap B_\delta
 not empty when the shapes are closer than $2\delta$; the offset rule then grows a
 point, not the true extent.
 
-**Fix.** (#PR) `_bbox_intersect` keeps the per-axis interval
+**Fix.** (#122) `_bbox_intersect` keeps the per-axis interval
 $[\min(l, u), \max(l, u)]$ of an empty overlap instead of collapsing it, so that
 growing it by $\delta$ covers $(\square_A\oplus\delta)\cap(\square_B\oplus\delta)$.
 The example's box is now $y\in[-1.5, 1.5]$ around the region's $[-1.43, 1.43]$.
@@ -77,7 +77,7 @@ loop keeps `hits[0]` and `hits[1]` only, pairing the first two edges in edge ord
 which drops one segment and can join the wrong pair. The chain then breaks at each
 such cell.
 
-**Fix.** (#PR) A cell with four crossings emits both segments, paired by the
+**Fix.** (#122) A cell with four crossings emits both segments, paired by the
 asymptotic decider (R4.31). The two circles now extract as two loops. Test:
 `tests/sdf/test_sd_fixes.py`.
 
@@ -93,7 +93,7 @@ arrays `ax`, `ay`, `bx`, `by` and loops over every edge.
 **Root cause.** The bucket grid was built but no nearest-edge search was written
 against it.
 
-**Fix.** (#PR) The grid is dropped: `build_polygon_accel` returns the edge arrays
+**Fix.** (#122) The grid is dropped: `build_polygon_accel` returns the edge arrays
 and the box only, and `LoftedPolygonSDF` documents `accelerate=True` as caching
 them per station (every query still visits every edge). Building a station is
 cheaper, since the Python loop that filled the buckets is gone; `phi` is

@@ -83,6 +83,7 @@ flowchart TB
 | 17 | [Aerofoil construction](blade/17_aerofoil_construction/) | NACA, CST and ellipse families (Figure R2.1) |
 | 18 | [PCHIP span laws](blade/18_pchip_span_laws/) | `PchipLaw`, leave-one-out check, airfoil morph (Figure R3.1) |
 | 19 | [Loft checks](blade/19_loft_checks/) | placement, tilted webs, locked loft, `PartitionPatch` (Figure R8.1) |
+| 20 | [Shell mesh checks](blade/20_shell_mesh_checks/) | `shell_mesh` sizing, mesh lines, orientation, rib fill (Figure R9.1) |
 
 ### section
 

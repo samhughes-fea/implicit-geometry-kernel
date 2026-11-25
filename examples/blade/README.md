@@ -25,3 +25,4 @@ Span loft, airfoils, queries, catalogue concepts, and published blades.
 | 17 | [17_aerofoil_construction](17_aerofoil_construction/) | `Airfoil.naca4`, `naca5`, `naca6`, `cst`: Figure R2.1 and checks of R2 |
 | 18 | [18_pchip_span_laws](18_pchip_span_laws/) | `PchipLaw`, `check_pchip_sampling`, airfoil morph: Figure R3.1 and checks of R3 |
 | 19 | [19_loft_checks](19_loft_checks/) | `section_at`, `LockedLoftPlan`, `PartitionPatch`: Figure R8.1 and checks of R8 |
+| 20 | [20_shell_mesh_checks](20_shell_mesh_checks/) | `shell_mesh`, `partition_mesh`, `check_shell_mesh`: Figure R9.1 and checks of R9 |

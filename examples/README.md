@@ -142,6 +142,7 @@ Teaching: [section/teaching/](section/teaching/) (`01_first_station` … `06_con
 | # | Example | Main API |
 |---|---|---|
 | 01 | [Quadtree vs shoelace](integration/01_quadtree_vs_shoelace/) | `ring_sums_S`, `section_properties_from_quadtree` |
+| 02 | [Property quadrature](integration/02_property_quadrature/) | `section_properties_S`, `section_properties_from_quadtree` (Figure R7.1) |
 
 ## Running
 

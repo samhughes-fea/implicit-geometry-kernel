@@ -5,7 +5,9 @@
 `implicit_geometry_kernel.integration.shoelace` evaluates area, first moments,
 and second moments of a simple closed polygon in the station plane by Green’s
 theorem. Coordinates are \((X,Y)\) in \(\mathrm{S}\) (pitch origin) unless noted.
-The implementation is `ring_sums_S`.
+The implementation is `ring_sums_S`. The derivation, with holes, parts and the
+centroidal reduction, is (R7.1)–(R7.7) in
+[R7](../r/R7_section_properties.md).
 
 ## Area
 

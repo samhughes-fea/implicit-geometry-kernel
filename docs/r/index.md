@@ -16,7 +16,7 @@ equations by number, for example (R1.4), rather than restating them.
 | R4 | [Signed distance fields and constructive solid geometry](R4_sdf_csg.md) | Written |
 | R5 | [Section layout: skin, caps, webs and the WX-Y-Z-NR catalogue](R5_section_layout.md) | Written |
 | R6 | [Mid-surfaces, cells and the thin-wall idealisation](R6_midsurfaces_cells.md) | Written |
-| R7 | Section properties by quadtree and shoelace integration | Current text: [integration](../integration/README.md), [shoelace](../integration/shoelace.md) |
+| R7 | [Section properties by quadtree and shoelace integration](R7_section_properties.md) | Written |
 | R8 | Spanwise members and the loft | Current text: [blade](../blade/README.md), [structure](../structure/README.md) |
 | R9 | Shell mesh generation | Current text: [geometry to mesh](../section/guides/geometry_to_mesh.md) |
 | R10 | Feasibility, drops and failure modes | Current text: [feasibility and drops](../section/guides/feasibility_and_drops.md) |
@@ -55,6 +55,7 @@ R3_span_laws
 R4_sdf_csg
 R5_section_layout
 R6_midsurfaces_cells
+R7_section_properties
 /sdf/README
 /section/README
 /blade/concepts/taxonomy

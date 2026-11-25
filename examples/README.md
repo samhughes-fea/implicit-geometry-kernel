@@ -90,6 +90,8 @@ flowchart TB
 | 01 | [Layout catalogue](section/01_layout_catalogue/) | `SYSTEM_TYPE_KEYS`, `resolve_system_type` |
 | 02 | [Section properties](section/02_section_properties/) | `SectionGeometry(spec, SectionOptions(outputs=("properties",)))` |
 | 03 | [Mid-surface and cells](section/03_mid_surface_and_cells/) | `SectionCut.walls`, `cells`, `mid_surface()` |
+| 04 | [Layout construction](section/04_layout_construction/) | catalogue, wall fields, web axes and anchoring (Figure R5.1) |
+| 05 | [Mid-surfaces and cells](section/05_midsurfaces_cells/) | skin mid ring, web feet, cap eccentricity, cells (Figure R6.1) |
 
 Teaching: [section/teaching/](section/teaching/) (`01_first_station` … `06_consumer_seams`).
 
@@ -108,6 +110,7 @@ Teaching: [section/teaching/](section/teaching/) (`01_first_station` … `06_con
 |---|---|---|
 | 01 | [Signed distances and CSG](sdf/01_signed_distance_csg/) | `sdf`, `SDFGrid`, `integration` |
 | 02 | [Feature field loft](sdf/02_feature_field_loft/) | `LoftedPolygonSDF`, `TagNode`, `GeometrySolver` |
+| 03 | [Distance and CSG](sdf/03_distance_and_csg/) | primitives, CSG bounds, smooth union, Newton (Figure R4.1) |
 
 ### frames
 

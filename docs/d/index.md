@@ -14,7 +14,7 @@ and fix log, the feature development log and the tracker.
 | D4 | Releases and governance | [Releasing](../conventions/RELEASING.md), [security](../project/security.md), [code of conduct](../project/conduct.md) |
 | D5 | Design decisions | [Architecture decision records](../decisions/README.md) |
 | D6 | Roadmap | [Refactor plan](../internal/REFACTOR_PLAN.md) |
-| D7 | Bug and fix log | [Section (SG)](../section/bug_log.md), [blade (BG)](../blade/bug_log.md), [frames (CF)](../frames/bug_log.md); one index planned |
+| D7 | Bug and fix log | [Section (SG)](../section/bug_log.md), [blade (BG)](../blade/bug_log.md), [frames (CF)](../frames/bug_log.md), [sdf (SD)](../sdf/bug_log.md); one index planned |
 | D8 | Internal reports | [Internal notes](../internal/README.md) |
 | D9 | Feature development log | Planned: one FD-nnn entry per feature |
 | D10 | Tracker | Planned: generated from GitHub Issues at each build; today see [issues](https://github.com/samhughes-fea/implicit-geometry-kernel/issues) |
@@ -43,5 +43,6 @@ and D9 entries they summarise.
 /section/bug_log
 /blade/bug_log
 /frames/bug_log
+/sdf/bug_log
 /internal/README
 ```

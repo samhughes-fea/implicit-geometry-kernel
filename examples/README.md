@@ -108,6 +108,7 @@ Teaching: [section/teaching/](section/teaching/) (`01_first_station` … `06_con
 |---|---|---|
 | 01 | [Signed distances and CSG](sdf/01_signed_distance_csg/) | `sdf`, `SDFGrid`, `integration` |
 | 02 | [Feature field loft](sdf/02_feature_field_loft/) | `LoftedPolygonSDF`, `TagNode`, `GeometrySolver` |
+| 03 | [Distance and CSG](sdf/03_distance_and_csg/) | primitives, CSG bounds, smooth union, Newton (Figure R4.1) |
 
 ### frames
 

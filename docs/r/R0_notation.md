@@ -58,6 +58,12 @@ table in the same change.
 | $h_k, \delta_k$ | Bay length $z_{k+1}-z_k$ and secant slope of a span law | m, – | R3 |
 | $w$ | Position within a bay, $0 \le w \le 1$ | – | (R3.1) |
 | $d_k$ | Slope of a PCHIP law at knot $k$ | – | (R3.7) |
+| $\Omega$, $\partial\Omega$ | A region of the section plane and its boundary | – | [R4](R4_sdf_csg.md) |
+| $d_\Omega$ | Signed distance to $\partial\Omega$, negative inside | m | (R4.1) |
+| $\phi$ | A field the kernel evaluates for a region: exact or a bound on $d_\Omega$ | m | R4 |
+| $\delta$, $D$ | Offset distance; wall depth | m | (R4.15), (R4.18) |
+| $k$ | Blend width of a smooth union | m | (R4.19) |
+| $m$, $\pi$ | Feature id of a point; priority of a member kind | – | (R4.24) |
 
 ## Bibliography
 

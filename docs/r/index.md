@@ -13,7 +13,7 @@ equations by number, for example (R1.4), rather than restating them.
 | R1 | [Coordinate frames and twist](R1_frames.md) | Written |
 | R2 | [Aerofoil parametrisation and families](R2_aerofoils.md) | Written |
 | R3 | [Planform and span laws](R3_span_laws.md) | Written |
-| R4 | Signed distance fields and constructive solid geometry | Current text: [sdf](../sdf/README.md) |
+| R4 | [Signed distance fields and constructive solid geometry](R4_sdf_csg.md) | Written |
 | R5 | Section layout: skin, caps, webs and the WX-Y-Z-NR catalogue | Current text: [section](../section/README.md), [taxonomy](../blade/concepts/taxonomy.md) |
 | R6 | Mid-surfaces, cells and the thin-wall idealisation | Current text: [section](../section/README.md), [structure](../structure/README.md) |
 | R7 | Section properties by quadtree and shoelace integration | Current text: [integration](../integration/README.md), [shoelace](../integration/shoelace.md) |
@@ -23,7 +23,7 @@ equations by number, for example (R1.4), rather than restating them.
 
 Documents marked "current text" keep their present page until they are rewritten
 to the template below; zero-level extraction ([extract](../extract/README.md)) is
-folded into R4 and R9 when they are.
+derived in R4, Section 3.11.
 
 ## Document template
 
@@ -52,6 +52,7 @@ R0_notation
 R1_frames
 R2_aerofoils
 R3_span_laws
+R4_sdf_csg
 /sdf/README
 /section/README
 /blade/concepts/taxonomy

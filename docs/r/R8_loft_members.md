@@ -83,9 +83,10 @@ k = \max\Big(1,\ \max_i \frac{t_i^{\min}}{t_i}\Big)\,(1 + 10^{-9}) \quad (k > 1)
 \end{equation*}
 
 where the factor $1 + 10^{-9}$ keeps the scaled walls strictly above the minima. The
-chord, thicknesses, web offsets and two-foot web axes are scaled; metre-valued
-fields of a user `SectionLayout` are not, and land at $1/k$ of their value
-([BG-058](../blade/bug_log.md#bg-058)).
+chord, the thicknesses, the web offsets and every metre-valued field of the layout
+(`web_stations_m`, `web_axes_m` and a fixed cap half-width) are scaled; before the
+fix of [BG-058](../blade/bug_log.md#bg-058) the layout's own fields were not, and
+landed at $1/k$ of their value.
 
 ### 3.3 Tilted webs
 
@@ -102,7 +103,8 @@ r(\xi, \eta) = (\xi - f)\cos\theta - (\eta - \eta_0)\sin\theta = 0,
 
 where $\mathbf{d}$ is the direction from the pressure end towards the suction end.
 A positive tilt therefore puts the pressure foot aft of the suction foot
-([BG-061](../blade/bug_log.md#bg-061)). The pivot is on the chord line,
+(a code comment that said the opposite was corrected,
+[BG-061](../blade/bug_log.md#bg-061)). The pivot is on the chord line,
 $\eta_0 = 0$ (`web_tilt_anchor="chord"`), or on one surface, $\eta_0 = \eta_u(f)$ or
 $\eta_l(f)$, which keeps that foot at $f$. Since (R8.1) scales both axes by $c$ and
 rotates, the angle is the same in the cut.
@@ -157,11 +159,12 @@ f' = \frac{1}{c}\Big(\mathbf{x}_A + \big(t_s + \tfrac{h}{2}\big)\,\boldsymbol\nu
 \end{equation*}
 
 where the tangent is the central difference over $f \pm 10^{-3}$, and
-$\boldsymbol\nu$ is the normal to it that points towards $(c/2, 0)$. The shift is
-$f' - f = (t_s + h/2)\,\nu_\xi / c$, of the order of $(t_s + h/2)\,\eta'(f)/c$. The
-point $(c/2, 0)$ is inside the section only where the surface does not cross the
-chord line; on a pressure surface above the chord line $\boldsymbol\nu$ points out
-([BG-059](../blade/bug_log.md#bg-059)).
+$\boldsymbol\nu$ is the inward normal to it: the left normal of the surface
+traversed from the leading edge on the pressure side, its negative on the suction
+side. The shift is $f' - f = (t_s + h/2)\,\nu_\xi / c$, of the order of
+$(t_s + h/2)\,\eta'(f)/c$. The side fixes the sense without a reference point,
+which also holds where a pressure surface lies above the chord line (an earlier test
+against $(c/2, 0)$ did not, [BG-059](../blade/bug_log.md#bg-059)).
 
 ### 3.6 Members and forced stations
 
@@ -320,14 +323,14 @@ and its gradient at $\mathbf{p}$ is $\mathbf{n}$.
 
 `offset_rings` moves every vertex of a placed outer mould ring a distance $d$ along
 its vertex normal, the normalised sum of the unit normals $\boldsymbol\nu_{i-1,i}$
-and $\boldsymbol\nu_{i,i+1}$ of its two edges, oriented by the vector to the vertex
-mean $\bar{\mathbf{x}}$:
+and $\boldsymbol\nu_{i,i+1}$ of its two edges, oriented by the sign of the ring's
+signed area $A$, since the left normal points into a counter-clockwise ring:
 
 \begin{equation*}
 \begin{gathered}
 \mathbf{n}_i = \frac{\boldsymbol\nu_{i-1,i} + \boldsymbol\nu_{i,i+1}}{|\boldsymbol\nu_{i-1,i} + \boldsymbol\nu_{i,i+1}|},
 \qquad
-s_i = \operatorname{sign}\big((\bar{\mathbf{x}} - \mathbf{x}_i)\cdot\mathbf{n}_i\big),
+s_i = \operatorname{sign} A,
 \\
 \mathbf{x}_i' = \mathbf{x}_i + d\,s_i\,\mathbf{n}_i .
 \end{gathered}
@@ -345,9 +348,9 @@ d_{\mathrm{edge}} = d\cos\frac{\alpha_i}{2} = d\Big(1 - \frac{\alpha_i^2}{8} + O
 
 $d\cos(\pi/N)$ on a regular $N$-gon, against $d$ for an exact offset (R6.2): the
 error is second order in the turning angle, so it vanishes as the sampling is
-refined except at true corners such as a sharp TE. The orientation $s_i$ is right
-only while $\bar{\mathbf{x}}$ lies on the inner side of every vertex's tangent;
-on thin cambered sections it does not ([BG-060](../blade/bug_log.md#bg-060)).
+refined except at true corners such as a sharp TE. One sign per ring is right at
+every vertex; an earlier test against the vertex mean failed on thin cambered
+sections ([BG-060](../blade/bug_log.md#bg-060)).
 
 ## 4. Algorithm
 
@@ -393,55 +396,46 @@ each name's samples over each maximal set of consecutive stations that carry it
 
 ## 6. Limits
 
-1. **BG-058 (open).** Metre-valued fields of a user `SectionLayout`
-   (`web_stations_m`, a fixed cap half-width) are not scaled by $k$, so they shrink
-   by $1/k$ on a cut whose walls are thinner than the minima.
-2. **BG-059 (open).** Cap edges given on the outer surface move outward on a
-   pressure surface above the chord line. The error is
-   $2(t_s + h/2)|\nu_\xi|/c$ in chord fraction, $2\times10^{-3}$ on the example.
-3. **BG-060 (open).** The vertex-normal offset (R8.17) moves vertices outward on
-   thin cambered sections. It is not yet on a production path.
-4. **BG-061 (open).** The tilt sense is stated wrongly in a comment; (R8.4) gives
-   the sense the code implements.
-5. **Tilted feet** (R8.5) are on the linear interpolant of the surface samples;
+1. **Vertex-normal offset** (R8.17) is not yet on a production path.
+2. **Tilted feet** (R8.5) are on the linear interpolant of the surface samples;
    a line that misses a surface leaves the foot at $f$ without a warning.
-6. **Outer-surface tangent** (R8.7) is a central difference of step $10^{-3}$ on
+3. **Outer-surface tangent** (R8.7) is a central difference of step $10^{-3}$ on
    the linear interpolant; its error is of the order of the sample spacing.
-7. **Forced stations** (R8.8) omit the outer ends of ply-drop ramps.
-8. **Locked resampling** (R8.11) moves a pin to the rounded index, so the samples
+4. **Forced stations** (R8.8) omit the outer ends of ply-drop ramps.
+5. **Locked resampling** (R8.11) moves a pin to the rounded index, so the samples
    either side of it are spaced unevenly by up to half a sample.
-9. **Partition patch.** The run's points set its accuracy: on a circle the
+6. **Partition patch.** The run's points set its accuracy: on a circle the
    curvature is within about 0.1 % of $1/r_m$ away from the ends; a vertex the
    section inserted near an end (a cap edge or web foot) can move the end curvature
    by several per cent. The run must have the same orientation at every station.
    A PCHIP row is C1, so $\mathbf{x}_{zz}$ jumps at stations; a linear row has
    $\mathbf{x}_{zz} = 0$ inside a bay.
-10. **Newton projection** (R8.16) converges from a start near the foot; the
-    Hessian is singular where $\mathbf{p}$ is at a centre of curvature.
+7. **Newton projection** (R8.16) converges from a start near the foot; the
+   Hessian is singular where $\mathbf{p}$ is at a centre of curvature.
 
 ## 7. Verification
 
 | Result | Check | Where |
 |---|---|---|
 | (R8.1), (R8.2) | Placed OML equals the hand map; inverse and re-placement: $4\times10^{-16}$ m; area ratio $c^2$ | [blade example 19](../../examples/blade/19_loft_checks/README.md), check 1 |
-| (R8.3) | A 0.4 m chord with a 1 mm skin ($k = 2.5$) equals 0.4 times the 1 m cut: $3\times10^{-14}$; BG-058 printed | example 19, check 2 |
+| (R8.3) | A 0.4 m chord with a 1 mm skin ($k = 2.5$) equals 0.4 times the 1 m cut: $3\times10^{-14}$; `web_stations_m` kept at 0.3 and 0.6 m at $k = 2.5$ | example 19, check 2 |
 | (R8.4), (R8.5) | Both feet on the tilted line: $5\times10^{-17}$; one-surface anchors keep their foot | example 19, check 3; `tests/test_web_tilt.py`, `tests/test_skeleton.py` |
 | (R8.6) | LE-frozen webs at 0.3 and 0.7 m on a chord tapering 2 m to 1 m: $10^{-16}$ m | example 19, check 4 |
-| (R8.7) | Suction side within $3\times10^{-5}$ of the normal offset; BG-059 printed | example 19, check 5 |
+| (R8.7) | Both sides within $10^{-4}$ of the inward normal offset, including a pressure surface above the chord line | example 19, check 5 |
 | (R8.8) | Rib, stringer and ply-drop ends collected | example 19, check 6 |
 | (R8.9)–(R8.11) | 13 runs of a 3D-F cut at 41 points; web ends on skin samples; pins at the rounded indices | example 19, check 7; `tests/test_locked_loft.py`; [blade example 12](../../examples/blade/12_locked_loft_zones/README.md) |
 | (R8.12)–(R8.16) | Spline exact on a cubic; cylinder curvature within $9\times10^{-4}$; projection recovers a 0.03 m offset | example 19, check 8; `tests/test_partition_patch.py` |
-| (R8.17), (R8.18) | Edge displacement $d\cos(\pi/N)$ to $10^{-16}$; BG-060 counts printed | example 19, check 9 |
+| (R8.17), (R8.18) | Edge displacement $d\cos(\pi/N)$ to $10^{-16}$; no vertex moved outward on NACA 0012, 4412, 4406, 6409 | example 19, check 9 |
 
 ```{figure} ../../examples/blade/19_loft_checks/figures/loft_checks.png
-:alt: Top left, a unit aerofoil, the same scaled about the pitch axis, and twisted and offset; top right, three tilted webs through their pivots on a symmetric section; bottom left, the patch curvature on a cylinder against the exact value; bottom right, a NACA 4406 offset by vertex normals, with the vertices moved outward marked
+:alt: Top left, a unit aerofoil, the same scaled about the pitch axis, and twisted and offset; top right, three tilted webs through their pivots on a symmetric section; bottom left, the patch curvature on a cylinder against the exact value; bottom right, a NACA 4406 offset inward by vertex normals
 :width: 100%
 
 **Figure R8.1.** Top left: placement (R8.1) of a NACA 2418 with $c = 1.7$ m,
 $p = 0.3$, $\tau = 12^\circ$ and an offset. Top right: webs tilted about $(f, 0)$
 (R8.4). Bottom left: $|\kappa|\,r_m$ on the skin patch of a cylinder (R8.15).
-Bottom right: the vertex-normal offset (R8.17) of a NACA 4406; the vertices moved
-outward are BG-060. Drawn by `examples/blade/19_loft_checks/loft_checks.py`.
+Bottom right: the vertex-normal offset (R8.17) of a NACA 4406; every vertex moves
+inward although the vertex mean lies outside the section. Drawn by `examples/blade/19_loft_checks/loft_checks.py`.
 ```
 
 These checks move to V1 when it is written.

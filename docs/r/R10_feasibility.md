@@ -56,9 +56,10 @@ t_s^{\min} = 2.5\ \mathrm{mm}, \quad t_w^{\min} = 4\ \mathrm{mm}, \quad h^{\min}
 The floors are applied in `plan_section`, so they bind every section; a cap height
 of zero is raised to $h^{\min}$, not removed (a capless station uses a family A
 layout). The loft avoids them for small chords by building the cut at the scale $k$
-of (R8.3). The web anchors of Section 3.2 are found by `resolve_station_layout`
-with the skin thickness as given, before (R10.1) is applied: a skin under
-$t_s^{\min}$ is probed at one depth and built at another (SG-040, Section 6).
+of (R8.3). `resolve_station_layout` applies the skin floor too, before it finds the web
+anchors of Section 3.2, so the anchors are found on the skin that is built. Before
+the fix of [SG-040](../section/bug_log.md#sg-040) they were found on the skin as
+given, and a skin under $t_s^{\min}/2$ raised.
 
 ### 3.2 The intercept probe
 
@@ -87,12 +88,12 @@ d(x) \le \Delta y\ \Rightarrow\ \text{found only if some } y_k \in (y_b, y_t).
 \end{equation*}
 
 Below $\Delta y$ the outcome depends on where the grid falls; a cavity that exists is
-then reported as `no_inner_skin_intercept`. The pad decides $\Delta y$. The probe's
-default window pads by $p = \max(0.05\,T, 0.01\ \mathrm{m})$; `resolve_web_anchors`
-builds its own window with $p = \max(0.05\,W, 0.01\ \mathrm{m})$, the chord extent in
-place of the thickness. On a 1 m NACA 0006 that is $\Delta y = 0.67$ mm against
-0.33 mm, and cavities of 0.4 and 0.6 mm at $0.8c$ are dropped although they exist
-(SG-038).
+then reported as `no_inner_skin_intercept`. The pad decides $\Delta y$; the window
+pads by $p = \max(0.05\,T, 0.01\ \mathrm{m})$. On a 1 m NACA 0006 that is
+$\Delta y = 0.33$ mm, and cavities of 0.4 mm and deeper at $0.8c$ are found. A pad
+of 5 % of the chord, which `resolve_web_anchors` used before the fix of
+[SG-038](../section/bug_log.md#sg-038), doubles $\Delta y$ and dropped cavities of
+0.4 and 0.6 mm.
 
 ### 3.3 Crossing accuracy
 
@@ -273,18 +274,24 @@ web can be the shallower one; the rule does not look there.
 (R5.3) when a minimum-gauge cap cannot be built. Its first test bounds each cap by
 
 \begin{equation*}
-h \le \tfrac12\big(h_{\mathrm{loc}} - t_s - g\big),
-\qquad g = 2\ \mathrm{mm},
+\begin{gathered}
+d = h_{\mathrm{loc}} - t_s,
+\\
+h \le \tfrac12\big(d - \max(g,\ \alpha\, d)\big), \qquad g = v_0 = 1\ \mathrm{mm},
+\end{gathered}
 \tag{R10.14}
 \end{equation*}
 
-which is the cavity room per cap when $h_{\mathrm{loc}}$ is the depth between the
-two skin mid-surfaces, $h_{\mathrm{loc}} = d + t_s$; it then becomes $(d - g)/2$. Its
-second test runs the clamp of Sections 3.6 to 3.9 at minimum gauge. The two void rules
-differ: the gate keeps $g = 2$ mm and the clamp keeps $\max(1\ \mathrm{mm}, 0.15\,d)$,
-equal at $d = g/\alpha = 13.3$ mm, so the gate is stricter in shallower cavities and
-more lenient in deeper ones; and $h_{\mathrm{loc}}$ is not defined in the code
-(SG-039). The gate has no caller in the library; consumers call it.
+where $h_{\mathrm{loc}}$ is the depth between the two skin mid-surfaces, so $d$ is the
+cavity depth. With the default floor $g = v_0$ the bound is $a(d)/2$ of (R10.7): the
+gate and the clamp keep the same void. A caller may raise $g$. Its second test runs
+the clamp of Sections 3.6 to 3.9 at minimum gauge, on the bands the build clamps:
+per-web pads of the section's half-width, and a fixed band at its published window or
+centred on its anchor (the pitch axis, given `pitch_fraction`, or the maximum
+thickness). Before the fixes of [SG-039](../section/bug_log.md#sg-039) and
+[SG-041](../section/bug_log.md#sg-041) the gate kept a 2 mm void with no 15 % term
+and tested a fixed band at $0.5c$. The gate has no caller in the library; consumers
+call it.
 
 ### 3.11 Failure modes that raise
 
@@ -331,32 +338,24 @@ At one station (`SectionGeometry.resolve`, then `execute`):
 
 ## 6. Limits
 
-1. **Shallow cavities (SG-038).** `resolve_web_anchors` pads its probe window by 5 %
-   of the chord, not of the thickness, so a cavity shallower than (R10.2)'s
-   $\Delta y$ may be dropped although it exists; on thin tip sections $\Delta y$ is
-   about 0.7 mm per metre of chord.
-2. **Floors after the probe (SG-040).** Anchors are resolved at the given skin and
-   built at the floored skin of (R10.1). Below $t_s^{\min}/2 = 1.25$ mm the frozen
-   anchor lies outboard of the built skin's mid-surface and the build raises; between
-   1.25 and 2.5 mm the drop decisions are made for the wrong skin.
-3. **Zero caps.** A cap height of zero is floored to 5 mm, not removed (R10.1).
-4. **Two void rules (SG-039).** The run-out gate (R10.14) and the clamp (R10.7) keep
-   different voids, and the gate's $h_{\mathrm{loc}}$ is undocumented.
-5. **Run-out gate geometry (SG-041).** The gate tests a fixed band centred at $0.5c$
-   and per-web pads of half-width $0.04c$; the build centres a fixed band at the
-   pitch axis or maximum thickness (or its published window) and takes the pad
-   half-width from the section options.
-6. **Fitted sample law.** (R10.8) is fitted on one section; for a much more curved
+1. **Shallow cavities.** A cavity shallower than (R10.2)'s $\Delta y$ may be dropped
+   although it exists; on a 6 % section $\Delta y$ is about 0.33 mm per metre of
+   chord.
+2. **Zero caps.** A cap height of zero is floored to 5 mm, not removed (R10.1).
+3. **Run-out gate inputs.** Without `pitch_fraction` a band anchored on the pitch
+   axis is still tested at $0.5c$ (with a `DeprecationWarning`); the pad half-width
+   must be passed when the section does not use the default.
+4. **Fitted sample law.** (R10.8) is fitted on one section; for a much more curved
    cavity mid-line the 1 µm budget is not guaranteed.
-7. **Family D void.** (R10.13) keeps no void at the aft web and reads only the aft
+5. **Family D void.** (R10.13) keeps no void at the aft web and reads only the aft
    end of the band.
 
 ## 7. Verification
 
 | Result | Check | Where |
 |---|---|---|
-| (R10.1) | Asked 2, 1, 0 mm; built 2.5, 4, 5 mm. SG-040: a 1.0 and 1.2 mm skin raise with the anchor $t_s^{\min}/2 - t_s$ outboard; 1.3 mm builds | [section example 06](../../examples/section/06_feasibility_checks/README.md), check 1 |
-| (R10.2), (R10.3) | Six cavities from 0.2 to 2 mm at $0.8c$ of NACA 0006: every outcome equals "a sample lies in the cavity"; SG-038 printed | example 06, check 2 |
+| (R10.1) | Asked 2, 1, 0 mm; built 2.5, 4, 5 mm. Skins of 1.0, 1.2 and 1.3 mm build with the anchors of the 2.5 mm skin | [section example 06](../../examples/section/06_feasibility_checks/README.md), check 1 |
+| (R10.2), (R10.3) | Six cavities from 0.2 to 2 mm at $0.8c$ of NACA 0006: every outcome equals "a sample lies in the cavity" | example 06, check 2; `tests/section/test_r10_fixes.py` |
 | (R10.4) | 18 columns: error $4\times10^{-18}$ m against the bound $9\times10^{-7}$ m | example 06, check 3 |
 | (R10.5) | One web of each drop reason, in order | example 06, check 4; `tests/section/test_assemble_web_layout_contract.py`, `tests/section/test_spanwise_web_anchoring.py` |
 | (R10.6) | 2D-F to 1C-F, 3D-F to 2D-F, no web raises | example 06, check 5; `tests/section/test_layout_step_down_cascade.py` |
@@ -364,7 +363,7 @@ At one station (`SectionGeometry.resolve`, then `execute`):
 | (R10.8) | Sample counts equal the formula for four band widths | example 06, check 7 |
 | (R10.10)–(R10.12) | Scale factor equal to (R10.10); a pad with a non-positive band minimum runs out | example 06, check 8 |
 | (R10.13) | Suction cap 50 mm clamped to $d(x_r)/2$, pressure cap kept, extent unchanged | example 06, check 9 |
-| (R10.14) | Gate equals $(d - g)/2$; equal to the clamp at 13.3 mm; SG-041 printed | example 06, check 10; `tests/section/test_spar_cap_runout.py` |
+| (R10.14) | Gate equals $a/2$ for four depths; a fixed band tested at maximum thickness | example 06, check 10; `tests/section/test_spar_cap_runout.py` |
 | Section 3.11 | Flapwise web at 90° twist; assembly refusing a drop | example 06, check 11 |
 
 ```{figure} ../../examples/section/06_feasibility_checks/figures/feasibility_checks.png
@@ -374,9 +373,8 @@ At one station (`SectionGeometry.resolve`, then `execute`):
 **Figure R10.1.** (a) Cavity depth $d(x)$ and allowance $a(x)$ (R10.7) of a NACA 2412,
 1 m chord, 6 mm skin, with four pads of half-width $0.04c$: authored band dotted,
 kept extent solid at the height $h_u + h_l$ it keeps. (b) Cavities at $0.8c$ of a
-NACA 0006 kept or dropped by the probe (R10.3), with the spacing $\Delta y$ of the
-chord pad and of the thickness pad (SG-038). (c) Per-cap ceiling of the clamp
-(R10.7) and of the run-out gate (R10.14) (SG-039). Drawn by
+NACA 0006 kept or dropped by the probe (R10.3), with the probe spacing $\Delta y$. (c) Per-cap ceiling of the clamp (R10.7) and of
+the run-out gate (R10.14). Drawn by
 `examples/section/06_feasibility_checks/feasibility_checks.py`.
 ```
 

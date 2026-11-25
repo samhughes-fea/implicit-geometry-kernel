@@ -191,8 +191,12 @@ class LoftLayoutMixin:
         if norm <= 1e-15:
             return float(frac)
         tangent /= norm
+        # The surface is traversed from the leading edge (x increasing), so the left
+        # normal points to +y: into the section on the pressure side, out of it on the
+        # suction side. A test against an interior point fails where the pressure
+        # surface lies above the chord line (BG-059).
         normal = np.array([-tangent[1], tangent[0]])
-        if float(np.dot(normal, np.array([0.5 * chord, 0.0]) - p)) < 0.0:
+        if side == "suction":
             normal = -normal
         landed = p + normal * inset
         return float(landed[0] / chord)

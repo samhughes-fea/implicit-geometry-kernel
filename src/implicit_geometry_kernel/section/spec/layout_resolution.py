@@ -205,9 +205,16 @@ def resolve_station_layout(
             nominal_sl, (), (), nominal_sl, web_y_coords=()
         )
 
+    from implicit_geometry_kernel.section.layout.thickness_limits import (
+        clamp_skin_thickness_m,
+    )
+
+    # Probe the skin that assembly will build: plan_section floors the skin at the
+    # manufacturing minimum, and anchors found for a thinner skin lie outboard of the
+    # built skin's mid-surface (SG-040).
     resolved, dropped = resolve_web_anchors(
         airfoil,
-        float(t_skin_v),
+        clamp_skin_thickness_m(float(t_skin_v)),
         requested,
         y_search=y_search,
         phi_inner=phi_inner,

@@ -66,10 +66,10 @@ Deviations are stated per entry.
 | [SG-035](#sg-035) | Web ends snapped to the nearest skin vertex with no tolerance | **Fixed** (0.9.6) — feet built on the skin; the snaps are coincidence checks that raise |
 | [SG-036](#sg-036) | `section_properties_S` on a MultiPolygon lost each part's offset from the combined centroid | **Fixed** (0.9.6) — parts' origin moments add |
 | [SG-037](#sg-037) | The OML offset read each tangent from points it had already moved | **Fixed** (0.9.6) — tangents from the unmoved mid-line |
-| [SG-038](#sg-038) | `resolve_web_anchors` pads its probe window by 5 % of the chord, so shallow cavities that exist are dropped | **Open** |
-| [SG-039](#sg-039) | The cap run-out gate keeps a 2 mm void where the clamp keeps max(1 mm, 0.15 d), and its `h_local` is undefined | **Open** |
-| [SG-040](#sg-040) | Web anchors are resolved at the given skin but built at the floored skin; a skin under 1.25 mm raises | **Open** |
-| [SG-041](#sg-041) | The run-out gate tests a fixed band at 0.5c and pads at 0.04c, not the band and pads the build uses | **Open** |
+| [SG-038](#sg-038) | `resolve_web_anchors` pads its probe window by 5 % of the chord, so shallow cavities that exist are dropped | **Fixed** (#124) |
+| [SG-039](#sg-039) | The cap run-out gate keeps a 2 mm void where the clamp keeps max(1 mm, 0.15 d), and its `h_local` is undefined | **Fixed** (#124) |
+| [SG-040](#sg-040) | Web anchors are resolved at the given skin but built at the floored skin; a skin under 1.25 mm raises | **Fixed** (#124) |
+| [SG-041](#sg-041) | The run-out gate tests a fixed band at 0.5c and pads at 0.04c, not the band and pads the build uses | **Fixed** (#124) |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -2019,7 +2019,7 @@ now r = 1.000 m to 5e-7.
 
 **`resolve_web_anchors` pads its probe window by 5 % of the chord**
 
-**Status:** Open
+**Status:** Fixed (#124)
 **Area:** `section/assembly/web_layout.py` `resolve_web_anchors`
 
 ### Symptom
@@ -2038,15 +2038,17 @@ case (section example 06, check 2).
 ### Root cause
 The window uses the x range where the y range was meant.
 
-### Fix (proposed)
-Use `_default_y_search` (thickness pad). Better, make the outcome independent of the
-grid: refine near the minimum of φ_inner along the column before declaring a miss.
+### Fix
+`resolve_web_anchors` takes its window from `_default_y_search`, padded by the
+thickness. The 0.4 and 0.6 mm cavities are now kept (section example 06 check 2;
+`tests/section/test_r10_fixes.py`). A cavity shallower than Δy can still be missed:
+R10 Limits 1.
 
 ## SG-039
 
 **The cap run-out gate and the cap clamp keep different voids**
 
-**Status:** Open
+**Status:** Fixed (#124)
 **Area:** `section/layout/spar_cap_runout.py` `max_spar_from_cavity`
 
 ### Symptom
@@ -2058,15 +2060,19 @@ d = 13.3 mm and more lenient above it. Read with h_local the outer thickness d +
 it is more lenient by t_s/2. `h_local` is not documented. Found while deriving R10
 ((R10.14)).
 
-### Fix (proposed)
-Define `h_local` as the cavity depth and use the clamp's own void rule, so the gate
-and the clamp agree.
+### Fix
+`h_local` is documented as the depth between the skin mid-surfaces, d = h_local − t_s,
+and the gate keeps the clamp's void max(gap_min, 0.15 d). The default `gap_min` is now
+the clamp's 1 mm floor, so with defaults the gate equals a(d)/2 (section example 06
+check 10; `tests/section/test_spar_cap_runout.py`). Callers that pass `gap_min=0.002`
+keep a 2 mm floor and gain the 15 % term, so the gate is stricter in deep cavities
+than before.
 
 ## SG-040
 
 **Web anchors are resolved at the given skin and built at the floored skin**
 
-**Status:** Open
+**Status:** Fixed (#124)
 **Area:** `section/spec/layout_resolution.py` `resolve_station_layout`; `section/assembly/plan.py`
 
 ### Symptom
@@ -2082,14 +2088,16 @@ t = 1 mm and 0.05 mm at t = 1.2 mm, equal to the reported offset (section exampl
 check 1). Between 1.25 and 2.5 mm the build succeeds but web drops are decided for a
 skin thinner than the one built.
 
-### Fix (proposed)
-Apply `clamp_skin_thickness_m` in `resolve_station_layout` before probing.
+### Fix
+`resolve_station_layout` floors the skin with `clamp_skin_thickness_m` before probing.
+Skins of 1.0, 1.2 and 1.3 mm build and resolve the same anchors as a 2.5 mm skin
+(section example 06 check 1; `tests/section/test_r10_fixes.py`).
 
 ## SG-041
 
 **The run-out gate tests a different band from the one the build clamps**
 
-**Status:** Open
+**Status:** Fixed (#124)
 **Area:** `section/layout/spar_cap_runout.py` `_placement_buildable_at_gauge`
 
 ### Symptom
@@ -2100,7 +2108,9 @@ half-width of 0.04c; the build uses `discrete_cap_chord_half_width`. The gate ca
 then pass a cap the build runs out, or run out a cap the build could place. Found
 while deriving R10 ((R10.14)).
 
-### Fix (proposed)
-Compute the band with the same function the build uses (`_caps_fixed_band` anchor
-and window, the section's pad half-width).
-
+### Fix
+`_placement_buildable_at_gauge` takes the band from `_fixed_bands`, which mirrors
+`_caps_fixed_band` (published side windows or window, else the anchor: maximum
+thickness, or the pitch axis from the new `pitch_fraction` argument; without it that
+band is still tested at 0.5c, with a `DeprecationWarning`). `apply_spar_cap_runout` gains `pitch_fraction` and `pad_half_width`
+(default 0.04c, the builder's default). Tests in `tests/section/test_spar_cap_runout.py`.

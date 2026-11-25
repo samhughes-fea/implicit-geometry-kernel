@@ -6,7 +6,7 @@ Draws Figure R7.1 of the R manual (docs/r/R7_section_properties.md) and checks:
 2. holes subtract and the parts of a multipolygon add about a common origin, (R7.6);
 3. the parallel-axis reduction to the centroid, (R7.7);
 4. a sampled ring converges to a circle as 1/N^2, (R7.8);
-5. the rectangle moments of an interior leaf, (R7.9), with the defect IN-001 printed;
+5. the rectangle moments of an interior leaf, (R7.9);
 6. the cut polygon of a boundary leaf and the leaf classes, (R7.10)-(R7.12);
 7. quadtree area and second moment converge as h^2 on a circle, (R7.13);
 8. the hybrid backend: wall solids by shoelace on their polygons, (R7.14).
@@ -143,11 +143,11 @@ def check_rectangle_moments():
     m = _rectangle_moments(x0, x1, y0, y1)
     p = _polygon_moments(rect(x0, x1, y0, y1))
     exact_sxy = (x1**2 - x0**2) * (y1**2 - y0**2) / 4
-    err = max(abs(m[i] - p[i]) for i in range(5))
-    assert err < 1e-15
+    err = max(abs(m[i] - p[i]) for i in range(6))
+    assert err < 1e-15 and abs(m[5] - exact_sxy) < 1e-15
     print(
-        f"5. Leaf rectangle [1, 2]^2: area, first and second moments equal the shoelace values to {err:.0e} (R7.9); "
-        f"integral of xy = {m[5]:.4f} against {exact_sxy:.4f}  <- IN-001"
+        f"5. Leaf rectangle [1, 2]^2: area, first, second and product moments equal the shoelace values to "
+        f"{err:.0e} (R7.9); integral of xy = {m[5]:.4f} against {exact_sxy:.4f} (IN-001 fixed)"
     )
     return m[5], exact_sxy
 
@@ -210,7 +210,8 @@ def check_quadtree():
         f"largest {sizes.max():.4f} m, {len(b)} leaves"
     )
     off, _ = quadtree_props(circle(0.2, 0.1, 0.2), 0.005, box=(-0.1, 0.5, -0.2, 0.4))
-    print(f"   Ixy of a circle centred at (0.2, 0.1), exactly 0: {off['Ixy']:.4e}  <- IN-001")
+    assert abs(off["Ixy"]) < 1e-3 * off["Ixx"]
+    print(f"   Ixy of a circle centred at (0.2, 0.1), exactly 0: {off['Ixy']:.1e} against Ixx {off['Ixx']:.2e}")
     return hs, np.array(ea), np.array(ei), off["Ixy"]
 
 
@@ -302,7 +303,7 @@ def figure(ring, hs, ea, ei):
     ax.legend(frameon=False, fontsize=8)
     note(
         fig,
-        "Checks: shoelace exact; holes and parts; parallel axis; N-gon; leaf rectangles (IN-001 printed); "
+        "Checks: shoelace exact; holes and parts; parallel axis; N-gon; leaf rectangles; "
         "cut leaves; h^2 convergence; hybrid against quadtree.",
     )
     fig.subplots_adjust(left=0.05, right=0.98, top=0.9, bottom=0.17)

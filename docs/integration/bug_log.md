@@ -17,7 +17,7 @@ quadrature). Identifiers are `IN-nnn`. Cross-link
 
 | ID | Title | Status |
 |---|---|---|
-| [IN-001](#in-001) | Quadtree interior leaves carry the wrong product moment | Open |
+| [IN-001](#in-001) | Quadtree interior leaves carry the wrong product moment | Fixed (#124) |
 
 ## IN-001
 
@@ -27,8 +27,7 @@ $I_{xx} = 1.26\times10^{-3}$. Area, first moments, $I_{xx}$ and $I_{yy}$ converg
 does not converge to zero.
 
 **Evidence.** Found while deriving [R7](../r/R7_section_properties.md), (R7.9).
-`examples/integration/02_property_quadrature` check 5 evaluates one leaf
-$[0.5, 1] \times [1, 2]$: $\int xy\,dA = 1.75$ against the exact 2.25; check 7
+`examples/integration/02_property_quadrature` check 5 evaluates the leaf $[1, 2]^2$: $\int xy\,dA = 1.75$ against the exact 2.25; check 7
 prints the circle case. Existing tests use sections centred on the origin or
 symmetric about an axis, where the error cancels.
 
@@ -44,4 +43,6 @@ with the distance of the section from the origin.
 hybrid backend integrates with the quadtree. The hybrid wall properties use the
 shoelace (R7.1)–(R7.6) and are not affected.
 
-**Fix.** Open; to follow in a separate PR.
+**Fix (#124).** Both functions evaluate $A\,(x_0 + x_1)(y_0 + y_1)/4$. The circle
+now gives $I'_{xy} = -1.5\times10^{-16}$; `tests/integration/test_quadtree_quadrature.py`
+checks one leaf against the factored integral and an off-axis circle against zero.

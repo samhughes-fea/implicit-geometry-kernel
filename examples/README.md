@@ -90,6 +90,7 @@ flowchart TB
 | 01 | [Layout catalogue](section/01_layout_catalogue/) | `SYSTEM_TYPE_KEYS`, `resolve_system_type` |
 | 02 | [Section properties](section/02_section_properties/) | `SectionGeometry(spec, SectionOptions(outputs=("properties",)))` |
 | 03 | [Mid-surface and cells](section/03_mid_surface_and_cells/) | `SectionCut.walls`, `cells`, `mid_surface()` |
+| 04 | [Layout construction](section/04_layout_construction/) | catalogue, wall fields, web axes and anchoring (Figure R5.1) |
 
 Teaching: [section/teaching/](section/teaching/) (`01_first_station` … `06_consumer_seams`).
 

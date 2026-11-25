@@ -3,7 +3,9 @@
 A catalogue key names a **blade concept**, not only a station layout. W, X,
 and Y are the station slice; Z is span web freeze; R is transverse faces.
 Example: `"2D-F-LC-0R"`. Authoring: `blade.concepts.BladeConcept`. Spec:
-`implicit_geometry_kernel.catalogue`.
+`implicit_geometry_kernel.catalogue`. The grammar, the counts, the step-down rule,
+the wall fields and the anchoring formulas are derived in
+[R5](../../r/R5_section_layout.md).
 
 ```text
 [W][X]-[Y]-[Z]-[R]     e.g.  2D-F-LC-0R    2D-F-LE-10R    2D-F-PA-10R

@@ -14,7 +14,7 @@ equations by number, for example (R1.4), rather than restating them.
 | R2 | [Aerofoil parametrisation and families](R2_aerofoils.md) | Written |
 | R3 | [Planform and span laws](R3_span_laws.md) | Written |
 | R4 | [Signed distance fields and constructive solid geometry](R4_sdf_csg.md) | Written |
-| R5 | Section layout: skin, caps, webs and the WX-Y-Z-NR catalogue | Current text: [section](../section/README.md), [taxonomy](../blade/concepts/taxonomy.md) |
+| R5 | [Section layout: skin, caps, webs and the WX-Y-Z-NR catalogue](R5_section_layout.md) | Written |
 | R6 | Mid-surfaces, cells and the thin-wall idealisation | Current text: [section](../section/README.md), [structure](../structure/README.md) |
 | R7 | Section properties by quadtree and shoelace integration | Current text: [integration](../integration/README.md), [shoelace](../integration/shoelace.md) |
 | R8 | Spanwise members and the loft | Current text: [blade](../blade/README.md), [structure](../structure/README.md) |
@@ -53,6 +53,7 @@ R1_frames
 R2_aerofoils
 R3_span_laws
 R4_sdf_csg
+R5_section_layout
 /sdf/README
 /section/README
 /blade/concepts/taxonomy

@@ -64,6 +64,10 @@ table in the same change.
 | $\delta$, $D$ | Offset distance; wall depth | m | (R4.15), (R4.18) |
 | $k$ | Blend width of a smooth union | m | (R4.19) |
 | $m$, $\pi$ | Feature id of a point; priority of a member kind | – | (R4.24) |
+| $t_s, h, t_w$ | Skin thickness, spar-cap height, shear-web thickness | m | [R5](R5_section_layout.md) |
+| $\phi_A$, $\phi_I$ | Fields of the outer and inner mould lines, $\phi_I = \phi_A + t_s$ | m | (R5.7) |
+| $x_k$, $f_k$ | Web station from the leading edge; as a fraction of chord | m, – | (R5.4) |
+| $W, X, Y, Z$ | Web count, cap family, web orientation and anchoring of a layout key | – | (R5.1) |
 
 ## Bibliography
 

@@ -166,12 +166,11 @@ S_{xy} = \frac{x_1^2 - x_0^2}{2}\cdot\frac{y_1^2 - y_0^2}{2}
 \tag{R7.9}
 \end{equation*}
 
-and likewise in $y$. The kernel's product moment has a factor $\tfrac12$ on the
-mixed terms $x_0y_1 + x_1y_0$, so it is wrong for every leaf off the axes
-([IN-001](../integration/bug_log.md#in-001)). On a circle of radius 0.2 centred at
-$(0.2, 0.1)$, the quadtree gives $I'_{xy} = -5.8\times10^{-4}$ instead of zero.
-The default hybrid backend computes wall solids by the shoelace, so only the
-quadtree backend and the residual regions (inserts) are affected.
+and likewise in $y$. Before FIXPR the kernel's product moment had a factor
+$\tfrac12$ on the mixed terms $x_0y_1 + x_1y_0$
+([IN-001](../integration/bug_log.md#in-001), fixed); it now evaluates the factored
+form, and a circle of radius 0.2 centred at $(0.2, 0.1)$ gives $I'_{xy}$ at
+round-off.
 
 ### 3.6 Cut leaves
 
@@ -251,8 +250,7 @@ Summed over the cut leaves:
 \tag{R7.13}
 \end{equation*}
 
-and the same order holds for each moment. Interior leaves are exact by (R7.9),
-apart from IN-001. On a circle of radius 0.3, the area error falls from
+and the same order holds for each moment. Interior leaves are exact by (R7.9). On a circle of radius 0.3, the area error falls from
 $5.8\times10^{-4}$ at $h = 0.02$ to $8.8\times10^{-6}$ at $h = 0.0025$, a log-log
 slope of 2.02.
 
@@ -301,7 +299,7 @@ Properties of one section (`compute_section_properties`, backend `"hybrid"`):
 | (R7.1)–(R7.5) | `integration.shoelace.ring_sums_S`; `integration.quadtree.moments._polygon_moments`, `_shoelace_moments_batch` |
 | (R7.6) | `integration.shoelace.section_properties_S` (holes and `MultiPolygon` parts) |
 | (R7.7) | `integration.shoelace.section_properties_Sprime`; `integration.quadtree.quadrature._raw_to_section_properties` |
-| (R7.9) | `integration.quadtree.moments._rectangle_moments`, `_rectangle_moments_batch` (IN-001) |
+| (R7.9) | `integration.quadtree.moments._rectangle_moments`, `_rectangle_moments_batch` |
 | (R7.10) | `integration.quadtree.moments._inside_polygon_from_cell`, `_boundary_recipe`, `_boundary_moments_batch` |
 | (R7.11) | `integration.quadtree.quadrature._accumulate_moments_vectorized`; `integration.quadtree.moments._accumulate_cell` (hollow leaves) |
 | (R7.12) | `integration.quadtree.soa._effective_refine_bands`, `_cells_need_refine_batch`; `integration.quadtree.soa_build.build_shared_quadtree`; defaults in `section.properties.backend.quadtree_spec_for_airfoil` |
@@ -309,20 +307,17 @@ Properties of one section (`compute_section_properties`, backend `"hybrid"`):
 
 ## 6. Limits
 
-1. **IN-001 (open).** The product moment of interior quadtree leaves (R7.9) is wrong
-   off the axes, so $I_{xy}$ from the quadtree backend and from inserts is wrong.
-   The hybrid wall properties are not affected.
-2. **Polygonisation** (R7.8) is second order in the vertex spacing. The shoelace is
+1. **Polygonisation** (R7.8) is second order in the vertex spacing. The shoelace is
    exact only for the polygon it is given.
-3. **Saddle leaves** (R7.10) are always joined. Two boundaries closer than one leaf
+2. **Saddle leaves** (R7.10) are always joined. Two boundaries closer than one leaf
    can be merged in the fill. The error is at most the leaf's area, on the rare
    leaves where it occurs.
-4. **Coarse cells.** Above $D = 4b_{\max}$, refinement of a filled solid relies on
+3. **Coarse cells.** Above $D = 4b_{\max}$, refinement of a filled solid relies on
    sign changes (R7.12). A sliver thinner than the probe spacing inside such a cell
    is found only by the hollow test, and only two levels deep.
-5. **Leaf budget.** `max_cells` stops refinement. If it is reached, cut leaves
+4. **Leaf budget.** `max_cells` stops refinement. If it is reached, cut leaves
    coarser than $h$ remain, and (R7.13) holds with the larger size.
-6. **The grid backend** (`SDFGrid.section_properties`) counts cell centres with
+5. **The grid backend** (`SDFGrid.section_properties`) counts cell centres with
    $\phi < 0$. Its error is first order in the grid step, and it is for debugging
    only.
 7. **Cancellation** in (R7.7) for sections far from the origin: see Section 3.3.
@@ -335,7 +330,7 @@ Properties of one section (`compute_section_properties`, backend `"hybrid"`):
 | (R7.6) | A hole subtracts; two disjoint squares add about the origin | example 02, check 2; `tests/integration/test_area_2d_quadtree.py` |
 | (R7.7) | S′ moments equal the moments of the polygon moved to its centroid: $6\times10^{-17}$ | example 02, check 3 |
 | (R7.8) | Inscribed $N$-gon area exact; deficit ratio 16.00 per doubling | example 02, check 4; Figure R7.1 |
-| (R7.9) | Area, first and second moments of a leaf exact; $S_{xy}$ = 1.75 against 2.25 (IN-001) | example 02, check 5 |
+| (R7.9) | Area, first, second and product moments of a leaf exact; $I'_{xy}$ of an off-axis circle at round-off | example 02, checks 5 and 7; `tests/integration/test_quadtree_quadrature.py` |
 | (R7.10) | Straight boundaries with one, two and three inside corners: exact | example 02, check 6 |
 | (R7.12), (R7.13) | Every cut leaf at $h$; area and $I_{xx}$ converge with slope 2.02 | example 02, check 7; Figure R7.1; `tests/integration/test_quadtree_quadrature.py` |
 | (R7.14) | Hybrid against quadtree on the walls of a 2D-F section: $1.2\times10^{-3}$ | example 02, check 8; [integration example 01](../../examples/integration/01_quadtree_vs_shoelace/README.md) |

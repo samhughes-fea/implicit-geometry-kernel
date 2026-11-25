@@ -59,13 +59,17 @@ def test_root_station_keeps_every_web():
     [
         (0.2409, "5D-F-LC-0R", 5),
         (0.2026, "4D-F-LC-0R", 4),
-        (0.1353, "3D-F-LC-0R", 3),
+        (0.1600, "3D-F-LC-0R", 3),
         (0.1121, "2D-F-LC-0R", 2),
         (0.0878, "1C-F-LC-0R", 1),
     ],
 )
 def test_layout_steps_down_as_the_section_tapers(chord, expected_key, expected_webs):
-    """The measured ladder from A1, now resolved in one call."""
+    """The measured ladder from A1, now resolved in one call.
+
+    The 1 mm skin is floored to 2.5 mm before probing, as assembly builds it (SG-040);
+    the 3D rung is measured at 0.1600 m (it spans 0.1390 to 0.1789 m at the floored skin).
+    """
     layout = resolve_system_type("5D-F-LC-0R")
 
     res = resolve_station_layout(
@@ -114,7 +118,9 @@ def test_omitting_anchored_positions_keeps_the_legacy_behaviour():
     """
     layout = resolve_system_type("5D-F-LC-0R")
 
-    res = resolve_station_layout(layout, _airfoil(0.0878), skin_thickness=T_SKIN)
+    # At a chord whose cavity holds every catalogue web at the floored 2.5 mm skin
+    # (SG-040); at 0.0878 m the aft web no longer fits the skin that is built.
+    res = resolve_station_layout(layout, _airfoil(0.1353), skin_thickness=T_SKIN)
 
     assert res.layout.key == "5D-F-LC-0R"
     assert len(res.web_x_positions_m) == 5

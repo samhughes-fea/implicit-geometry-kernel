@@ -246,7 +246,9 @@ def test_reversed_loop_partitions_mesh_and_web_normals_face_the_te(layout):
         assert float(normal[:2] @ (te[j][:2] - p.mean(axis=0)[:2])) > 0.0
 
 
-@pytest.mark.parametrize("layout, web, z_end", [("5D-F-LE-0R", "shear_web_4", 1.937), ("3D-F-LE-10R", "shear_web_2", 3.051)])
+# End stations measured with the intercept probe padded by the thickness (SG-038); the
+# chord-padded probe missed the last shallow cavities and ended the webs at 1.937 / 3.051.
+@pytest.mark.parametrize("layout, web, z_end", [("5D-F-LE-0R", "shear_web_4", 1.9457), ("3D-F-LE-10R", "shear_web_2", 3.0583)])
 def test_a_web_that_ends_mid_span_keeps_the_loop_lines_and_reaches_its_end_station(layout, web, z_end):
     """Leading-edge layouts lose their aft web inside the span (and the cap edge moves to the next web).
 

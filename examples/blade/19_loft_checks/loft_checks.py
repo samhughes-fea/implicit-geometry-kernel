@@ -4,16 +4,15 @@ Draws Figure R8.1 of the R manual (docs/r/R8_loft_members.md) and checks:
 
 1. placement of a unit section in the blade frame and its inverse, (R8.1)-(R8.2);
 2. a thin-walled cut is built k times larger and scaled back exactly, (R8.3),
-   with the defect BG-058 printed;
+   with metre-valued layout fields scaled too (BG-058);
 3. tilted webs: both feet on the line through the pivot at the tilt angle, (R8.4)-(R8.5);
 4. metre anchors: an LE-frozen web keeps its distance from the leading edge, (R8.6);
-5. cap edges given on the outer surface move half a cap and one skin inward, (R8.7),
-   with the defect BG-059 printed;
+5. cap edges given on the outer surface move half a cap and one skin inward, (R8.7);
 6. forced stations collect member ends, (R8.8);
 7. locked resampling: equal counts, web feet kept as skin vertices, (R8.9)-(R8.11);
 8. the partition patch: not-a-knot spline exact on cubics, curvature of a cylinder,
    Newton projection, (R8.12)-(R8.16);
-9. the vertex-normal skin offset, its corner error and the defect BG-060, (R8.17)-(R8.18).
+9. the vertex-normal skin offset and its corner error, (R8.17)-(R8.18), inward on thin cambered sections (BG-060).
 
     python examples/blade/19_loft_checks/loft_checks.py
 """
@@ -132,10 +131,11 @@ def check_scaling():
         cut = blade(Airfoil.naca4("0018"), layout=lay, skin_thickness=t, shear_web_thickness=0.005).section_at(1.0)
         xs = [float(np.mean(w.points[:, 0])) + 0.25 for w in cut.walls if w.kind == "web"]
         rows.append((t, cut.scale, xs))
+    assert all(abs(xs[0] - 0.3) < 1e-9 and abs(xs[1] - 0.6) < 1e-9 for _, _, xs in rows)
     print(
         "   web_stations_m = (0.3, 0.6) m on a 1 m chord: "
         + "; ".join(f"skin {t * 1e3:.0f} mm, k = {k:.1f}: webs at {xs[0]:.3f}, {xs[1]:.3f} m" for t, k, xs in rows)
-        + "  <- BG-058"
+        + " (metre fields scale with k, BG-058 fixed)"
     )
 
 
@@ -218,12 +218,12 @@ def check_cap_edges():
             inward = np.array([-tangent[1], tangent[0]]) * (-1.0 if side == "suction" else 1.0)
             rows.append((side, f, float(np.interp(f, x, y)), got, f + inward[0] * inset / c))
     suction = max(abs(r[3] - r[4]) for r in rows if r[0] == "suction")
-    assert suction < 1e-4
+    pressure = max(abs(r[3] - r[4]) for r in rows if r[0] == "pressure")
+    assert suction < 1e-4 and pressure < 1e-4
     print(
         f"5. Cap edges from the outer surface (R8.7), NACA 4406, c = 2 m, inset {inset * 1e3:.0f} mm: suction side "
-        f"within {suction:.1e}; pressure side "
-        + ", ".join(f"f = {f}: {g:.5f} against {e:.5f}" for s, f, _, g, e in rows if s == "pressure")
-        + "  <- BG-059 (moved outward where the pressure surface is above the chord line)"
+        f"within {suction:.1e}, pressure side within {pressure:.1e} of the inward normal, including where the "
+        "pressure surface is above the chord line (BG-059 fixed)"
     )
 
 
@@ -348,7 +348,7 @@ def check_offset():
         rows.append((n, edge_dist, d * np.cos(np.pi / n)))
     worst = max(abs(e - x) for _, e, x in rows)
     assert worst < 1e-14
-    flips = {}
+    flips: dict[str, tuple[int, int]] = {}
     for code in ("0012", "4412", "4406", "6409"):
         up, lo = surfaces(code)
         ring = place_oml(np.ones(1), np.zeros(1), np.zeros(1), np.zeros((1, 2)), X, up[None], lo[None], np.zeros(1))
@@ -357,11 +357,12 @@ def check_offset():
         tang = np.roll(xy, -1, 0) - np.roll(xy, 1, 0)
         inward = np.column_stack([-tang[:, 1], tang[:, 0]])
         flips[code] = (int(np.sum(np.sum(inward * mv, axis=1) < 0)), len(xy))
+        assert flips[code][0] == 0
     print(
         f"9. Vertex-normal offset (R8.17)-(R8.18): on a regular N-gon the edge moves d cos(pi/N), to {worst:.0e} "
         f"(N = 6: {rows[0][1] / d:.4f} d). Vertices moved outward: "
         + ", ".join(f"NACA {k} {v[0]} of {v[1]}" for k, v in flips.items())
-        + "  <- BG-060"
+        + " (one orientation per ring from its signed area, BG-060 fixed)"
     )
     return flips
 
@@ -430,8 +431,8 @@ def figure(unit, ring, params, tilts, curv):
     bad = np.sum(inward * (moved - xy), axis=1) < 0
     ax.plot(xy[:, 0], xy[:, 1], color=REFERENCE, lw=0.8, label="outer mould line, NACA 4406")
     ax.plot(moved[~bad, 0], moved[~bad, 1], ".", color=SERIES[0], ms=2, label="moved inward")
-    ax.plot(moved[bad, 0], moved[bad, 1], ".", color=SERIES[1], ms=2, label="moved outward (BG-060)")
-    ax.plot([xy[:, 0].mean()], [xy[:, 1].mean()], "+", color=REFERENCE, ms=8, label="vertex mean")
+    assert not np.any(bad)
+    ax.plot([xy[:, 0].mean()], [xy[:, 1].mean()], "+", color=REFERENCE, ms=8, label="vertex mean (outside the section)")
     ax.set_xlim(-0.02, 1.02)
     ax.set_ylim(-0.03, 0.09)
     ax.set_xlabel("$\\xi$")
@@ -440,8 +441,8 @@ def figure(unit, ring, params, tilts, curv):
     ax.legend(frameon=False, fontsize=7, loc="upper right")
     note(
         fig,
-        "Checks: placement; scaling (BG-058); tilted webs; LE freeze; cap edges (BG-059); forced stations; "
-        "locked resampling; partition patch; vertex-normal offset (BG-060).",
+        "Checks: placement; scaling; tilted webs; LE freeze; cap edges; forced stations; "
+        "locked resampling; partition patch; vertex-normal offset.",
     )
     fig.subplots_adjust(left=0.07, right=0.98, top=0.96, bottom=0.1)
     save(fig, __file__, "loft_checks")

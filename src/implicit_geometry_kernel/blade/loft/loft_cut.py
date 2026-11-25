@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 
 import numpy as np
 
@@ -33,6 +34,32 @@ def _scale_gauge(value, k: float):
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         return vals[0]
     return vals
+
+
+def _scale_layout_metres(layout, k: float):
+    """``layout`` with its metre-valued fields multiplied by ``k`` (BG-058).
+
+    A thin-walled cut is built ``k`` times larger and divided by ``k`` (R8.3), so every
+    length the builder reads must be scaled with the chord: web stations, web axes and a
+    fixed cap band's half-width. Chord fractions and catalogue layouts carry no metres.
+    """
+    import dataclasses
+
+    from implicit_geometry_kernel.section.layout.section_layout import SectionLayout
+
+    if k == 1.0 or not isinstance(layout, SectionLayout):
+        return layout
+    changes: dict[str, Any] = {}
+    if layout.web_stations_m is not None:
+        changes["web_stations_m"] = tuple(float(v) * k for v in layout.web_stations_m)
+    if layout.web_axes_m is not None:
+        changes["web_axes_m"] = tuple(
+            tuple((float(px) * k, float(py) * k) for px, py in axis) for axis in layout.web_axes_m
+        )
+    rule = layout.cap_placement
+    if rule is not None and rule.half_width is not None:
+        changes["cap_placement"] = dataclasses.replace(rule, half_width=float(rule.half_width) * k)
+    return dataclasses.replace(layout, **changes) if changes else layout
 
 
 def _min_thickness_scale(t_skin, t_cap, t_web) -> float:
@@ -116,7 +143,8 @@ def _tilted_feet(fracs, tilt_deg, x, upper, lower, anchor: str = "chord"):
     """
     feet = []
     for frac, deg in zip(fracs, tilt_deg):
-        # Positive tilt walks the suction foot toward the trailing edge.
+        # Positive tilt walks the suction foot toward the leading edge and the pressure
+        # foot toward the trailing edge (BG-061).
         theta = -float(np.radians(deg))
         if abs(theta) < 1e-12:
             feet.append((float(frac), float(frac)))
@@ -336,6 +364,7 @@ class LoftCutMixin:
         # thinner-walled section is built k times larger and scaled back: exact, and the
         # frozen geometry code is used as it is.
         k = _min_thickness_scale(t_skin, t_cap, t_web)
+        layout = _scale_layout_metres(layout, k)
         signed_twist = self._placement_twist(twist)
         twist_rad = _FORK_TWIST_SIGN * np.radians(signed_twist)
         pitch_m = self._pitch_metres_at(z)

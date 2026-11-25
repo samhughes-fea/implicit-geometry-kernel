@@ -81,10 +81,10 @@ entries are from a retired repo-root log.
 | [BG-055](#bg-055) | NACA 5-digit mean line is about ten times too flat and peaks in the wrong place | **Fixed** |
 | [BG-056](#bg-056) | `Airfoil.naca6` scales the reference camber with the thickness | **Fixed** |
 | [BG-057](#bg-057) | Smoothstep morph moves the trailing-edge point with the wrong weight | **Fixed** |
-| [BG-058](#bg-058) | A thin-walled cut scales the chord and thicknesses but not metre-valued layout fields | Open |
-| [BG-059](#bg-059) | Cap edges given on the outer surface move outward where the pressure side is above the chord line | Open |
-| [BG-060](#bg-060) | `offset_rings` moves vertices outward on thin cambered sections | Open |
-| [BG-061](#bg-061) | `_tilted_feet` comment states the opposite tilt sense | Open |
+| [BG-058](#bg-058) | A thin-walled cut scales the chord and thicknesses but not metre-valued layout fields | Fixed (FIXPR) |
+| [BG-059](#bg-059) | Cap edges given on the outer surface move outward where the pressure side is above the chord line | Fixed (FIXPR) |
+| [BG-060](#bg-060) | `offset_rings` moves vertices outward on thin cambered sections | Fixed (FIXPR) |
+| [BG-061](#bg-061) | `_tilted_feet` comment states the opposite tilt sense | Fixed (FIXPR) |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -1378,9 +1378,10 @@ fields (`web_stations_m`, `CapPlacementRule.half_width`) unscaled, so after the
 division they are $1/k$ of their value. Catalogue layouts and chord-fraction fields
 are not affected.
 
-**Fix.** Open. Scale every metre-valued layout field by $k$ before the build, or
-build at $k = 1$ and lift the thickness floor.
-
+**Fix (FIXPR).** `section_at` passes the layout through `_scale_layout_metres`, which
+multiplies `web_stations_m`, `web_axes_m` and a cap half-width by $k$. Example 19
+check 2 now finds the webs at 0.300 and 0.600 m at $k = 2.5$;
+`tests/blade/test_r8_fixes.py` covers the stations and every scaled field.
 ## BG-059
 
 **Symptom.** With `cap_edge_reference="outer"`, a cap edge given at chord fraction
@@ -1396,9 +1397,9 @@ towards the mid-chord point $(c/2, 0)$. Where the pressure surface lies above th
 chord line, as on thin cambered sections, that point is outside the section and
 the normal points outward.
 
-**Fix.** Open. Take the inward normal from the side: the left normal of the
-surface traversed from the leading edge, negated on the suction side.
-
+**Fix (FIXPR).** The normal is the left normal of the surface traversed from the leading
+edge, negated on the suction side. Both sides now agree with the inward normal to
+$3\times10^{-5}$ (example 19 check 5; `tests/blade/test_r8_fixes.py`).
 ## BG-060
 
 **Symptom.** `offset_rings(rings, 0.002)` on a unit NACA 4406 moves 58 of 298
@@ -1417,8 +1418,9 @@ vector points out of the section.
 shell mesher does not yet use in place of the section midline (see
 `tests/test_span_arrays.py`). No current output is affected.
 
-**Fix.** Open. Orient every normal by the sign of the ring's signed area.
-
+**Fix (FIXPR).** One sign per ring from its signed area. No vertex moves outward on
+NACA 0012, 4412, 4406 or 6409 in either winding (example 19 check 9;
+`tests/blade/test_r8_fixes.py`).
 ## BG-061
 
 **Symptom.** The comment in `_tilted_feet` says a positive tilt walks the suction
@@ -1433,5 +1435,5 @@ angle from the suction end down, which agrees with the code.
 **Root cause.** Documentation only: the code and its test agree; the comment, and
 the `web_tilt_deg` docstring's "toward the trailing edge", do not say which end.
 
-**Fix.** Open. State the sense as in (R8.4): positive tilt turns the web so that
-its pressure end lies aft of its suction end.
+**Fix (FIXPR).** The comment and the `web_tilt_deg` docstring now say a positive tilt walks the suction foot toward the
+leading edge and the pressure foot toward the trailing edge.

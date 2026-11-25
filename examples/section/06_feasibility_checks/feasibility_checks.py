@@ -2,8 +2,8 @@
 
 Draws Figure R10.1 of the R manual (docs/r/R10_feasibility.md) and checks:
 
-1. the wall thickness floors, (R10.1), and the resolve/assemble skin mismatch (SG-040);
-2. the intercept probe grid and the cavities it can miss, (R10.2)-(R10.3) (SG-038);
+1. the wall thickness floors, (R10.1), applied before the web probe (SG-040);
+2. the intercept probe grid and the cavities it can miss, (R10.2)-(R10.3);
 3. the accuracy of a refined crossing, (R10.4);
 4. the three drop reasons in their order, (R10.5);
 5. the step-down of the layout after a drop, (R10.6);
@@ -11,7 +11,7 @@ Draws Figure R10.1 of the R manual (docs/r/R10_feasibility.md) and checks:
 7. the clip sample count, (R10.8);
 8. the two height scalings and the pad run-out, (R10.10)-(R10.12);
 9. the aft half-depth rule of family D, (R10.13);
-10. the run-out gate against the clamp, (R10.14) (SG-039, SG-041);
+10. the run-out gate against the clamp, (R10.14);
 11. the failure modes that raise.
 
     python examples/section/06_feasibility_checks/feasibility_checks.py
@@ -39,7 +39,8 @@ from implicit_geometry_kernel.section.assembly.web_layout import (  # noqa: E402
     resolve_web_anchors,
 )
 from implicit_geometry_kernel.section.layout.section_axes import max_thickness_chord_x  # noqa: E402
-from implicit_geometry_kernel.section.layout.spar_cap_runout import max_spar_from_cavity  # noqa: E402
+from implicit_geometry_kernel.section.layout.cap_placement import CapPlacementRule  # noqa: E402
+from implicit_geometry_kernel.section.layout.spar_cap_runout import _fixed_bands, max_spar_from_cavity  # noqa: E402
 from implicit_geometry_kernel.section.layout.thickness_limits import (  # noqa: E402
     MIN_REALISTIC_SKIN_WALL_THICKNESS_M as T_SKIN_MIN,
     MIN_REALISTIC_SPAR_WALL_THICKNESS_M as T_CAP_MIN,
@@ -103,19 +104,18 @@ def check_floors():
     print(
         f"1. Floors (R10.1): asked skin 2 mm, web 1 mm, cap 0 mm; built {t_s * 1e3:g}, {t_w * 1e3:g}, {h_c * 1e3:g} mm"
     )
-    rows = []
+    ref = resolve_station_layout(
+        resolve_system_type("2D-F-LC-0R"), AF, skin_thickness=T_SKIN_MIN, web_x_positions_m=[0.15, 0.5]
+    ).web_y_coords
     for t in (0.0010, 0.0012, 0.0013):
-        try:
-            section(t)
-            rows.append(f"t = {t * 1e3:g} mm builds")
-            assert t >= T_SKIN_MIN / 2
-        except InfeasibleSectionGeometry as exc:
-            gap = float(str(exc).split(" lies ")[1].split(" m ")[0])
-            assert t < T_SKIN_MIN / 2 and abs(gap - (T_SKIN_MIN / 2 - t)) < 1e-9
-            rows.append(f"t = {t * 1e3:g} mm raises, anchor {gap * 1e3:.2f} mm outboard")
+        section(t)
+        got = resolve_station_layout(
+            resolve_system_type("2D-F-LC-0R"), AF, skin_thickness=t, web_x_positions_m=[0.15, 0.5]
+        ).web_y_coords
+        assert got == ref
     print(
-        f"   SG-040: resolve probes the unclamped skin, assembly builds at {T_SKIN_MIN * 1e3:g} mm, so a skin "
-        f"under t_min/2 = {T_SKIN_MIN / 2 * 1e3:g} mm raises: " + "; ".join(rows)
+        f"   Skins of 1.0, 1.2 and 1.3 mm build; their webs are anchored on the floored {T_SKIN_MIN * 1e3:g} mm "
+        "skin, the one assembly builds (SG-040 fixed)"
     )
 
 
@@ -145,30 +145,23 @@ def check_probe_grid():
             lo, hi = (mid, hi) if fine_depth(THIN, mid, x)[0] > target else (lo, mid)
         d, yt, yb = fine_depth(THIN, lo, x)
         kept, dropped = resolve_web_anchors(THIN, lo, [x], return_dropped=True)
-        ys = np.linspace(*win_chord, N_PROBE)
+        ys = np.linspace(*win_thick, N_PROBE)
         predicted = bool(np.any((ys > yb) & (ys < yt)))
         assert predicted == bool(kept)
-        if d > dy_chord:
+        if d > dy_thick:
             assert kept
-        ys2 = np.linspace(*win_thick, N_PROBE)
-        thick_pad = bool(np.any((ys2 > yb) & (ys2 < yt)))
-        rows.append((d, bool(kept), thick_pad))
+        rows.append((d, bool(kept)))
     print(
-        f"2. Probe grid (R10.2)-(R10.3), NACA 0006, x = 0.8c: n = {N_PROBE} samples, dy = {dy_chord * 1e3:.3f} mm "
-        f"with the chord pad of resolve_web_anchors, {dy_thick * 1e3:.3f} mm with the thickness pad; "
-        + ", ".join(f"d = {d * 1e3:.1f} mm {'kept' if k else 'dropped'}" for d, k, _ in rows)
+        f"2. Probe grid (R10.2)-(R10.3), NACA 0006, x = 0.8c: n = {N_PROBE} samples padded by the thickness, "
+        f"dy = {dy_thick * 1e3:.3f} mm (a chord pad would give {dy_chord * 1e3:.3f} mm, SG-038 fixed); "
+        + ", ".join(f"d = {d * 1e3:.1f} mm {'kept' if k else 'dropped'}" for d, k in rows)
         + "; every outcome matches 'a sample lies in the cavity'"
-    )
-    missed = [d for d, k, tp in rows if not k and tp]
-    print(
-        f"   SG-038: {len(missed)} real cavities ({', '.join(f'{d * 1e3:.1f}' for d in missed)} mm) are dropped as "
-        "no_inner_skin_intercept; the thickness pad of _default_y_search would see them"
     )
     return rows, dy_chord, dy_thick
 
 
 def check_crossings():
-    win = probe_window(AF, CHORD)
+    win = probe_window(AF, float(OML[:, 1].max() - OML[:, 1].min()))
     dy = (win[1] - win[0]) / (N_PROBE - 1)
     worst, worst0 = 0.0, 0.0
     xs = np.linspace(0.05, 0.9, 18)
@@ -319,23 +312,23 @@ def check_family_d():
 
 
 def check_runout_gate():
-    t, g = 0.004, 0.002
-    rows, curves = [], []
+    t = 0.004
+    rows = []
     for d in (0.005, 0.010, 0.020, 0.100):
-        gate = max_spar_from_cavity(d + t, t, gap_min=g)
+        gate = max_spar_from_cavity(d + t, t)
         clamp = 0.5 * float(allowed(np.array([d]))[0])
-        assert abs(gate - 0.5 * (d - g)) < 1e-15
-        rows.append(f"d = {d * 1e3:g} mm: gate {gate * 1e3:.2f}, clamp {clamp * 1e3:.2f}")
-        curves.append((d, gate, clamp))
+        assert abs(gate - clamp) < 1e-15
+        rows.append(f"d = {d * 1e3:g} mm: {gate * 1e3:.2f}")
     x_mt = max_thickness_chord_x(AF)
+    rule = CapPlacementRule.fixed_band(anchor="max_thickness", half_width=0.1)
+    (band,), _ = _fixed_bands(rule, AF, CHORD, None)
+    assert abs(0.5 * (band[0] + band[1]) - x_mt) < 1e-12
     print(
-        "10. Run-out gate (R10.14) with h_local the mid-to-mid depth d + t_s, per-cap ceiling (mm): "
+        "10. Run-out gate (R10.14), h_local = d + t_s, per-cap ceiling equal to the clamp's a/2 (SG-039 fixed): "
         + "; ".join(rows)
-        + ". SG-039: the gate is stricter below d = g/0.15 = 13.3 mm and more lenient above it"
+        + f" mm. A fixed band is tested where the build clamps it, centred at max thickness {x_mt:.3f}c "
+        "(SG-041 fixed)"
     )
-    print(f"    SG-041: the gate centres a fixed band at 0.5c; the build centres it at max thickness, x = {x_mt:.3f}c")
-    assert abs(x_mt - 0.5) > 0.1
-    assert abs(0.5 * (0.002 / 0.15 - 0.002) - 0.5 * float(allowed(np.array([0.002 / 0.15]))[0])) < 1e-15
 
 
 def check_raises():
@@ -401,29 +394,31 @@ def figure(pads, probe_rows, dy_chord, dy_thick, h_allow):
     kept = np.array([r[1] for r in probe_rows])
     ax.plot(ds[kept], np.ones(kept.sum()), "o", color=TEAL, label="kept")
     ax.plot(ds[~kept], np.ones((~kept).sum()), "x", color=RED, ms=7, label="dropped: no intercept")
-    ax.axvline(dy_chord * 1e3, color=RED, lw=0.9, ls="--", label=f"$\\Delta y$ chord pad {dy_chord * 1e3:.2f} mm")
-    ax.axvline(dy_thick * 1e3, color=TEAL, lw=0.9, ls="--", label=f"$\\Delta y$ thickness pad {dy_thick * 1e3:.2f} mm")
+    ax.axvline(
+        dy_thick * 1e3, color=TEAL, lw=0.9, ls="--", label=f"probe spacing $\\Delta y$ = {dy_thick * 1e3:.2f} mm"
+    )
     ax.set_yticks([])
     ax.set_ylim(0.9, 1.25)
     ax.set_xlabel("cavity depth $d$ at 0.8c (mm)")
-    ax.set_title("(b) Probe grid misses shallow cavities (SG-038)")
+    ax.set_title("(b) Cavities the probe grid finds (R10.3)")
     ax.legend(frameon=False, fontsize=6.5, loc="upper right")
 
     ax = axes[2]
     dd = np.linspace(0.0, 0.03, 300)
     ax.plot(dd * 1e3, 0.5 * np.maximum(allowed(dd), 0) * 1e3, color=REFERENCE, lw=1.0, label="clamp $a/2$ (R10.7)")
+    dg = np.linspace(0.0, 0.03, 16)
     ax.plot(
-        dd * 1e3,
-        np.maximum(0.5 * (dd - 0.002), 0) * 1e3,
+        dg * 1e3,
+        [max_spar_from_cavity(d + 0.004, 0.004) * 1e3 for d in dg],
+        "o",
         color=RED,
-        lw=1.0,
-        ls="--",
-        label="run-out gate $(d - g)/2$ (R10.14)",
+        ms=3,
+        label="run-out gate (R10.14)",
     )
     ax.axhline(T_CAP_MIN * 1e3, color=TEAL, lw=0.6, label="cap floor 5 mm")
     ax.set_xlabel("cavity depth $d$ (mm)")
     ax.set_ylabel("per-cap ceiling (mm)")
-    ax.set_title("(c) Two void rules (SG-039)")
+    ax.set_title("(c) Run-out gate against the clamp")
     ax.legend(frameon=False, fontsize=6.5, loc="upper left")
     note(
         fig,

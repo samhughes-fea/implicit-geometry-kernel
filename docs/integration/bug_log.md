@@ -17,7 +17,7 @@ quadrature). Identifiers are `IN-nnn`. Cross-link
 
 | ID | Title | Status |
 |---|---|---|
-| [IN-001](#in-001) | Quadtree interior leaves carry the wrong product moment | Fixed (FIXPR) |
+| [IN-001](#in-001) | Quadtree interior leaves carry the wrong product moment | Fixed (#124) |
 
 ## IN-001
 
@@ -43,6 +43,6 @@ with the distance of the section from the origin.
 hybrid backend integrates with the quadtree. The hybrid wall properties use the
 shoelace (R7.1)–(R7.6) and are not affected.
 
-**Fix (FIXPR).** Both functions evaluate $A\,(x_0 + x_1)(y_0 + y_1)/4$. The circle
+**Fix (#124).** Both functions evaluate $A\,(x_0 + x_1)(y_0 + y_1)/4$. The circle
 now gives $I'_{xy} = -1.5\times10^{-16}$; `tests/integration/test_quadtree_quadrature.py`
 checks one leaf against the factored integral and an off-axis circle against zero.

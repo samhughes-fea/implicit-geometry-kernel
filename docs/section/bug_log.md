@@ -66,10 +66,10 @@ Deviations are stated per entry.
 | [SG-035](#sg-035) | Web ends snapped to the nearest skin vertex with no tolerance | **Fixed** (0.9.6) — feet built on the skin; the snaps are coincidence checks that raise |
 | [SG-036](#sg-036) | `section_properties_S` on a MultiPolygon lost each part's offset from the combined centroid | **Fixed** (0.9.6) — parts' origin moments add |
 | [SG-037](#sg-037) | The OML offset read each tangent from points it had already moved | **Fixed** (0.9.6) — tangents from the unmoved mid-line |
-| [SG-038](#sg-038) | `resolve_web_anchors` pads its probe window by 5 % of the chord, so shallow cavities that exist are dropped | **Fixed** (FIXPR) |
-| [SG-039](#sg-039) | The cap run-out gate keeps a 2 mm void where the clamp keeps max(1 mm, 0.15 d), and its `h_local` is undefined | **Fixed** (FIXPR) |
-| [SG-040](#sg-040) | Web anchors are resolved at the given skin but built at the floored skin; a skin under 1.25 mm raises | **Fixed** (FIXPR) |
-| [SG-041](#sg-041) | The run-out gate tests a fixed band at 0.5c and pads at 0.04c, not the band and pads the build uses | **Fixed** (FIXPR) |
+| [SG-038](#sg-038) | `resolve_web_anchors` pads its probe window by 5 % of the chord, so shallow cavities that exist are dropped | **Fixed** (#124) |
+| [SG-039](#sg-039) | The cap run-out gate keeps a 2 mm void where the clamp keeps max(1 mm, 0.15 d), and its `h_local` is undefined | **Fixed** (#124) |
+| [SG-040](#sg-040) | Web anchors are resolved at the given skin but built at the floored skin; a skin under 1.25 mm raises | **Fixed** (#124) |
+| [SG-041](#sg-041) | The run-out gate tests a fixed band at 0.5c and pads at 0.04c, not the band and pads the build uses | **Fixed** (#124) |
 
 ## Standing invariant (established 2026-08-30)
 
@@ -2019,7 +2019,7 @@ now r = 1.000 m to 5e-7.
 
 **`resolve_web_anchors` pads its probe window by 5 % of the chord**
 
-**Status:** Fixed (FIXPR)
+**Status:** Fixed (#124)
 **Area:** `section/assembly/web_layout.py` `resolve_web_anchors`
 
 ### Symptom
@@ -2048,7 +2048,7 @@ R10 Limits 1.
 
 **The cap run-out gate and the cap clamp keep different voids**
 
-**Status:** Fixed (FIXPR)
+**Status:** Fixed (#124)
 **Area:** `section/layout/spar_cap_runout.py` `max_spar_from_cavity`
 
 ### Symptom
@@ -2072,7 +2072,7 @@ than before.
 
 **Web anchors are resolved at the given skin and built at the floored skin**
 
-**Status:** Fixed (FIXPR)
+**Status:** Fixed (#124)
 **Area:** `section/spec/layout_resolution.py` `resolve_station_layout`; `section/assembly/plan.py`
 
 ### Symptom
@@ -2097,7 +2097,7 @@ Skins of 1.0, 1.2 and 1.3 mm build and resolve the same anchors as a 2.5 mm skin
 
 **The run-out gate tests a different band from the one the build clamps**
 
-**Status:** Fixed (FIXPR)
+**Status:** Fixed (#124)
 **Area:** `section/layout/spar_cap_runout.py` `_placement_buildable_at_gauge`
 
 ### Symptom

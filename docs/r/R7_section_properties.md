@@ -166,7 +166,7 @@ S_{xy} = \frac{x_1^2 - x_0^2}{2}\cdot\frac{y_1^2 - y_0^2}{2}
 \tag{R7.9}
 \end{equation*}
 
-and likewise in $y$. Before FIXPR the kernel's product moment had a factor
+and likewise in $y$. Before #124 the kernel's product moment had a factor
 $\tfrac12$ on the mixed terms $x_0y_1 + x_1y_0$
 ([IN-001](../integration/bug_log.md#in-001), fixed); it now evaluates the factored
 form, and a circle of radius 0.2 centred at $(0.2, 0.1)$ gives $I'_{xy}$ at

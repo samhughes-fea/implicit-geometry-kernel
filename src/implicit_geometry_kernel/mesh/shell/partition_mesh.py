@@ -15,13 +15,14 @@ edge.
 
 Nodes lie on the section mid-line at each station (the cut's run polylines).
 The skin loop is meshed as one closed ring from the partition boundary nearest
-the trailing edge, so its partitions must be the same at every station, with a
-closed loop and no branches (stringers). Webs may start or stop inside the
-span: every web foot is a mesh line round the loop at every station (held
-between its neighbouring lines where the web is absent), so the loop's lines
-never change in number and a web that ends is a plain all-quad strip that
-stops on its end station. A cap edge that moves from one web foot to another
-where a web ends moves between two existing lines; each skin quad takes the
+the trailing edge; it must be closed and have no branches (stringers).
+Terminations ride persistent mesh lines (decision 0018): every web foot, every
+partition boundary and every band edge seen anywhere along the span is a line
+round the loop at every station, held between its neighbouring lines where its
+feature is absent. So the loop's lines never change in number: a web that ends
+is a plain all-quad strip that stops on its end station, and caps or skin bays
+that appear, vanish or renumber move between existing lines. Boundaries are
+followed by partition kind and position, not by name. Each skin quad takes the
 partition its middle lies in at the lower station of its bay. Ribs and the tip
 closure are triangle fills on the station's skin and web nodes. Branches and
 Newton junction nodes between stations are later steps of plan row L6.
@@ -30,6 +31,7 @@ Newton junction nodes between stations are later steps of plan row L6.
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import replace
 from typing import Any, Sequence
 
@@ -210,8 +212,9 @@ class _StationLoop:
         self.w = np.concatenate(w_all)
         self.index = {r.name: i for i, r in enumerate(self.runs)}
         names = list(loop_names)
-        self.boundaries = {("partition_boundary",) + tuple(sorted((names[i - 1], names[i]))): float(self.s0[i])
-                           for i in range(1, len(names))}
+        #: ``[(kind pair, u)]``: each boundary but the ring start, with the kinds
+        #: of the partitions before and after it (see :func:`_kind`).
+        self.boundaries = [((_kind(names[i - 1]), _kind(names[i])), float(self.s0[i])) for i in range(1, len(names))]
 
     def u_of(self, host: str, t: float) -> float:
         """Ring ``u`` of the point at ``t`` (along the loop direction) on partition ``host``."""
@@ -222,6 +225,79 @@ class _StationLoop:
         """The loop partition holding ring parameter ``u``."""
         i = int(np.searchsorted(self.s1, float(u), side="right"))
         return self.runs[min(i, len(self.runs) - 1)]
+
+
+def _kind(name: str) -> str:
+    """A partition's kind without its place: ``skin_suction_surface:bay_3`` and
+    ``skin_suction_surface:trailing_edge`` are both ``skin_suction_surface``, and
+    ``spar_cap_suction_surface_2`` is ``spar_cap_suction_surface``. Partition
+    names renumber as webs and caps come and go; kinds do not."""
+    return re.sub(r"_\d+$", "", name.split(":")[0])
+
+
+#: How far, in normalised loop arc length, a partition boundary may move from
+#: one station to the next and still be the same mesh line.
+_TRACK_U = 0.03
+
+
+def _hold_absent(real: list[dict]) -> list[dict]:
+    """Every key at every station: where a key is absent it is held by :func:`_held_u`
+    from the nearest station that has it."""
+    n = len(real)
+    lines = [dict(at) for at in real]
+    for key in sorted({k for at in real for k in at}, key=repr):
+        have = [j for j in range(n) if key in real[j]]
+        for j in range(n):
+            if key not in real[j]:
+                r = min(have, key=lambda i: abs(i - j))
+                lines[j][key] = _held_u(real[r], real[j], key)
+    return lines
+
+
+def _slot(foot_lines: dict, u: float):
+    """The web-foot line just before ``u`` round the ring (``None`` before the first)."""
+    before = [(v, k) for k, v in foot_lines.items() if v < u - _U_TOL]
+    return max(before)[1] if before else None
+
+
+def _track_boundaries(loops: Sequence[Any], feet: dict, foot_lines: list[dict]) -> list[dict]:
+    """``{key: u}`` per station of the partition boundaries no web foot sits on.
+
+    Boundaries are followed along the span by kind pair, by the web-foot line
+    they follow, and by position, not by partition name: each takes the
+    nearest line of the same kind pair and foot seen at an earlier station,
+    within :data:`_TRACK_U`, or starts a new line. A cap edge that crosses a
+    web foot therefore becomes a new line on the far side, and the old one is
+    held on its own side, so lines never cross.
+    """
+    out: list[dict] = []
+    last: dict = {}  # key -> u where last seen
+    counter: dict = {}
+    for j, lp in enumerate(loops):
+        foot_u = [u for (jj, _w, _e), u in feet.items() if jj == j]
+        found = [((pair, _slot(foot_lines[j], u)), u) for pair, u in lp.boundaries
+                 if not any(min(abs(u - f), 1.0 - abs(u - f)) <= _U_TOL for f in foot_u)]
+        cands = sorted(
+            (abs(u - lu), i, key) for i, (pair, u) in enumerate(found) for key, lu in last.items()
+            if key[1] == pair and abs(u - lu) <= _TRACK_U
+        )
+        taken: dict = {}
+        used: set = set()
+        for _d, i, key in cands:
+            if i in taken or key in used:
+                continue
+            taken[i] = key
+            used.add(key)
+        at: dict = {}
+        for i, (pair, u) in enumerate(found):
+            key = taken.get(i)
+            if key is None:
+                counter[pair] = counter.get(pair, -1) + 1
+                key = ("partition_boundary", pair, counter[pair])
+            at[key] = u
+            last[key] = u
+        out.append(at)
+    return out
 
 
 def _station_loop(graph, flip: frozenset, loop_names: Sequence[str], h: float, chord: float) -> _StationLoop:
@@ -429,8 +505,8 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     Raises
     ------
     PartitionMeshError
-        If the skin loop's partitions change along the span, the loop is open,
-        a web stops and starts again, or mesh lines round the loop change order.
+        If the loop is open or branched, a web stops and starts again, or mesh
+        lines round the loop would cross or meet at some stations only.
     """
     if not float(h) > 0.0:
         raise ValueError("element size h must be positive")
@@ -444,13 +520,7 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     graphs = [geo.section_at(z).shell_graph() for z in z_list]
     if zs is None:
         z_list, graphs = _grade_span(geo, z_list, graphs, float(h))
-    loop_names = _graph_signature(graphs[0])[0]
-    for g in graphs[1:]:
-        if _graph_signature(g)[0] != loop_names:
-            raise PartitionMeshError(
-                f"the skin loop changes between z={z_list[0]:g} and z={float(g.z):g}; "
-                "the partition mesher needs the same loop partitions at every station (use shell_mesh)"
-            )
+    chains = [_graph_signature(g)[0] for g in graphs]
     n_st = len(z_list)
     flips = [_flipped(g) for g in graphs]
     skeletons = [g.skeleton() for g in graphs]
@@ -463,8 +533,11 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     # The ring starts at the partition boundary nearest the trailing edge, so
     # its start does not move with a cap edge.
     _le, te_pts, _chord = _le_te_points(geo, z_list)
-    loop_names = _start_at_te(graphs[0], flips[0], loop_names, np.asarray(te_pts[0], float))
-    loops = [_station_loop(g, flips[j], loop_names, float(h), chords[j]) for j, g in enumerate(graphs)]
+    # Skin partitions may appear or vanish along the span (decision 0018): each
+    # station has its own chain, and their boundaries are held lines where absent.
+    names_at = [_start_at_te(g, flips[j], chains[j], np.asarray(te_pts[j], float)) for j, g in enumerate(graphs)]
+    loop_names = sorted({n for c in chains for n in c})
+    loops = [_station_loop(g, flips[j], names_at[j], float(h), chords[j]) for j, g in enumerate(graphs)]
 
     # Webs may start or stop inside the span. Each web's stations must be one
     # unbroken run. A web that ends on a station (a birth or death anchor) is
@@ -488,7 +561,10 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
             # little further in, up to a thousandth of the bay.
             bay = abs(z_list[j + int(side)] - z_list[j])
             for k in range(7, 2, -1):
-                gd = geo.section_at(z_list[j] + side * bay * 10.0 ** -k).shell_graph()
+                try:
+                    gd = geo.section_at(z_list[j] + side * bay * 10.0 ** -k).shell_graph()
+                except Exception:  # noqa: BLE001 - a cut that fails there (BG-062): try nearer, else stop
+                    continue
                 run = next((w for w in gd.webs if w.name == name), None)
                 if run is not None:
                     web_src[(j, name)] = (run, None)
@@ -512,41 +588,37 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
         lp = loops[j]
         for end in (0, 1):
             if sk is not None:
-                ft = _web_feet(sk, name, loop_names, flips[j]).get(end)
+                ft = _web_feet(sk, name, names_at[j], flips[j]).get(end)
                 if ft is not None:
                     feet[(j, name, end)] = lp.u_of(ft[0], ft[1])
             else:
                 xy = np.asarray(run.points, float)[0 if end == 0 else -1]
                 feet[(j, name, end)] = _closest_t(lp.points, xy)[0]
-    # Lines that are really there at each station: web feet, and partition
-    # boundaries no foot sits on.
+    # Lines that are really there at each station: web feet, partition
+    # boundaries no foot sits on, and sub-partition band edges.
+    # On a foot a step rides the foot's line; a boundary's own line is held
+    # apart there like any absent feature.
+    feet = {k: _wrap(u) for k, u in feet.items()}
+    # Web feet first, held among themselves where a web is absent; every other
+    # line is then placed relative to them.
+    foot_real = [{("junction", w, end): u for (jj, w, end), u in feet.items() if jj == j} for j in range(n_st)]
+    foot_lines = _hold_absent(foot_real)
+    bounds = _track_boundaries(loops, feet, foot_lines)
     real: list[dict] = []
     for j, lp in enumerate(loops):
-        at: dict = {("junction", w, end): _wrap(u) for (jj, w, end), u in feet.items() if jj == j}
-        foot_u = list(at.values())
-        for key, u in lp.boundaries.items():
-            if not any(min(abs(u - f), 1.0 - abs(u - f)) <= _U_TOL for f in foot_u):
-                at[key] = u
-        real.append(at)
-    # A foot where its web is absent is held between the same two neighbouring
-    # lines, at the same fraction of the gap, as at the nearest station with
-    # the web; so it moves with the loop and other webs and never crosses them.
-    lines: list[dict] = [dict(at) for at in real]
-    for name in web_names:
-        for end in (0, 1):
-            foot = ("junction", name, end)
-            have = [j for j in range(n_st) if foot in real[j]]
-            for j in range(n_st):
-                if not have or foot in real[j]:
-                    continue
-                r = min(have, key=lambda i: abs(i - j))
-                lines[j][foot] = _held_u(real[r], real[j], foot)
-    for j, lp in enumerate(loops):
+        at: dict = dict(foot_real[j])
+        at.update(bounds[j])
         for s in sub_partitions:
-            if s.host in loop_names:
+            if s.host in names_at[j]:
                 for k, t in enumerate(s.t_range):
                     if _T_TOL < t < 1.0 - _T_TOL:
-                        lines[j][("band", s.name, k)] = lp.u_of(s.host, _along(t, s.host in flips[j]))
+                        at[("band", s.name, k)] = lp.u_of(s.host, _along(t, s.host in flips[j]))
+        real.append(at)
+    # A line whose feature is absent at a station (a web that has ended, a
+    # partition that has vanished) is held between the same two neighbouring
+    # lines, at the same fraction of the gap, as at the nearest station with
+    # the feature; so it moves with the loop and never crosses its neighbours.
+    lines = _hold_absent([{**foot_lines[j], **real[j]} for j in range(n_st)])
     ring_breaks = [_ring_breaks(at) for at in lines]
     keys0 = [k for k, _ in ring_breaks[0]]
     for j in range(1, n_st):

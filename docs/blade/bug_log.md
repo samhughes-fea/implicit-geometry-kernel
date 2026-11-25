@@ -85,6 +85,7 @@ entries are from a retired repo-root log.
 | [BG-059](#bg-059) | Cap edges given on the outer surface move outward where the pressure side is above the chord line | Fixed (#124) |
 | [BG-060](#bg-060) | `offset_rings` moves vertices outward on thin cambered sections | Fixed (#124) |
 | [BG-061](#bg-061) | `_tilted_feet` comment states the opposite tilt sense | Fixed (#124) |
+| [BG-062](#bg-062) | `shell_graph()` fails just before a web leaves the section on `3C-F-LE` | Open |
 
 Keep-set / TE / VTK pass (2026-11-08): **BG-001**–**BG-007** (PA identity,
 cylinder cluster, pressure-skin holes, ParaView RGB, IEA 15 wrap, IEA 3.4
@@ -1437,3 +1438,21 @@ the `web_tilt_deg` docstring's "toward the trailing edge", do not say which end.
 
 **Fix (#124).** The comment and the `web_tilt_deg` docstring now say a positive tilt walks the suction foot toward the
 leading edge and the pressure foot toward the trailing edge.
+
+## BG-062
+
+**Symptom.** `section_at(z).shell_graph()` raises `ValueError: zero-size array to
+reduction operation maximum` for z in about [3.050, 3.0507) on a two-station
+NACA 0018 blade, `3C-F-LE-4R`, root chord 1 m, taper 0.7, length 4 m, caps 8 mm:
+the last 0.7 mm before its aft web leaves the section.
+
+**Evidence.** The cut there has two `cap` walls with no points. `section_at(3.05)`
+itself succeeds; `_mid_surface` in `blade/shell_graph_build.py` takes the max over
+every wall. Found by the partition mesher, which samples the section just inside a
+web's end to reach its end station (decision 0018).
+
+**Root cause.** Not traced. Likely the cap builder emits an empty cap window when
+the web it anchors to is about to drop, instead of dropping the cap piece.
+
+**Workaround.** `partition_mesh` skips a failing sample and ends the web strip at
+the last station that has it. **Open.**

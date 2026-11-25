@@ -23,3 +23,4 @@ new record that supersedes it; do not edit history.
 | [0015](0015-partition-mesher.md) | The shell mesh is built per partition on a (t, z) patch from a shared skeleton | 2026-11-22 |
 | [0016](0016-property-only-sub-partitions.md) | Sub-partitions step properties, never geometry | 2026-11-22 |
 | [0017](0017-analytic-surface-derivatives.md) | Surface derivatives and curvature are analytic, not finite differences | 2026-11-22 |
+| [0018](0018-terminations-on-persistent-mesh-lines.md) | Terminations ride persistent mesh lines; count-changing bands are an opt-in later step | 2026-11-25 |

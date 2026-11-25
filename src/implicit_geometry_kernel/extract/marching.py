@@ -34,12 +34,27 @@ def extract_zero_loops(field: SDFNode, z: float, bounds: tuple[float, float, flo
             inside = vals < 0.0
             if inside.all() or not inside.any():
                 continue
-            hits = []
-            for a, b in _EDGES:
+            hits = {}
+            for k, (a, b) in enumerate(_EDGES):
                 if inside[a] != inside[b]:
-                    hits.append(_interp(corners[a], corners[b], vals[a], vals[b]))
-            if len(hits) >= 2:
-                segs.append((hits[0], hits[1]))
+                    hits[k] = _interp(corners[a], corners[b], vals[a], vals[b])
+            if len(hits) == 2:
+                first, second = hits.values()
+                segs.append((first, second))
+            elif len(hits) == 4:
+                # Saddle cell: two segments. The asymptotic decider (R4.31) gives the
+                # sign of the bilinear interpolant at its saddle point; if it has the
+                # sign of corners 0 and 2, those corners connect and the segments cut
+                # off corners 1 and 3, otherwise they cut off corners 0 and 2.
+                v0, v1, v2, v3 = vals
+                denom = v0 + v2 - v1 - v3
+                saddle = (v0 * v2 - v1 * v3) / denom if denom != 0.0 else 0.25 * float(np.sum(vals))
+                if (saddle < 0.0) == inside[0]:
+                    pairs = ((0, 1), (2, 3))
+                else:
+                    pairs = ((3, 0), (1, 2))
+                for p, q in pairs:
+                    segs.append((hits[p], hits[q]))
     if not segs:
         return []
     loops = _chain(segs)

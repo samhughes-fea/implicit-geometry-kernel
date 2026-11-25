@@ -21,8 +21,10 @@ class LoftedPolygonSDF(LeafNode):
     Points are grouped by distinct ``z``. Distances are **not** interpolated between
     stations (interpolated distances are not distances; twist misplaces a thin TE).
 
-    ``accelerate=True`` (default) caches a uniform-grid BVH / AABB of the station
-    polygon for batched queries. ``phi`` matches the unaccelerated edge loop.
+    ``accelerate=True`` (default) caches each station polygon's edge arrays and
+    axis-aligned box and evaluates them with the compiled edge loop, so ``phi`` is
+    that of the unaccelerated path; there is no spatial search, and each query still
+    visits every edge (SD-004).
     Read the cache with :meth:`accel_at` or the :attr:`bvh` mapping.
     """
 
@@ -59,7 +61,7 @@ class LoftedPolygonSDF(LeafNode):
         return poly
 
     def accel_at(self, z: float) -> dict | None:
-        """Uniform-grid AABB for the station polygon, or ``None`` if not accelerated."""
+        """Cached edge arrays and box of the station polygon, or ``None`` if not accelerated."""
         key = round(float(z), 9)
         self.polygon_at(key)
         return self._accel.get(key)

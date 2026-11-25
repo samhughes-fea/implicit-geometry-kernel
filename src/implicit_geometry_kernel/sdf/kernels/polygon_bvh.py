@@ -1,4 +1,4 @@
-"""Cached edges and AABB for lofted polygon SDF (same phi as the edge loop)."""
+"""Cached edge arrays and box of a lofted station polygon (same phi as the edge loop)."""
 
 from __future__ import annotations
 
@@ -19,52 +19,19 @@ def sdf_polygon_bvh(xf: np.ndarray, yf: np.ndarray, accel: dict) -> np.ndarray:
     )
 
 
-def build_polygon_accel(verts: np.ndarray, nx: int = 16, ny: int = 16) -> dict:
-    """AABB plus a uniform grid of edge indices for batched lofted queries."""
+def build_polygon_accel(verts: np.ndarray) -> dict:
+    """The station polygon's edge arrays and axis-aligned box, cached per station.
+
+    ``sdf_polygon_bvh`` runs the compiled edge loop over these arrays, so ``phi`` is
+    bit-for-bit that of ``sdf_polygon``; the saving is that the arrays are built once
+    per station rather than once per query. No spatial search structure is built:
+    an earlier version filled a uniform grid of edge buckets that no query read
+    (SD-004).
+    """
     verts = np.ascontiguousarray(verts[:, :2], dtype=np.float64)
-    n = int(verts.shape[0])
     ax = np.ascontiguousarray(verts[:, 0], dtype=np.float64)
     ay = np.ascontiguousarray(verts[:, 1], dtype=np.float64)
-    bx = np.empty(n, dtype=np.float64)
-    by = np.empty(n, dtype=np.float64)
-    bx[:-1] = ax[1:]
-    by[:-1] = ay[1:]
-    bx[-1] = ax[0]
-    by[-1] = ay[0]
-    xmin = float(min(np.min(ax), np.min(bx)))
-    xmax = float(max(np.max(ax), np.max(bx)))
-    ymin = float(min(np.min(ay), np.min(by)))
-    ymax = float(max(np.max(ay), np.max(by)))
-    pad = 1e-12 * max(1.0, xmax - xmin, ymax - ymin)
-    dx = (xmax - xmin + 2.0 * pad) / float(nx) if nx else 1.0
-    dy = (ymax - ymin + 2.0 * pad) / float(ny) if ny else 1.0
-    buckets: list[list[int]] = [[] for _ in range(int(nx) * int(ny))]
-    x0, y0 = xmin - pad, ymin - pad
-    for e in range(n):
-        ex0, ex1 = (ax[e], bx[e]) if ax[e] <= bx[e] else (bx[e], ax[e])
-        ey0, ey1 = (ay[e], by[e]) if ay[e] <= by[e] else (by[e], ay[e])
-        gx0 = max(0, min(nx - 1, int((ex0 - x0) / dx)))
-        gx1 = max(0, min(nx - 1, int((ex1 - x0) / dx)))
-        gy0 = max(0, min(ny - 1, int((ey0 - y0) / dy)))
-        gy1 = max(0, min(ny - 1, int((ey1 - y0) / dy)))
-        for gy in range(gy0, gy1 + 1):
-            for gx in range(gx0, gx1 + 1):
-                buckets[gy * nx + gx].append(e)
-    counts = np.array([len(b) for b in buckets], dtype=np.int32)
-    offsets = np.zeros(int(nx) * int(ny) + 1, dtype=np.int32)
-    offsets[1:] = np.cumsum(counts)
-    flat = np.empty(int(offsets[-1]), dtype=np.int32)
-    for i, bucket in enumerate(buckets):
-        if bucket:
-            flat[offsets[i] : offsets[i + 1]] = np.asarray(bucket, dtype=np.int32)
-    return {
-        "ax": ax,
-        "ay": ay,
-        "bx": bx,
-        "by": by,
-        "nx": int(nx),
-        "ny": int(ny),
-        "offsets": offsets,
-        "flat": flat,
-        "aabb": (xmin, xmax, ymin, ymax),
-    }
+    bx = np.ascontiguousarray(np.roll(ax, -1))
+    by = np.ascontiguousarray(np.roll(ay, -1))
+    aabb = (float(np.min(ax)), float(np.max(ax)), float(np.min(ay)), float(np.max(ay)))
+    return {"ax": ax, "ay": ay, "bx": bx, "by": by, "aabb": aabb}

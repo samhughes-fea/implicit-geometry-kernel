@@ -110,7 +110,7 @@ Home: [sdf](sdf/README.md). Barrel names:
 | `Circle` / `Polygon` | Canonical 2-D Expr leaves (`SDFNode`) |
 | `PriorityUnionNode` | Union resolved by feature priority |
 | `KIND_PRIORITY` | Default meta ownership by kind (cap beats skin) on `FeatureTable` |
-| `LoftedPolygonSDF` | Polygon SDF at each point's `z`; `accelerate` BVH via `accel_at` / `bvh` |
+| `LoftedPolygonSDF` | Polygon SDF at each point's `z`; `accelerate` caches each station's edge arrays (`accel_at` / `bvh`) |
 | `GeometrySolver` | In-plane Newton (`sdf.solve`); not the extract package |
 
 ## Mesh health

@@ -51,7 +51,7 @@ flowchart LR
 A two-and-a-half-dimensional feature field (`FieldSample`, `FeatureTable`,
 `NO_FEATURE`, `TagNode`, `PriorityUnionNode`, `LoftedPolygonSDF`) tags walls
 without becoming a Euclidean \(F(x,y,z)\). `LoftedPolygonSDF` caches a
-uniform-grid AABB per station (`accelerate=True`, `accel_at` / `bvh`). Kernel barrel names:
+station's edge arrays and box (`accelerate=True`, `accel_at` / `bvh`); every query still visits every edge. Kernel barrel names:
 [glossary](../glossary.md#sdf).
 
 The page [section/sdf](../section/sdf/README.md) is a redirect: SDF is not a

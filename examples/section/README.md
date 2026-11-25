@@ -13,6 +13,7 @@ Numbered worked examples plus print-first teaching scripts.
 | 03 | [03_mid_surface_and_cells](03_mid_surface_and_cells/) | walls, cells, `mid_surface()` |
 | 04 | [04_layout_construction](04_layout_construction/) | catalogue, wall fields, web axes and anchoring (Figure R5.1) |
 | 05 | [05_midsurfaces_cells](05_midsurfaces_cells/) | skin mid ring, web feet, cap eccentricity, cells and the thin-wall idealisation (Figure R6.1) |
+| 06 | [06_feasibility_checks](06_feasibility_checks/) | thickness floors, web drops and step-down, cap clamp and run-out (Figure R10.1) |
 
 ## Teaching
 

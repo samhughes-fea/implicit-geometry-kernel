@@ -94,6 +94,7 @@ flowchart TB
 | 03 | [Mid-surface and cells](section/03_mid_surface_and_cells/) | `SectionCut.walls`, `cells`, `mid_surface()` |
 | 04 | [Layout construction](section/04_layout_construction/) | catalogue, wall fields, web axes and anchoring (Figure R5.1) |
 | 05 | [Mid-surfaces and cells](section/05_midsurfaces_cells/) | skin mid ring, web feet, cap eccentricity, cells (Figure R6.1) |
+| 06 | [Feasibility checks](section/06_feasibility_checks/) | floors, web drops, step-down, cap clamp and run-out (Figure R10.1) |
 
 Teaching: [section/teaching/](section/teaching/) (`01_first_station` … `06_consumer_seams`).
 

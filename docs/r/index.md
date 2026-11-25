@@ -19,7 +19,7 @@ equations by number, for example (R1.4), rather than restating them.
 | R7 | [Section properties by quadtree and shoelace integration](R7_section_properties.md) | Written |
 | R8 | [Spanwise members and the loft](R8_loft_members.md) | Written |
 | R9 | [Shell mesh generation](R9_shell_mesh.md) | Written |
-| R10 | Feasibility, drops and failure modes | Current text: [feasibility and drops](../section/guides/feasibility_and_drops.md) |
+| R10 | [Feasibility, drops and failure modes](R10_feasibility.md) | Written |
 
 Documents marked "current text" keep their present page until they are rewritten
 to the template below; zero-level extraction ([extract](../extract/README.md)) is
@@ -58,6 +58,7 @@ R6_midsurfaces_cells
 R7_section_properties
 R8_loft_members
 R9_shell_mesh
+R10_feasibility
 /sdf/README
 /section/README
 /blade/concepts/taxonomy

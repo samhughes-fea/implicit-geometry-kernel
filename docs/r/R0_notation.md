@@ -85,6 +85,10 @@ table in the same change.
 | $\beta$, $f$ | Web tilt from the thickness direction; its pivot chord fraction | deg, – | (R8.4) |
 | $\sigma(z)$ | Signature: ordered loftable run names of the cut at $z$ | – | (R8.9) |
 | $\mathrm{I}, \mathrm{II}$, $\kappa_{1,2}$ | Fundamental forms and principal curvatures of a partition patch | –, 1/m | (R8.15) |
+| $t^{\min}$ | Manufacturing floor of a wall thickness | m | (R10.1) |
+| $d(x)$, $y_t, y_b$ | Cavity depth at chord station $x$; its upper and lower inner-skin crossings | m | (R10.3) |
+| $\Delta y$ | Spacing of the intercept probe | m | (R10.2) |
+| $a(x)$ | Room for the two spar caps together at $x$ | m | (R10.7) |
 
 ## Bibliography
 

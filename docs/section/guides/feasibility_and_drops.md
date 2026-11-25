@@ -4,6 +4,10 @@ How `resolve()` omits webs, steps the catalogue, or raises. A requested web that
 does not intercept the inner skin is **omitted**, not slid. Overview:
 [`../README.md`](../README.md).
 
+The rules (floors, the intercept probe, drop reasons, step-down, the cap clamp and
+run-out, and the failure modes that raise) are derived in
+[R10 · Feasibility, drops and failure modes](../../r/R10_feasibility.md).
+
 ↑ [`section_geometry`](../docs_index.md) · [`docs index`](../docs_index.md)
 
 ## Table of contents

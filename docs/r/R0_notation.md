@@ -76,6 +76,19 @@ table in the same change.
 | $e$ | Eccentricity of the merged cap-and-skin laminate from the skin mid-surface | m | (R6.12) |
 | $\gamma$ | Angle between a web axis and the skin normal at its foot | rad | (R6.14) |
 | $V, E, F$ | Nodes, edges and faces of the wall graph | – | (R6.15), (R6.16) |
+| $S_x, S_{xx}, S_{xy}$ | Raw first and second moments about the origin | m³, m⁴ | [R7](R7_section_properties.md) |
+| $c_i$ | Edge cross product $x_i y_{i+1} - x_{i+1} y_i$ of a polygon | m² | (R7.1) |
+| $h$, $D$, $b(D)$ | Smallest quadtree leaf; leaf diagonal; refinement band | m | (R7.12), (R7.13) |
+| $\xi, \eta$ | Unit-section coordinates in the loft (chord fraction, thickness fraction) | – | [R8](R8_loft_members.md) |
+| $\tau$, $\mathbf{o}$, $\mathbf{Q}(\tau)$ | Twist, in-plane offset and the twist rotation of a placed section | deg, m, – | (R8.1) |
+| $k$ | Scale factor that lifts thin walls above the manufacturing minima | – | (R8.3) |
+| $\beta$, $f$ | Web tilt from the thickness direction; its pivot chord fraction | deg, – | (R8.4) |
+| $\sigma(z)$ | Signature: ordered loftable run names of the cut at $z$ | – | (R8.9) |
+| $\mathrm{I}, \mathrm{II}$, $\kappa_{1,2}$ | Fundamental forms and principal curvatures of a partition patch | –, 1/m | (R8.15) |
+| $t^{\min}$ | Manufacturing floor of a wall thickness | m | (R10.1) |
+| $d(x)$, $y_t, y_b$ | Cavity depth at chord station $x$; its upper and lower inner-skin crossings | m | (R10.3) |
+| $\Delta y$ | Spacing of the intercept probe | m | (R10.2) |
+| $a(x)$ | Room for the two spar caps together at $x$ | m | (R10.7) |
 
 ## Bibliography
 

@@ -10,6 +10,11 @@ calls `SectionGeometry` and returns a `SectionCut` in the blade frame.
 
 Concepts: [taxonomy](concepts/taxonomy.md).
 
+The placement, thin-wall scaling, tilted and anchored webs, member stations, locked
+resampling and partition patches are derived in
+[R8 · Spanwise members and the loft](../r/R8_loft_members.md). Known defects are in
+the [loft bug log](bug_log.md).
+
 ## Contents
 
 1. [Stations and interpolant](#stations-and-interpolant)
@@ -199,6 +204,7 @@ Public names: [glossary](../glossary.md) (loft group). On this package:
 | [13_planform_csv_roundtrip](../../examples/blade/13_planform_csv_roundtrip/) | `read_planform_csv`, `write_windio` |
 | [14_geometric_centroid](../../examples/blade/14_geometric_centroid/) | Geometric centroid of the walls (three routes) |
 | [15_shell_mesh](../../examples/blade/15_shell_mesh/) | Conformal `shell_mesh` twin ([geometry to mesh](../section/guides/geometry_to_mesh.md)) |
+| [19_loft_checks](../../examples/blade/19_loft_checks/) | Checks of R8 (Figure R8.1) |
 
 ---
 

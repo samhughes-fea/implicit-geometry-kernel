@@ -6,6 +6,9 @@ Turn gated midlines into downstream mesh inputs. Overview:
 
 ↑ [`section_geometry`](../docs_index.md) · [`docs index`](../docs_index.md)
 
+The shell mesh itself (stations, element size, mesh lines, rib fills, orientation
+and invariants) is derived in [R9 · Shell mesh generation](../../r/R9_shell_mesh.md).
+
 ## Table of contents
 
 1. [Pipeline](#pipeline)

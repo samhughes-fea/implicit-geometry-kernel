@@ -82,6 +82,8 @@ flowchart TB
 | 14 | [Geometric centroid](blade/14_geometric_centroid/) | shoelace / thin-wall strip / quadtree |
 | 17 | [Aerofoil construction](blade/17_aerofoil_construction/) | NACA, CST and ellipse families (Figure R2.1) |
 | 18 | [PCHIP span laws](blade/18_pchip_span_laws/) | `PchipLaw`, leave-one-out check, airfoil morph (Figure R3.1) |
+| 19 | [Loft checks](blade/19_loft_checks/) | placement, tilted webs, locked loft, `PartitionPatch` (Figure R8.1) |
+| 20 | [Shell mesh checks](blade/20_shell_mesh_checks/) | `shell_mesh` sizing, mesh lines, orientation, rib fill (Figure R9.1) |
 
 ### section
 
@@ -92,6 +94,7 @@ flowchart TB
 | 03 | [Mid-surface and cells](section/03_mid_surface_and_cells/) | `SectionCut.walls`, `cells`, `mid_surface()` |
 | 04 | [Layout construction](section/04_layout_construction/) | catalogue, wall fields, web axes and anchoring (Figure R5.1) |
 | 05 | [Mid-surfaces and cells](section/05_midsurfaces_cells/) | skin mid ring, web feet, cap eccentricity, cells (Figure R6.1) |
+| 06 | [Feasibility checks](section/06_feasibility_checks/) | floors, web drops, step-down, cap clamp and run-out (Figure R10.1) |
 
 Teaching: [section/teaching/](section/teaching/) (`01_first_station` … `06_consumer_seams`).
 
@@ -142,6 +145,7 @@ Teaching: [section/teaching/](section/teaching/) (`01_first_station` … `06_con
 | # | Example | Main API |
 |---|---|---|
 | 01 | [Quadtree vs shoelace](integration/01_quadtree_vs_shoelace/) | `ring_sums_S`, `section_properties_from_quadtree` |
+| 02 | [Property quadrature](integration/02_property_quadrature/) | `section_properties_S`, `section_properties_from_quadtree` (Figure R7.1) |
 
 ## Running
 

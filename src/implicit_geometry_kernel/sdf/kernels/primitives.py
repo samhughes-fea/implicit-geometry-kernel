@@ -99,34 +99,64 @@ def sdf_rounded_box(x, y, cx=0.0, cy=0.0, half_w=1.0, half_h=0.5, r=0.1):
 
 
 def sdf_ellipse(x, y, cx=0.0, cy=0.0, rx=1.0, ry=0.5):
-    """Approximate SDF for an axis-aligned ellipse (Quilez iterative, 4 Newton steps)."""
+    """Exact signed distance to an axis-aligned ellipse (R4.10).
+
+    The nearest point of the ellipse to ``(p0, p1)`` in the first quadrant, with
+    semi-axes ``e0 >= e1``, is ``x_i = e_i^2 p_i / (s + e_i^2)``, where ``s`` is the
+    root of ``F(s) = sum (e_i p_i / (s + e_i^2))^2 - 1``. ``F`` decreases on
+    ``s > -e1^2`` and its root lies in ``[-e1^2 + e1 p1, -e1^2 + |(e0 p0, e1 p1)|]``,
+    so bisection converges to it (Eberly, 2013). Points on an axis are solved in
+    closed form.
+    """
     x, y = _as_arrays(x, y)
-    px = np.abs(x - cx)
-    py = np.abs(y - cy)
-    tx = np.full_like(px, 0.707)
-    ty = np.full_like(py, 0.707)
-    for _ in range(4):
-        ex = rx * tx
-        ey = ry * ty
-        qx = px - ex
-        qy = py - ey
-        r_ = _length(qx, qy)
-        r_ = np.where(r_ < 1e-14, 1e-14, r_)
-        lx = (ex - px) / (rx * rx)
-        ly = (ey - py) / (ry * ry)
-        l_ = _length(lx, ly)
-        l_ = np.where(l_ < 1e-14, 1e-14, l_)
-        tx = _clamp(lx / l_, 0.0, 1.0)
-        ty = _clamp(ly / l_, 0.0, 1.0)
-        t_mag = _length(tx, ty)
-        t_mag = np.where(t_mag < 1e-14, 1e-14, t_mag)
-        tx /= t_mag
-        ty /= t_mag
-    nearest_x = rx * tx
-    nearest_y = ry * ty
-    dist = _length(px - nearest_x, py - nearest_y)
-    inside_mask = (px / rx)**2 + (py / ry)**2 <= 1.0
-    return np.where(inside_mask, -dist, dist)
+    a = np.abs(np.asarray(x, dtype=float) - cx)
+    b = np.abs(np.asarray(y, dtype=float) - cy)
+    rx, ry = float(rx), float(ry)
+    if rx >= ry:
+        e0, e1, p0, p1 = rx, ry, a, b
+    else:
+        e0, e1, p0, p1 = ry, rx, b, a
+    p0, p1 = np.broadcast_arrays(p0, p1)
+    p0 = np.array(p0, dtype=float, copy=True)
+    p1 = np.array(p1, dtype=float, copy=True)
+    dist = np.empty_like(p0)
+
+    general = (p0 > 0.0) & (p1 > 0.0)
+    if np.any(general):
+        q0, q1 = p0[general], p1[general]
+        z0, z1 = e0 * q0, e1 * q1
+        lo = -e1 * e1 + z1
+        hi = -e1 * e1 + np.hypot(z0, z1)
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            f = (z0 / (mid + e0 * e0)) ** 2 + (z1 / (mid + e1 * e1)) ** 2 - 1.0
+            pos = f > 0.0
+            lo = np.where(pos, mid, lo)
+            hi = np.where(pos, hi, mid)
+            if np.all(hi - lo <= 4.0 * np.finfo(float).eps * np.maximum(1.0, np.abs(mid))):
+                break
+        s = 0.5 * (lo + hi)
+        n0 = e0 * e0 * q0 / (s + e0 * e0)
+        n1 = e1 * e1 * q1 / (s + e1 * e1)
+        dist[general] = np.hypot(q0 - n0, q1 - n1)
+
+    on_minor = (p0 <= 0.0) & ~general
+    dist[on_minor] = np.abs(p1[on_minor] - e1)
+
+    on_major = (p1 <= 0.0) & (p0 > 0.0)
+    if np.any(on_major):
+        q0 = p0[on_major]
+        if e0 > e1:
+            reach = (e0 * e0 - e1 * e1) / e0
+            inner = q0 < reach
+            n0 = np.where(inner, e0 * e0 * q0 / (e0 * e0 - e1 * e1), e0)
+            n1 = np.where(inner, e1 * np.sqrt(np.clip(1.0 - (n0 / e0) ** 2, 0.0, None)), 0.0)
+            dist[on_major] = np.hypot(q0 - n0, n1)
+        else:
+            dist[on_major] = np.abs(q0 - e0)
+
+    inside = (a / rx) ** 2 + (b / ry) ** 2 <= 1.0
+    return np.where(inside, -dist, dist)
 
 
 def sdf_oriented_box(x, y, cx=0.0, cy=0.0, half_w=1.0, half_h=0.5, angle=0.0):

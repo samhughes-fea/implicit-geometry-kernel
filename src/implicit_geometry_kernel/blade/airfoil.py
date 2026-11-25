@@ -27,7 +27,8 @@ class Airfoil:
     """Airfoil from coordinates normalised by the chord (x from 0 at the LE to 1 at the TE).
 
     ``points`` run in Selig order (TE, upper surface, LE, lower surface, TE) or in the
-    reverse order; the surfaces are split at the leading edge (smallest x). The
+    reverse order; the surfaces are split at the leading edge, the point farthest
+    from the mid-point of the two trailing-edge points (R2, Section 4). The
     trailing edge can be sharp or blunt (a flatback).
     """
 

@@ -11,8 +11,8 @@ equations by number, for example (R1.4), rather than restating them.
 |---|---|---|
 | R0 | [Notation and bibliography](R0_notation.md) | Written |
 | R1 | [Coordinate frames and twist](R1_frames.md) | Written |
-| R2 | Aerofoil parametrisation and families | Planned |
-| R3 | Planform and span laws | Planned |
+| R2 | [Aerofoil parametrisation and families](R2_aerofoils.md) | Written |
+| R3 | [Planform and span laws](R3_span_laws.md) | Written |
 | R4 | Signed distance fields and constructive solid geometry | Current text: [sdf](../sdf/README.md) |
 | R5 | Section layout: skin, caps, webs and the WX-Y-Z-NR catalogue | Current text: [section](../section/README.md), [taxonomy](../blade/concepts/taxonomy.md) |
 | R6 | Mid-surfaces, cells and the thin-wall idealisation | Current text: [section](../section/README.md), [structure](../structure/README.md) |
@@ -50,6 +50,8 @@ Each R document has the same eight parts, in this order:
 
 R0_notation
 R1_frames
+R2_aerofoils
+R3_span_laws
 /sdf/README
 /section/README
 /blade/concepts/taxonomy

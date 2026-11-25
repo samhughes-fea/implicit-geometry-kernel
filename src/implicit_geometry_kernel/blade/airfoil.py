@@ -145,12 +145,18 @@ class Airfoil:
 
     @classmethod
     def naca6(cls, family: int, t_percent: float, n: int = 81, closed_te: bool = True) -> "Airfoil":
-        """NACA 6-series family 63 or 64, thickness as a percent of chord."""
+        """NACA 6-series family 63 or 64, thickness as a percent of chord.
+
+        The thickness of the embedded reference section (NACA 63-415 or 64(1)-212)
+        is scaled to ``t_percent``; its camber, and so its design lift (0.4 or 0.2),
+        is kept. The name says so: ``naca6(64, 18)`` is ``"NACA 64-218"``.
+        """
         from implicit_geometry_kernel.sdf.shapes.naca import naca_six_series_vertices
 
         verts = naca_six_series_vertices(int(family), float(t_percent), 2 * int(n) - 1, 1.0,
                                          closed_te=closed_te)
-        return cls(verts, f"NACA {int(family)}-{int(t_percent):02d}")
+        cl_tenth = {63: 4, 64: 2}.get(int(family), 0)
+        return cls(verts, f"NACA {int(family)}-{cl_tenth}{int(round(float(t_percent))):02d}")
 
     @classmethod
     def cst(cls, upper, lower, n: int = 81, te_thickness: float = 0.0, name: str = "CST") -> "Airfoil":

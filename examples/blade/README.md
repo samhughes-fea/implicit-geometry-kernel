@@ -24,3 +24,4 @@ Span loft, airfoils, queries, catalogue concepts, and published blades.
 | 16 | [16_bottleneck_splits](16_bottleneck_splits/) | shell, figure, quadtree, and station/strip timings |
 | 17 | [17_aerofoil_construction](17_aerofoil_construction/) | `Airfoil.naca4`, `naca5`, `naca6`, `cst`: Figure R2.1 and checks of R2 |
 | 18 | [18_pchip_span_laws](18_pchip_span_laws/) | `PchipLaw`, `check_pchip_sampling`, airfoil morph: Figure R3.1 and checks of R3 |
+| 19 | [19_loft_checks](19_loft_checks/) | `section_at`, `LockedLoftPlan`, `PartitionPatch`: Figure R8.1 and checks of R8 |

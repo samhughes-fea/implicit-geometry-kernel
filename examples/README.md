@@ -82,6 +82,7 @@ flowchart TB
 | 14 | [Geometric centroid](blade/14_geometric_centroid/) | shoelace / thin-wall strip / quadtree |
 | 17 | [Aerofoil construction](blade/17_aerofoil_construction/) | NACA, CST and ellipse families (Figure R2.1) |
 | 18 | [PCHIP span laws](blade/18_pchip_span_laws/) | `PchipLaw`, leave-one-out check, airfoil morph (Figure R3.1) |
+| 19 | [Loft checks](blade/19_loft_checks/) | placement, tilted webs, locked loft, `PartitionPatch` (Figure R8.1) |
 
 ### section
 

@@ -13,7 +13,9 @@ The cells are the bounded faces of the labelled wall graph: nodes are the
 skin-arc junctions made by `split_skin_at_junctions`, edges are the labelled
 skin arcs and webs. No coordinate axis is read, and each loop carries
 `wall_labels` — the exact strips that bound it — which consumers use as the
-wall-to-cell membership ([SG-014](../bug_log.md#sg-014)).
+wall-to-cell membership ([SG-014](../bug_log.md#sg-014)). The cell count, the
+face walk and the area identity are derived in
+[R6, Section 3.8](../../r/R6_midsurfaces_cells.md).
 
 ## Table of contents
 
@@ -29,8 +31,8 @@ wall-to-cell membership ([SG-014](../bug_log.md#sg-014)).
 | File | Role |
 |------|------|
 | `loops.py` | `build_cell_wall_loops` |
-| `cell_wall_loop_builders.py` | Face walk over the labelled wall graph; invariant checks |
-| `cell_wall_geom.py` | Skin-ring ordering, shoelace area |
+| `builders.py` | Face walk over the labelled wall graph; invariant checks |
+| `geom.py` | Skin-ring ordering, shoelace area |
 
 ```mermaid
 flowchart LR

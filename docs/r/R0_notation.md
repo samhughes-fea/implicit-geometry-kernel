@@ -68,6 +68,14 @@ table in the same change.
 | $\phi_A$, $\phi_I$ | Fields of the outer and inner mould lines, $\phi_I = \phi_A + t_s$ | m | (R5.7) |
 | $x_k$, $f_k$ | Web station from the leading edge; as a fraction of chord | m, – | (R5.4) |
 | $W, X, Y, Z$ | Web count, cap family, web orientation and anchoring of a layout key | – | (R5.1) |
+| $d_m$, $M$ | Depth of the skin mid-surface; the skin mid ring | m, – | [R6](R6_midsurfaces_cells.md), (R6.1), (R6.2) |
+| $\alpha_i$, $K$ | Exterior turning angle at polygon vertex $i$; $K = \sum_i \tan(\alpha_i/2)$ | rad, – | (R6.3) |
+| $L(d)$, $A(d)$, $d^*$ | Perimeter and area of the offset at depth $d$; depth at which an edge first vanishes | m, m², m | (R6.3)–(R6.5) |
+| $\beta$ | Included angle of a sharp trailing edge | rad | (R6.7) |
+| $\boldsymbol\nu$, $\kappa$, $\eta$ | Unit normal and signed curvature of a mid-curve; offset along $\boldsymbol\nu$ | –, 1/m, m | (R6.8) |
+| $e$ | Eccentricity of the merged cap-and-skin laminate from the skin mid-surface | m | (R6.12) |
+| $\gamma$ | Angle between a web axis and the skin normal at its foot | rad | (R6.14) |
+| $V, E, F$ | Nodes, edges and faces of the wall graph | – | (R6.15), (R6.16) |
 
 ## Bibliography
 

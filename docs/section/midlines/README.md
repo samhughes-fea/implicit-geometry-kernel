@@ -9,7 +9,9 @@ Emits wall centrelines as `(N, 2)` polylines (`ShellMidlineStrip`: `skin` /
 into the blade frame ([`contract`](../../contract/README.md)). Cap solids stay
 on `cut.walls`; conformal partitions are `shell_strips_from_graph`. Mid-loci
 follow the recipe (aerofoil offset, web capsule axis, IML offset), not
-post-boolean SDF zero contours.
+post-boolean SDF zero contours. The depths, the web feet, the cap eccentricity
+and the thin-wall idealisation are derived in
+[R6 · Mid-surfaces, cells and the thin-wall idealisation](../../r/R6_midsurfaces_cells.md).
 
 Manual look-up (three strip products + which thickness):
 [`guides/geometry_to_mesh.md`](../guides/geometry_to_mesh.md).

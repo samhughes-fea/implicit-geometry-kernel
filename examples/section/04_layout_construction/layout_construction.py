@@ -43,8 +43,14 @@ TWIST = np.radians(15.0)
 
 def section(key, twist=TWIST, chord=CHORD, code="2418"):
     af = Airfoil.naca4(code).to_sdf(chord=chord)
-    sec = multicell_from_layout(af, resolve_system_type(key), twist_rad=twist, skin_thickness=SKIN,
-                                spar_cap_thickness=CAP, shear_web_thickness=WEB)
+    sec = multicell_from_layout(
+        af,
+        resolve_system_type(key),
+        twist_rad=twist,
+        skin_thickness=SKIN,
+        spar_cap_thickness=CAP,
+        shear_web_thickness=WEB,
+    )
     return af, sec
 
 
@@ -57,10 +63,12 @@ def comp(sec, name):
 
 # --- 1-3. catalogue ---------------------------------------------------------------------
 
+
 def check_catalogue():
     cores = {k.rsplit("-", 2)[0] for k in SYSTEM_TYPE_LAYOUT_KEYS}
-    expect = {"0A", "0B"} | {f"{w}{x}-{y}" for w in range(1, 6) for x in "ABCD" for y in ("CN", "F")
-                             if not (w == 1 and x == "D")}
+    expect = {"0A", "0B"} | {
+        f"{w}{x}-{y}" for w in range(1, 6) for x in "ABCD" for y in ("CN", "F") if not (w == 1 and x == "D")
+    }
     assert cores == expect and len(SYSTEM_TYPE_LAYOUT_KEYS) == 40 and len(SYSTEM_TYPE_KEYS) == 120
     refused = []
     for bad in ("2D-F", "2D-F-LC", "2D-F-LC-R", "1D-F-LC-0R", "0C-LC-0R", "2D-F-XX-0R"):
@@ -70,15 +78,21 @@ def check_catalogue():
             refused.append(bad)
     assert len(refused) == 6
     spec = resolve_system_type("4D-F-PA-10R")
-    assert (spec.n_webs, spec.n_cells, spec.structural_family, spec.web_anchoring, spec.n_ribs) == \
-        (4, 5, "D", "pitch_axis", 10)
-    print(f"1. Catalogue: {len(cores)} cores = 2 + 5 x 4 x 2 - 2 (no 1D); {len(SYSTEM_TYPE_KEYS)} keys = 40 x 3 "
-          f"anchorings at 0R; refused {', '.join(refused)}")
+    assert (spec.n_webs, spec.n_cells, spec.structural_family, spec.web_anchoring, spec.n_ribs) == (
+        4,
+        5,
+        "D",
+        "pitch_axis",
+        10,
+    )
+    print(
+        f"1. Catalogue: {len(cores)} cores = 2 + 5 x 4 x 2 - 2 (no 1D); {len(SYSTEM_TYPE_KEYS)} keys = 40 x 3 "
+        f"anchorings at 0R; refused {', '.join(refused)}"
+    )
     ladders = {f: step_down_cascade(resolve_system_type(f"5{f}-CN-LC-0R")) for f in "ABCD"}
     for f, lad in ladders.items():
         cores_l = [k.rsplit("-", 2)[0] for k in lad]
-        want = [f"{n}{f}-CN" for n in range(5, 0, -1)] if f != "D" else \
-            ["5D-CN", "4D-CN", "3D-CN", "2D-CN", "1C-CN"]
+        want = [f"{n}{f}-CN" for n in range(5, 0, -1)] if f != "D" else ["5D-CN", "4D-CN", "3D-CN", "2D-CN", "1C-CN"]
         assert cores_l == want, (f, cores_l)
         print(f"2. Step-down from 5{f}-CN: {' -> '.join(cores_l)}")
     runout = layout_without_spar_caps(resolve_system_type("3D-F-LE-4R")).key
@@ -92,6 +106,7 @@ def check_catalogue():
 
 
 # --- 4. wall fields ---------------------------------------------------------------------
+
 
 def edge_probes(verts):
     """Edge mid-points and unit outward edge normals: along these the distance is exact."""
@@ -138,14 +153,17 @@ def check_walls():
         err_web = max(err_web, float(np.abs(phi - (np.abs(s) - 0.5 * WEB)).max()))
     phi_i = af(np.array([a[0], b[0]]), np.array([a[1], b[1]])) + SKIN
     err_feet = float(np.abs(phi_i).max())
-    print(f"\n4. Wall fields on a NACA 2418, 2 m chord: skin slab against max(-d, d - t_s) {err_skin:.1e}; "
-          f"cap slab {err_cap:.1e}; web strip against |s| - t_w/2 {err_web:.1e}")
+    print(
+        f"\n4. Wall fields on a NACA 2418, 2 m chord: skin slab against max(-d, d - t_s) {err_skin:.1e}; "
+        f"cap slab {err_cap:.1e}; web strip against |s| - t_w/2 {err_web:.1e}"
+    )
     print(f"   web feet on the inner mould line: |phi_A + t_s| <= {err_feet:.1e}")
     assert err_skin < 1e-12 and err_cap < 1e-12 and err_web < 1e-12 and err_feet < 1e-6
     return err_skin, err_cap, err_web
 
 
 # --- 5. web axes ------------------------------------------------------------------------
+
 
 def check_web_axes():
     worst_f = worst_cn = 0.0
@@ -161,12 +179,15 @@ def check_web_axes():
                     worst_f = max(worst_f, abs(ang - th))
                 else:
                     worst_cn = max(worst_cn, abs(ang))
-    print(f"\n5. Web axes for twists -10 to 30 deg: flapwise axis at the twist angle from the chord normal "
-          f"to {worst_f:.1e} rad; chord-normal axis vertical to {worst_cn:.1e} rad")
+    print(
+        f"\n5. Web axes for twists -10 to 30 deg: flapwise axis at the twist angle from the chord normal "
+        f"to {worst_f:.1e} rad; chord-normal axis vertical to {worst_cn:.1e} rad"
+    )
     assert worst_f < 1e-9 and worst_cn < 1e-12
 
 
 # --- 6. cap bands -----------------------------------------------------------------------
+
 
 def check_cap_bands():
     rows = []
@@ -185,11 +206,15 @@ def check_cap_bands():
     foil = Airfoil.naca4("2418")
     x_ref = CHORD * x[np.argmax(foil.surface("upper", x) - foil.surface("lower", x))]
     print("\n6. Cap bands:")
-    print(f"   D (2 webs): x from {rows[0][1]:.4f} to {rows[0][2]:.4f} m = the outer webs {rows[0][3]:.4f}, {rows[0][4]:.4f}")
+    print(
+        f"   D (2 webs): x from {rows[0][1]:.4f} to {rows[0][2]:.4f} m = the outer webs {rows[0][3]:.4f}, {rows[0][4]:.4f}"
+    )
     print(f"   C (3 webs): pad centres {', '.join(f'{v:.4f}' for v in xc)} m, half-width {hw[0]:.4f} m = 0.04 c")
-    print(f"   B (1 web, max-thickness anchor): band {cb.x_start:.4f} to {cb.x_end:.4f} m, centre "
-          f"{0.5 * (cb.x_start + cb.x_end):.4f}; sampled max-thickness station {x_t:.4f}, "
-          f"fine-grid vertical thickness peak {x_ref:.4f}")
+    print(
+        f"   B (1 web, max-thickness anchor): band {cb.x_start:.4f} to {cb.x_end:.4f} m, centre "
+        f"{0.5 * (cb.x_start + cb.x_end):.4f}; sampled max-thickness station {x_t:.4f}, "
+        f"fine-grid vertical thickness peak {x_ref:.4f}"
+    )
     assert abs(rows[0][1] - rows[0][3]) < 1e-12 and abs(rows[0][2] - rows[0][4]) < 1e-12
     assert np.allclose(xc, [0.25 * CHORD, 0.5 * CHORD, 0.75 * CHORD], atol=1e-9) and abs(hw[0] - 0.04 * CHORD) < 1e-9
     assert abs(0.5 * (cb.x_end - cb.x_start) - 0.05 * CHORD) < 1e-9
@@ -214,7 +239,7 @@ class _St:
 def check_anchoring():
     fr = (0.15, 0.5)
     stations = [_St(z) for z in Z]
-    lc = np.array([[f * chord_at(z) for f in fr] for z in Z])                       # from the LE
+    lc = np.array([[f * chord_at(z) for f in fr] for z in Z])  # from the LE
     le = np.array([le_web_offsets_m(fr, C0) for _ in Z])
     pa_x = pa_web_x_from_pitch(stations, lambda z: P, 2)
     pa = np.array([[chord_fraction_from_pitch(x, chord_at(z), P) * chord_at(z) for x in pa_x] for z in Z])
@@ -226,16 +251,21 @@ def check_anchoring():
     err_le = float(np.abs(le - np.array(fr) * C0).max())
     err_pa = float(np.abs((pa - P * chord_at(Z)[:, None]) - np.array(pa_x)).max())
     print("\n7. Web stations along a 2.0 -> 0.8 m taper, pitch axis at 0.3 c:")
-    print(f"   LC: x/c held at {fr} to {err_lc:.1e}; LE: x held at {tuple(f * C0 for f in fr)} m to {err_le:.1e}; "
-          f"PA: x from the pitch axis held at ({pa_x[0]:.4f}, {pa_x[1]:.4f}) m to {err_pa:.1e}")
-    print(f"   PA lattice, 2 webs: {np.round(lattice, 6).tolist()} m (thirds of the root band); "
-          f"4 webs: {np.round(pa4, 6).tolist()} m, the fourth at the root TE {x_te0:.4f} m")
+    print(
+        f"   LC: x/c held at {fr} to {err_lc:.1e}; LE: x held at {tuple(f * C0 for f in fr)} m to {err_le:.1e}; "
+        f"PA: x from the pitch axis held at ({pa_x[0]:.4f}, {pa_x[1]:.4f}) m to {err_pa:.1e}"
+    )
+    print(
+        f"   PA lattice, 2 webs: {np.round(lattice, 6).tolist()} m (thirds of the root band); "
+        f"4 webs: {np.round(pa4, 6).tolist()} m, the fourth at the root TE {x_te0:.4f} m"
+    )
     assert np.allclose(pa_x, lattice) and abs(pa4[3] - x_te0) < 1e-12 and np.allclose(np.diff(pa4[:3]), dx)
     assert err_lc < 1e-15 and err_le < 1e-15 and err_pa < 1e-12
     return lc, le, pa
 
 
 # --- figure -----------------------------------------------------------------------------
+
 
 def figure(span):
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.6), gridspec_kw={"width_ratios": [1.45, 1.0], "wspace": 0.25})
@@ -284,8 +314,11 @@ def figure(span):
     ax.set_ylabel("$z$ (m)")
     ax.set_title("Two webs on a 2.0 → 0.8 m taper", fontsize=9)
     ax.legend(frameon=False, fontsize=8, loc="upper right")
-    note(fig, "Checks: catalogue counts and ladders; skin, cap and web fields exact; web axes; "
-              "cap bands B, C, D; LC, LE and PA stations.")
+    note(
+        fig,
+        "Checks: catalogue counts and ladders; skin, cap and web fields exact; web axes; "
+        "cap bands B, C, D; LC, LE and PA stations.",
+    )
     fig.subplots_adjust(left=0.06, right=0.98, top=0.93, bottom=0.12)
     save(fig, __file__, "layout_construction")
 

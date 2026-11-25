@@ -57,6 +57,7 @@ N_BOUNDARY = 400_000
 
 # --- reference distances: nearest point of a densely sampled boundary ----------------
 
+
 def _ring(t, cx, cy, rx, ry):
     return np.column_stack([cx + rx * np.cos(t), cy + ry * np.sin(t)])
 
@@ -86,10 +87,12 @@ def rounded_box_boundary(cx, cy, hw, hh, r, n=N_BOUNDARY):
     for (qx, qy), a0 in zip(inner[[2, 3, 0, 1]], (0.0, 0.5 * np.pi, np.pi, 1.5 * np.pi)):
         tt = t[(t >= a0) & (t < a0 + 0.5 * np.pi)]
         pts.append(_ring(tt, qx, qy, r, r))
-    sides = [np.column_stack([np.full(n // 4, cx + hw), np.linspace(cy - hh + r, cy + hh - r, n // 4)]),
-             np.column_stack([np.full(n // 4, cx - hw), np.linspace(cy - hh + r, cy + hh - r, n // 4)]),
-             np.column_stack([np.linspace(cx - hw + r, cx + hw - r, n // 4), np.full(n // 4, cy + hh)]),
-             np.column_stack([np.linspace(cx - hw + r, cx + hw - r, n // 4), np.full(n // 4, cy - hh)])]
+    sides = [
+        np.column_stack([np.full(n // 4, cx + hw), np.linspace(cy - hh + r, cy + hh - r, n // 4)]),
+        np.column_stack([np.full(n // 4, cx - hw), np.linspace(cy - hh + r, cy + hh - r, n // 4)]),
+        np.column_stack([np.linspace(cx - hw + r, cx + hw - r, n // 4), np.full(n // 4, cy + hh)]),
+        np.column_stack([np.linspace(cx - hw + r, cx + hw - r, n // 4), np.full(n // 4, cy - hh)]),
+    ]
     return np.vstack(pts + sides)
 
 
@@ -127,25 +130,38 @@ def away(phi_ref, tol=2e-3):
 
 # --- 1. primitives --------------------------------------------------------------------
 
+
 def check_primitives():
     p = sample()
     x, y = p[:, 0], p[:, 1]
-    star = np.array([[np.cos(a) * r, np.sin(a) * r] for a, r in
-                     zip(np.linspace(0.0, 2 * np.pi, 10, endpoint=False), [1.0, 0.45] * 5)])
+    star = np.array(
+        [
+            [np.cos(a) * r, np.sin(a) * r]
+            for a, r in zip(np.linspace(0.0, 2 * np.pi, 10, endpoint=False), [1.0, 0.45] * 5)
+        ]
+    )
     ang = 0.6
     rot = np.array([[np.cos(ang), -np.sin(ang)], [np.sin(ang), np.cos(ang)]])
     obox = box_vertices(0.0, 0.0, 0.9, 0.35) @ rot.T + [0.1, -0.2]
     cases = {
-        "circle (R4.3)": (sdf_circle(x, y, 0.2, -0.1, 0.8),
-                          reference(p, circle_boundary(0.2, -0.1, 0.8), np.hypot(x - 0.2, y + 0.1) < 0.8)),
-        "box (R4.4)": (sdf_box(x, y, 0.1, 0.0, 0.9, 0.4),
-                       reference(p, polyline_boundary(box_vertices(0.1, 0.0, 0.9, 0.4)),
-                                 (np.abs(x - 0.1) < 0.9) & (np.abs(y) < 0.4))),
-        "rounded box (R4.5)": (sdf_rounded_box(x, y, 0.0, 0.0, 1.0, 0.5, 0.2),
-                               reference(p, rounded_box_boundary(0.0, 0.0, 1.0, 0.5, 0.2),
-                                         in_rounded_box(x, y, 1.0, 0.5, 0.2))),
-        "oriented box (R4.6)": (sdf_oriented_box(x, y, 0.1, -0.2, 0.9, 0.35, ang),
-                                reference(p, polyline_boundary(obox), sdf_polygon(x, y, obox) < 0)),
+        "circle (R4.3)": (
+            sdf_circle(x, y, 0.2, -0.1, 0.8),
+            reference(p, circle_boundary(0.2, -0.1, 0.8), np.hypot(x - 0.2, y + 0.1) < 0.8),
+        ),
+        "box (R4.4)": (
+            sdf_box(x, y, 0.1, 0.0, 0.9, 0.4),
+            reference(
+                p, polyline_boundary(box_vertices(0.1, 0.0, 0.9, 0.4)), (np.abs(x - 0.1) < 0.9) & (np.abs(y) < 0.4)
+            ),
+        ),
+        "rounded box (R4.5)": (
+            sdf_rounded_box(x, y, 0.0, 0.0, 1.0, 0.5, 0.2),
+            reference(p, rounded_box_boundary(0.0, 0.0, 1.0, 0.5, 0.2), in_rounded_box(x, y, 1.0, 0.5, 0.2)),
+        ),
+        "oriented box (R4.6)": (
+            sdf_oriented_box(x, y, 0.1, -0.2, 0.9, 0.35, ang),
+            reference(p, polyline_boundary(obox), sdf_polygon(x, y, obox) < 0),
+        ),
         "capsule (R4.7)": (sdf_capsule(x, y, -0.7, -0.3, 0.6, 0.5, 0.25), None),
         "star polygon (R4.9)": (sdf_polygon(x, y, star), None),
     }
@@ -159,8 +175,10 @@ def check_primitives():
     for (x0, y0), (x1, y1) in zip(vs[:-1], vs[1:]):
         hit = ((y0 > y) != (y1 > y)) & (x < x0 + (y - y0) * (x1 - x0) / (y1 - y0 + 1e-300))
         cross += hit
-    cases["star polygon (R4.9)"] = (cases["star polygon (R4.9)"][0],
-                                    reference(p, polyline_boundary(star), cross % 2 == 1))
+    cases["star polygon (R4.9)"] = (
+        cases["star polygon (R4.9)"][0],
+        reference(p, polyline_boundary(star), cross % 2 == 1),
+    )
     print("1. Primitive fields against the distance to a densely sampled boundary:")
     worst = 0.0
     for name, (phi, ref) in cases.items():
@@ -181,8 +199,8 @@ def check_primitives():
 
 # --- 2. CSG ---------------------------------------------------------------------------
 
-A = (0.25, 0.1, 0.7)            # disk centre and radius
-B = (-0.35, -0.1, 0.6, 0.45)    # box centre and half sizes
+A = (0.25, 0.1, 0.7)  # disk centre and radius
+B = (-0.35, -0.1, 0.6, 0.45)  # box centre and half sizes
 
 
 def in_a(p):
@@ -226,8 +244,10 @@ def check_csg():
         ratio = float((np.abs(phi) / np.abs(ref))[ok & ~exact_side].max())
         worst_gap = float((np.abs(ref) - np.abs(phi))[ok & ~exact_side].max())
         sign_ok = bool(np.all(np.sign(phi[ok]) == np.sign(ref[ok])))
-        print(f"   {op:9s} exact side error {err:.1e}; bound side |phi|/|d| <= {ratio:.6f}, "
-              f"largest shortfall {worst_gap:.3f}; signs agree: {sign_ok}")
+        print(
+            f"   {op:9s} exact side error {err:.1e}; bound side |phi|/|d| <= {ratio:.6f}, "
+            f"largest shortfall {worst_gap:.3f}; signs agree: {sign_ok}"
+        )
         assert err < 1e-5 and ratio <= 1.0 + 1e-5 and sign_ok
         out[op] = (err, worst_gap)
     # 1-Lipschitz for a deeper tree, (R4.14)
@@ -305,6 +325,7 @@ def check_offsets():
 
 # --- 4. smooth union ------------------------------------------------------------------
 
+
 def smin_scalar(a, b, k):
     return smooth_union(np.asarray(a, float), np.asarray(b, float), k)(None, None)
 
@@ -326,14 +347,17 @@ def check_smooth_union():
     q1, q2 = sample(20000, -1, 1), sample(20000, -1, 1)
     lip = float((np.abs(su(q1[:, 0], q1[:, 1]) - su(q2[:, 0], q2[:, 1])) / np.linalg.norm(q1 - q2, axis=1)).max())
     print("\n4. Smooth union, k = 0.2 (R4.19)-(R4.21):")
-    print(f"   |smin - min| beyond |a - b| >= k: {dev_far:.1e}; largest min - smin {dev_mid:.6f} "
-          f"at a - b = {at:.1e} (k/4 = {k / 4})")
+    print(
+        f"   |smin - min| beyond |a - b| >= k: {dev_far:.1e}; largest min - smin {dev_mid:.6f} "
+        f"at a - b = {at:.1e} (k/4 = {k / 4})"
+    )
     print(f"   slope jump across |a - b| = k: {jump:.1e} (C1); Lipschitz ratio {lip:.6f} (<= 1)")
     assert dev_far < 1e-15 and abs(dev_mid - k / 4) < 1e-12 and jump < 1e-4 and lip <= 1 + 1e-12
     return u, f, m, k
 
 
 # --- 5. transforms --------------------------------------------------------------------
+
 
 def check_transforms():
     p = sample()
@@ -357,6 +381,7 @@ def check_transforms():
 
 # --- 6. Newton ------------------------------------------------------------------------
 
+
 def check_newton():
     circle = Circle(0.1, -0.2, 0.6)
     solver = GeometrySolver(tolerance=0.0, iterations=1, max_step=10.0)
@@ -374,13 +399,16 @@ def check_newton():
     rates = [np.log(hist[i + 1]) / np.log(hist[i]) for i in range(len(hist) - 1) if 1e-14 < hist[i + 1]]
     print("\n6. Newton on fields (R4.27)-(R4.28):")
     print(f"   one projection step onto a circle from 500 points: |phi| <= {err_one:.1e}")
-    print(f"   circle x line residuals: {', '.join(f'{h:.1e}' for h in hist)}; "
-          f"log-ratio of successive residuals {', '.join(f'{r:.2f}' for r in rates)} (2 = quadratic)")
+    print(
+        f"   circle x line residuals: {', '.join(f'{h:.1e}' for h in hist)}; "
+        f"log-ratio of successive residuals {', '.join(f'{r:.2f}' for r in rates)} (2 = quadratic)"
+    )
     assert err_one < 1e-9 and hist[3] < 1e-12
     return hist
 
 
 # --- 7. bounding boxes and zero loops -------------------------------------------------
+
 
 def check_bbox_and_loops():
     e = Offset(Intersect(Box(0, 0, 1, 1), Box(2.5, 0, 1, 1)), 0.5)
@@ -388,19 +416,24 @@ def check_bbox_and_loops():
     m = eval_expr(e, xs, ys) <= 0
     bb = e.bbox()
     print("\n7. Bounding boxes and zero loops (R4.29)-(R4.31):")
-    print(f"   Offset(Intersect(two boxes 0.5 apart), 0.5): region y in [{ys[m].min():.2f}, {ys[m].max():.2f}], "
-          f"expr_bbox y in [{bb[2]:.2f}, {bb[3]:.2f}]  <- SD-002")
+    print(
+        f"   Offset(Intersect(two boxes 0.5 apart), 0.5): region y in [{ys[m].min():.2f}, {ys[m].max():.2f}], "
+        f"expr_bbox y in [{bb[2]:.2f}, {bb[3]:.2f}]  <- SD-002"
+    )
     two = Union(Circle(-0.37, -0.37, 0.5), Circle(0.37, 0.37, 0.5))
     loops = extract_zero_loops(two, 0.0, (-1.5, 1.5, -1.5, 1.5), n=48)
     one = extract_zero_loops(Circle(0.0, 0.0, 0.5), 0.0, (-1.5, 1.5, -1.5, 1.5), n=48)
     snap = float(np.abs(np.hypot(one[0][:, 0], one[0][:, 1]) - 0.5).max())
-    print(f"   one circle: {len(one)} loop, on phi = 0 to {snap:.1e}; two circles 0.05 apart: "
-          f"{len(loops)} loops (2 expected)  <- SD-003")
+    print(
+        f"   one circle: {len(one)} loop, on phi = 0 to {snap:.1e}; two circles 0.05 apart: "
+        f"{len(loops)} loops (2 expected)  <- SD-003"
+    )
     assert len(one) == 1 and snap < 1e-8
     return len(loops)
 
 
 # --- figure ---------------------------------------------------------------------------
+
 
 def figure(smooth, hist):
     fig, axes = plt.subplots(2, 2, figsize=(9.4, 7.6), gridspec_kw={"hspace": 0.42, "wspace": 0.28})
@@ -454,8 +487,11 @@ def figure(smooth, hist):
     ax.set_ylabel("$\\max(|\\phi_a|, |\\phi_b|)$")
     ax.set_title("Two-field Newton solve converges quadratically", fontsize=9)
     ax.legend(frameon=False, fontsize=8)
-    note(fig, "Checks: primitives against a sampled boundary; CSG exact and bound sides; offsets; "
-              "smooth union; transforms; Newton; bbox and zero loops.")
+    note(
+        fig,
+        "Checks: primitives against a sampled boundary; CSG exact and bound sides; offsets; "
+        "smooth union; transforms; Newton; bbox and zero loops.",
+    )
     fig.subplots_adjust(left=0.07, right=0.97, top=0.95, bottom=0.1)
     save(fig, __file__, "distance_and_csg")
 

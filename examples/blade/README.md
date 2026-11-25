@@ -22,3 +22,5 @@ Span loft, airfoils, queries, catalogue concepts, and published blades.
 | 14 | [14_geometric_centroid](14_geometric_centroid/) | wall geometric centroid (shoelace / strip / quadtree) |
 | 15 | [15_shell_mesh](15_shell_mesh/) | `mesh.shell`, `mesh.export`: all-quad skin and webs, triangle ribs and tip |
 | 16 | [16_bottleneck_splits](16_bottleneck_splits/) | shell, figure, quadtree, and station/strip timings |
+| 17 | [17_aerofoil_construction](17_aerofoil_construction/) | `Airfoil.naca4`, `naca5`, `naca6`, `cst`: Figure R2.1 and checks of R2 |
+| 18 | [18_pchip_span_laws](18_pchip_span_laws/) | `PchipLaw`, `check_pchip_sampling`, airfoil morph: Figure R3.1 and checks of R3 |

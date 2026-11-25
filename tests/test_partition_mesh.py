@@ -278,3 +278,31 @@ def test_a_web_that_ends_mid_span_keeps_the_loop_lines_and_reaches_its_end_stati
     ruled = shell_mesh(geo, h=0.25, method="ruled")
     assert _area(mesh, "web") == pytest.approx(_area(ruled, "web"), rel=0.02)
     assert _area(mesh, "skin") == pytest.approx(_area(ruled, "skin"), rel=0.02)
+
+
+def _tapered(layout):
+    foil = Airfoil.naca4("2421")
+    stations = [Station(0.0, 1.0, foil, twist=5.0, pitch_axis=0.3), Station(6.0, 0.35, foil, twist=0.0, pitch_axis=0.3)]
+    return BladeGeometry(stations, layout, 0.004, spar_cap_thickness=0.008, shear_web_thickness=0.004, pivot_fraction=0.3)
+
+
+@pytest.mark.parametrize("layout, compare", [("3B-F-PA-4R", True), ("4B-F-PA-4R", True),
+                                             ("4C-F-LE-4R", False), ("2C-F-PA-4R", False)])
+def test_skin_partitions_that_come_and_go_ride_held_lines(layout, compare):
+    """Decision 0018: caps and skin bays that appear, vanish or renumber along the span keep one line count."""
+    from implicit_geometry_kernel.mesh.shell import check_shell_mesh
+
+    geo = _tapered(layout)
+    chains = {tuple(r.name for r in geo.section_at(z).shell_graph().loop) for z in (0.0, 2.0, 4.0, 6.0)}
+    assert len(chains) > 1  # the loop's partitions really change along this blade
+    mesh = partition_mesh(geo, h=0.25)
+    assert check_shell_mesh(mesh) == []
+    per_station: dict = {}
+    for e, s in zip(mesh.elements, mesh.surface):
+        if s == "skin":
+            for k in e:
+                per_station.setdefault(round(float(mesh.nodes[k][2]), 9), set()).add(k)
+    assert len({len(v) for v in per_station.values()}) == 1
+    if compare:  # the ruled mesh takes minutes on the other two
+        ruled = shell_mesh(geo, h=0.25, method="ruled")
+        assert _area(mesh, "skin") == pytest.approx(_area(ruled, "skin"), rel=0.02)

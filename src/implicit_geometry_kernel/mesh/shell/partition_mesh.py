@@ -34,6 +34,7 @@ from implicit_geometry_kernel.blade.skeleton import run_point_at, run_t
 from implicit_geometry_kernel.blade.topology.sizing import EPS_OVER_C, KAPPA_FLOOR
 from implicit_geometry_kernel.mesh.fill import triangulate_ring
 from implicit_geometry_kernel.mesh.shell.orient import _oriented
+from implicit_geometry_kernel.mesh.shell.spanwise import _le_te_points
 from implicit_geometry_kernel.mesh.quality import _measure, quality_rollup, volume_ratio_from_edges
 from implicit_geometry_kernel.mesh.tables import assemble
 from implicit_geometry_kernel.mesh.shell.types import MeshRecipe, ShellMesh
@@ -52,10 +53,6 @@ def _graph_signature(graph) -> tuple:
         raise PartitionMeshError(
             f"station z={float(graph.z):g}: the skin loop is not closed; the partition mesher needs a closed loop"
         )
-    if any(rev for _, _, rev in chain):
-        raise PartitionMeshError(
-            f"station z={float(graph.z):g}: a loop partition runs against the loop direction"
-        )
     if graph.branches:
         raise PartitionMeshError(
             f"station z={float(graph.z):g}: branches ({', '.join(b.name for b in graph.branches)}) are not meshed yet"
@@ -63,19 +60,34 @@ def _graph_signature(graph) -> tuple:
     return tuple(name for name, _, _ in chain), tuple(sorted(w.name for w in graph.webs))
 
 
-def _breakpoints(skeleton, run, bands: Sequence[Any]) -> dict:
-    """``{key: t}`` of interior points on ``run`` that a mesh line must pass through."""
+def _flipped(graph) -> frozenset:
+    """Loop partitions whose points run against the loop direction at this station."""
+    chain = graph.closed_loop_chain() or ()
+    return frozenset(name for name, _, rev in chain if rev)
+
+
+def _along(t: float, flip: bool) -> float:
+    """A run's own ``t`` as ``t`` along the loop direction."""
+    return 1.0 - float(t) if flip else float(t)
+
+
+def _breakpoints(skeleton, run, bands: Sequence[Any], flip: bool = False) -> dict:
+    """``{key: t}`` of interior points on ``run`` that a mesh line must pass through.
+
+    ``t`` runs along the loop direction: a run stored against it (``flip``) has
+    its own ``t`` reversed, so the mesh walks every loop partition the same way.
+    """
     out: dict = {}
     for node in skeleton.nodes:
         t = node.runs.get(run.name)
         if t is not None and _T_TOL < t < 1.0 - _T_TOL:
-            out[node.key] = float(t)
+            out[node.key] = _along(t, flip)
     for s in bands:
         if s.host != run.name:
             continue
         for k, t in enumerate(s.t_range):
             if _T_TOL < t < 1.0 - _T_TOL:
-                out[("band", s.name, k)] = float(t)
+                out[("band", s.name, k)] = _along(t, flip)
     return out
 
 
@@ -114,13 +126,6 @@ def _cells(ids: dict, j: int, loop_names: Sequence[str], web_names: Sequence[str
         else:
             raise PartitionMeshError(f"web {w!r} does not join two nodes of one cell at station {j}")
     return cells
-
-
-def _te_point(ring: np.ndarray) -> np.ndarray:
-    """The loop point farthest from the loop's mean point (the trailing edge of an aerofoil)."""
-    pts = ring[:-1] if np.allclose(ring[0], ring[-1]) else ring
-    c = pts.mean(axis=0)
-    return pts[int(np.argmax(np.linalg.norm(pts - c, axis=1)))]
 
 
 #: How fast the local edge may grow along a run, per metre of arc (graded sizing).
@@ -301,10 +306,15 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     if unknown:
         raise ValueError(f"sub-partition hosts not in the shell graph: {sorted(unknown)}")
 
-    def runs_of(g) -> dict:
-        return {r.name: r for r in g.loop + g.webs}
+    flips = [_flipped(g) for g in graphs]
 
-    by_station = [runs_of(g) for g in graphs]
+    def runs_of(g, flip: frozenset) -> dict:
+        # A loop run stored against the loop direction is walked reversed, so
+        # node rows always follow the loop; orientation fixes normals later.
+        return {r.name: (replace(r, points=np.asarray(r.points)[::-1].copy()) if r.name in flip else r)
+                for r in g.loop + g.webs}
+
+    by_station = [runs_of(g, f) for g, f in zip(graphs, flips)]
     skeletons = [g.skeleton() for g in graphs]
     order = list(loop_names) + list(web_names)
 
@@ -314,7 +324,8 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
     measure: dict = {}  # (station, run) -> (t, W), the graded edge measure
     chords = [float(geo.interpolate(z)[0]) for z in z_list]
     for name in order:
-        per_station = [_segment_breaks(_breakpoints(sk, rs[name], sub_partitions)) for sk, rs in zip(skeletons, by_station)]
+        per_station = [_segment_breaks(_breakpoints(sk, rs[name], sub_partitions, name in fl))
+                       for sk, rs, fl in zip(skeletons, by_station, flips)]
         keys0 = [k for k, _ in per_station[0]]
         for g, b in zip(graphs[1:], per_station[1:]):
             if [k for k, _ in b] != keys0:
@@ -402,6 +413,7 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
                     t = node.runs.get(host)
                     if t is None:
                         continue
+                    t = _along(t, host in flips[j])
                     hrow = ids[(j, host)]
                     if t <= _T_TOL:
                         ends[end] = hrow[0]
@@ -479,7 +491,11 @@ def partition_mesh(geo, *, h: float, zs: Sequence[float] | None = None,
                                  if any(i >= n_source for i in tri_ids) else "inherited"))
 
     pts = np.asarray(nodes, float)
-    te_at = {z: np.append(_te_point(np.asarray(g.loop_polygon(), float)), z) for z, g in zip(z_list, graphs)}
+    # The placed trailing edge from the loft (as the ruled mesher), not the loop
+    # point farthest from the loop's mean: on a thick section dense near the
+    # nose that point can be the leading edge, which flipped web normals.
+    _le, te_pts, _chord = _le_te_points(geo, z_list)
+    te_at = {z: np.asarray(te, float) for z, te in zip(z_list, te_pts)}
     elements, flipped = _oriented(pts, elements, [r[1] for r in rows], z_list, te_at)
     mesh = ShellMesh(
         nodes=pts,

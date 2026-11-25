@@ -32,39 +32,13 @@ higher package: polylines from zero sets and feature ids. It may import `sdf`;
 
 [structure](../structure/README.md) assembles member fields from `sdf` nodes.
 
-## Distance
+## Theory
 
-Let \(\Omega\subset\mathbb{R}^2\) be a closed region with boundary \(\partial\Omega\).
-The signed distance at a point \(\mathbf{x}\) is
-
-$$
-d(\mathbf{x})
-= \mathrm{sign}(\mathbf{x};\Omega)\,
-  \inf_{\mathbf{y}\in\partial\Omega}\lVert\mathbf{x}-\mathbf{y}\rVert,
-\tag{1}
-$$
-
-where the sign is negative in the interior of \(\Omega\) (the kernel’s solid
-convention) and positive in the exterior. Primitive fields (disk, box,
-half-plane, segment, capsule, polygon) implement \((1)\) exactly or to the
-polygon polyline.
-
-## CSG
-
-For fields \(d_A\) and \(d_B\),
-
-$$
-\begin{aligned}
-d_{A\cup B} &= \min(d_A,d_B),\\
-d_{A\cap B} &= \max(d_A,d_B),\\
-d_{A\setminus B} &= \max(d_A,-d_B),\\
-d_{\mathrm{offset}(\delta)} &= d - \delta.
-\end{aligned}
-\tag{2}
-$$
-
-Smooth blends replace \(\min\) and \(\max\) with \(C^1\) envelopes. An
-expression tree (`Expr`, `Union`, …) is lowered to Numba kernels.
+The fields, the CSG operations and what each keeps of the distance, the smooth
+blends, the transforms, the feature ids, the Newton solves, the bounding boxes and
+the zero-loop extraction are derived in
+[R4 · Signed distance fields and constructive solid geometry](../r/R4_sdf_csg.md).
+Known defects are in the [sdf bug log](bug_log.md).
 
 ```mermaid
 flowchart LR
@@ -77,7 +51,7 @@ flowchart LR
 A two-and-a-half-dimensional feature field (`FieldSample`, `FeatureTable`,
 `NO_FEATURE`, `TagNode`, `PriorityUnionNode`, `LoftedPolygonSDF`) tags walls
 without becoming a Euclidean \(F(x,y,z)\). `LoftedPolygonSDF` caches a
-uniform-grid AABB per station (`accelerate=True`, `accel_at` / `bvh`). Kernel barrel names:
+station's edge arrays and box (`accelerate=True`, `accel_at` / `bvh`); every query still visits every edge. Kernel barrel names:
 [glossary](../glossary.md#sdf).
 
 The page [section/sdf](../section/sdf/README.md) is a redirect: SDF is not a

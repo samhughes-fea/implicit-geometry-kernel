@@ -38,11 +38,12 @@ def _bbox_intersect(a: Optional[BBox], b: Optional[BBox]) -> Optional[BBox]:
         return a
     lo_x, hi_x = max(a[0], b[0]), min(a[1], b[1])
     lo_y, hi_y = max(a[2], b[2]), min(a[3], b[3])
-    if lo_x > hi_x or lo_y > hi_y:
-        # Disjoint boxes ⇒ the intersection region is empty; return a degenerate
-        # box so downstream culling drops the (empty) component.
-        return (lo_x, lo_x, lo_y, lo_y)
-    return (lo_x, hi_x, lo_y, hi_y)
+    # Disjoint boxes: the intersection is empty, but its field max(phi_A, phi_B) is
+    # only a bound outside (R4.12), so an Offset of it by delta has the non-empty
+    # region A_delta ∩ B_delta. Keep each axis as the gap [min(l, u), max(l, u)]
+    # rather than collapsing it to a point: grown by delta it still covers
+    # (box_A ⊕ delta) ∩ (box_B ⊕ delta) (SD-002).
+    return (min(lo_x, hi_x), max(lo_x, hi_x), min(lo_y, hi_y), max(lo_y, hi_y))
 
 
 def _bbox_expand(box: Optional[BBox], margin: float) -> Optional[BBox]:

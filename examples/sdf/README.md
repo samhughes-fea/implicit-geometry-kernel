@@ -8,3 +8,4 @@ Domain-agnostic signed-distance modelling.
 |---|---|---|
 | 01 | [01_signed_distance_csg](01_signed_distance_csg/) | primitives, CSG, `SDFGrid`, Steiner |
 | 02 | [02_feature_field_loft](02_feature_field_loft/) | `LoftedPolygonSDF`, `TagNode`, `GeometrySolver` |
+| 03 | [03_distance_and_csg](03_distance_and_csg/) | primitives, CSG bounds, smooth union, Newton (Figure R4.1) |

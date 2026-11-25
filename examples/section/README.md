@@ -11,6 +11,8 @@ Numbered worked examples plus print-first teaching scripts.
 | 01 | [01_layout_catalogue](01_layout_catalogue/) | `SYSTEM_TYPE_KEYS` |
 | 02 | [02_section_properties](02_section_properties/) | gated `"properties"` |
 | 03 | [03_mid_surface_and_cells](03_mid_surface_and_cells/) | walls, cells, `mid_surface()` |
+| 04 | [04_layout_construction](04_layout_construction/) | catalogue, wall fields, web axes and anchoring (Figure R5.1) |
+| 05 | [05_midsurfaces_cells](05_midsurfaces_cells/) | skin mid ring, web feet, cap eccentricity, cells and the thin-wall idealisation (Figure R6.1) |
 
 ## Teaching
 

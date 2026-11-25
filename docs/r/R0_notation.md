@@ -58,6 +58,24 @@ table in the same change.
 | $h_k, \delta_k$ | Bay length $z_{k+1}-z_k$ and secant slope of a span law | m, – | R3 |
 | $w$ | Position within a bay, $0 \le w \le 1$ | – | (R3.1) |
 | $d_k$ | Slope of a PCHIP law at knot $k$ | – | (R3.7) |
+| $\Omega$, $\partial\Omega$ | A region of the section plane and its boundary | – | [R4](R4_sdf_csg.md) |
+| $d_\Omega$ | Signed distance to $\partial\Omega$, negative inside | m | (R4.1) |
+| $\phi$ | A field the kernel evaluates for a region: exact or a bound on $d_\Omega$ | m | R4 |
+| $\delta$, $D$ | Offset distance; wall depth | m | (R4.15), (R4.18) |
+| $k$ | Blend width of a smooth union | m | (R4.19) |
+| $m$, $\pi$ | Feature id of a point; priority of a member kind | – | (R4.24) |
+| $t_s, h, t_w$ | Skin thickness, spar-cap height, shear-web thickness | m | [R5](R5_section_layout.md) |
+| $\phi_A$, $\phi_I$ | Fields of the outer and inner mould lines, $\phi_I = \phi_A + t_s$ | m | (R5.7) |
+| $x_k$, $f_k$ | Web station from the leading edge; as a fraction of chord | m, – | (R5.4) |
+| $W, X, Y, Z$ | Web count, cap family, web orientation and anchoring of a layout key | – | (R5.1) |
+| $d_m$, $M$ | Depth of the skin mid-surface; the skin mid ring | m, – | [R6](R6_midsurfaces_cells.md), (R6.1), (R6.2) |
+| $\alpha_i$, $K$ | Exterior turning angle at polygon vertex $i$; $K = \sum_i \tan(\alpha_i/2)$ | rad, – | (R6.3) |
+| $L(d)$, $A(d)$, $d^*$ | Perimeter and area of the offset at depth $d$; depth at which an edge first vanishes | m, m², m | (R6.3)–(R6.5) |
+| $\beta$ | Included angle of a sharp trailing edge | rad | (R6.7) |
+| $\boldsymbol\nu$, $\kappa$, $\eta$ | Unit normal and signed curvature of a mid-curve; offset along $\boldsymbol\nu$ | –, 1/m, m | (R6.8) |
+| $e$ | Eccentricity of the merged cap-and-skin laminate from the skin mid-surface | m | (R6.12) |
+| $\gamma$ | Angle between a web axis and the skin normal at its foot | rad | (R6.14) |
+| $V, E, F$ | Nodes, edges and faces of the wall graph | – | (R6.15), (R6.16) |
 
 ## Bibliography
 

@@ -138,10 +138,12 @@ def _morph_surfaces(fa, fb, w: float, x: np.ndarray, rule: str = "auto") -> tupl
         yl = (1.0 - s) * np.asarray(fa.surface("lower", xs), float) + s * np.asarray(fb.surface("lower", xs), float)
         return yu, yl
 
+    te_w = w  # the weight the trailing-edge gap follows: the rule's own (BG-057)
     if rule == "linear":
         upper, lower = lerp(w, x)
     elif rule == "smoothstep":
-        upper, lower = lerp(_smoothstep(w), x)
+        te_w = _smoothstep(w)
+        upper, lower = lerp(te_w, x)
     elif rule == "thickness" or not (_near_circle(fa) or _near_circle(fb)):
         # Lerp the surfaces in t/c, then scale thickness about the camber line so the
         # peak t/c is the lerped one (Airfoil.interpolate_by_thickness, evaluated at x).
@@ -160,11 +162,11 @@ def _morph_surfaces(fa, fb, w: float, x: np.ndarray, rule: str = "auto") -> tupl
         upper, lower = camber + 0.5 * thick * scale, camber - 0.5 * thick * scale
     else:
         # auto, and the parents differ about the 60 % circle test
-        s = _smoothstep(w) if _near_circle(fa) != _near_circle(fb) else w
-        upper, lower = lerp(s, x)
+        te_w = _smoothstep(w) if _near_circle(fa) != _near_circle(fb) else w
+        upper, lower = lerp(te_w, x)
     gap_a = abs(float(np.asarray(fa.surface("upper", 1.0)) - np.asarray(fa.surface("lower", 1.0))))
     gap_b = abs(float(np.asarray(fb.surface("upper", 1.0)) - np.asarray(fb.surface("lower", 1.0))))
-    gap = (1.0 - w) * gap_a + w * gap_b
+    gap = (1.0 - te_w) * gap_a + te_w * gap_b
     mid = 0.5 * (float(upper[-1]) + float(lower[-1]))
     upper[-1] = mid + 0.5 * gap
     lower[-1] = mid - 0.5 * gap
@@ -201,6 +203,7 @@ def _morph_surfaces_many(fa, fb, w: np.ndarray, x: np.ndarray, rule: str = "auto
     neither = not (_near_circle(fa) or _near_circle(fb))
     circle_diff = _near_circle(fa) != _near_circle(fb)
     by_thickness = rule == "thickness" or (rule == "auto" and neither)
+    te_w = wl  # the weight the trailing-edge gap follows: the rule's own (BG-057)
     if by_thickness:
         dense = np.linspace(0.0, 1.0, 401)
         dua = np.asarray(fa.surface("upper", dense), float)
@@ -220,12 +223,13 @@ def _morph_surfaces_many(fa, fb, w: np.ndarray, x: np.ndarray, rule: str = "auto
         yu = camber + 0.5 * thick * scale[:, None]
         yl = camber - 0.5 * thick * scale[:, None]
     elif rule == "smoothstep" or (rule == "auto" and circle_diff):
-        yu, yl = blend(_smoothstep_many(wl), ua, ub, la, lb)
+        te_w = _smoothstep_many(wl)
+        yu, yl = blend(te_w, ua, ub, la, lb)
     else:
         yu, yl = blend(wl, ua, ub, la, lb)
     gap_a = abs(float(np.asarray(fa.surface("upper", 1.0)) - np.asarray(fa.surface("lower", 1.0))))
     gap_b = abs(float(np.asarray(fb.surface("upper", 1.0)) - np.asarray(fb.surface("lower", 1.0))))
-    gap = (1.0 - wl) * gap_a + wl * gap_b
+    gap = (1.0 - te_w) * gap_a + te_w * gap_b
     mid = 0.5 * (yu[:, -1] + yl[:, -1])
     yu[:, -1] = mid + 0.5 * gap
     yl[:, -1] = mid - 0.5 * gap

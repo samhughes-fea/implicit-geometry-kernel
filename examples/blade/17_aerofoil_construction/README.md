@@ -18,8 +18,8 @@ python examples/blade/17_aerofoil_construction/aerofoil_construction.py
 | 2 | NACA 2412: maximum camber 0.02 at $x = 0.4$, `max_thickness` 0.12 | (R2.7) | $5\times10^{-7}$ in camber |
 | 3 | Surfaces are the mean line offset by $h$ along its normal | (R2.9) | $1.1\times10^{-16}$ |
 | 4 | `Airfoil.cst` against the formula; trailing-edge gap; symmetry for equal weights | (R2.16) | $1.5\times10^{-5}$ of chord |
-| 5 | The 5-digit join $r$ from $3p^2 - 6pr + r^2(3-r) = 0$ against the published table | (R2.12) | $3\times10^{-4}$ |
+| 5 | The 5-digit join $r$ from $3p^2 - 6pr + r^2(3-r) = 0$ against the published table; NACA 23012 maximum camber 0.0184 | (R2.12), (R2.11) | $3\times10^{-4}$; $2\times10^{-4}$ in camber |
 
-Check 5 also prints the NACA 23012 mean line of Abbott and von Doenhoff against the
-kernel's. They differ by a factor of ten ([BG-055](../../../docs/blade/bug_log.md#bg-055),
-open), so that comparison is reported, not asserted.
+The 23012 camber is read from the section's vertical mid-line, which peaks at
+$x = 0.144$ rather than at the mean line's 0.15 (R2, Section 3.6).
+[BG-055](../../../docs/blade/bug_log.md#bg-055) made it ten times too flat before 0.9.6.

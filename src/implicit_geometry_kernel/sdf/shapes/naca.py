@@ -21,28 +21,16 @@ from functools import lru_cache
 import numpy as np
 from numpy.typing import NDArray
 
-_NACA5_RMK1: NDArray[np.float64] = np.array(
+# Published NACA 5-digit normal (Q = 0) camber parameters for C_l,i = 0.3
+# (Abbott & von Doenhoff, Theory of Wing Sections, section 6.6): columns [p, r, k1],
+# p the position of maximum camber (P / 20), r the join of the cubic and the line.
+_NACA5_NORMAL: NDArray[np.float64] = np.array(
     [
-        [0.05, 0.02000, 361.400],
-        [0.08, 0.01700, 330.700],
-        [0.10, 0.01500, 310.100],
-        [0.15, 0.01250, 270.900],
-        [0.20, 0.01100, 251.100],
-        [0.25, 0.01100, 231.800],
-        [0.30, 0.01100, 212.100],
-        [0.35, 0.01100, 193.100],
-        [0.40, 0.01000, 174.100],
-        [0.45, 0.00900, 155.300],
-        [0.50, 0.00800, 136.600],
-        [0.55, 0.00700, 118.300],
-        [0.60, 0.00600, 100.300],
-        [0.65, 0.00500, 82.800],
-        [0.70, 0.00400, 66.100],
-        [0.75, 0.00300, 50.500],
-        [0.80, 0.00200, 36.100],
-        [0.85, 0.00100, 23.300],
-        [0.90, 0.00050, 11.700],
-        [0.95, 0.00025, 3.500],
+        [0.05, 0.0580, 361.400],
+        [0.10, 0.1260, 51.640],
+        [0.15, 0.2025, 15.957],
+        [0.20, 0.2900, 6.643],
+        [0.25, 0.3910, 3.230],
     ],
     dtype=np.float64,
 )
@@ -117,10 +105,29 @@ def naca_four_digit_vertices(m, p, t_frac, n_points, chord, *, closed_te=True):
     return verts
 
 
-def _interp_naca5_table(r):
-    r = float(np.clip(r, _NACA5_RMK1[0, 0], _NACA5_RMK1[-1, 0]))
-    rr = _NACA5_RMK1[:, 0]
-    return float(np.interp(r, rr, _NACA5_RMK1[:, 1])), float(np.interp(r, rr, _NACA5_RMK1[:, 2]))
+def _naca5_join(p):
+    """Join ``r`` of the normal 5-digit mean line: the root in (p, 1) of 3p^2 - 6pr + r^2(3 - r) = 0 (R2.12)."""
+    roots = np.roots([-1.0, 3.0, -6.0 * float(p), 3.0 * float(p) ** 2])
+    real = [float(z.real) for z in roots if abs(z.imag) < 1e-12 and float(p) < z.real < 1.0]
+    if not real:
+        raise ValueError(f"no 5-digit mean-line join for p = {p}")
+    return min(real)
+
+
+def _interp_naca5_table(p):
+    """Return (r, k1) for maximum-camber position ``p`` at C_l,i = 0.3.
+
+    The published values are used at their five tabulated positions; between them
+    ``r`` comes from (R2.12) and ``k1`` is interpolated in log space.
+    """
+    p = float(np.clip(p, _NACA5_NORMAL[0, 0], _NACA5_NORMAL[-1, 0]))
+    pp = _NACA5_NORMAL[:, 0]
+    hit = np.isclose(pp, p, rtol=0.0, atol=1e-12)
+    if np.any(hit):
+        row = _NACA5_NORMAL[int(np.argmax(hit))]
+        return float(row[1]), float(row[2])
+    k1 = float(np.exp(np.interp(p, pp, np.log(_NACA5_NORMAL[:, 2]))))
+    return _naca5_join(p), k1
 
 
 def _interp_naca5_reflex(p):
@@ -144,7 +151,12 @@ def _reflex_k2_over_k1(r, p):
 
 
 def naca_five_digit_vertices(L, PQ, TT, n_points, chord, *, closed_te=True, reflex=False):
-    """NACA five-digit LPQTT camber (S=0 simple, S=1 reflex)."""
+    """NACA five-digit section ``L P Q TT`` (Abbott & von Doenhoff; R2, Section 3.3).
+
+    ``PQ`` is the two middle digits: ``P`` sets the position of maximum camber
+    ``p = P / 20`` and ``Q = 1`` selects the reflexed mean line (as does
+    ``reflex=True``). ``L`` sets the design lift ``C_l,i = 3L / 20``.
+    """
     if L < 1 or L > 9:
         raise ValueError(f"Five-digit L must be 1..9, got {L}.")
     if PQ < 0 or PQ > 99:
@@ -157,11 +169,13 @@ def naca_five_digit_vertices(L, PQ, TT, n_points, chord, *, closed_te=True, refl
     xc = 0.5 * (1.0 - np.cos(beta))
     yt = _thickness_yt_4digit(xc, float(TT) / 100.0, closed_te=closed_te)
 
-    if reflex:
-        # PQ encodes 10*P (+ optional S digit ignored when reflex=True).
-        p_design = float(int(PQ) // 10) / 20.0
-        if p_design <= 0.0:
-            p_design = float(PQ) / 200.0
+    P, Q = int(PQ) // 10, int(PQ) % 10
+    if Q not in (0, 1):
+        raise ValueError(f"Five-digit Q (third digit) must be 0 or 1, got {Q}.")
+    if not 1 <= P <= 5:
+        raise ValueError(f"Five-digit P (second digit) must be 1..5, got {P}.")
+    p_design = P / 20.0
+    if reflex or Q == 1:
         r, k1_tab, k2_ratio = _interp_naca5_reflex(p_design)
         # Prefer tabulated k2/k1; fall back to closed form if needed.
         if not np.isfinite(k2_ratio):
@@ -207,8 +221,8 @@ def naca_five_digit_vertices(L, PQ, TT, n_points, chord, *, closed_te=True, refl
         )
         return _wrap_upper_lower(xc, yc, dyc, yt, float(chord))
 
-    r = float(PQ) / 200.0
-    m_tab, k1 = _interp_naca5_table(r)
+    r, k1 = _interp_naca5_table(p_design)
+    k1 = k1 * lift_scale
     yc = np.zeros_like(xc)
     dyc = np.zeros_like(xc)
     mask0 = xc <= r
@@ -216,8 +230,6 @@ def naca_five_digit_vertices(L, PQ, TT, n_points, chord, *, closed_te=True, refl
     yc = np.where(~mask0, k1 * r**3 / 6.0 * (1.0 - xc), yc)
     dyc = np.where(mask0, k1 / 6.0 * (3.0 * xc**2 - 6.0 * r * xc + r**2 * (3.0 - r)), dyc)
     dyc = np.where(~mask0, -k1 * r**3 / 6.0, dyc)
-    yc = yc * m_tab * lift_scale
-    dyc = dyc * m_tab * lift_scale
     return _wrap_upper_lower(xc, yc, dyc, yt, float(chord))
 
 
@@ -240,20 +252,6 @@ def _parse_uiuc_ads_flat_dat(text):
     if len(nums) < 8 or len(nums) % 2 != 0:
         raise ValueError("UIUC flat dat: expected an even count of numeric tokens.")
     return np.asarray(nums, dtype=np.float64).reshape(-1, 2)
-
-
-def _resample_polyline(xy, n_target):
-    if xy.shape[0] < 3 or n_target < 6:
-        return xy
-    d = np.sqrt(np.sum(np.diff(xy, axis=0) ** 2, axis=1))
-    s = np.concatenate([[0.0], np.cumsum(d)])
-    total = float(s[-1])
-    if total <= 0.0:
-        return xy
-    s_new = np.linspace(0.0, total, n_target, endpoint=False, dtype=np.float64)
-    x = np.interp(s_new, s, xy[:, 0])
-    y = np.interp(s_new, s, xy[:, 1])
-    return np.column_stack([x, y])
 
 
 def _embed_n63415():
@@ -279,17 +277,46 @@ def _six_series_reference_xy(family):
     return np.vstack([upper_o, lower_o[1:]])
 
 
+#: design lift coefficient of each embedded reference section (63-415, 64(1)-212)
+_SIX_SERIES_REF_CL = {63: 0.4, 64: 0.2}
+
+
+def six_series_camber_thickness(family, x):
+    """Vertical mid-line and vertical thickness of the reference section at chord fractions ``x``."""
+    ref = _six_series_reference_xy(int(family))
+    n = len(ref) // 2
+    upper = ref[: n + 1][::-1]
+    lower = ref[n:]
+    yu = np.interp(x, upper[:, 0], upper[:, 1])
+    yl = np.interp(x, lower[:, 0], lower[:, 1])
+    return 0.5 * (yu + yl), yu - yl
+
+
 def naca_six_series_vertices(family, t_percent, n_points, chord, *, closed_te=True, design_cl_tenth=None):
-    """Six-series airfoil from embedded UIUC coordinates (families 63 and 64)."""
-    _ = design_cl_tenth
-    xy = _six_series_reference_xy(int(family)).astype(np.float64)
-    t_ref = float(np.max(xy[:, 1]) - np.min(xy[:, 1]))
+    """Six-series section from embedded UIUC coordinates (families 63 and 64).
+
+    The reference section (NACA 63-415 or 64(1)-212) is split into its vertical
+    mid-line and thickness (R2.19); only the thickness is scaled to ``t_percent``,
+    so the camber stays the reference's. ``design_cl_tenth`` (the design lift in
+    tenths, as in the code 63-4xx) scales the mid-line linearly from the
+    reference's design lift; ``None`` keeps it (R2, Section 3.4).
+    """
+    _ = closed_te
+    fam = int(family)
+    if fam not in _SIX_SERIES_REF_CL:
+        raise ValueError(f"Unsupported 6-series family: {family}.")
+    beta = np.linspace(0.0, math.pi, max(4, int(n_points) // 2 + 1), dtype=np.float64)
+    x = 0.5 * (1.0 - np.cos(beta))
+    camber, thick = six_series_camber_thickness(fam, x)
+    t_ref = float(np.max(thick))
     if t_ref <= 1e-9:
         raise ValueError("Reference six-series airfoil has near-zero thickness.")
-    scale_y = float(t_percent) / 100.0 / (t_ref / 1.0)
-    xy[:, 1] *= scale_y
-    xy *= float(chord)
-    return _resample_polyline(xy, max(32, int(n_points)))
+    if design_cl_tenth is not None:
+        camber = camber * (float(design_cl_tenth) / 10.0) / _SIX_SERIES_REF_CL[fam]
+    half = 0.5 * thick * (float(t_percent) / 100.0) / t_ref
+    upper = np.column_stack([x[::-1], (camber + half)[::-1]])
+    lower = np.column_stack([x[1:], (camber - half)[1:]])
+    return np.vstack([upper, lower]) * float(chord)
 
 
 def airfoil_vertices_from_spanwise(series, m, p, xx, n_points, chord, *, closed_te=True):

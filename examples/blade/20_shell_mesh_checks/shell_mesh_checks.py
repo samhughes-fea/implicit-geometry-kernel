@@ -255,9 +255,6 @@ def check_orientation(geo, mesh):
     zs = np.asarray(mesh.stations)
     areas = []
     for z in zs:
-        ring = np.asarray(
-            [nodes[k] for k in sorted({k for i in skin for k in mesh.elements[i] if abs(nodes[k, 2] - z) < 1e-9})]
-        )
         ring_xy, _ = loop_points(geo, float(z))
         areas.append(abs(ring_area(ring_xy[:-1])))
     volume = float(np.trapezoid(areas, zs))

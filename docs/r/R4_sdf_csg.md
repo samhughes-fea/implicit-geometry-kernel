@@ -188,10 +188,12 @@ F(s) = \left(\frac{a x}{a^2 + s}\right)^{2} + \left(\frac{b y}{b^2 + s}\right)^{
 
 $F$ decreases monotonically on $s > -b^2$, so the root is unique and bracketed by
 $[\,b y - b^2,\ \lVert(a x, b y)\rVert - b^2\,]$ for $x, y > 0$; the axis cases
-$x = 0$ or $y = 0$ are closed-form. The sign is that of
-$(x/a)^2 + (y/b)^2 - 1$. The kernel today runs four steps of a fixed-point
-iteration instead of solving (R4.10), and its result is not the distance
-(Section 6, SD-001).
+$x = 0$ or $y = 0$ are closed-form: on the minor axis the nearest point is
+$(0, b)$; on the major axis it is $\big(a^2x/(a^2 - b^2),\ b\sqrt{1 - p_x^2/a^2}\big)$
+for $x < (a^2 - b^2)/a$ and $(a, 0)$ beyond. The sign is that of
+$(x/a)^2 + (y/b)^2 - 1$. The kernel bisects $F$ on that bracket to machine
+precision (fixed in SD-001; it used to run a fixed-point iteration that did not
+converge).
 
 ### 3.3 Union, intersection and difference
 
@@ -515,8 +517,10 @@ $\{\phi \le 0\}$. That holds when $\phi$ is exact outside the region, but an
 intersection is only a bound there (R4.12): $\{\max(\phi_A, \phi_B) \le \delta\} =
 A_\delta\cap B_\delta$, which is not empty when $A$ and $B$ are disjoint but closer
 than $2\delta$. The right box for that case is
-$(\square_A\oplus\delta)\cap(\square_B\oplus\delta)$; the kernel collapses an empty
-overlap to a point first and loses it (Section 6, SD-002).
+$(\square_A\oplus\delta)\cap(\square_B\oplus\delta)$. The kernel keeps an empty
+overlap as the gap interval $[\min(l, u), \max(l, u)]$ on each axis, which grown by
+$\delta$ covers that box (fixed in SD-002; it used to collapse the overlap to a
+point).
 
 ### 3.11 Zero loops
 
@@ -543,8 +547,9 @@ interpolant resolves it {cite:p}`nielson1991` by the sign of its saddle value
 where $\phi_{ij}$ are the corner values. When $\phi_{\mathrm{s}}$ has the sign of
 $\phi_{00}$ the corners of that sign are joined through the cell centre, otherwise
 they are separated. A cell with four crossings also occurs when two boundaries pass
-through it. The kernel keeps only the first two crossings of such a cell, and the
-loops break there (Section 6, SD-003).
+through it. The kernel emits both segments of such a cell, paired by (R4.31)
+(fixed in SD-003; it used to keep the first two crossings only, and the loops broke
+there).
 
 ## 4. Algorithm
 
@@ -592,21 +597,15 @@ keyed by the (hashable) subtree, so a memo can be shared across trees.
    right zero set but is not a distance.
 4. **Smooth blends** move the zero set by up to $k/4$ along the bisector of the two
    boundaries, (R4.19); they are $C^1$, not $C^2$.
-5. **SD-001 (open).** `sdf_ellipse` runs four fixed-point steps instead of solving
-   (R4.10). Its value is wrong by up to the semi-major axis (1.1 for $a = 1$,
-   $b = 0.5$); only its sign is right. No kernel path calls it; `Airfoil.ellipse`
-   builds a polygon.
-6. **SD-002 (open).** `expr_bbox` collapses the box of an empty intersection to a
-   point, so an `Offset` or `Shell` of two disjoint shapes closer than $2\delta$ gets
-   a box that misses its region, and culling by that box drops material.
-7. **SD-003 (open).** `extract_zero_loops` keeps two of the four crossings in a cell
-   with four, so two boundaries closer than a cell, or a saddle, break the loops
-   into fragments. A single smooth boundary resolved by the grid extracts correctly.
-8. **SD-004 (open).** `LoftedPolygonSDF(accelerate=True)` builds a uniform grid of
-   edge buckets that the evaluator never reads: it evaluates every edge, as the
-   unaccelerated path does. The values are right; the "acceleration" is the caching
-   of the station polygon's edge arrays only.
-9. **Along the span** (R4.25) is a distance in each plane only. A step in $z$ is not
+5. **Empty intersections.** The box of an empty intersection (SD-002, fixed) is
+   the gap between the two boxes, not empty, so culling by it is conservative.
+6. **Zero loops.** Two boundaries closer than one grid cell in a cell with only two
+   crossings still merge into one loop; (R4.31) resolves the four-crossing case
+   only (SD-003, fixed).
+7. **Lofted polygons.** `LoftedPolygonSDF(accelerate=True)` caches each station
+   polygon's edge arrays; every query still visits every edge, so the cost is
+   linear in the number of edges (SD-004, fixed by describing it so).
+8. **Along the span** (R4.25) is a distance in each plane only. A step in $z$ is not
    bounded by $|\phi|$.
 
 ## 7. Verification
@@ -614,14 +613,14 @@ keyed by the (hashable) subtree, so a memo can be shared across trees.
 | Result | Check | Where |
 |---|---|---|
 | (R4.3)–(R4.9) | Circle, box, rounded box, oriented box, capsule and a star polygon against the distance to a boundary sampled at $4\times10^5$ points: largest difference $4.6\times10^{-6}$, the sampling spacing; half-plane exact | [sdf example 03](../../examples/sdf/03_distance_and_csg/README.md), check 1 |
-| (R4.10) | Ellipse against the sampled distance: wrong by 1.1 (SD-001) | example 03, check 1; Figure R4.1 |
+| (R4.10) | Ellipse against the sampled distance: $1.2\times10^{-7}$, the sampling spacing | example 03, check 1; Figure R4.1; `tests/sdf/test_sd_fixes.py` |
 | (R4.11)–(R4.13) | Union, intersection and difference of a disk and a box against the true boundary: exact side to $2.8\times10^{-6}$; on the bound side $|\phi|/|d| \le 1$ and signs agree | example 03, check 2 |
 | (R4.14) | A min/max/offset tree is 1-Lipschitz over $2\times10^4$ random pairs | example 03, check 2 |
 | (R4.15)–(R4.17) | Dilation, erosion and shell of an L-shaped polygon against independently built level sets | example 03, check 3 |
 | (R4.19)–(R4.21) | Smooth union equals min beyond the band, sits $k/4$ below it at $a = b$, is 1-Lipschitz, and its slope is continuous at $|a-b| = k$ | example 03, check 4 |
 | (R4.22), (R4.23) | Rotate-then-translate equals the oriented box; uniform scaling exact; anisotropic scaling 1-Lipschitz with correct sign | example 03, check 5 |
 | (R4.27), (R4.28) | One projection step lands on a circle; the circle-line crossing converges quadratically | example 03, check 6; Figure R4.1 |
-| (R4.29)–(R4.31) | SD-002 and SD-003 printed; a single circle extracts as one loop on $\phi = 0$ | example 03, check 7 |
+| (R4.29)–(R4.31) | The box of an offset of two disjoint boxes contains its region; two circles 0.05 apart extract as two loops; a single circle as one loop on $\phi = 0$ | example 03, check 7; `tests/sdf/test_sd_fixes.py` |
 | (R4.24) | Ids of union, intersection, priority union and tags | `tests/sdf/test_field_meta.py` |
 | (R4.25) | Lofted polygon field against the station polygon; Newton on the lofted field | `tests/sdf/test_lofted_solve.py` |
 | (R4.9) | Primitive values, signs and polygon winding | `tests/section/test_primitives.py` |
@@ -633,8 +632,8 @@ keyed by the (hashable) subtree, so a memo can be shared across trees.
 **Figure R4.1.** Top left: union of a disk and a box by (R4.11), with field contours;
 the shading is $|d| - |\phi|$, zero outside the union and positive inside, where the
 field is a bound. Top right: the smooth union (R4.19) against $\min$, $k/4$ below it
-at $a = b$. Bottom left: the error of `sdf_ellipse` against the exact distance
-(SD-001). Bottom right: residuals of the two-field Newton solve (R4.28). Drawn by
+at $a = b$. Bottom left: the error of `sdf_ellipse` against the distance to a
+densely sampled ellipse, at the sampling spacing. Bottom right: residuals of the two-field Newton solve (R4.28). Drawn by
 `examples/sdf/03_distance_and_csg/distance_and_csg.py`.
 ```
 

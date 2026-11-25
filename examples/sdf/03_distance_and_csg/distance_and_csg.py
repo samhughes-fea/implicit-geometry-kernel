@@ -13,7 +13,7 @@ Draws Figure R4.1 of the R manual (docs/r/R4_sdf_csg.md) and checks:
 6. the Newton projection lands on a circle in one step and the two-field solve
    converges quadratically, (R4.27)-(R4.28);
 7. the conservative bounding box and the zero-loop extraction, (R4.29)-(R4.31),
-   with the defects SD-002 and SD-003 printed.
+   including the cases fixed as SD-002 and SD-003.
 
     python examples/sdf/03_distance_and_csg/distance_and_csg.py
 """
@@ -193,7 +193,8 @@ def check_primitives():
     ell = sdf_ellipse(x, y, 0.0, 0.0, 1.0, 0.5)
     ell_ref = reference(p, circle_boundary(0, 0, 1) * [1.0, 0.5], x**2 + (y / 0.5) ** 2 < 1.0)
     ell_err = float(np.abs(ell - ell_ref).max())
-    print(f"   ellipse (R4.10)        {ell_err:.1e}  <- SD-001: the kernel's iteration does not converge")
+    print(f"   ellipse (R4.10)        {ell_err:.1e}  (SD-001 fixed: root of (R4.10) by bisection)")
+    assert ell_err < 1e-5
     return worst, ell_err
 
 
@@ -418,17 +419,18 @@ def check_bbox_and_loops():
     print("\n7. Bounding boxes and zero loops (R4.29)-(R4.31):")
     print(
         f"   Offset(Intersect(two boxes 0.5 apart), 0.5): region y in [{ys[m].min():.2f}, {ys[m].max():.2f}], "
-        f"expr_bbox y in [{bb[2]:.2f}, {bb[3]:.2f}]  <- SD-002"
+        f"expr_bbox y in [{bb[2]:.2f}, {bb[3]:.2f}] (SD-002 fixed: the box contains the region)"
     )
+    assert bb[0] <= xs[m].min() and xs[m].max() <= bb[1] and bb[2] <= ys[m].min() and ys[m].max() <= bb[3]
     two = Union(Circle(-0.37, -0.37, 0.5), Circle(0.37, 0.37, 0.5))
     loops = extract_zero_loops(two, 0.0, (-1.5, 1.5, -1.5, 1.5), n=48)
     one = extract_zero_loops(Circle(0.0, 0.0, 0.5), 0.0, (-1.5, 1.5, -1.5, 1.5), n=48)
     snap = float(np.abs(np.hypot(one[0][:, 0], one[0][:, 1]) - 0.5).max())
     print(
         f"   one circle: {len(one)} loop, on phi = 0 to {snap:.1e}; two circles 0.05 apart: "
-        f"{len(loops)} loops (2 expected)  <- SD-003"
+        f"{len(loops)} loops (SD-003 fixed: saddle cells by the asymptotic decider)"
     )
-    assert len(one) == 1 and snap < 1e-8
+    assert len(one) == 1 and snap < 1e-8 and len(loops) == 2
     return len(loops)
 
 
